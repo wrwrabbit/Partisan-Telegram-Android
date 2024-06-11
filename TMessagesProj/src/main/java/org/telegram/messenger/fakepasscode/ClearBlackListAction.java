@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.support.LongSparseIntArray;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,12 +37,13 @@ public class ClearBlackListAction extends AccountAction implements NotificationC
             NotificationCenter.getInstance(accountNum).removeObserver(this, NotificationCenter.blockedUsersDidLoad);
         }
         Set<Long> notBlockedPeers = Collections.synchronizedSet(new HashSet<>());
-        for (int i = 0; i < controller.blockePeers.size(); i++) {
-            notBlockedPeers.add(controller.blockePeers.keyAt(i));
+
+        for (int i = 0; i < controller.getUnfilteredBlockedPeers().size(); i++) {
+            notBlockedPeers.add(controller.getUnfilteredBlockedPeers().keyAt(i));
         }
-        for (int i = 0; i < controller.blockePeers.size(); i++) {
-            long userId = controller.blockePeers.keyAt(i);
-            int blocked = controller.blockePeers.get(userId);
+        for (int i = 0; i < controller.getUnfilteredBlockedPeers().size(); i++) {
+            long userId = controller.getUnfilteredBlockedPeers().keyAt(i);
+            int blocked = controller.getUnfilteredBlockedPeers().get(userId);
             if (blocked == 0) {
                 continue;
             }

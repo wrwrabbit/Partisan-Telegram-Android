@@ -49,6 +49,9 @@ public class VerificationRepository {
             boolean repositoryFilled = preferences.contains("storages");
             if (repositoryFilled) {
                 storages = SharedConfig.fromJson(preferences.getString("storages", null), StoragesWrapper.class).verificationStorages;
+                for (VerificationStorage storage : storages) {
+                    storage.migrate();
+                }
                 updateCache();
             } else {
                 fillRepository();
@@ -423,11 +426,11 @@ public class VerificationRepository {
         saveRepository();
     }
 
-    public void saveLastCheckTime(long storageChatId, long lastCheckTime) {
+    public void saveNextCheckTime(long storageChatId, long lastCheckTime) {
         ensureRepositoryLoaded();
         storages.stream()
                 .filter(s -> s.chatId == storageChatId)
-                .forEach(s -> s.lastCheckTime = lastCheckTime);
+                .forEach(s -> s.updateNextCheckTime(lastCheckTime));
         saveRepository();
     }
 
@@ -480,11 +483,13 @@ public class VerificationRepository {
         saveRepository();
     }
 
-    public void deleteChats(long storageChatId, Set<Long> chatIds) {
+    public void deleteChats(long storageChatId, List<VerificationChatInfo> chats) {
         ensureRepositoryLoaded();
         storages.stream()
                 .filter(s -> s.chatId == storageChatId)
-                .forEach(s -> s.chats.removeIf(c -> chatIds.contains(c.chatId)));
+                .forEach(s -> s.chats.removeIf(c ->
+                        chats.stream().anyMatch(toDelete -> c.type == toDelete.type && c.chatId == toDelete.chatId))
+                );
         saveRepository();
     }
 

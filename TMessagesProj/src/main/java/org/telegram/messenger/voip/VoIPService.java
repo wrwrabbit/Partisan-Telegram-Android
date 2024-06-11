@@ -3103,6 +3103,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				MessagesController.getInstance(currentAccount).ignoreSetOnline = false;
 			}
 			NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.appDidLogout);
+			NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.dialogsHidingChanged);
+			NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.accountHidingChanged);
 		}
 		SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
 		Sensor proximity = sm.getDefaultSensor(Sensor.TYPE_PROXIMITY);
@@ -3571,6 +3573,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	private void initializeAccountRelatedThings() {
 		updateServerConfig();
 		NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.appDidLogout);
+		NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.dialogsHidingChanged);
+		NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.accountHidingChanged);
 		ConnectionsManager.getInstance(currentAccount).setAppPaused(false, false);
 	}
 
@@ -4520,6 +4524,14 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	public void didReceivedNotification(int id, int account, Object... args) {
 		if (id == NotificationCenter.appDidLogout) {
 			callEnded();
+		} else if (id == NotificationCenter.dialogsHidingChanged) {
+			if (FakePasscodeUtils.isHideChat(getCallerId(), currentAccount)) {
+				callEnded();
+			}
+		} else if (id == NotificationCenter.accountHidingChanged) {
+			if (FakePasscodeUtils.isHideAccount(currentAccount)) {
+				callEnded();
+			}
 		}
 	}
 

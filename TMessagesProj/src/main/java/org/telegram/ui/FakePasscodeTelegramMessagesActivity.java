@@ -8,11 +8,8 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.text.Editable;
 import android.text.InputType;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.ActionMode;
 import android.view.Gravity;
@@ -44,6 +41,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -51,7 +49,6 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
-import org.telegram.ui.Adapters.SearchAdapterHelper;
 import org.telegram.ui.Cells.SendMessageChatCell;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.EditTextCaption;
@@ -202,6 +199,9 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
         getNotificationCenter().addObserver(this, NotificationCenter.contactsDidLoad);
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().addObserver(this, NotificationCenter.chatDidCreated);
+        if (Utils.loadAllDialogs(accountNum)) {
+            getNotificationCenter().addObserver(this, NotificationCenter.dialogsNeedReload);
+        }
         return super.onFragmentCreate();
     }
 
@@ -211,6 +211,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
         getNotificationCenter().removeObserver(this, NotificationCenter.contactsDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().removeObserver(this, NotificationCenter.chatDidCreated);
+        getNotificationCenter().removeObserver(this, NotificationCenter.dialogsNeedReload);
     }
 
     @Override
@@ -559,6 +560,16 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
             }
         } else if (id == NotificationCenter.chatDidCreated) {
             removeSelfFromStack();
+        } else if (id == NotificationCenter.dialogsNeedReload) {
+            if (!Utils.loadAllDialogs(accountNum)) {
+                if (emptyView != null) {
+                    emptyView.showTextView();
+                }
+                if (adapter != null) {
+                    adapter.notifyDataSetChanged();
+                }
+                getNotificationCenter().removeObserver(this, NotificationCenter.dialogsNeedReload);
+            }
         }
     }
 
@@ -659,7 +670,6 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
         private Context context;
         private ArrayList<Object> searchResult = new ArrayList<>();
         private ArrayList<CharSequence> searchResultNames = new ArrayList<>();
-        private SearchAdapterHelper searchAdapterHelper;
         private Runnable searchRunnable;
         private boolean searching;
         private ArrayList<TLObject> contacts = new ArrayList<>();
@@ -710,7 +720,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                     }
                 } else if (DialogObject.isEncryptedDialog(dialog.id)) {
                     TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
-                    if (encryptedChat != null) {
+                    if (encryptedChat != null && !(encryptedChat instanceof TLRPC.TL_encryptedChatDiscarded)) {
                         contacts.add(encryptedChat);
                     }
                 } else if (DialogObject.isChatDialog(dialog.id)) {
@@ -726,15 +736,6 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                 TLRPC.User user = getMessagesController().getUser(getUserConfig().clientUserId);
                 contacts.add(0, user);
             }
-
-            searchAdapterHelper = new SearchAdapterHelper(false);
-            searchAdapterHelper.setAllowGlobalResults(false);
-            searchAdapterHelper.setDelegate((searchId) -> {
-                if (searchRunnable == null && !searchAdapterHelper.isSearchInProgress()) {
-                    emptyView.showTextView();
-                }
-                notifyDataSetChanged();
-            });
         }
 
         public void setSearching(boolean value) {
@@ -753,11 +754,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
         @Override
         public int getItemCount() {
             if (searching) {
-                int count = searchResult.size();
-                int localServerCount = searchAdapterHelper.getLocalServerSearch().size();
-                int globalCount = searchAdapterHelper.getGlobalSearch().size();
-                count += localServerCount + globalCount;
-                return count;
+                return searchResult.size();
             } else {
                 return contacts.size();
             }
@@ -784,15 +781,9 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                     CharSequence name = null;
                     if (searching) {
                         int localCount = searchResult.size();
-                        int globalCount = searchAdapterHelper.getGlobalSearch().size();
-                        int localServerCount = searchAdapterHelper.getLocalServerSearch().size();
 
                         if (position >= 0 && position < localCount) {
                             object = searchResult.get(position);
-                        } else if (position >= localCount && position < localServerCount + localCount) {
-                            object = searchAdapterHelper.getLocalServerSearch().get(position - localCount);
-                        } else if (position > localCount + localServerCount && position < globalCount + localCount + localServerCount) {
-                            object = searchAdapterHelper.getGlobalSearch().get(position - localCount - localServerCount);
                         } else {
                             object = null;
                         }
@@ -808,33 +799,10 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                                         .getUser(encryptedChat.user_id);
                                 objectUserName = currentUser.username;
                             }
-                            if (position < localCount) {
-                                name = searchResultNames.get(position);
-                                if (name != null && !TextUtils.isEmpty(objectUserName)) {
-                                    if (name.toString().startsWith("@" + objectUserName)) {
-                                        name = null;
-                                    }
-                                }
-                            } else if (position > localCount && !TextUtils.isEmpty(objectUserName)) {
-                                String foundUserName = searchAdapterHelper.getLastFoundUsername();
-                                if (foundUserName.startsWith("@")) {
-                                    foundUserName = foundUserName.substring(1);
-                                }
-                                try {
-                                    int index;
-                                    SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
-                                    spannableStringBuilder.append("@");
-                                    spannableStringBuilder.append(objectUserName);
-                                    if ((index = AndroidUtilities.indexOfIgnoreCase(objectUserName, foundUserName)) != -1) {
-                                        int len = foundUserName.length();
-                                        if (index == 0) {
-                                            len++;
-                                        } else {
-                                            index++;
-                                        }
-                                        spannableStringBuilder.setSpan(new ForegroundColorSpan(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4)), index, index + len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    }
-                                } catch (Exception ignored) {
+                            name = searchResultNames.get(position);
+                            if (name != null && !TextUtils.isEmpty(objectUserName)) {
+                                if (name.toString().startsWith("@" + objectUserName)) {
+                                    name = null;
                                 }
                             }
                         }
@@ -895,12 +863,9 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
             if (query == null) {
                 searchResult.clear();
                 searchResultNames.clear();
-                searchAdapterHelper.mergeResults(null);
-                searchAdapterHelper.queryServerSearch(null, true, true, false, false, false, 0, false, 0, 0);
                 notifyDataSetChanged();
             } else {
                 Utilities.searchQueue.postRunnable(searchRunnable = () -> AndroidUtilities.runOnUIThread(() -> {
-                    searchAdapterHelper.queryServerSearch(query, true, true, true, true, false, 0, false, 0, 0);
                     Utilities.searchQueue.postRunnable(searchRunnable = () -> {
                         String search1 = query.trim().toLowerCase();
                         if (search1.length() == 0) {
@@ -1002,10 +967,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                 searchRunnable = null;
                 searchResult = users;
                 searchResultNames = names;
-                searchAdapterHelper.mergeResults(searchResult);
-                if (searching && !searchAdapterHelper.isSearchInProgress()) {
-                    emptyView.showTextView();
-                }
+                emptyView.showTextView();
                 notifyDataSetChanged();
             });
         }

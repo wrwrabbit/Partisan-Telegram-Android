@@ -11,7 +11,7 @@ import java.util.Set;
 public class VerificationMessageParser {
     public static class ParsingResult {
         List<VerificationChatInfo> chatsToAdd = new ArrayList<>();
-        Set<Long> chatsToRemove = new HashSet<>();
+        List<VerificationChatInfo> chatsToRemove = new ArrayList<>();
     }
     private int currentChatType;
 
@@ -32,7 +32,7 @@ public class VerificationMessageParser {
                         result.chatsToAdd.add(parseChatInfo(line.substring(1)));
                     } else if (line.startsWith("-")) {
                         VerificationChatInfo info = parseChatInfo(line.substring(1));
-                        result.chatsToRemove.add(info.chatId);
+                        result.chatsToRemove.add(info);
                     }
                 }
             }

@@ -36,8 +36,8 @@ public class BuildVars {
 
     public static String HUAWEI_APP_ID = "101184875";
 
-    public static final String PARTISAN_VERSION_STRING = "3.6.4";
-    public static int PARTISAN_BUILD_VERSION = 1419;
+    public static final String PARTISAN_VERSION_STRING = "3.6.7";
+    public static int PARTISAN_BUILD_VERSION = 1436;
 
     // You can use this flag to disable Google Play Billing (If you're making fork and want it to be in Google Play)
     public static boolean IS_BILLING_UNAVAILABLE = false;

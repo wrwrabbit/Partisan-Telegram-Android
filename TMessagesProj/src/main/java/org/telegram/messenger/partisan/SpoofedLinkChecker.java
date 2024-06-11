@@ -142,8 +142,11 @@ public class SpoofedLinkChecker {
         // avoid ' @username' workaround
         label = label.trim();
         String url = span.getURL();
-        boolean isInternalActualLink = Browser.isInternalUrl(url, null);
+        if (label.equals(url)) {
+            return false;
+        }
 
+        boolean isInternalActualLink = Browser.isInternalUrl(url, null);
         if (label.startsWith("@") && !isInternalActualLink) {
             // external website? ok
             return false;
@@ -171,6 +174,9 @@ public class SpoofedLinkChecker {
     private static boolean areSameInternalLinks(String str1, String str2) {
         String username1 = extractUsername(str1);
         String username2 = extractUsername(str2);
+        if (username1 == null && username2 == null) {
+            return true;
+        }
         // Only usernames are compared. Maybe we need to compare parameters too.
         return username1 != null && username1.equalsIgnoreCase(username2);
     }

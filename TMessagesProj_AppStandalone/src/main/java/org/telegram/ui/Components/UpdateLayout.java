@@ -25,7 +25,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.partisan.UpdateChecker;
+import org.telegram.messenger.partisan.update.UpdateChecker;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
@@ -137,7 +137,7 @@ public class UpdateLayout extends IUpdateLayout {
 
         updateTextView = new SimpleTextView(activity);
         updateTextView.setTextSize(15);
-        updateTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        updateTextView.setTypeface(AndroidUtilities.bold());
         updateTextView.setText(LocaleController.getString("AppUpdate", R.string.AppUpdate));
         updateTextView.setTextColor(0xffffffff);
         updateTextView.setGravity(Gravity.LEFT);
@@ -145,7 +145,7 @@ public class UpdateLayout extends IUpdateLayout {
 
         updateSizeTextView = new TextView(activity);
         updateSizeTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
-        updateSizeTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        updateSizeTextView.setTypeface(AndroidUtilities.bold());
         updateSizeTextView.setGravity(Gravity.RIGHT);
         updateSizeTextView.setTextColor(0xffffffff);
         updateLayout.addView(updateSizeTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL | Gravity.RIGHT, 0, 0, 17, 0));
@@ -261,9 +261,9 @@ public class UpdateLayout extends IUpdateLayout {
     private void startUpdateDownloading(int currentAccount) {
         if (LaunchActivity.getUpdateAccountNum() != currentAccount || SharedConfig.pendingPtgAppUpdate.message == null) {
             isUpdateChecking = true;
-            UpdateChecker.checkUpdate(currentAccount, (updateFounded, data) -> {
+            UpdateChecker.checkUpdate(currentAccount, data -> {
                 isUpdateChecking = false;
-                if (updateFounded) {
+                if (data != null) {
                     SharedConfig.pendingPtgAppUpdate = data;
                     SharedConfig.saveConfig();
                     AndroidUtilities.runOnUIThread(() -> startUpdateDownloading(currentAccount));

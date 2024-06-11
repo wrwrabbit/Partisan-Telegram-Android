@@ -158,15 +158,17 @@ public class FakePasscode {
 
     public void deactivate() {
         activated = false;
+        ActionsResult oldActionResult = actionsResult;
+        actionsResult = new ActionsResult();
         if (SharedConfig.fakePasscodeActionsResult != null) {
             SharedConfig.fakePasscodeActionsResult = null;
              SharedConfig.saveConfig();
         }
         AndroidUtilities.runOnUIThread(() -> {
-            if (!actionsResult.hiddenAccountEntries.isEmpty()) {
+            if (!oldActionResult.hiddenAccountEntries.isEmpty()) {
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.accountHidingChanged);
             }
-            for (Map.Entry<Integer, RemoveChatsResult> entry : actionsResult.removeChatsResults.entrySet()) {
+            for (Map.Entry<Integer, RemoveChatsResult> entry : oldActionResult.removeChatsResults.entrySet()) {
                 int account = entry.getKey();
                 RemoveChatsResult removeResult = entry.getValue();
                 if (removeResult == null) {

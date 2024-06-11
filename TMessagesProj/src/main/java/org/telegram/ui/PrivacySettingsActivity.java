@@ -1238,7 +1238,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                         }
                         textCell2.setTextAndValueAndIcon(LocaleController.getString("Passcode", R.string.Passcode), value, true, icon, true);
                     } else if (position == blockedRow) {
-                        int totalCount = getMessagesController().totalBlockedCount;
+                        int totalCount = getMessagesController().getTotalBlockedCount();
                         if (totalCount == 0) {
                             value = LocaleController.getString("BlockedEmpty", R.string.BlockedEmpty);
                         } else if (totalCount > 0) {

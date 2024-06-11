@@ -278,7 +278,7 @@ public class TesterSettingsActivity extends BaseFragment {
                 Toast.makeText(getParentActivity(), "Check started", Toast.LENGTH_SHORT).show();
             } else if (position == resetVerificationLastCheckTimeRow) {
                 for (VerificationStorage storage : VerificationRepository.getInstance().getStorages()) {
-                    VerificationRepository.getInstance().saveLastCheckTime(storage.chatId, 0);
+                    VerificationRepository.getInstance().saveNextCheckTime(storage.chatId, 0);
                 }
                 Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
             } else if (position == forceAllowScreenshotsRow) {

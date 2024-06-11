@@ -35,7 +35,6 @@ import android.text.Spanned;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
@@ -46,15 +45,10 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.Keep;
-import androidx.core.graphics.ColorUtils;
-import androidx.core.math.MathUtils;
-
-import com.google.android.gms.vision.Frame;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -62,7 +56,6 @@ import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
-import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.LocationController;
 import org.telegram.messenger.MediaController;
@@ -73,7 +66,6 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
-import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.ConnectionsManager;
@@ -391,12 +383,12 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 } else if (currentStyle == STYLE_INACTIVE_GROUP_CALL) {
                     textView.setGravity(Gravity.TOP | Gravity.LEFT);
                     textView.setTextColor(getThemedColor(Theme.key_inappPlayerPerformer));
-                    textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                    textView.setTypeface(AndroidUtilities.bold());
                     textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
                 } else if (currentStyle == STYLE_CONNECTING_GROUP_CALL || currentStyle == STYLE_ACTIVE_GROUP_CALL) {
                     textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
                     textView.setTextColor(getThemedColor(Theme.key_returnToCallText));
-                    textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                    textView.setTypeface(AndroidUtilities.bold());
                     textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
                 }
                 return textView;
@@ -471,7 +463,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         joinButton.setTextColor(getThemedColor(Theme.key_featuredStickers_buttonText));
         joinButton.setBackground(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(16), getThemedColor(Theme.key_featuredStickers_addButton), getThemedColor(Theme.key_featuredStickers_addButtonPressed)));
         joinButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-        joinButton.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        joinButton.setTypeface(AndroidUtilities.bold());
         joinButton.setGravity(Gravity.CENTER);
         joinButton.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
         addView(joinButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 28, Gravity.TOP | Gravity.RIGHT, 0, 10, 14, 0));
@@ -956,9 +948,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 show = LocationController.getInstance(fragment.getCurrentAccount()).isSharingLocation(chatActivity.getDialogId());
             }
         } else {
-            if (VoIPService.getSharedInstance() != null && !VoIPService.getSharedInstance().isHangingUp() && VoIPService.getSharedInstance().getCallState() != VoIPService.STATE_WAITING_INCOMING &&
-                    (VoIPService.getSharedInstance().groupCall == null || !FakePasscodeUtils.isHideChat(VoIPService.getSharedInstance().groupCall.chatId, account)) &&
-                    (VoIPService.getSharedInstance().privateCall == null || !FakePasscodeUtils.isHideChat(VoIPService.getSharedInstance().privateCall.participant_id, account))) {
+            if (VoIPService.getSharedInstance() != null && !VoIPService.getSharedInstance().isHangingUp() && VoIPService.getSharedInstance().getCallState() != VoIPService.STATE_WAITING_INCOMING && !isCallHiddenByPasscode()) {
                 show = true;
                 startJoinFlickerAnimation();
             } else if (chatActivity != null && fragment.getSendMessagesHelper().getImportingHistory(chatActivity.getDialogId()) != null && !isPlayingVoice()) {
@@ -977,6 +967,31 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             checkCreateView();
         }
         setVisibility(show ? VISIBLE : GONE);
+    }
+
+    private boolean isCallHiddenByPasscode() {
+        VoIPService service = VoIPService.getSharedInstance();
+        if (service == null) {
+            return false;
+        }
+        if (service.groupCall != null) {
+            ChatObject.Call call = service.groupCall;
+            if (isChatOrAccountHidden(call.chatId, call.currentAccount.getCurrentAccount())) {
+                return true;
+            }
+        }
+        if (service.privateCall != null) {
+            TLRPC.PhoneCall call = service.privateCall;
+            if (isChatOrAccountHidden(call.participant_id, account)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isChatOrAccountHidden(long dialogId, int accountNum) {
+        return FakePasscodeUtils.isHideChat(dialogId, accountNum)
+                || FakePasscodeUtils.isHideAccount(accountNum);
     }
 
     @Keep
@@ -1152,7 +1167,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 }
                 textView.setGravity(Gravity.TOP | Gravity.LEFT);
                 textView.setTextColor(getThemedColor(Theme.key_inappPlayerPerformer));
-                textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                textView.setTypeface(AndroidUtilities.bold());
                 textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
             }
             titleTextView.setTag(Theme.key_inappPlayerPerformer);
@@ -1216,7 +1231,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 }
                 textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
                 textView.setTextColor(getThemedColor(Theme.key_returnToCallText));
-                textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                textView.setTypeface(AndroidUtilities.bold());
                 textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
             }
 
@@ -1559,7 +1574,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                     textView.setEllipsize(TextUtils.TruncateAt.END);
                 }
 
-                TypefaceSpan span = new TypefaceSpan(AndroidUtilities.getTypeface("fonts/rmedium.ttf"), 0, getThemedColor(Theme.key_inappPlayerPerformer));
+                TypefaceSpan span = new TypefaceSpan(AndroidUtilities.bold(), 0, getThemedColor(Theme.key_inappPlayerPerformer));
                 stringBuilder.setSpan(span, start, start + liveLocation.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 titleTextView.setText(stringBuilder, false);
             } else {
@@ -1644,7 +1659,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             textView.setEllipsize(TextUtils.TruncateAt.END);
         }
         if (start >= 0) {
-            TypefaceSpan span = new TypefaceSpan(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM), 0, getThemedColor(Theme.key_inappPlayerPerformer));
+            TypefaceSpan span = new TypefaceSpan(AndroidUtilities.bold(), 0, getThemedColor(Theme.key_inappPlayerPerformer));
             stringBuilder.setSpan(span, start, start + liveLocation.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
         }
         titleTextView.setText(stringBuilder, false);
@@ -1837,7 +1852,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                         textView.setEllipsize(TextUtils.TruncateAt.END);
                     }
                 }
-                TypefaceSpan span = new TypefaceSpan(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM), 0, getThemedColor(Theme.key_inappPlayerPerformer));
+                TypefaceSpan span = new TypefaceSpan(AndroidUtilities.bold(), 0, getThemedColor(Theme.key_inappPlayerPerformer));
                 stringBuilder.setSpan(span, 0, messageObject.getMusicAuthor().length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 titleTextView.setText(stringBuilder, !create && wasVisible && isMusic);
             }
@@ -2108,7 +2123,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                         gradientTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
                         gradientTextPaint.setColor(0xffffffff);
                         gradientTextPaint.setTextSize(AndroidUtilities.dp(14));
-                        gradientTextPaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                        gradientTextPaint.setTypeface(AndroidUtilities.bold());
 
                         gradientPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
                         gradientPaint.setColor(0xffffffff);
@@ -2160,7 +2175,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                     updateStyle(STYLE_CONNECTING_GROUP_CALL);
                 }
             }
-            if (!visible) {
+            if (!visible && !isCallHiddenByPasscode()) {
                 if (!create) {
                     if (animatorSet != null) {
                         animatorSet.cancel();
