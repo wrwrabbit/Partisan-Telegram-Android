@@ -32,15 +32,16 @@ public class FakePasscodeUtils {
     public static FakePasscode getActivatedFakePasscode() {
         if (SharedConfig.fakePasscodeActivatedIndex > -1
                 && SharedConfig.fakePasscodeActivatedIndex < SharedConfig.fakePasscodes.size()) {
-            return SharedConfig.fakePasscodes.get(SharedConfig.fakePasscodeActivatedIndex);
-        } else {
-            return null;
+            FakePasscode fakePasscode = SharedConfig.fakePasscodes.get(SharedConfig.fakePasscodeActivatedIndex);
+            if (fakePasscode.activated) {
+                return fakePasscode;
+            }
         }
+        return null;
     }
 
     public static boolean isFakePasscodeActivated() {
-        return SharedConfig.fakePasscodeActivatedIndex > -1
-                && SharedConfig.fakePasscodeActivatedIndex < SharedConfig.fakePasscodes.size();
+        return getActivatedFakePasscode() != null;
     }
 
     private static ActionsResult getActivatedActionsResult() {
@@ -123,11 +124,11 @@ public class FakePasscodeUtils {
     }
 
     public static List<TLRPC.Peer> filterPeers(List<TLRPC.Peer> peers, int account) {
-        return filterItems(peers, Optional.of(account), (peer, action) -> !isHidePeer(peer, action));
+        return filterItems(peers, Optional.of(account), (peer, filter) -> !filter.isHidePeer(peer));
     }
 
     public static List<TLRPC.TL_sendAsPeer> filterSendAsPeers(List<TLRPC.TL_sendAsPeer> peers, int account) {
-        return filterItems(peers, Optional.of(account), (peer, action) -> !isHidePeer(peer.peer, action));
+        return filterItems(peers, Optional.of(account), (peer, filter) -> !filter.isHidePeer(peer.peer));
     }
 
     public static boolean isHidePeer(TLRPC.Peer peer, int account) {
@@ -137,24 +138,18 @@ public class FakePasscodeUtils {
             return false;
         }
         RemoveChatsResult result = actionsResult.getRemoveChatsResult(account);
-        if (result != null && isHidePeer(peer, result)) {
+        if (result != null && result.isHidePeer(peer)) {
             return true;
         }
         if (passcode != null) {
             for (AccountActions actions : passcode.getFilteredAccountActions()) {
                 Integer accountNum = actions.getAccountNum();
                 if (accountNum != null && accountNum.equals(account)) {
-                    return isHidePeer(peer, actions.getRemoveChatsAction());
+                    return actions.getRemoveChatsAction().isHidePeer(peer);
                 }
             }
         }
         return false;
-    }
-
-    private static boolean isHidePeer(TLRPC.Peer peer, ChatFilter filter) {
-        return filter.isHideChat(peer.chat_id)
-                || filter.isHideChat(peer.channel_id)
-                || filter.isHideChat(peer.user_id);
     }
 
     public static List<TLRPC.TL_contact> filterContacts(List<TLRPC.TL_contact> contacts, int account) {
@@ -181,7 +176,7 @@ public class FakePasscodeUtils {
         if (stories == null) {
             return null;
         }
-        return filterItems(stories, Optional.of(account), (s, filter) -> !isHidePeer(s.peer, filter));
+        return filterItems(stories, Optional.of(account), (s, filter) -> !filter.isHidePeer(s.peer));
     }
 
     public static boolean isHideChat(long chatId, int account) {

@@ -604,6 +604,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
 //        }
         if (!fragmentsStack.isEmpty()) {
             BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
+            lastFragment.onActivityResume();
             lastFragment.onResume();
         }
     }
@@ -1254,10 +1255,10 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         boolean preview = params.preview;
         ActionBarPopupWindow.ActionBarPopupWindowLayout menu = params.menuView;
 
-        if (fragment == null || checkTransitionAnimation() || delegate != null && check && !delegate.needPresentFragment(this, params) || !fragment.onFragmentCreate()) {
+        if (fragment instanceof AllowShowingActivityInterface && !((AllowShowingActivityInterface) fragment).allowShowing()) {
             return false;
         }
-        if (fragment instanceof AllowShowingActivityInterface && !((AllowShowingActivityInterface) fragment).allowShowing()) {
+        if (fragment == null || checkTransitionAnimation() || delegate != null && check && !delegate.needPresentFragment(this, params) || !fragment.onFragmentCreate()) {
             return false;
         }
         BaseFragment lastFragment = getLastFragment();

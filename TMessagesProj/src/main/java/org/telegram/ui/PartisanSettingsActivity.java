@@ -19,12 +19,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
+import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
@@ -91,6 +94,8 @@ public class PartisanSettingsActivity extends BaseFragment {
     private int verifiedDetailRow;
     private int confirmDangerousActionRow;
     private int confirmDangerousActionDetailRow;
+    private int transferDataToOtherPtgRow;
+    private int transferDataToOtherPtgDetailRow;
 
     private class DangerousSettingSwitcher {
         public Context context;
@@ -316,6 +321,8 @@ public class PartisanSettingsActivity extends BaseFragment {
                     SharedConfig.toggleAdditionalVerifiedBadges();
                     ((NotificationsCheckCell) view).setChecked(SharedConfig.additionalVerifiedBadges);
                 }
+            } else if (position == transferDataToOtherPtgRow) {
+                presentFragment(new AppMigrationActivity());
             }
         });
 
@@ -368,12 +375,24 @@ public class PartisanSettingsActivity extends BaseFragment {
         showCallButtonDetailRow = rowCount++;
         isDeleteMessagesForAllByDefaultRow = rowCount++;
         isDeleteMessagesForAllByDefaultDetailRow = rowCount++;
-        marketIconsRow = rowCount++;
-        marketIconsDetailRow = rowCount++;
+        if (ApplicationLoader.isRealBuildStandaloneBuild()) {
+            marketIconsRow = rowCount++;
+            marketIconsDetailRow = rowCount++;
+        } else {
+            marketIconsRow = -1;
+            marketIconsDetailRow = -1;
+        }
         verifiedRow = rowCount++;
         verifiedDetailRow = rowCount++;
         confirmDangerousActionRow = rowCount++;
         confirmDangerousActionDetailRow = rowCount++;
+        if (AppMigrator.isNewerPtgInstalled(ApplicationLoader.applicationContext, false)) {
+            transferDataToOtherPtgRow = rowCount++;
+            transferDataToOtherPtgDetailRow = rowCount++;
+        } else {
+            transferDataToOtherPtgRow = -1;
+            transferDataToOtherPtgDetailRow = -1;
+        }
     }
 
     @Override
@@ -402,12 +421,14 @@ public class PartisanSettingsActivity extends BaseFragment {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position != versionDetailRow && position != idDetailRow && position != disableAvatarDetailRow
-                    && position != renameChatDetailRow && position != deleteMyMessagesDetailRow && position != deleteAfterReadDetailRow
-                    && position != savedChannelsDetailRow && position != reactionsDetailRow && position != foreignAgentsDetailRow
+            return position != versionDetailRow && position != idDetailRow
+                    && position != disableAvatarDetailRow && position != renameChatDetailRow && position != deleteMyMessagesDetailRow
+                    && position != deleteAfterReadDetailRow && position != savedChannelsDetailRow
+                    && position != reactionsDetailRow && position != foreignAgentsDetailRow
                     && position != onScreenLockActionDetailRow && position != isClearAllDraftsOnScreenLockDetailRow
                     && position != showCallButtonDetailRow && position != isDeleteMessagesForAllByDefaultDetailRow
-                    && position != marketIconsDetailRow && position!= confirmDangerousActionDetailRow;
+                    && position != marketIconsDetailRow && position!= confirmDangerousActionDetailRow
+                    && position != transferDataToOtherPtgDetailRow;
         }
 
         @Override
@@ -540,13 +561,16 @@ public class PartisanSettingsActivity extends BaseFragment {
                     } else if (position == confirmDangerousActionDetailRow) {
                         cell.setText(LocaleController.getString( R.string.ConfirmDangerousActionInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                    } else if (position == transferDataToOtherPtgDetailRow) {
+                        cell.setText(LocaleController.getString(R.string.TransferDataToOtherPtgInfo));
+                        cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     }
                     break;
                 }
                 case 2: {
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
-                    String value = null;
                     if (position == onScreenLockActionRow) {
+                        String value = null;
                         switch (SharedConfig.onScreenLockAction) {
                             case 0:
                                 value = LocaleController.getString("OnScreenLockActionNothing", R.string.OnScreenLockActionNothing);
@@ -558,7 +582,9 @@ public class PartisanSettingsActivity extends BaseFragment {
                                 value = LocaleController.getString("OnScreenLockActionClose", R.string.OnScreenLockActionClose);
                                 break;
                         }
-                        textCell.setTextAndValue(LocaleController.getString("OnScreenLockActionTitle", R.string.OnScreenLockActionTitle), value, true);
+                        textCell.setTextAndValue(LocaleController.getString(R.string.OnScreenLockActionTitle), value, true);
+                    } else if (position == transferDataToOtherPtgRow) {
+                        textCell.setText(LocaleController.getString(R.string.TransferDataToAnotherPtgButton), true);
                     }
                     break;
                 }
@@ -581,16 +607,19 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == renameChatRow || position == deleteMyMessagesRow || position == deleteAfterReadRow
                     || position == savedChannelsRow || position == reactionsRow || position == foreignAgentsRow
                     || position == isClearAllDraftsOnScreenLockRow || position == showCallButtonRow
-                    || position == isDeleteMessagesForAllByDefaultRow || position == marketIconsRow || position == confirmDangerousActionRow) {
+                    || position == isDeleteMessagesForAllByDefaultRow || position == marketIconsRow
+                    || position == confirmDangerousActionRow) {
                 return 0;
             } else if (position == versionDetailRow || position == idDetailRow || position == disableAvatarDetailRow
-                    || position == renameChatDetailRow || position == deleteMyMessagesDetailRow || position == deleteAfterReadDetailRow
-                    || position == savedChannelsDetailRow || position == reactionsDetailRow || position == foreignAgentsDetailRow
+                    || position == renameChatDetailRow || position == deleteMyMessagesDetailRow
+                    || position == deleteAfterReadDetailRow || position == savedChannelsDetailRow
+                    || position == reactionsDetailRow || position == foreignAgentsDetailRow
                     || position == onScreenLockActionDetailRow || position == isClearAllDraftsOnScreenLockDetailRow
                     || position == showCallButtonDetailRow || position == isDeleteMessagesForAllByDefaultDetailRow
-                    || position == marketIconsDetailRow || position == verifiedDetailRow || position == confirmDangerousActionDetailRow) {
+                    || position == marketIconsDetailRow || position == verifiedDetailRow
+                    || position == confirmDangerousActionDetailRow || position == transferDataToOtherPtgDetailRow) {
                 return 1;
-            } else if (position == onScreenLockActionRow) {
+            } else if (position == onScreenLockActionRow || position == transferDataToOtherPtgRow) {
                 return 2;
             } else if (position == verifiedRow) {
                 return 3;

@@ -17,8 +17,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -41,14 +39,14 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import org.json.JSONObject;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
-import org.telegram.messenger.partisan.UpdateData;
+import org.telegram.messenger.partisan.appmigration.AppMigrator;
+import org.telegram.messenger.partisan.update.UpdateData;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Adapters.DrawerLayoutAdapter;
 import org.telegram.ui.Components.ForegroundDetector;
-import org.telegram.ui.Components.Premium.boosts.BoostRepository;
 import org.telegram.ui.IUpdateLayout;
 import org.telegram.ui.LauncherIconController;
 
@@ -57,7 +55,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.io.FileWriter;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class ApplicationLoader extends Application {
 
@@ -142,6 +142,7 @@ public class ApplicationLoader extends Application {
         return applicationLoaderInstance.isHuaweiBuild();
     }
 
+    // This method actually returns whether the application should look like a standalone app
     public static boolean isStandaloneBuild() {
         return applicationLoaderInstance.isStandalone();
     }
@@ -156,9 +157,15 @@ public class ApplicationLoader extends Application {
             return true;
         }
         if (standaloneApp == null) {
-            standaloneApp = ApplicationLoader.applicationContext != null && ("org.telegram.messenger.web".equals(ApplicationLoader.applicationContext.getPackageName()) || "org.telegram.messenger.alpha".equals(ApplicationLoader.applicationContext.getPackageName()));
+            standaloneApp = ApplicationLoader.applicationContext != null && isRealBuildStandaloneBuild();
         }
         return standaloneApp;
+    }
+
+    public static boolean isRealBuildStandaloneBuild() {
+        List<String> standalonePackageNames = Arrays.asList("org.telegram.messenger.web", "org.telegram.messenger.alpha");
+        String appPackageName = ApplicationLoader.applicationContext.getPackageName();
+        return standalonePackageNames.stream().anyMatch(name -> name.equals(appPackageName));
     }
 
     public static File getFilesDirFixed() {
@@ -237,12 +244,8 @@ public class ApplicationLoader extends Application {
 
         SharedConfig.loadConfig();
         SharedPrefsHelper.init(applicationContext);
-        if (filesCopiedFromUpdater && !SharedConfig.filesCopiedFromOldTelegram) {
-            SharedConfig.filesCopiedFromOldTelegram = true;
-            SharedConfig.saveConfig();
-            SharedConfig.reloadConfig();
-        }
-        if (BuildVars.LOGS_ENABLED && !FakePasscodeUtils.isFakePasscodeActivated()) {
+        checkFiledCopiedFromOldTelegram();
+        if (SharedConfig.saveLogcatAfterRestart) {
             saveLogcatFile();
         }
         RemoveAfterReadingMessages.runChecker();
@@ -274,6 +277,20 @@ public class ApplicationLoader extends Application {
             DownloadController.getInstance(a);
         }
         BillingController.getInstance().startConnection();
+    }
+
+    private static void checkFiledCopiedFromOldTelegram() {
+        if (filesCopiedFromUpdater && !SharedConfig.filesCopiedFromOldTelegram) {
+            SharedConfig.filesCopiedFromOldTelegram = true;
+            applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE).edit()
+                    .remove("ptgMigrationStep")
+                    .remove("ptgMigrationMaxCancelledInstallationDate")
+                    .remove("migratedPackageName")
+                    .remove("migratedDate")
+                    .apply();
+            SharedConfig.saveConfig();
+            SharedConfig.reloadConfig();
+        }
     }
 
     public ApplicationLoader() {

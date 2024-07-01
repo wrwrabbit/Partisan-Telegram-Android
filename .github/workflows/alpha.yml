@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # [self-hosted, ptg]
+    runs-on: ubuntu-24.04 # [self-hosted, ptg]
     steps:
       - uses: actions/checkout@v2
       - name: Build docker image
@@ -18,7 +18,7 @@ jobs:
       - name: Save artifact
         uses: actions/upload-artifact@master
         with:
-          name: PTelegram-v1419.apk
+          name: PTelegramAlpha-v1444.apk
           path: TMessagesProj/build/outputs/apk/afat/alpha/app.apk
       - name: Create cleanup request
         run: touch delete_request

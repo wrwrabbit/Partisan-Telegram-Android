@@ -4,9 +4,12 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Environment;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -37,6 +40,8 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.CacheControlActivity;
 
 import java.io.File;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,7 +57,7 @@ import java.util.stream.Stream;
 
 public class Utils {
     private static final Pattern FOREIGN_AGENT_REGEX = Pattern.compile("\\s*данное\\s*сообщение\\s*\\(материал\\)\\s*создано\\s*и\\s*\\(или\\)\\s*распространено\\s*(иностранным\\s*)?средством\\s*массовой\\s*информации,\\s*выполняющим\\s*функции\\s*иностранного\\s*агента,\\s*и\\s*\\(или\\)\\s*российским\\s*юридическим\\s*лицом,\\s*выполняющим\\s*функции\\s*иностранного\\s*агента[\\.\\s\\r\\n]*", CASE_INSENSITIVE);
-    private static final Pattern FOREIGN_AGENT_REGEX2 = Pattern.compile("(\\s*18\\+)?\\s*настоящий\\s*материал\\s*(\\(информация\\))?\\s*произвед[её]н\\s*(,|и\\s*\\(или\\))\\s*распространен(\\s*и\\s*\\(или\\)\\s*направлен)?\\s*иностранным\\s*агентом\\s*.*(\\s*либо\\s*касается\\s*деятельности\\s*иностранного\\s*агента\\s*.*)?(\\s*18\\+)?[\\.\\s\\r\\n]*", CASE_INSENSITIVE);
+    private static final Pattern FOREIGN_AGENT_REGEX2 = Pattern.compile("(\\s*18\\+)?\\s*настоящий\\s*материал\\s*(\\(информация\\))?\\s*произвед[её]н\\s*(,|и\\s*(\\(или\\))?)\\s*распространен(\\s*и\\s*\\(или\\)\\s*направлен)?\\s*иностранным\\s*агентом\\s*.*(\\s*либо\\s*касается\\s*деятельности\\s*иностранного\\s*агента\\s*.*)?(\\s*18\\+)?[\\.\\s\\r\\n]*", CASE_INSENSITIVE);
     private static final Pattern FOREIGN_AGENT_REGEX_WWF = Pattern.compile("\\s*настоящий\\s*материал\\s*(\\(информация\\))?\\s*произвед[её]н(,|\\s*и)\\s*распространен\\s*[\\w\\s]+,\\s*внесенным\\s*в\\s*реестр\\s*иностранных\\s*агентов,\\s*либо\\s*касается\\s*деятельности\\s*[\\w\\s]+,\\s*внесенного\\s*в\\s*реестр\\s*иностранных\\s*агентов.[\\.\\s\\r\\n]*", CASE_INSENSITIVE);
     static Location getLastLocation() {
         boolean permissionGranted = ContextCompat.checkSelfPermission(ApplicationLoader.applicationContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
@@ -215,9 +220,10 @@ public class Utils {
     }
 
     public static boolean isDialogsLeft(int accountNum, Set<Long> ids) {
-        return AccountInstance.getInstance(accountNum)
+        ArrayList<TLRPC.Dialog> dialogs = AccountInstance.getInstance(accountNum)
                 .getMessagesController()
-                .getDialogs(0)
+                .getDialogs(0);
+        return new ArrayList<>(dialogs) // Workaround for ConcurrentModificationException
                 .stream()
                 .anyMatch(e -> ids.contains(e.id));
     }
@@ -322,7 +328,11 @@ public class Utils {
             }
         }
         if (lastEnd != -1) {
-            builder.append(message.subSequence(lastEnd, message.length()));
+            CharSequence endCharSequence = message.subSequence(lastEnd, message.length());
+            if (builder.length() != 0 && endCharSequence.length() != 0) {
+                builder.append("\n\n");
+                builder.append(endCharSequence);
+            }
             if (builder.length() != 0) {
                 int end = builder.length() - 1;
                 while (end > 0 && Character.isWhitespace(builder.charAt(end))) {

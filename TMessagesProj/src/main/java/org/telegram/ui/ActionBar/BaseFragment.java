@@ -407,6 +407,11 @@ public abstract class BaseFragment {
         }
     }
 
+    // onResume is called when LaunchActivity resume or when the user returns back to the fragment.
+    // onActivityResumed is called only when LaunchActivity resumes.
+    public void onActivityResume() {
+    }
+
     @CallSuper
     public void onPause() {
         if (actionBar != null) {

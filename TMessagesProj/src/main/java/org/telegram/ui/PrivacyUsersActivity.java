@@ -27,6 +27,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -228,7 +229,7 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
             } else if (position >= usersStartRow && position < usersEndRow) {
                 if (currentType == TYPE_BLOCKED) {
                     Bundle args = new Bundle();
-                    args.putLong("user_id", getMessagesController().blockePeers.keyAt(position - usersStartRow));
+                    args.putLong("user_id", getMessagesController().getFilteredBlockedPeers().keyAt(position - usersStartRow));
                     presentFragment(new ProfileActivity(args));
                 } else {
                     Bundle args = new Bundle();
@@ -246,7 +247,7 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
         listView.setOnItemLongClickListener((view, position) -> {
             if (position >= usersStartRow && position < usersEndRow) {
                 if (currentType == TYPE_BLOCKED) {
-                    showUnblockAlert(getMessagesController().blockePeers.keyAt(position - usersStartRow), view);
+                    showUnblockAlert(getMessagesController().getFilteredBlockedPeers().keyAt(position - usersStartRow), view);
                 } else {
                     showUnblockAlert(uidArray.get(position - usersStartRow), view);
                 }
@@ -273,7 +274,7 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
                 }
             });
 
-            if (getMessagesController().totalBlockedCount < 0) {
+            if (getMessagesController().getTotalBlockedCount() < 0) {
                 emptyView.showProgress();
             } else {
                 emptyView.showTextView();
@@ -314,7 +315,7 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
         usersHeaderRow = -1;
         blockUserDetailRow = -1;
         deleteAllRow = -1;
-        if (!blockedUsersActivity || getMessagesController().totalBlockedCount >= 0) {
+        if (!blockedUsersActivity || getMessagesController().getTotalBlockedCount() >= 0) {
             blockUserRow = rowCount++;
             if (currentType == TYPE_BLOCKED) {
                 blockUserDetailRow = rowCount++;
@@ -322,7 +323,7 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
 
             int count;
             if (currentType == TYPE_BLOCKED) {
-                count = getMessagesController().blockePeers.size();
+                count = getMessagesController().getFilteredBlockedPeers().size();
             } else {
                 count = uidArray.size();
             }
@@ -459,7 +460,7 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
                     ManageChatUserCell userCell = (ManageChatUserCell) holder.itemView;
                     long uid;
                     if (currentType == TYPE_BLOCKED) {
-                        uid = getMessagesController().blockePeers.keyAt(position - usersStartRow);
+                        uid = getMessagesController().getFilteredBlockedPeers().keyAt(position - usersStartRow);
                     } else {
                         uid = uidArray.get(position - usersStartRow);
                     }
@@ -528,7 +529,7 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
                     if (position == usersHeaderRow) {
                         if (currentType == TYPE_BLOCKED) {
-                            headerCell.setText(LocaleController.formatPluralString("BlockedUsersCount", getMessagesController().totalBlockedCount));
+                            headerCell.setText(LocaleController.formatPluralString("BlockedUsersCount", getMessagesController().getTotalBlockedCount()));
                         } else {
                             headerCell.setText(LocaleController.getString("PrivacyExceptions", R.string.PrivacyExceptions));
                         }

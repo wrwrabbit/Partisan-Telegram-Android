@@ -274,7 +274,7 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
         try {
             if (Build.VERSION.SDK_INT >= 23) {
                 FingerprintManagerCompat fingerprintManager = FingerprintManagerCompat.from(ApplicationLoader.applicationContext);
-                if (fingerprintManager.isHardwareDetected() && AndroidUtilities.isKeyguardSecure() && SharedConfig.useFingerprint) {
+                if (fingerprintManager.isHardwareDetected() && AndroidUtilities.isKeyguardSecure() && SharedConfig.useFingerprintLock) {
                     fingerprintRow = rowCount++;
                     fingerprintDetailRow = rowCount++;
                 } else {

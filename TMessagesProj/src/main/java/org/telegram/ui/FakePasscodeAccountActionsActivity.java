@@ -42,6 +42,7 @@ import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.DialogBuilder.DialogTemplate;
 import org.telegram.ui.DialogBuilder.DialogType;
 import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
+import org.telegram.ui.RemoveChatsAction.RemoveChatsFragment;
 
 import java.util.ArrayList;
 
@@ -210,7 +211,7 @@ public class FakePasscodeAccountActionsActivity extends BaseFragment {
                 AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
                 showDialog(dialog);
             } else if (position == changeChatsToRemoveRow) {
-                presentFragment(new FakePasscodeRemoveChatsActivity(fakePasscode, actions.getRemoveChatsAction(), actions.getAccountNum()));
+                presentFragment(new RemoveChatsFragment(fakePasscode, actions.getRemoveChatsAction(), actions.getAccountNum()));
             } else if (position == deleteAllContactsRow) {
                 TextCheckCell cell = (TextCheckCell) view;
                 actions.toggleDeleteContactsAction();

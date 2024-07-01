@@ -93,6 +93,7 @@ public class TesterSettingsActivity extends BaseFragment {
     private int checkVerificationUpdatesRow;
     private int resetVerificationLastCheckTimeRow;
     private int forceAllowScreenshotsRow;
+    private int saveLogcatAfterRestartRow;
 
     public static boolean showPlainBackup;
 
@@ -278,12 +279,17 @@ public class TesterSettingsActivity extends BaseFragment {
                 Toast.makeText(getParentActivity(), "Check started", Toast.LENGTH_SHORT).show();
             } else if (position == resetVerificationLastCheckTimeRow) {
                 for (VerificationStorage storage : VerificationRepository.getInstance().getStorages()) {
-                    VerificationRepository.getInstance().saveLastCheckTime(storage.chatId, 0);
+                    VerificationRepository.getInstance().saveNextCheckTime(storage.chatId, 0);
                 }
                 Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
             } else if (position == forceAllowScreenshotsRow) {
                 SharedConfig.forceAllowScreenshots = !SharedConfig.forceAllowScreenshots;
+                SharedConfig.saveConfig();
                 ((TextCheckCell) view).setChecked(SharedConfig.forceAllowScreenshots);
+            } else if (position == saveLogcatAfterRestartRow) {
+                SharedConfig.saveLogcatAfterRestart = !SharedConfig.saveLogcatAfterRestart;
+                SharedConfig.saveConfig();
+                ((TextCheckCell) view).setChecked(SharedConfig.saveLogcatAfterRestart);
             }
         });
 
@@ -318,6 +324,7 @@ public class TesterSettingsActivity extends BaseFragment {
         checkVerificationUpdatesRow = rowCount++;
         resetVerificationLastCheckTimeRow = rowCount++;
         forceAllowScreenshotsRow = rowCount++;
+        saveLogcatAfterRestartRow = rowCount++;
     }
 
     @Override
@@ -421,13 +428,16 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == showPlainBackupRow) {
                         textCell.setTextAndCheck("Show plain backup", showPlainBackup, true);
                     } else if (position == disablePremiumRow) {
-                        textCell.setTextAndCheck("Disable Premiun", SharedConfig.premiumDisabled, true);
+                        textCell.setTextAndCheck("Disable Premium", SharedConfig.premiumDisabled, true);
                     } else if (position == hideDialogIsNotSafeWarningRow) {
                         textCell.setTextAndCheck("Show hide dialog is not safe warning",
                                 SharedConfig.showHideDialogIsNotSafeWarning, true);
                     } else if (position == forceAllowScreenshotsRow) {
                         textCell.setTextAndCheck("Force allow screenshots",
                                 SharedConfig.forceAllowScreenshots, true);
+                    } else if (position == saveLogcatAfterRestartRow) {
+                        textCell.setTextAndCheck("Save logcat after restart",
+                                SharedConfig.saveLogcatAfterRestart, true);
                     }
                     break;
                 } case 1: {
@@ -464,7 +474,7 @@ public class TesterSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == sessionTerminateActionWarningRow || position == showPlainBackupRow
                     || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow
-                    || position == forceAllowScreenshotsRow) {
+                    || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow) {
                 return 0;
             } else if (position == updateChannelIdRow || position == updateChannelUsernameRow
                     || (simpleDataStartRow <= position && position < simpleDataEndRow)

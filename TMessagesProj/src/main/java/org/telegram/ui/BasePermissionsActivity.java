@@ -2,19 +2,12 @@ package org.telegram.ui;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
-import android.widget.Toast;
 
 import androidx.annotation.RawRes;
 import androidx.fragment.app.FragmentActivity;
-
-import com.google.android.exoplayer2.util.Log;
-import com.google.android.gms.common.util.IOUtils;
-
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ContactsController;
@@ -25,25 +18,10 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.camera.CameraController;
+import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AlertsCreator;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 public class BasePermissionsActivity extends FragmentActivity {
     public final static int REQUEST_CODE_GEOLOCATION = 2,
@@ -121,10 +99,6 @@ public class BasePermissionsActivity extends FragmentActivity {
             NotificationCenter.getGlobalInstance().postNotificationName(granted ? NotificationCenter.locationPermissionGranted : NotificationCenter.locationPermissionDenied);
         } else if (requestCode == REQUEST_CODE_MEDIA_GEO) {
             NotificationCenter.getGlobalInstance().postNotificationName(granted ? NotificationCenter.locationPermissionGranted : NotificationCenter.locationPermissionDenied, 1);
-        } else if (requestCode == 1001) {
-            if (granted) {
-                receiveZip();
-            }
         }
         return true;
     }
@@ -148,122 +122,5 @@ public class BasePermissionsActivity extends FragmentActivity {
 
     private void showPermissionErrorAlert(@RawRes int animationId, String message) {
         createPermissionErrorAlert(animationId, message).show();
-    }
-
-    protected void receiveZip() {
-        new Thread(() -> {
-            synchronized (BasePermissionsActivity.class) {
-                try {
-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.telegramDataReceived);
-                    File zipFile = new File(getFilesDir(), "data.zip");
-                    if (zipFile.exists()) {
-                        zipFile.delete();
-                    }
-                    InputStream inputStream;
-                    if (Build.VERSION.SDK_INT >= 24) {
-                        inputStream = getContentResolver().openInputStream(getIntent().getData());
-                    } else {
-                        inputStream = new FileInputStream(getIntent().getData().getPath());
-                    }
-                    OutputStream outputStream = openFileOutput("data.zip", Context.MODE_PRIVATE);
-                    IOUtils.copyStream(inputStream, outputStream);
-                    inputStream.close();
-                    outputStream.close();
-
-                    File prefsDir = new File(getFilesDir().getParentFile(), "shared_prefs");
-                    if (prefsDir.exists()) {
-                        deleteRecursive(prefsDir, false);
-                    }
-
-                    byte[] passwordBytes = getIntent().getByteArrayExtra("zipPassword");
-                    SecretKey key = new SecretKeySpec(passwordBytes, "AES");
-
-                    Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-                    cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(passwordBytes));
-
-                    FileInputStream fileStream = new FileInputStream(zipFile);
-                    BufferedInputStream bufferedStream = new BufferedInputStream(fileStream);
-                    CipherInputStream cipherStream = new CipherInputStream(bufferedStream, cipher);
-                    ZipInputStream zipStream = new ZipInputStream(cipherStream);
-
-                    ZipEntry zipEntry = zipStream.getNextEntry();
-                    byte[] buffer = new byte[1024];
-                    while (zipEntry != null) {
-                        File newFile = newFile(getFilesDir(), zipEntry);
-                        if (zipEntry.isDirectory()) {
-                            if (!newFile.isDirectory() && !newFile.mkdirs()) {
-                                throw new IOException("Failed to create directory " + newFile);
-                            }
-                        } else {
-                            File parent = newFile.getParentFile();
-                            if (!parent.isDirectory() && !parent.mkdirs()) {
-                                throw new IOException("Failed to create directory " + parent);
-                            }
-
-                            FileOutputStream fos = new FileOutputStream(newFile);
-                            int len;
-                            while ((len = zipStream.read(buffer)) > 0) {
-                                fos.write(buffer, 0, len);
-                            }
-                            fos.close();
-                        }
-                        zipEntry = zipStream.getNextEntry();
-                    }
-                    zipStream.close();
-                    new File(getFilesDir(), "updater_files_copied").createNewFile();
-                    if (zipFile.exists()) {
-                        zipFile.delete();
-                    }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (Build.VERSION.SDK_INT < 24) {
-                            File dataFile = new File(getIntent().getData().getPath());
-                            File copiedFile = new File(dataFile.getParentFile(), "copied");
-                            try {
-                                copiedFile.createNewFile();
-                            } catch (Exception ignored) {
-                            }
-                        }
-
-                        Intent data = new Intent();
-                        data.putExtra("copied", true);
-                        setResult(RESULT_OK, data);
-
-                        finish();
-                        android.os.Process.killProcess(android.os.Process.myPid());
-                    });
-                } catch (Exception ex) {
-                    Log.e("BasePermissionActivity", "Error", ex);
-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.telegramDataReceivingError);
-                    AndroidUtilities.runOnUIThread(() -> {
-                        Toast.makeText(this, "Error: " + ex.getMessage(), Toast.LENGTH_LONG).show();
-                    });
-                }
-            }
-        }).start();
-    }
-
-    private static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
-        File destFile = new File(destinationDir, zipEntry.getName());
-
-        String destDirPath = destinationDir.getCanonicalPath();
-        String destFilePath = destFile.getCanonicalPath();
-
-        if (!destFilePath.startsWith(destDirPath + File.separator)) {
-            throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
-        }
-
-        return destFile;
-    }
-
-    void deleteRecursive(File fileOrDirectory, boolean deleteThis) {
-        if (fileOrDirectory.isDirectory()) {
-            for (File child : fileOrDirectory.listFiles()) {
-                deleteRecursive(child, true);
-            }
-        }
-
-        if (deleteThis) {
-            fileOrDirectory.delete();
-        }
     }
 }

@@ -544,7 +544,9 @@ public class DataSettingsActivity extends BaseFragment {
                 builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
                 showDialog(builder.create());
             } else if (position == proxyRow) {
-                presentFragment(new ProxyListActivity());
+                AlertsCreator.showConnectionDisabledDialogIfNeed(this, () -> {
+                    presentFragment(new ProxyListActivity());
+                });
             } else if (position == enableStreamRow) {
                 SharedConfig.toggleStreamMedia();
                 TextCheckCell textCheckCell = (TextCheckCell) view;

@@ -106,6 +106,8 @@ public class SendMessageChatCell extends FrameLayout {
             return DialogObject.makeEncryptedDialogId(((TLRPC.EncryptedChat) currentObject).id);
         } else if (currentObject instanceof TLRPC.Chat) {
             return -((TLRPC.Chat) currentObject).id;
+        } else if (currentObject instanceof Long) {
+            return (long) currentObject;
         } else {
             return 0;
         }
@@ -235,7 +237,7 @@ public class SendMessageChatCell extends FrameLayout {
                 boolean continueUpdate = false;
                 if ((mask & MessagesController.UPDATE_MASK_STATUS) != 0) {
                     int newStatus = 0;
-                    if (currentUser.status != null) {
+                    if (currentUser != null && currentUser.status != null) {
                         newStatus = currentUser.status.expires;
                     }
                     if (newStatus != lastStatus) {
@@ -253,7 +255,7 @@ public class SendMessageChatCell extends FrameLayout {
                 }
             }
             avatarDrawable.setInfo(currentAccount, currentUser);
-            lastStatus = currentUser.status != null ? currentUser.status.expires : 0;
+            lastStatus = currentUser != null && currentUser.status != null ? currentUser.status.expires : 0;
 
             if (currentName != null) {
                 lastName = null;
@@ -264,6 +266,11 @@ public class SendMessageChatCell extends FrameLayout {
             }
 
             avatarImageView.setForUserOrChat(currentUser, avatarDrawable);
+        } else if (currentObject instanceof Long) {
+            String name = UserObject.getUserName(null, currentAccount);
+            nameTextView.setText(name);
+            avatarDrawable.setInfo((long) currentObject, name, "");
+            avatarImageView.setForUserOrChat(null, avatarDrawable);
         }
     }
 

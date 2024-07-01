@@ -1,7 +1,10 @@
 package org.telegram.messenger.partisan.verification;
 
+import androidx.annotation.Keep;
+
 public class VerificationChatInfo {
     public long chatId;
+    @Keep
     public String username;
     public int type;
 
