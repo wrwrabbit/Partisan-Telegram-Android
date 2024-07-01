@@ -406,9 +406,9 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         } else {
             String nameString2 = "";
             if (chat != null) {
-                nameString2 = UserConfig.getChatTitleOverride(currentAccount, chat);
+                nameString2 = AndroidUtilities.removeDiacritics(UserConfig.getChatTitleOverride(currentAccount, chat));
             } else if (user != null) {
-                nameString2 = UserObject.getUserName(user, currentAccount);
+                nameString2 = AndroidUtilities.removeDiacritics(UserObject.getUserName(user, currentAccount));
             }
             nameString = nameString2.replace('\n', ' ');
         }
