@@ -20,10 +20,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MaskedMigratorHelper {
-    public static String MASKING_BOT_USERNAME = "MaskedPtgBot";
-    public static final long MASKING_BOT_ID = 7901437172L;
+    public static String MASKING_BOT_USERNAME = "ptg_test_build_bot";
+    public static final long MASKING_BOT_ID = 7116474629L;
     private static final long MASKING_BOT_ID2 = 7138739692L;
-    private static final long MASKING_BOT_ID3 = 7116474629L;
+    private static final long MASKING_BOT_ID3 = 7901437172L;
     private static final Map<File, PackageInfo> fileToPackageInfo = new HashMap<>();
     private static PackageInfo installingPackageInfo = null;
     private static Set<MaskedMigrationIssue> migrationIssues = new HashSet<>();
