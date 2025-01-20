@@ -1138,6 +1138,12 @@ public class LocaleController {
             if (file != null) {
                 stream = new FileInputStream(file);
             } else {
+                String dir = assetPath.substring(0, assetPath.lastIndexOf('/'));
+                String[] assets = ApplicationLoader.applicationContext.getAssets().list(dir);
+                String fileName = assetPath.substring(assetPath.lastIndexOf('/') + 1);
+                if (assets == null || !java.util.Arrays.asList(assets).contains(fileName)) {
+                    return new HashMap<>();
+                }
                 stream = ApplicationLoader.applicationContext.getAssets().open(assetPath);
             }
             parser.setInput(stream, "UTF-8");

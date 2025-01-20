@@ -50,13 +50,14 @@ public class MultiLogOutDialogBuilder {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
         final AlertDialog[] alertDialog = new AlertDialog[1];
-        final Set<Integer> selectedAccounts = new HashSet();
+        final Set<Integer> selectedAccounts = new HashSet<>();
         final LinearLayout linearLayout = new LinearLayout(fragment.getContext());
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         List<Integer> accounts = new ArrayList<>();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             if (UserConfig.getInstance(a).isClientActivated()) {
                 accounts.add(a);
+                selectedAccounts.add(a);
             }
         }
         Collections.sort(accounts, (o1, o2) -> {
@@ -74,7 +75,7 @@ public class MultiLogOutDialogBuilder {
             if (u != null) {
                 int currentAccount = a;
                 CheckBoxUserCell cell = new CheckBoxUserCell(fragment.getContext(), false);
-                cell.setUser(u, false, true);
+                cell.setUser(u, selectedAccounts.contains(a), true);
                 cell.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
                 cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
                 linearLayout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 50));

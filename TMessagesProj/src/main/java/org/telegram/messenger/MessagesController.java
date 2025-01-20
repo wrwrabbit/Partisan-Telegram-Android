@@ -16168,14 +16168,29 @@ public class MessagesController extends BaseController implements NotificationCe
                     ArrayList<TLRPC.Dialog> dialogs = getDialogs(folderId);
 
                     int pinnedNum = firstIsFolder ? 1 : 0;
+                    // It looks like there is a bug in the original app here. We fixed pinning all encrypted dialogs and reordering their position.
+                    if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+                        Comparator<TLRPC.Dialog> pinnedNumComparator = Comparator.comparingInt(dlg -> dlg.pinnedNum);
+                        dialogs = dialogs.stream()
+                                .filter(dlg -> dlg.pinned)
+                                .sorted(pinnedNumComparator.reversed())
+                                .collect(Collectors.toCollection(ArrayList::new));
+                    }
+                    int encryptedPinnedCount = (int)dialogs.stream()
+                            .filter(dlg -> DialogObject.isEncryptedDialog(dlg.id))
+                            .count();
+                    int targetCount = newPinnedDialogs.size() + encryptedPinnedCount;
                     for (int a = 0; a < dialogs.size(); a++) {
                         TLRPC.Dialog dialog = dialogs.get(a);
                         if (dialog instanceof TLRPC.TL_dialogFolder) {
                             continue;
                         }
-                        if (DialogObject.isEncryptedDialog(dialog.id)) {
-                            if (pinnedNum < newPinnedDialogs.size()) {
-                                newPinnedDialogs.add(pinnedNum, dialog);
+                        if (DialogObject.isEncryptedDialog(dialog.id) && (FakePasscodeUtils.isFakePasscodeActivated() || dialog.pinned)) {
+                            int targetPosition = !FakePasscodeUtils.isFakePasscodeActivated()
+                                    ? Math.max(targetCount - dialog.pinnedNum, 0)
+                                    : pinnedNum;
+                            if (targetPosition < newPinnedDialogs.size()) {
+                                newPinnedDialogs.add(targetPosition, dialog);
                             } else {
                                 newPinnedDialogs.add(dialog);
                             }

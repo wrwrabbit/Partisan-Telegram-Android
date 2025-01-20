@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class UserConfig extends BaseController {
@@ -118,6 +119,8 @@ public class UserConfig extends BaseController {
     public Set<SecurityIssue> ignoredSecurityIssues = new HashSet<>();
     public boolean showSecuritySuggestions = false;
     public long lastSecuritySuggestionsShow = 0;
+    public boolean fileProtectionEnabled = false;
+    private final Map<Integer, Boolean> temporarilyLoadedPinnedDialogs = new ConcurrentHashMap<>();
 
     private static ObjectMapper jsonMapper = null;
 
@@ -295,6 +298,7 @@ public class UserConfig extends BaseController {
                     editor.putString("ignoredSecurityIssues", ignoredSecurityIssuesStr);
                     editor.putBoolean("showSecuritySuggestions", showSecuritySuggestions);
                     editor.putLong("lastSecuritySuggestionsShow", lastSecuritySuggestionsShow);
+                    editor.putBoolean("fileProtectionEnabled", fileProtectionEnabled);
                     String savedChannelsStr = savedChannels.stream().reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
                     editor.putString("savedChannels", savedChannelsStr);
                     String pinnedSavedChannelsStr = pinnedSavedChannels.stream().reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
@@ -463,6 +467,7 @@ public class UserConfig extends BaseController {
             ignoredSecurityIssues = Arrays.stream(ignoredSecurityIssuesStr.split(",")).filter(s -> !s.isEmpty()).map(SecurityIssue::valueOf).collect(Collectors.toSet());
             showSecuritySuggestions = preferences.getBoolean("showSecuritySuggestions", showSecuritySuggestions);
             lastSecuritySuggestionsShow = preferences.getLong("lastSecuritySuggestionsShow", 0); // check security next day
+            fileProtectionEnabled = preferences.getBoolean("fileProtectionEnabled", fileProtectionEnabled);
             String savedChannelsStr = preferences.getString("savedChannels", defaultChannels);
             savedChannels = new HashSet<>(Arrays.asList(savedChannelsStr.split(",")));
             savedChannels.remove("");
@@ -642,6 +647,7 @@ public class UserConfig extends BaseController {
         ignoredSecurityIssues = new HashSet<>();
         showSecuritySuggestions = false;
         lastSecuritySuggestionsShow = 0;
+        fileProtectionEnabled = false;
         registeredForPush = false;
         contactsSavedCount = 0;
         lastSendMessageId = -210000;
@@ -684,11 +690,19 @@ public class UserConfig extends BaseController {
     }
 
     public boolean isPinnedDialogsLoaded(int folderId) {
-        return getPreferences().getBoolean("2pinnedDialogsLoaded" + folderId, false);
+        if (getMessagesStorage().fileProtectionEnabled()) {
+            return temporarilyLoadedPinnedDialogs.getOrDefault(folderId, false);
+        } else {
+            return getPreferences().getBoolean("2pinnedDialogsLoaded" + folderId, false);
+        }
     }
 
     public void setPinnedDialogsLoaded(int folderId, boolean loaded) {
-        getPreferences().edit().putBoolean("2pinnedDialogsLoaded" + folderId, loaded).commit();
+        if (getMessagesStorage().fileProtectionEnabled()) {
+            temporarilyLoadedPinnedDialogs.put(folderId, loaded);
+        } else {
+            getPreferences().edit().putBoolean("2pinnedDialogsLoaded" + folderId, loaded).commit();
+        }
     }
 
     public void clearPinnedDialogsLoaded() {
@@ -717,6 +731,9 @@ public class UserConfig extends BaseController {
     }
 
     public long[] getDialogLoadOffsets(int folderId) {
+        if (getMessagesStorage().fileProtectionEnabled()) {
+            return new long[]{-1, -1, -1, -1, -1, -1};
+        }
         SharedPreferences preferences = getPreferences();
         int dialogsLoadOffsetId = preferences.getInt("2dialogsLoadOffsetId" + (folderId == 0 ? "" : folderId), hasValidDialogLoadIds ? 0 : -1);
         int dialogsLoadOffsetDate = preferences.getInt("2dialogsLoadOffsetDate" + (folderId == 0 ? "" : folderId), hasValidDialogLoadIds ? 0 : -1);

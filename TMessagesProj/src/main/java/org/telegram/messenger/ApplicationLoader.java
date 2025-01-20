@@ -92,7 +92,7 @@ public class ApplicationLoader extends Application {
     private static IMapsProvider mapsProvider;
     private static ILocationServiceProvider locationServiceProvider;
 
-    private static boolean filesCopiedFromUpdater;
+    public static boolean filesCopiedFromUpdater;
 
     @Override
     protected void attachBaseContext(Context base) {

@@ -129,6 +129,7 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
+import org.telegram.messenger.partisan.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrationDialogs;
@@ -7053,6 +7054,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else if (!AndroidUtilities.needShowPasscode(false)) {
             checkOtherPtg();
             checkPtgPermissions();
+            if (!anyPtgDialogShown) {
+                FileProtectionNewFeatureDialog.showDialogIfNeeded(this);
+            }
         }
     }
 
@@ -7795,7 +7799,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         return !AppMigrationDialogs.needShowNewerPtgDialog(getContext())
                 && !getOlderPtgStatus().needShowDialog()
-                && !needCameraPermission();
+                && !needCameraPermission()
+                && !FileProtectionNewFeatureDialog.needShowDialog;
     }
 
     private boolean needCameraPermission() {

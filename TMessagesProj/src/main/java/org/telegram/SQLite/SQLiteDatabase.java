@@ -23,6 +23,13 @@ public class SQLiteDatabase {
 		return sqliteHandle;
 	}
 
+	public SQLiteDatabase() { // For SQLiteDatabaseWrapper
+		sqliteHandle = 0;
+		if (!(this instanceof SQLiteDatabaseWrapper)) {
+			throw new RuntimeException();
+		}
+	}
+
 	public SQLiteDatabase(String fileName) throws SQLiteException {
 		sqliteHandle = opendb(fileName, ApplicationLoader.getFilesDirFixed().getPath());
 		isOpen = true;
@@ -115,8 +122,13 @@ public class SQLiteDatabase {
         commitTransaction(sqliteHandle);
     }
 
+	public void backup(SQLiteDatabase other) {
+		internalBackup(sqliteHandle, other.sqliteHandle);
+	}
+
 	native long opendb(String fileName, String tempDir) throws SQLiteException;
 	native void closedb(long sqliteHandle) throws SQLiteException;
     native void beginTransaction(long sqliteHandle);
     native void commitTransaction(long sqliteHandle);
+    native void internalBackup(long sqliteHandle, long otherSqliteHandle);
 }

@@ -391,7 +391,7 @@ public class FakePasscodeUtils {
 
     public static synchronized void tryActivateByTimer() {
         try {
-            if (SharedConfig.lastPauseFakePasscodeTime == 0) {
+            if (SharedConfig.lastPauseFakePasscodeTime == 0 || SharedConfig.autoLockIn == 1 && !SharedConfig.isAppLocked()) {
                 return;
             }
             long uptime = SystemClock.elapsedRealtime() / 1000;
