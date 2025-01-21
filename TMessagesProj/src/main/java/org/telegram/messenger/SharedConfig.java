@@ -42,7 +42,7 @@ import org.json.JSONObject;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
-import org.telegram.messenger.partisan.FileProtectionNewFeatureDialog;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
@@ -739,8 +739,13 @@ public class SharedConfig {
             }, 1000);
             sharedConfigMigrationVersion++;
         } if (sharedConfigMigrationVersion == 1) {
-            if (prevMigrationVersion == 1) { // check if ptg has just been updated
-                FileProtectionNewFeatureDialog.needShowDialog = true;
+            boolean updatedFromOldPtg = prevMigrationVersion == 1 || !fakePasscodes.isEmpty() || !passcodeHash.isEmpty();
+            if (updatedFromOldPtg) { // check if ptg has just been updated
+                SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
+                editor.apply();
+
                 fileProtectionForAllAccountsEnabled = false;
             }
             sharedConfigMigrationVersion++;
@@ -836,11 +841,7 @@ public class SharedConfig {
             activatedTesterSettingType = preferences.getInt("activatedTesterSettingType", BuildVars.DEBUG_PRIVATE_VERSION ? 1 : 0);
             updateChannelIdOverride = preferences.getLong("updateChannelIdOverride", 0);
             updateChannelUsernameOverride = preferences.getString("updateChannelUsernameOverride", "");
-            if (!ApplicationLoader.filesCopiedFromUpdater) {
-                filesCopiedFromOldTelegram = preferences.getBoolean("filesCopiedFromOldTelegram", false);
-            } else {
-                filesCopiedFromOldTelegram = false;
-            }
+            filesCopiedFromOldTelegram = preferences.getBoolean("filesCopiedFromOldTelegram", false);
             oldTelegramRemoved = preferences.getBoolean("oldTelegramRemoved", false);
             runNumber = preferences.getInt("runNumber", 0);
             premiumDisabled = preferences.getBoolean("premiumDisabled", false);

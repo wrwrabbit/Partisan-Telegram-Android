@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan;
+package org.telegram.messenger.partisan.fileprotection;
 
 import android.content.Context;
 
@@ -8,6 +8,7 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 

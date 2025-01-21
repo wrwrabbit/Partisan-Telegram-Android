@@ -1,4 +1,4 @@
-package org.telegram.ui;
+package org.telegram.messenger.partisan.fileprotection;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -16,7 +16,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.partisan.FileProtectionSwitcher;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.AlertDialog;
