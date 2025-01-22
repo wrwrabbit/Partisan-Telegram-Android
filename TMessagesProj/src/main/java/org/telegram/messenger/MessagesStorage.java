@@ -15,6 +15,7 @@ import static org.telegram.messenger.MessagesController.LOAD_FORWARD;
 import static org.telegram.messenger.MessagesController.LOAD_FROM_UNREAD;
 
 import android.appwidget.AppWidgetManager;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
@@ -321,8 +322,21 @@ public class MessagesStorage extends BaseController {
         }
         try {
             if (fileProtectionEnabled()) {
-                database = new SQLiteDatabaseWrapper(cacheFile.getPath());
-                storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
+                if (cacheFile.length() <= 128 * 1024 * 1024) { // allow only small databases
+                    database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                    storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
+                } else {
+                    database = new SQLiteDatabase(cacheFile.getPath());
+                    if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+                        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = preferences.edit();
+                        editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
+                        editor.apply();
+
+                        SharedConfig.fileProtectionForAllAccountsEnabled = false;
+                        SharedConfig.saveConfig();
+                    }
+                }
             } else {
                 database = new SQLiteDatabase(cacheFile.getPath());
             }
@@ -10732,12 +10746,15 @@ public class MessagesStorage extends BaseController {
     }
 
     public void clearFileProtectedDb() {
+        SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
+                ? ((SQLiteDatabaseWrapper)database).getFileDatabase()
+                : database;
+        clearFileProtectedDb(db);
+    }
+
+    public void clearFileProtectedDb(SQLiteDatabase db) {
         storageQueue.postRunnable(() -> {
             try {
-                SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
-                        ? ((SQLiteDatabaseWrapper)database).getFileDatabase()
-                        : database;
-
                 String notEncryptedGroupCheck = "did & 0x4000000000000000 = 0 OR did & 0x8000000000000000 <> 0";
                 db.executeFast("DELETE FROM chats").stepThis().dispose();
                 db.executeFast("DELETE FROM contacts").stepThis().dispose();
