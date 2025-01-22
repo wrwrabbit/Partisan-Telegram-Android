@@ -91,13 +91,14 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     private void updateConfigs() {
         SharedConfig.setFileProtectionForAllAccounts(enableForAllAccounts);
         Utils.foreachActivatedAccountInstance(accountInstance -> {
-            boolean enabled = SharedConfig.fileProtectionForAllAccountsEnabled
-                    || valuesPerAccounts.getOrDefault(accountInstance.getCurrentAccount(), false);
+            boolean enabledInConfig = valuesPerAccounts.getOrDefault(accountInstance.getCurrentAccount(), false);
+            boolean enabledForAccountOrGlobally = SharedConfig.fileProtectionForAllAccountsEnabled
+                    || enabledInConfig;
             UserConfig userConfig = accountInstance.getUserConfig();
-            if (userConfig.fileProtectionEnabled != enabled) {
+            if (userConfig.fileProtectionEnabled != enabledForAccountOrGlobally) {
                 userConfig.clearPinnedDialogsLoaded();
             }
-            userConfig.fileProtectionEnabled = enabled;
+            userConfig.fileProtectionEnabled = enabledInConfig;
             userConfig.saveConfig(false);
         });
     }

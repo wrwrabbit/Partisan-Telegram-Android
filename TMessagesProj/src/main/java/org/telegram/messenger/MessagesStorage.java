@@ -15,6 +15,7 @@ import static org.telegram.messenger.MessagesController.LOAD_FORWARD;
 import static org.telegram.messenger.MessagesController.LOAD_FROM_UNREAD;
 
 import android.appwidget.AppWidgetManager;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
@@ -321,8 +322,20 @@ public class MessagesStorage extends BaseController {
         }
         try {
             if (fileProtectionEnabled()) {
-                database = new SQLiteDatabaseWrapper(cacheFile.getPath());
-                storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
+                if (cacheFile.length() <= 128 * 1024 * 1024) { // allow only small databases
+                    database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                    storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
+                } else {
+                    database = new SQLiteDatabase(cacheFile.getPath());
+                    if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+                        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = preferences.edit();
+                        editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
+                        editor.apply();
+
+                        SharedConfig.setFileProtectionForAllAccounts(false);
+                    }
+                }
             } else {
                 database = new SQLiteDatabase(cacheFile.getPath());
             }
@@ -10732,14 +10745,39 @@ public class MessagesStorage extends BaseController {
     }
 
     public void clearFileProtectedDb() {
+        SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
+                ? ((SQLiteDatabaseWrapper)database).getFileDatabase()
+                : database;
+        clearFileProtectedDb(db);
+    }
+
+    public void clearFileProtectedDb(SQLiteDatabase db) {
         storageQueue.postRunnable(() -> {
+            SQLiteCursor cursor = null;
             try {
-                SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
-                        ? ((SQLiteDatabaseWrapper)database).getFileDatabase()
-                        : database;
+                cursor = db.queryFinalized("SELECT did FROM search_recent WHERE 1");
+                Set<Long> recentSearchDialogIds = new HashSet<>();
+                while (cursor.next()) {
+                    recentSearchDialogIds.add(cursor.longValue(0));
+                }
+                cursor.dispose();
+                cursor = null;
+                cursor = db.queryFinalized("SELECT uid FROM chats WHERE 1");
+                Set<Long> chatIdsToDelete = new HashSet<>();
+                while (cursor.next()) {
+                    long chatId = cursor.longValue(0);
+                    if (!recentSearchDialogIds.contains(chatId)) {
+                        chatIdsToDelete.add(chatId);
+                    }
+                }
+                cursor.dispose();
+                cursor = null;
+
+                for (Long chatId : recentSearchDialogIds) {
+                    db.executeFast("DELETE FROM chats WHERE uid = " + chatId).stepThis().dispose();
+                }
 
                 String notEncryptedGroupCheck = "did & 0x4000000000000000 = 0 OR did & 0x8000000000000000 <> 0";
-                db.executeFast("DELETE FROM chats").stepThis().dispose();
                 db.executeFast("DELETE FROM contacts").stepThis().dispose();
                 db.executeFast("DELETE FROM messages_v2 WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
                 db.executeFast("DELETE FROM dialogs WHERE " + notEncryptedGroupCheck).stepThis().dispose();
@@ -10749,6 +10787,9 @@ public class MessagesStorage extends BaseController {
             } catch (Exception e) {
                 checkSQLException(e);
             } finally {
+                if (cursor != null) {
+                    cursor.dispose();
+                }
                 AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
             }
         });
