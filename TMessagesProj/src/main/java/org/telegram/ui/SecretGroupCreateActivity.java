@@ -108,7 +108,7 @@ public class SecretGroupCreateActivity extends BaseFragment implements Notificat
     private final ArrayList<GroupCreateSpan> allSpans = new ArrayList<>();
     private GroupCreateSpan currentDeletingSpan;
 
-    AlertDialog creationProgressDialog;
+    private AlertDialog creationProgressDialog;
 
     private int fieldY;
 

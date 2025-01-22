@@ -8805,6 +8805,7 @@
     <string name="EnableSecretGroups">Enable Secret Groups</string>
     <string name="SecretGroupsEnabled">Secret Groups Enabled</string>
     <string name="EnableSecretGroupsInfo">Secret groups allow multiple users to communicate using end-to-end encryption. To create a secret group, enable this feature using the button above, return to the list of conversations, click the pencil icon in the lower right corner and select \"%1$s\".</string>
+
     <string name="PermissionDisabledTitle">Permission Disabled</string>
     <string name="PermissionDisabledMessage">The permission is disabled in your version of Partisan Telegram.</string>
     <string name="MaskedUpdateWarningMessage">PTelegram will send a message to the builder bot with a request to build the update.</string>
@@ -8819,8 +8820,18 @@
     <string name="LoadingPasscodeScreen_PasscodeReset">The passcode has been reset after %1$d seconds of waiting.</string>
     <string name="LoadingPasscodeScreen_Loading">Loading…</string>
     <string name="NotePasscodeScreen_Instruction">1. Click the create note button.\n2. Enter your password in the note title.\n3. Click the add note button. If the correct password is entered, the application will be unlocked. If the password is entered incorrectly, a note with the specified title will be created.\n\nNotes are saved between app restarts. You can change them to prevent the application from being suspicious.</string>
+    <string name="NotePasscodeScreen_NoteTitle">Title</string>
+    <string name="NotePasscodeScreen_NoteDescription">Description</string>
     <string name="CalculatorPasscodeScreen_Instruction">Enter the passcode using the calculator numbers.</string>
     <string name="MaskedPasscodeScreenInstructionShownOnlyOnce">This instruction is only shown the first time you launch the app or create a passcode for the first time. It will not be shown when you actually unlock the app.</string>
     <string name="MaskedPasscodeScreen_Tutorial">Tutorial</string>
     <string name="MaskedPasscodeScreen_WrongPasscode">You have entered an incorrect passcode. Try again.</string>
+
+    <string name="FileProtection">File Protection</string>
+    <string name="FileProtectionInfo">File protection allows you to protect yourself from information extraction during phone inspection. Enabling this option may cause the application to work incorrectly. After enabling file protection, the message cache will be cleared and the application will reboot.</string>
+    <string name="ApplicationWillBeRestarted">The application will be restarted.</string>
+    <string name="WorksWithFakePasscodes">Works With Fake Passcodes</string>
+    <string name="NewFeatureTitle">Works With Fake Passcodes</string>
+    <string name="NewPtelegramFeatureTitle">New PTelegram Feature</string>
+    <string name="FileProtectionNewFeatureDetails">A new option has appeared in Partisan Telegram: "File protection".\n\nFile protection allows you to protect yourself from the extraction of various information by specialists during inspection. For example, they will not be able to extract the message cache. This option can significantly increase your security, but it also has disadvantages:\n- Enabling this option will clear the message cache. Correspondence will no longer be visible in the application if there is no access to the Internet.\n- The application may not work correctly due to the enabling of this option.\n\nWe recommend enabling file protection. You can change this setting later in the Partisan settings.</string>
 </resources>

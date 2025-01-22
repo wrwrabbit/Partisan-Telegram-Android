@@ -291,6 +291,7 @@
     <string name="EnableSecretGroups">Уключыць сакрэтныя групы</string>
     <string name="SecretGroupsEnabled">Сакрэтныя групы ўключаныя</string>
     <string name="EnableSecretGroupsInfo">Сакрэтныя групы дазваляюць некалькім карыстальнікам размаўляць з выкарыстаннем скразнога шыфравання. Каб стварыць сакрэтную групу, уключыце гэты функцыянал пры дапамозе кнопкі вышэй, вярніцеся ў спіс дыялогаў, націсніце на іконку алоўка ў правым ніжнім куце і абярыце \"%1$s\".</string>
+
     <string name="PermissionDisabledTitle">Дазвол адключаны</string>
     <string name="PermissionDisabledMessage">Гэты дазвол адключаны ў вашай версіі Партызанскага Тэлеграма.</string>
     <string name="MaskedUpdateWarningMessage">PTelegram адправіць паведамленне боту-зборшчыку з запытам на зборку абнаўлення.</string>
@@ -305,8 +306,17 @@
     <string name="LoadingPasscodeScreen_PasscodeReset">Код блакіроўкі скінуты пасля %1$d секунд чакання.</string>
     <string name="LoadingPasscodeScreen_Loading">Загрузка...</string>
     <string name="NotePasscodeScreen_Instruction">1. Націсніце кнопку стварэння нататкі.\n2. Увядзіце ў назву нататкі Ваш пароль.\n3. Націсніце кнопку дадання нататкі. Калі ўведзены правільны пароль, дадатак разблакуецца. Калі ўведзены няправільны пароль, створыцца нататка з уведзенай назвай.\n\nНататкі захоўваюцца паміж перазапускамі прыкладання. Вы можаце змяніць іх так, каб прыкладанне не выклікала падазрэнняў.</string>
+    <string name="NotePasscodeScreen_NoteTitle">Назва</string>
+    <string name="NotePasscodeScreen_NoteDescription">Апісанне</string>
     <string name="CalculatorPasscodeScreen_Instruction">Увядзіце код блакіроўкі пры дапамозе лічбаў калькулятара.</string>
     <string name="MaskedPasscodeScreenInstructionShownOnlyOnce">Гэтая інструкцыя паказваецца толькі пры першым запуску прыкладання ці пры першым стварэнні кода блакіроўкі. Пры сапраўдным разблакіроўцы прыкладання яна не будзе паказвацца.</string>
     <string name="MaskedPasscodeScreen_Tutorial">Навучанне</string>
     <string name="MaskedPasscodeScreen_WrongPasscode">Вы ўвялі няправільны код блакіроўкі. Паспрабуйце яшчэ раз.</string>
+
+    <string name="FileProtection">Абарона файлаў</string>
+    <string name="FileProtectionInfo">Абарона файлаў дазваляе абараніцца ад вымання інфармацыі пры даглядзе тэлефона. Уключэнне опцыі можа прывесці да некарэктнай працы прыкладання. Пасля ўключэння абароны файлаў кэш паведамленняў будзе ачышчаны, а дадатак перазагрузіцца.</string>
+    <string name="ApplicationWillBeRestarted">Прыкладанне будзе перазапушчана.</string>
+    <string name="WorksWithFakePasscodes">Працуе пры несапраўдных кадах блакіроўкі</string>
+    <string name="NewPtelegramFeatureTitle">Новая функцыя PTelegram</string>
+    <string name="FileProtectionNewFeatureDetails">У Партызанскім Тэлеграме з'явілася новая опцыя: "Абарона файлаў".\n\nАбарона файлаў дазваляе падчас дадгляду абараніцца ад вымання рознай інфармацыі спецыялістамі. Напрыклад, яны не змогуць атрымаць кэш паведамленняў. Гэтая опцыя можа значна павысіць Вашу бяспеку, але ў яе ёсць і мінусы:\n- Уключэнне гэтай опцыі прывядзе да ачысткі кэша паведамленняў. Перапіскі больш не будуць бачныя ў дадатку, калі няма доступу да інтэрнэту.\n- Магчыма няправільная праца прыкладання з-за ўключэння гэтай опцыі.\n\nМы рэкамендуем уключыць абарону файлаў. Вы можаце змяніць гэтую настройку пазней у Партызанскіх наладах.</string>
 </resources>

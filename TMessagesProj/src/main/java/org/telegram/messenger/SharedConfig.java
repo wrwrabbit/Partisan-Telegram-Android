@@ -42,6 +42,7 @@ import org.json.JSONObject;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
@@ -433,6 +434,7 @@ public class SharedConfig {
     public static long updateChannelIdOverride;
     public static String updateChannelUsernameOverride;
     public static boolean needShowMaskedPasscodeScreenTutorial;
+    public static boolean showPermissionDisabledDialog = true;
     public static boolean filesCopiedFromOldTelegram;
     public static boolean oldTelegramRemoved;
     public static int runNumber;
@@ -444,6 +446,8 @@ public class SharedConfig {
     public static boolean confirmDangerousActions;
     public static boolean showEncryptedChatsFromEncryptedGroups = false;
     public static boolean encryptedGroupsEnabled = false;
+    public static boolean fileProtectionForAllAccountsEnabled = true;
+    public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
 
     private static final int[] LOW_SOC = {
             -1775228513, // EXYNOS 850
@@ -662,6 +666,7 @@ public class SharedConfig {
                 editor.putLong("updateChannelIdOverride", updateChannelIdOverride);
                 editor.putString("updateChannelUsernameOverride", updateChannelUsernameOverride);
                 editor.putBoolean("needShowMaskedPasscodeScreenTutorial", needShowMaskedPasscodeScreenTutorial);
+                editor.putBoolean("showPermissionDisabledDialog", showPermissionDisabledDialog);
                 editor.putBoolean("filesCopiedFromOldTelegram", filesCopiedFromOldTelegram);
                 editor.putBoolean("oldTelegramRemoved", oldTelegramRemoved);
                 editor.putInt("runNumber", runNumber);
@@ -741,6 +746,17 @@ public class SharedConfig {
                 AndroidUtilities.runOnUIThread(() -> Utils.clearWebBrowserCache(ApplicationLoader.applicationContext));
                 BrowserHistory.clearHistory();
             }, 1000);
+            sharedConfigMigrationVersion++;
+        } if (sharedConfigMigrationVersion == 1) {
+            boolean updatedFromOldPtg = prevMigrationVersion == 1 || !fakePasscodes.isEmpty() || !passcodeHash.isEmpty();
+            if (updatedFromOldPtg) { // check if ptg has just been updated
+                SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
+                editor.apply();
+
+                fileProtectionForAllAccountsEnabled = false;
+            }
             sharedConfigMigrationVersion++;
         }
         if (prevMigrationVersion != sharedConfigMigrationVersion) {
@@ -836,11 +852,8 @@ public class SharedConfig {
             updateChannelIdOverride = preferences.getLong("updateChannelIdOverride", 0);
             updateChannelUsernameOverride = preferences.getString("updateChannelUsernameOverride", "");
             needShowMaskedPasscodeScreenTutorial = preferences.getBoolean("needShowMaskedPasscodeScreenTutorial", false);
-            if (!ApplicationLoader.filesCopiedFromUpdater) {
-                filesCopiedFromOldTelegram = preferences.getBoolean("filesCopiedFromOldTelegram", false);
-            } else {
-                filesCopiedFromOldTelegram = false;
-            }
+            showPermissionDisabledDialog = preferences.getBoolean("showPermissionDisabledDialog", showPermissionDisabledDialog);
+            filesCopiedFromOldTelegram = preferences.getBoolean("filesCopiedFromOldTelegram", false);
             oldTelegramRemoved = preferences.getBoolean("oldTelegramRemoved", false);
             runNumber = preferences.getInt("runNumber", 0);
             premiumDisabled = preferences.getBoolean("premiumDisabled", false);
@@ -961,6 +974,8 @@ public class SharedConfig {
             confirmDangerousActions = preferences.getBoolean("confirmDangerousActions", false);
             showEncryptedChatsFromEncryptedGroups = preferences.getBoolean("showEncryptedChatsFromEncryptedGroups", false);
             encryptedGroupsEnabled = preferences.getBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
+            fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
+            fileProtectionWorksWhenFakePasscodeActivated = preferences.getBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
             dayNightWallpaperSwitchHint = preferences.getInt("dayNightWallpaperSwitchHint", 0);
             bigCameraForRound = preferences.getBoolean("bigCameraForRound", false);
             useNewBlur = preferences.getBoolean("useNewBlur", true);
@@ -1078,6 +1093,22 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
+        editor.commit();
+    }
+
+    public static void setFileProtectionForAllAccounts(boolean enabled) {
+        fileProtectionForAllAccountsEnabled = enabled;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
+        editor.commit();
+    }
+
+    public static void toggleFileProtectionWorksWhenFakePasscodeActivated() {
+        fileProtectionWorksWhenFakePasscodeActivated = !fileProtectionWorksWhenFakePasscodeActivated;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
         editor.commit();
     }
 
@@ -1345,6 +1376,7 @@ public class SharedConfig {
             fakePasscodeActivatedIndex = -1;
         }
         needShowMaskedPasscodeScreenTutorial = false;
+        showPermissionDisabledDialog = true;
         filesCopiedFromOldTelegram = false;
         passcodeSalt = new byte[0];
         autoLockIn = 60 * 60;

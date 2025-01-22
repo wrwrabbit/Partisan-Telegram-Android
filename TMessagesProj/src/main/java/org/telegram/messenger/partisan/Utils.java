@@ -632,4 +632,13 @@ public class Utils {
         List<String> russianLikeLanguageList = Arrays.asList("ru", "be", "uk", "kk", "ky", "mo", "hy", "ka", "az", "uz");
         return new HashSet<>(russianLikeLanguageList).contains(appLanguage);
     }
+
+    public static void foreachActivatedAccountInstance(Consumer<AccountInstance> action) {
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            UserConfig config = UserConfig.getInstance(a);
+            if (config.isClientActivated()) {
+                action.accept(AccountInstance.getInstance(a));
+            }
+        }
+    }
 }

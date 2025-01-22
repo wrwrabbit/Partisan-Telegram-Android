@@ -187,16 +187,14 @@ public class FakePasscodeActivity extends BaseFragment {
     private int deletePasscodeRow;
     private int deletePasscodeDetailRow;
 
-    List<AccountActionsCellInfo> accounts = new ArrayList<>();
+    private final List<AccountActionsCellInfo> accounts = new ArrayList<>();
 
     private boolean creating;
     private FakePasscode fakePasscode;
     private byte[] encryptedPasscode;
 
-    TextCheckCell allowFakePasscodeLoginCell;
-
     private boolean postedHidePasscodesDoNotMatch;
-    private Runnable hidePasscodesDoNotMatch = () -> {
+    private final Runnable hidePasscodesDoNotMatch = () -> {
         postedHidePasscodesDoNotMatch = false;
         AndroidUtilities.updateViewVisibilityAnimated(passcodesErrorTextView, false);
     };
@@ -1364,7 +1362,7 @@ public class FakePasscodeActivity extends BaseFragment {
         }, isPinCode() ? 150 : 1000));
     }
 
-    private class AccountActionsCellInfo {
+    private static class AccountActionsCellInfo {
         public Integer accountNum;
         public AccountActions actions;
 
@@ -1470,7 +1468,6 @@ public class FakePasscodeActivity extends BaseFragment {
                     } else if (position == replaceOriginalPasscodeRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.ReplaceOriginalPasscode), fakePasscode.replaceOriginalPasscode, false);
                     } else if (position == allowFakePasscodeLoginRow) {
-                        allowFakePasscodeLoginCell = textCell;
                         textCell.setTextAndCheck(LocaleController.getString("AllowFakePasscodeLogin", R.string.AllowFakePasscodeLogin), fakePasscode.allowLogin, false);
                     }
                     break;

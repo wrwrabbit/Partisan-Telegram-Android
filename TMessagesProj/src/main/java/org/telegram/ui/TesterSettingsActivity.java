@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -96,6 +95,7 @@ public class TesterSettingsActivity extends BaseFragment {
     private int checkVerificationUpdatesRow;
     private int resetVerificationLastCheckTimeRow;
     private int resetMaskedUpdateTagRow;
+    private int showPermissionDisabledDialogRow;
     private int forceAllowScreenshotsRow;
     private int saveLogcatAfterRestartRow;
     private int showEncryptedChatsFromEncryptedGroupsRow;
@@ -294,6 +294,10 @@ public class TesterSettingsActivity extends BaseFragment {
                 SharedConfig.saveConfig();
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived);
                 Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
+            } else if (position == showPermissionDisabledDialogRow) {
+                SharedConfig.showPermissionDisabledDialog = !SharedConfig.showPermissionDisabledDialog;
+                SharedConfig.saveConfig();
+                ((TextCheckCell) view).setChecked(SharedConfig.showPermissionDisabledDialog);
             } else if (position == forceAllowScreenshotsRow) {
                 SharedConfig.forceAllowScreenshots = !SharedConfig.forceAllowScreenshots;
                 SharedConfig.saveConfig();
@@ -351,6 +355,7 @@ public class TesterSettingsActivity extends BaseFragment {
         } else {
             resetMaskedUpdateTagRow = -1;
         }
+        showPermissionDisabledDialogRow = rowCount++;
         if (SharedConfig.activatedTesterSettingType >= 2) {
             forceAllowScreenshotsRow = rowCount++;
         }
@@ -470,6 +475,9 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == saveLogcatAfterRestartRow) {
                         textCell.setTextAndCheck("Save logcat after restart",
                                 SharedConfig.saveLogcatAfterRestart, true);
+                    } else if (position == showPermissionDisabledDialogRow) {
+                        textCell.setTextAndCheck("Show permission disabled dialog",
+                                SharedConfig.showPermissionDisabledDialog, true);
                     } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
                         textCell.setTextAndCheck("Show encrypted chats from encrypted groups",
                                 SharedConfig.showEncryptedChatsFromEncryptedGroups, true);
@@ -513,7 +521,7 @@ public class TesterSettingsActivity extends BaseFragment {
         @Override
         public int getItemViewType(int position) {
             if (position == sessionTerminateActionWarningRow || position == showPlainBackupRow
-                    || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow
+                    || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow || position == showPermissionDisabledDialogRow
                     || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow) {
                 return 0;
             } else if (position == updateChannelIdRow || position == updateChannelUsernameRow

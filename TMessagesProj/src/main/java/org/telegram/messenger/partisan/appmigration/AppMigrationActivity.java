@@ -24,6 +24,7 @@ import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.voip.CellFlickerDrawable;
@@ -82,14 +83,21 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
                 if (id == -1) {
                     finishFragment();
                 } else if (id == cancel) {
-                    cancelMigration();
-                    finishFragment();
+                    handleCancelling();
                 }
             }
         });
 
         ActionBarMenu menu = actionBar.createMenu();
         menu.addItem(cancel, new BackDrawable(true));
+    }
+
+    private void handleCancelling() {
+        if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
+            cancelMigration();
+        } else {
+            AlertsCreator.showConnectionDisabledDialogIfNeed(this, this::cancelMigration);
+        }
     }
 
     private void cancelMigration() {
@@ -102,6 +110,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         if (!AppMigrator.isNewerPtgInstalled(getContext(), false)) {
             AppMigrator.enableConnection();
         }
+        finishFragment();
     }
 
     private void createFragmentView(Context context) {

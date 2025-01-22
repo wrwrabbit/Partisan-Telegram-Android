@@ -18,6 +18,8 @@ import android.widget.Button;
 import android.widget.RelativeLayout;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.R;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.EditTextBoldCursor;
@@ -95,7 +97,7 @@ class EditNoteSubcreen extends RelativeLayout {
             titleEditText.setBackgroundTintList(colorStateList);
         }
         titleEditText.setId(generateViewId());
-        titleEditText.setHint("Title");
+        titleEditText.setHint(LocaleController.getString(R.string.NotePasscodeScreen_NoteTitle));
         titleEditText.setHintTextColor(Colors.noteTitleHintColor);
         titleEditText.setCursorColor(getPrimaryColor());
         titleEditText.setHandlesColor(getPrimaryColor());
@@ -155,7 +157,7 @@ class EditNoteSubcreen extends RelativeLayout {
             descriptionEditText.setBackgroundTintList(colorStateList);
         }
         descriptionEditText.setId(generateViewId());
-        descriptionEditText.setHint("Description");
+        descriptionEditText.setHint(LocaleController.getString(R.string.NotePasscodeScreen_NoteDescription));
         descriptionEditText.setHintTextColor(Colors.descriptionHintColor);
         descriptionEditText.setCursorColor(getPrimaryColor());
         descriptionEditText.setHandlesColor(getPrimaryColor());

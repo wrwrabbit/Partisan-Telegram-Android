@@ -129,6 +129,7 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrationDialogs;
@@ -261,7 +262,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class DialogsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, FloatingDebugProvider {
 
@@ -7056,6 +7056,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else if (!AndroidUtilities.needShowPasscode(false)) {
             checkOtherPtg();
             checkPtgPermissions();
+            if (!anyPtgDialogShown) {
+                FileProtectionNewFeatureDialog.showDialogIfNeeded(this);
+            }
         }
     }
 
@@ -7798,7 +7801,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         return !AppMigrationDialogs.needShowNewerPtgDialog(getContext())
                 && !getOlderPtgStatus().needShowDialog()
-                && !needCameraPermission();
+                && !needCameraPermission()
+                && !FileProtectionNewFeatureDialog.needShow();
     }
 
     private boolean needCameraPermission() {

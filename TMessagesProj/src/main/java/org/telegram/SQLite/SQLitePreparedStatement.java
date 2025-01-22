@@ -30,6 +30,10 @@ public class SQLitePreparedStatement {
         return sqliteStatementHandle;
     }
 
+    public SQLitePreparedStatement() { // For SQLitePreparedStatementMultiple
+
+    }
+
     public SQLitePreparedStatement(SQLiteDatabase db, String sql) throws SQLiteException {
         sqliteStatementHandle = prepare(db.getSQLiteHandle(), sql);
         if (BuildVars.LOGS_ENABLED) {

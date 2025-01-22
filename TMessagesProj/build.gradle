@@ -71,6 +71,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.12.2'
     implementation 'com.scottyab:rootbeer-lib:0.1.0'
     implementation 'org.bitbucket.cowwoc:diff-match-patch:1.2'
+    implementation 'com.jakewharton:process-phoenix:3.0.0'
 }
 
 def isWindows = String.valueOf(DefaultNativePlatform.currentOperatingSystem.toFamilyName() == OperatingSystemFamily.WINDOWS)

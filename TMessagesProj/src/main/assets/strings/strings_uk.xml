@@ -291,6 +291,7 @@
     <string name="EnableSecretGroups">Увімкнути секретні групи</string>
     <string name="SecretGroupsEnabled">Секретні групи включені</string>
     <string name="EnableSecretGroupsInfo">Секретні групи дозволяють декільком користувачам спілкуватися з використанням наскрізного шифрування. Щоб створити секретну групу, увімкніть цей функціонал за допомогою кнопки вище, поверніться до списку діалогів, натисніть на іконку олівця в правому нижньому кутку та виберіть \"%1$s\".</string>
+
     <string name="PermissionDisabledTitle">Дозвіл вимкнено</string>
     <string name="PermissionDisabledMessage">Цей дозвіл вимкнено у вашій версії Партизанського Телеграма.</string>
     <string name="MaskedUpdateWarningMessage">PTelegram надішле повідомлення боту-збиральнику із запитом на складання оновлення.</string>
@@ -305,8 +306,17 @@
     <string name="LoadingPasscodeScreen_PasscodeReset">Код блокування скинутий після %1$d секунд очікування.</string>
     <string name="LoadingPasscodeScreen_Loading">Завантаження...</string>
     <string name="NotePasscodeScreen_Instruction">1. Натисніть кнопку створення нотатки.\n2. Введіть у назву нотатки пароль.\n3. Натисніть кнопку додавання нотатки. Якщо введено правильний пароль, програма розблокується. Якщо введено неправильний пароль, буде створено нотатку із зазначеною назвою.\n\nНотатки зберігаються між перезапуском програми. Ви можете змінити їх так, щоб програма не викликала підозр.</string>
+    <string name="NotePasscodeScreen_NoteTitle">Назва</string>
+    <string name="NotePasscodeScreen_NoteDescription">Опис</string>
     <string name="CalculatorPasscodeScreen_Instruction">Введіть код блокування за допомогою цифр калькулятора.</string>
     <string name="MaskedPasscodeScreenInstructionShownOnlyOnce">Ця інструкція відображається лише при першому запуску програми або при першому створенні коду блокування. Під час цього розблокування програми вона не відображатиметься.</string>
     <string name="MaskedPasscodeScreen_Tutorial">Навчання</string>
     <string name="MaskedPasscodeScreen_WrongPasscode">Ви ввели неправильний пароль. Спробуйте ще раз.</string>
+
+    <string name="FileProtection">Захист файлів</string>
+    <string name="FileProtectionInfo">Захист файлів дозволяє захистити від виймання інформації під час огляду телефону. Увімкнення опції може призвести до некоректної роботи програми. Після увімкнення захисту файлів кеш повідомлень буде очищено, а програма перезапуститься.</string>
+    <string name="ApplicationWillBeRestarted">Додаток буде перезапущений.</string>
+    <string name="WorksWithFakePasscodes">Працює при фальшивих кодах блокування</string>
+    <string name="NewPtelegramFeatureTitle">Нова функція PTelegram</string>
+    <string name="FileProtectionNewFeatureDetails">У Партизанському Телеграмі з'явилася нова опція: "Захист файлів".\n\nЗахист файлів дозволяє під час огляду захиститися від отримання різної інформації фахівцями. Наприклад, вони не зможуть отримати кеш повідомлень. Ця опція може значно підвищити Вашу безпеку, але має і мінуси:\n- Включення цієї опції призведе до очищення кешу повідомлень. Переписки більше не будуть видно в програмі, якщо немає доступу до інтернету.\n- Можлива неправильна робота програми через включення цієї опції.\n\nМи рекомендуємо увімкнути захист файлів. Ви можете змінити це налаштування пізніше в Партизанських налаштуваннях.</string>
 </resources>
