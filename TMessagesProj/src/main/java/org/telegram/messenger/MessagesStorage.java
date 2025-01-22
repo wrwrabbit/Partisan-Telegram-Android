@@ -333,8 +333,7 @@ public class MessagesStorage extends BaseController {
                         editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
                         editor.apply();
 
-                        SharedConfig.fileProtectionForAllAccountsEnabled = false;
-                        SharedConfig.saveConfig();
+                        SharedConfig.setFileProtectionForAllAccounts(false);
                     }
                 }
             } else {
