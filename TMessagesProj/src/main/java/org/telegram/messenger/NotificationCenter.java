@@ -284,6 +284,7 @@ public class NotificationCenter {
     public static final int unknownPartisanActionLinkOpened = totalEvents++;
     public static final int updateDownloadingStarted = totalEvents++;
     public static final int encryptedGroupUpdated = totalEvents++;
+    public static final int onFileProtectedDbCleared = totalEvents++;
 
 
     //global

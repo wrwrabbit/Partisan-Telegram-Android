@@ -284,7 +284,7 @@ public class ApplicationLoader extends Application {
     }
 
     private static void checkFiledCopiedFromOldTelegram() {
-        if (filesCopiedFromUpdater && !SharedConfig.filesCopiedFromOldTelegram) {
+        if (filesCopiedFromUpdater) {
             PartisanLog.d("Remove migration preferences from config");
             SharedConfig.filesCopiedFromOldTelegram = true;
             applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE).edit()

@@ -139,6 +139,16 @@ JNIEXPORT void Java_org_telegram_SQLite_SQLiteDatabase_commitTransaction(JNIEnv 
     sqlite3_exec(handle, "COMMIT", 0, 0, 0);
 }
 
+JNIEXPORT jint Java_org_telegram_SQLite_SQLiteDatabase_internalBackup(JNIEnv *env, jobject object, jlong sqliteHandle, jlong otherSqliteHandle){
+    sqlite3_backup *pBackup = sqlite3_backup_init((sqlite3 *) (intptr_t) otherSqliteHandle, "main", (sqlite3 *) (intptr_t) sqliteHandle, "main");
+    if (pBackup){
+        (void)sqlite3_backup_step(pBackup, -1);
+        (void)sqlite3_backup_finish(pBackup);
+    }
+    int rc = sqlite3_errcode((sqlite3 *) (intptr_t) otherSqliteHandle);
+    return rc;
+}
+
 JNIEXPORT jlong Java_org_telegram_SQLite_SQLiteDatabase_opendb(JNIEnv *env, jobject object, jstring fileName, jstring tempDir) {
     char const *fileNameStr = env->GetStringUTFChars(fileName, 0);
     char const *tempDirStr = env->GetStringUTFChars(tempDir, 0);

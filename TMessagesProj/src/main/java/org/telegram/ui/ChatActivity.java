@@ -28986,6 +28986,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         return encryptedGroupMessages;
     }
 
+    private void forEachMessageCopy(MessageObject message, Consumer<MessageObject> action) {
+        if (isEncryptedGroup() && message.isOut()) {
+            if (hiddenEncryptedGroupOutMessages.containsKey(message.getId())) {
+                hiddenEncryptedGroupOutMessages.get(message.getId()).stream().forEach(action);
+            }
+        }
+        action.accept(message);
+    }
+
     private void hideActionMode() {
         if (actionBar != null) {
             if (!actionBar.isActionModeShowed()) {
@@ -32264,7 +32273,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             case OPTION_CANCEL_SENDING: {
                 if (selectedObject.isEditing() || selectedObject.isSending() && selectedObjectGroup == null) {
-                    getSendMessagesHelper().cancelSendingMessage(selectedObject);
+                    forEachMessageCopy(selectedObject, selectedObject -> {
+                        if (selectedObject.isEditing() || selectedObject.isSending()) {
+                            getSendMessagesHelper().cancelSendingMessage(selectedObject);
+                        }
+                    });
                 } else if (selectedObject.isSending() && selectedObjectGroup != null) {
                     for (int a = 0; a < selectedObjectGroup.messages.size(); a++) {
                         getSendMessagesHelper().cancelSendingMessage(new ArrayList<>(selectedObjectGroup.messages));
@@ -37617,7 +37630,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         public void didPressCancelSendButton(ChatMessageCell cell) {
             MessageObject message = cell.getMessageObject();
             if (message.messageOwner.send_state != 0) {
-                getSendMessagesHelper().cancelSendingMessage(message);
+                forEachMessageCopy(message, messageCopy -> {
+                    if (messageCopy.messageOwner.send_state != 0) {
+                        getSendMessagesHelper().cancelSendingMessage(messageCopy);
+                    }
+                });
             }
         }
 

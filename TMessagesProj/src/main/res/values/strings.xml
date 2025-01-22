@@ -8805,4 +8805,11 @@
     <string name="EnableSecretGroups">Enable Secret Groups</string>
     <string name="SecretGroupsEnabled">Secret Groups Enabled</string>
     <string name="EnableSecretGroupsInfo">Secret groups allow multiple users to communicate using end-to-end encryption. To create a secret group, enable this feature using the button above, return to the list of conversations, click the pencil icon in the lower right corner and select \"%1$s\".</string>
+    <string name="FileProtection">File Protection</string>
+    <string name="FileProtectionInfo">File protection allows you to protect yourself from information extraction during phone inspection. Enabling this option may cause the application to work incorrectly. After enabling file protection, the message cache will be cleared and the application will reboot.</string>
+    <string name="ApplicationWillBeRestarted">The application will be restarted.</string>
+    <string name="WorksWithFakePasscodes">Works With Fake Passcodes</string>
+    <string name="NewFeatureTitle">Works With Fake Passcodes</string>
+    <string name="NewPtelegramFeatureTitle">New PTelegram Feature</string>
+    <string name="FileProtectionNewFeatureDetails">A new option has appeared in Partisan Telegram: "File protection".\n\nFile protection allows you to protect yourself from the extraction of various information by specialists during inspection. For example, they will not be able to extract the message cache. This option can significantly increase your security, but it also has disadvantages:\n- Enabling this option will clear the message cache. Correspondence will no longer be visible in the application if there is no access to the Internet.\n- The application may not work correctly due to the enabling of this option.\n\nWe recommend enabling file protection. You can change this setting later in the Partisan settings.</string>
 </resources>

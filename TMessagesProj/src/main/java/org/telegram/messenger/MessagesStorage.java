@@ -31,8 +31,10 @@ import androidx.collection.LongSparseArray;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.SQLite.SQLiteDatabase;
+import org.telegram.SQLite.SQLiteDatabaseWrapper;
 import org.telegram.SQLite.SQLiteException;
 import org.telegram.SQLite.SQLitePreparedStatement;
+import org.telegram.SQLite.SQLitePreparedStatementWrapper;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanDatabaseMigrationHelper;
@@ -318,7 +320,12 @@ public class MessagesStorage extends BaseController {
             createTable = true;
         }
         try {
-            database = new SQLiteDatabase(cacheFile.getPath());
+            if (fileProtectionEnabled()) {
+                database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
+            } else {
+                database = new SQLiteDatabase(cacheFile.getPath());
+            }
             database.executeFast("PRAGMA secure_delete = ON").stepThis().dispose();
             database.executeFast("PRAGMA temp_store = MEMORY").stepThis().dispose();
             database.executeFast("PRAGMA journal_mode = WAL").stepThis().dispose();
@@ -432,7 +439,11 @@ public class MessagesStorage extends BaseController {
         FileLog.e("Database restored = " + restored);
         if (restored) {
             try {
-                database = new SQLiteDatabase(cacheFile.getPath());
+                if (fileProtectionEnabled()) {
+                    database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                } else {
+                    database = new SQLiteDatabase(cacheFile.getPath());
+                }
                 database.executeFast("PRAGMA secure_delete = ON").stepThis().dispose();
                 database.executeFast("PRAGMA temp_store = MEMORY").stepThis().dispose();
                 database.executeFast("PRAGMA journal_mode = WAL").stepThis().dispose();
@@ -4522,9 +4533,12 @@ public class MessagesStorage extends BaseController {
                 cursor = null;
                 deleteFromDownloadQueue(idsToDelete, true);
                 if (!messages.isEmpty()) {
-                    state = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
+                    state = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
                     for (int a = 0; a < messages.size(); a++) {
                         TLRPC.Message message = messages.get(a);
+                        if (state instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(message.dialog_id);
+                        }
 
                         MessageObject.normalizeFlags(message);
                         NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
@@ -9988,7 +10002,10 @@ public class MessagesStorage extends BaseController {
                 data4.reuse();
                 data5.reuse();
                 if (dialog != null) {
-                    state = database.executeFast("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    state = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    if (state instanceof SQLitePreparedStatementWrapper) {
+                        ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(dialog.id);
+                    }
                     state.bindLong(1, dialog.id);
                     state.bindInteger(2, dialog.last_message_date);
                     state.bindInteger(3, dialog.unread_count);
@@ -10069,7 +10086,7 @@ public class MessagesStorage extends BaseController {
     public void updateEncryptedGroupDialog(TLRPC.Dialog dialog) {
         SQLitePreparedStatement state = null;
         try {
-            state = database.executeFast("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            state = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             state.bindLong(1, dialog.id);
             state.bindInteger(2, dialog.last_message_date);
             state.bindInteger(3, dialog.unread_count);
@@ -10690,6 +10707,51 @@ public class MessagesStorage extends BaseController {
             cursor.dispose();
         }
         return result;
+    }
+
+    private SQLitePreparedStatement executeFastForBothDbIfNeeded(String sql) throws SQLiteException {
+        if (database instanceof SQLiteDatabaseWrapper) {
+            return ((SQLiteDatabaseWrapper)database).executeFastForBothDb(sql);
+        } else {
+            return database.executeFast(sql);
+        }
+    }
+
+    public boolean fileProtectionEnabled() {
+        if (FakePasscodeUtils.isFakePasscodeActivated() && !SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
+            return false;
+        }
+        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+            return true;
+        }
+        if (getUserConfig().isConfigLoaded()) {
+            return getUserConfig().fileProtectionEnabled;
+        } else {
+            return getUserConfig().getPreferences().getBoolean("fileProtectionEnabled", false);
+        }
+    }
+
+    public void clearFileProtectedDb() {
+        storageQueue.postRunnable(() -> {
+            try {
+                SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
+                        ? ((SQLiteDatabaseWrapper)database).getFileDatabase()
+                        : database;
+
+                String notEncryptedGroupCheck = "did & 0x4000000000000000 = 0 OR did & 0x8000000000000000 <> 0";
+                db.executeFast("DELETE FROM chats").stepThis().dispose();
+                db.executeFast("DELETE FROM contacts").stepThis().dispose();
+                db.executeFast("DELETE FROM messages_v2 WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
+                db.executeFast("DELETE FROM dialogs WHERE " + notEncryptedGroupCheck).stepThis().dispose();
+                db.executeFast("DELETE FROM messages_holes WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
+                db.executeFast("DELETE FROM messages_topics WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
+                db.executeFast("DELETE FROM messages_holes_topics").stepThis().dispose();
+            } catch (Exception e) {
+                checkSQLException(e);
+            } finally {
+                AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
+            }
+        });
     }
 
     private void putUsersAndChatsInternal(List<TLRPC.User> users, List<TLRPC.Chat> chats, boolean withTransaction) {
@@ -11646,8 +11708,8 @@ public class MessagesStorage extends BaseController {
                 ArrayList<TLRPC.Message> createNewTopics = null;
                 ArrayList<TLRPC.Message> changedSavedMessages = null;
 
-                state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
-                state_messages_topic = database.executeFast("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
+                state_messages = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
+                state_messages_topic = executeFastForBothDbIfNeeded("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
                 state_media = null;
                 state_randoms = database.executeFast("REPLACE INTO randoms_v2 VALUES(?, ?, ?)");
                 state_download = database.executeFast("REPLACE INTO download_queue VALUES(?, ?, ?, ?, ?)");
@@ -11658,6 +11720,12 @@ public class MessagesStorage extends BaseController {
 
                 for (int a = 0; a < messages.size(); a++) {
                     TLRPC.Message message = messages.get(a);
+                    if (state_messages instanceof SQLitePreparedStatementWrapper) {
+                        ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(message.dialog_id);
+                    }
+                    if (state_messages_topic instanceof SQLitePreparedStatementWrapper) {
+                        ((SQLitePreparedStatementWrapper)state_messages_topic).setDbSelectorByDialogId(message.dialog_id);
+                    }
 
                     int messageId = message.id;
                     MessageObject.getDialogId(message);
@@ -12398,7 +12466,7 @@ public class MessagesStorage extends BaseController {
                     }
                 }
 
-                state_dialogs_replace = database.executeFast("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                state_dialogs_replace = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 state_dialogs_update = database.executeFast("UPDATE dialogs SET date = ?, unread_count = ?, last_mid = ?, last_mid_group = ?, unread_count_i = ? WHERE did = ?");
                 state_dialogs_update_without_message = database.executeFast("UPDATE dialogs SET unread_count = ?, unread_count_i = ? WHERE did = ?");
                 state_topics_update = database.executeFast("UPDATE topics SET unread_count = ?, top_message = ?, unread_mentions = ?, total_messages_count = ? WHERE did = ? AND topic_id = ?");
@@ -12480,6 +12548,9 @@ public class MessagesStorage extends BaseController {
                             state_dialogs_update_without_message.step();
                         }
                     } else {
+                        if (state_dialogs_replace instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper)state_dialogs_replace).setDbSelectorByDialogId(message.dialog_id);
+                        }
                         state_dialogs_replace.requery();
                         state_dialogs_replace.bindLong(1, key);
                         state_dialogs_replace.bindInteger(2, message != null && (!doNotUpdateDialogDate || dialog_date == 0) ? message.date : dialog_date);
@@ -14824,7 +14895,7 @@ public class MessagesStorage extends BaseController {
                         if (topicId == 0) {
                             continue;
                         }
-                        state = database.executeFast("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
+                        state = executeFastForBothDbIfNeeded("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
                         if (dialogId == selfId && MessageObject.getSavedDialogId(selfId, message) != 0) {
                             if (changedSavedMessages == null) {
                                 changedSavedMessages = new ArrayList<>();
@@ -14832,7 +14903,10 @@ public class MessagesStorage extends BaseController {
                             changedSavedMessages.add(message);
                         }
                     } else {
-                        state = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
+                        state = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
+                    }
+                    if (state instanceof SQLitePreparedStatementWrapper) {
+                        ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(message.dialog_id);
                     }
                     state.requery();
 
@@ -15152,8 +15226,8 @@ public class MessagesStorage extends BaseController {
                     Integer lastMessageId = null;
                     Long lastMessageGroupId = null;
 
-                    state_messages_topics = database.executeFast("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
-                    state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
+                    state_messages_topics = executeFastForBothDbIfNeeded("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
+                    state_messages = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
                     state_media = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                     state_media_topics = database.executeFast("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
                     state_polls = null;
@@ -15174,6 +15248,12 @@ public class MessagesStorage extends BaseController {
                     }
                     for (int a = 0; a < count; a++) {
                         TLRPC.Message message = messages.messages.get(a);
+                        if (state_messages instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(message.dialog_id);
+                        }
+                        if (state_messages_topics instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper)state_messages_topics).setDbSelectorByDialogId(message.dialog_id);
+                        }
                         if (lastMessageId == null && message != null || lastMessageId != null && lastMessageId < message.id) {
                             lastMessageId = message.id;
                             lastMessageGroupId = (message.flags & 131072) != 0 ? message.grouped_id : null;
@@ -15281,7 +15361,10 @@ public class MessagesStorage extends BaseController {
                                 state3.bindInteger(7, message.date);
                                 state3.bindLong(8, dialogId);
                             } else {
-                                state3 = database.executeFast("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                state3 = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                if (state3 instanceof SQLitePreparedStatementWrapper) {
+                                    ((SQLitePreparedStatementWrapper)state3).setDbSelectorByDialogId(dialogId);
+                                }
                                 state3.bindLong(1, dialogId);
                                 state3.bindInteger(2, message.date);
                                 state3.bindInteger(3, 0);
@@ -16215,8 +16298,8 @@ public class MessagesStorage extends BaseController {
             }
 
             if (!dialogs.dialogs.isEmpty()) {
-                state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)");
-                state_dialogs = database.executeFast("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                state_messages = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)");
+                state_dialogs = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 state_media = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                 state_settings = database.executeFast("REPLACE INTO dialog_settings VALUES(?, ?)");
                 state_holes = database.executeFast("REPLACE INTO messages_holes VALUES(?, ?, ?)");
@@ -16265,6 +16348,9 @@ public class MessagesStorage extends BaseController {
 
                     TLRPC.Message message = new_dialogMessage.get(dialog.id);
                     if (message != null) {
+                        if (state_messages instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(dialog.id);
+                        }
                         messageDate = Math.max(message.date, messageDate);
 
                         if (isValidKeyboardToSave(message)) {
@@ -16369,6 +16455,9 @@ public class MessagesStorage extends BaseController {
                         }
                     }
 
+                    if (state_dialogs instanceof SQLitePreparedStatementWrapper) {
+                        ((SQLitePreparedStatementWrapper)state_dialogs).setDbSelectorByDialogId(dialog.id);
+                    }
                     state_dialogs.requery();
                     state_dialogs.bindLong(1, dialog.id);
                     state_dialogs.bindInteger(2, messageDate);
