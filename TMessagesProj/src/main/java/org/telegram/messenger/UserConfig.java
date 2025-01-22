@@ -468,6 +468,9 @@ public class UserConfig extends BaseController {
             showSecuritySuggestions = preferences.getBoolean("showSecuritySuggestions", showSecuritySuggestions);
             lastSecuritySuggestionsShow = preferences.getLong("lastSecuritySuggestionsShow", 0); // check security next day
             fileProtectionEnabled = preferences.getBoolean("fileProtectionEnabled", fileProtectionEnabled);
+            if (SharedConfig.fileProtectionForAllAccountsEnabled) { // Don't enable file protection for accounts if global file protection enabled.
+                fileProtectionEnabled = false;
+            }
             String savedChannelsStr = preferences.getString("savedChannels", defaultChannels);
             savedChannels = new HashSet<>(Arrays.asList(savedChannelsStr.split(",")));
             savedChannels.remove("");
