@@ -48,10 +48,12 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SavedMessagesController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -825,7 +827,9 @@ public class UndoView extends FrameLayout {
                     long dialogId = did;
                     if (DialogObject.isEncryptedDialog(did)) {
                         TLRPC.EncryptedChat encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
-                        dialogId = encryptedChat.user_id;
+                        if (encryptedChat != null) {
+                            dialogId = encryptedChat.user_id;
+                        }
                     }
                     if (DialogObject.isUserDialog(dialogId)) {
                         TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
@@ -839,6 +843,14 @@ public class UndoView extends FrameLayout {
                             infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterUserAddedToExisting", R.string.FilterUserAddedToExisting, name, filter.name));
                         } else {
                             infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterUserRemovedFrom", R.string.FilterUserRemovedFrom, name, filter.name));
+                        }
+                    } else if (MessagesStorage.getInstance(currentAccount).isEncryptedGroup(dialogId)) {
+                        int groupId = DialogObject.getEncryptedChatId(dialogId);
+                        EncryptedGroup encryptedGroup = MessagesController.getInstance(currentAccount).getEncryptedGroup(groupId);
+                        if (action == ACTION_ADDED_TO_FOLDER) {
+                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatAddedToExisting", R.string.FilterChatAddedToExisting, encryptedGroup.getName(), filter.name));
+                        } else {
+                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatRemovedFrom", R.string.FilterChatRemovedFrom, encryptedGroup.getName(), filter.name));
                         }
                     } else {
                         TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);

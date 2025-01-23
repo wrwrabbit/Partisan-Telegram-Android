@@ -31,6 +31,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
@@ -352,7 +353,10 @@ public class FiltersListBottomSheet extends BottomSheet implements NotificationC
                         continue;
                     }
                 } else {
-                    continue;
+                    EncryptedGroup encryptedGroup = fragment.getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(did));
+                    if (encryptedGroup == null) {
+                        continue;
+                    }
                 }
             }
             if (filter != null && (always && filter.alwaysShow.contains(did) || !always && filter.neverShow.contains(did))) {
