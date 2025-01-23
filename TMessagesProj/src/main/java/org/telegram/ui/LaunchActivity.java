@@ -132,6 +132,9 @@ import org.telegram.messenger.partisan.appmigration.MigrationIntentHandler;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.update.UpdateChecker;
 import org.telegram.messenger.partisan.update.UpdateData;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
@@ -5976,7 +5979,17 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.closeChats);
                 }
                 if (DialogObject.isEncryptedDialog(did)) {
-                    args.putInt("enc_id", DialogObject.getEncryptedChatId(did));
+                    EncryptedGroup encryptedGroup = MessagesController.getInstance(account)
+                            .getEncryptedGroup(DialogObject.getEncryptedChatId(did));
+                    if (encryptedGroup != null) {
+                        if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
+                            return false;
+                        } else {
+                            args.putInt("enc_group_id", encryptedGroup.getInternalId());
+                        }
+                    } else {
+                        args.putInt("enc_id", DialogObject.getEncryptedChatId(did));
+                    }
                 } else if (DialogObject.isUserDialog(did)) {
                     args.putLong("user_id", did);
                 } else {
