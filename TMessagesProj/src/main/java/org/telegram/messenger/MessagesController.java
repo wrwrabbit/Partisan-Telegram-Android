@@ -10263,6 +10263,18 @@ public class MessagesController extends BaseController implements NotificationCe
             }
         }
 
+        for (int i = 0; i < newStrings.size(); i++) {
+            long dialogId = newStrings.keyAt(i);
+            if (DialogObject.isEncryptedDialog(dialogId)) {
+                Integer encryptedGroupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(DialogObject.getEncryptedChatId(dialogId));
+                if (encryptedGroupId != null) {
+                    long encryptedGroupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroupId);
+                    newStrings.put(encryptedGroupDialogId, newStrings.get(dialogId).clone());
+                    newTypes.put(encryptedGroupDialogId, newTypes.get(dialogId));
+                }
+            }
+        }
+
         lastPrintingStringCount = newStrings.size();
 
         AndroidUtilities.runOnUIThread(() -> {
@@ -10380,6 +10392,15 @@ public class MessagesController extends BaseController implements NotificationCe
                 return false;
             }
             TLRPC.EncryptedChat chat = getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
+            if (chat == null) {
+                EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+                if (encryptedGroup != null) {
+                    boolean result = false;
+                    for (int innerChatId : encryptedGroup.getInitializedInnerEncryptedChatIds()) {
+                        result |= sendTyping(DialogObject.makeEncryptedDialogId(innerChatId), threadMsgId, action, emojicon, classGuid);
+                    }
+                }
+            }
             if (chat != null && chat.auth_key != null && chat.auth_key.length > 1 && chat instanceof TLRPC.TL_encryptedChat) {
                 TLRPC.TL_messages_setEncryptedTyping req = new TLRPC.TL_messages_setEncryptedTyping();
                 req.peer = new TLRPC.TL_inputEncryptedChat();
