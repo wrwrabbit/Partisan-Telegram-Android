@@ -8222,22 +8222,16 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else {
             Bundle args = new Bundle();
             if (DialogObject.isEncryptedDialog(dialogId)) {
-                EncryptedGroup encryptedGroup = getMessagesController()
-                        .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
-                if (encryptedGroup != null) {
-                    if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
-                        EncryptedGroupUtils.showSecretGroupJoinDialog(encryptedGroup, this, currentAccount, () -> {
-                            Bundle args2 = new Bundle();
-                            args2.putInt("enc_group_id", encryptedGroup.getInternalId());
-                            args2.putBoolean("just_created_chat", true);
-                            presentFragment(new ChatActivity(args2), false);
-                        });
-                        return;
-                    } else {
-                        args.putInt("enc_group_id", encryptedGroup.getInternalId());
-                    }
-                } else {
-                    args.putInt("enc_id", DialogObject.getEncryptedChatId(dialogId));
+                if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, dialogId, currentAccount)) {
+                    EncryptedGroup encryptedGroup = getMessagesController()
+                            .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+                    EncryptedGroupUtils.showSecretGroupJoinDialog(encryptedGroup, this, currentAccount, () -> {
+                        Bundle args2 = new Bundle();
+                        args2.putInt("enc_group_id", encryptedGroup.getInternalId());
+                        args2.putBoolean("just_created_chat", true);
+                        presentFragment(new ChatActivity(args2), false);
+                    });
+                    return;
                 }
             } else if (DialogObject.isUserDialog(dialogId)) {
                 args.putLong("user_id", dialogId);

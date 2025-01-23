@@ -2474,14 +2474,31 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
         } else {
             boolean canSendVoiceMessages = true;
-            TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat((int) peer);
-            long userId = encryptedChat.user_id;
-            if (DialogObject.isUserDialog(userId)) {
-                TLRPC.User sendToUser = getMessagesController().getUser(userId);
-                if (sendToUser != null) {
-                    TLRPC.UserFull userFull = getMessagesController().getUserFull(userId);
-                    if (userFull != null) {
-                        canSendVoiceMessages = !userFull.voice_messages_forbidden;
+            TLRPC.EncryptedChat tempEncryptedChat = getMessagesController().getEncryptedChat((int) peer);
+            List<TLRPC.EncryptedChat> encryptedChats;
+            if (tempEncryptedChat != null) {
+                encryptedChats = Collections.singletonList(tempEncryptedChat);
+            } else {
+                encryptedChats = new ArrayList<>();
+                EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(peer));
+                if (encryptedGroup != null) {
+                    for (int encryptedChatId : encryptedGroup.getInitializedInnerEncryptedChatIds()) {
+                        TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedChatId);
+                        if (encryptedChat != null) {
+                            encryptedChats.add(encryptedChat);
+                        }
+                    }
+                }
+            }
+            for (TLRPC.EncryptedChat encryptedChat : encryptedChats) {
+                long userId = encryptedChat.user_id;
+                if (DialogObject.isUserDialog(userId)) {
+                    TLRPC.User sendToUser = getMessagesController().getUser(userId);
+                    if (sendToUser != null) {
+                        TLRPC.UserFull userFull = getMessagesController().getUserFull(userId);
+                        if (userFull != null) {
+                            canSendVoiceMessages = !userFull.voice_messages_forbidden;
+                        }
                     }
                 }
             }

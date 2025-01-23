@@ -3154,11 +3154,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
             } else if (push_enc_id != 0) {
                 Bundle args = new Bundle();
-                Integer encryptedGroupId = MessagesStorage.getInstance(currentAccount).getEncryptedGroupIdByInnerEncryptedChatId(push_enc_id);
-                if (encryptedGroupId != null) {
-                    args.putInt("enc_group_id", encryptedGroupId);
-                } else {
-                    args.putInt("enc_id", push_enc_id);
+                if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, DialogObject.makeEncryptedDialogId(push_enc_id), currentAccount)) {
+                    return true;
                 }
                 ChatActivity fragment = new ChatActivity(args);
                 if (getActionBarLayout().presentFragment(new INavigationLayout.NavigationParams(fragment).setNoAnimation(true))) {
@@ -5979,16 +5976,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.closeChats);
                 }
                 if (DialogObject.isEncryptedDialog(did)) {
-                    EncryptedGroup encryptedGroup = MessagesController.getInstance(account)
-                            .getEncryptedGroup(DialogObject.getEncryptedChatId(did));
-                    if (encryptedGroup != null) {
-                        if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
-                            return false;
-                        } else {
-                            args.putInt("enc_group_id", encryptedGroup.getInternalId());
-                        }
-                    } else {
-                        args.putInt("enc_id", DialogObject.getEncryptedChatId(did));
+                    if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, did, account)) {
+                        return false;
                     }
                 } else if (DialogObject.isUserDialog(did)) {
                     args.putLong("user_id", did);
