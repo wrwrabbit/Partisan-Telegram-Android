@@ -41,6 +41,7 @@ import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanDatabaseMigrationHelper;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionDatabaseCleaner;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
@@ -10745,52 +10746,14 @@ public class MessagesStorage extends BaseController {
     }
 
     public void clearFileProtectedDb() {
-        SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
-                ? ((SQLiteDatabaseWrapper)database).getFileDatabase()
-                : database;
-        clearFileProtectedDb(db);
-    }
-
-    public void clearFileProtectedDb(SQLiteDatabase db) {
         storageQueue.postRunnable(() -> {
-            SQLiteCursor cursor = null;
+            SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
+                    ? ((SQLiteDatabaseWrapper) database).getFileDatabase()
+                    : database;
             try {
-                cursor = db.queryFinalized("SELECT did FROM search_recent WHERE 1");
-                Set<Long> recentSearchDialogIds = new HashSet<>();
-                while (cursor.next()) {
-                    recentSearchDialogIds.add(cursor.longValue(0));
-                }
-                cursor.dispose();
-                cursor = null;
-                cursor = db.queryFinalized("SELECT uid FROM chats WHERE 1");
-                Set<Long> chatIdsToDelete = new HashSet<>();
-                while (cursor.next()) {
-                    long chatId = cursor.longValue(0);
-                    if (!recentSearchDialogIds.contains(chatId)) {
-                        chatIdsToDelete.add(chatId);
-                    }
-                }
-                cursor.dispose();
-                cursor = null;
-
-                for (Long chatId : recentSearchDialogIds) {
-                    db.executeFast("DELETE FROM chats WHERE uid = " + chatId).stepThis().dispose();
-                }
-
-                String notEncryptedGroupCheck = "did & 0x4000000000000000 = 0 OR did & 0x8000000000000000 <> 0";
-                db.executeFast("DELETE FROM contacts").stepThis().dispose();
-                db.executeFast("DELETE FROM messages_v2 WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
-                db.executeFast("DELETE FROM dialogs WHERE " + notEncryptedGroupCheck).stepThis().dispose();
-                db.executeFast("DELETE FROM messages_holes WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
-                db.executeFast("DELETE FROM messages_topics WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
-                db.executeFast("DELETE FROM messages_holes_topics").stepThis().dispose();
+                new FileProtectionDatabaseCleaner(db, currentAccount).clear();
             } catch (Exception e) {
                 checkSQLException(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-                AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
             }
         });
     }
