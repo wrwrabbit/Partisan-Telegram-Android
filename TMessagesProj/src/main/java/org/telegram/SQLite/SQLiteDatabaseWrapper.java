@@ -21,7 +21,7 @@ public class SQLiteDatabaseWrapper extends SQLiteDatabase {
     ));
     private final Set<String> onlyMemoryTables = new HashSet<>(Arrays.asList(
             "messages_v2", "chats", "contacts", "dialogs", "messages_holes", "messages_topics", "messages_holes_topics",
-            "users", "media_v4"
+            "users", "media_v4", "media_holes_topics", "media_holes_v2"
     ));
 
     private final SQLiteDatabase fileDatabase;

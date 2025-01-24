@@ -49,6 +49,8 @@ public class FileProtectionDatabaseCleaner {
             clearTable(new TableInfo("messages_topics"));
             clearTable(new TableInfo("messages_holes_topics"));
             clearTable(new TableInfo("media_v4"));
+            clearTable(new TableInfo("media_holes_topics"));
+            clearTable(new TableInfo("media_holes_v2"));
         } finally {
             AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
         }
