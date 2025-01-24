@@ -3791,9 +3791,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         boolean isRegex = ((DialogCheckBox) views.get(1)).isChecked();
                         boolean isCaseSensitive = ((DialogCheckBox) views.get(2)).isChecked();
                         boolean isDeleteAll = ((DialogCheckBox) views.get(3)).isChecked();
-                        if(isDeleteAll){
+                        if (isDeleteAll) {
                             getMessagesController().deleteAllMessagesFromDialogByUser(UserConfig.getInstance(currentAccount).clientUserId, did, getTopicId(), null);
-                        }else {
+                        } else {
                             getMessagesController().deleteAllMessagesFromDialogByUser(UserConfig.getInstance(currentAccount).clientUserId, did, getTopicId(), msg -> {
                                 String msgText;
                                 if (msg.caption != null) {
