@@ -62,8 +62,6 @@ public class FileProtectionDatabaseCleaner {
             while (cursor.next()) {
                 recentSearchDialogIds.add(cursor.longValue(0));
             }
-            cursor.dispose();
-            cursor = null;
         } finally {
             if (cursor != null) {
                 cursor.dispose();
@@ -101,7 +99,7 @@ public class FileProtectionDatabaseCleaner {
                 if (tableInfo.keepRecentSearch && recentSearchDialogIds.contains(dialogId)) {
                     continue;
                 }
-                if (tableInfo.keepEncryptedGroups || DialogObject.isEncryptedDialog(dialogId)) {
+                if (tableInfo.keepEncryptedGroups && DialogObject.isEncryptedDialog(dialogId)) {
                     continue;
                 }
                 dialogIdsToDelete.add(dialogId);
