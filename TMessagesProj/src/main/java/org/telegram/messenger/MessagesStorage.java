@@ -10746,7 +10746,7 @@ public class MessagesStorage extends BaseController {
     }
 
     public void clearFileProtectedDb() {
-        storageQueue.postRunnable(() -> {
+        Utilities.cacheClearQueue.postRunnable(() -> {
             SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
                     ? ((SQLiteDatabaseWrapper) database).getFileDatabase()
                     : database;
