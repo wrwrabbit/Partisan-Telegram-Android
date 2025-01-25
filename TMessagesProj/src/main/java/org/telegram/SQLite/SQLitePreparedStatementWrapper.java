@@ -1,6 +1,7 @@
 package org.telegram.SQLite;
 
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionData;
 import org.telegram.tgnet.NativeByteBuffer;
 
 import java.nio.ByteBuffer;
@@ -19,8 +20,16 @@ public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
         this.dbSelector = dbSelector;
     }
 
-    public void setDbSelectorByDialogId(long dialogId) {
-        setDbSelector(DialogObject.isEncryptedDialog(dialogId) ? DbSelector.BOTH_DB : DbSelector.MEMORY_DB);
+    public void setDbSelectorByDialogId(int account, long dialogId, boolean keepRecentSearch) {
+        DbSelector dbSelector;
+        if (DialogObject.isEncryptedDialog(dialogId)) {
+            dbSelector = DbSelector.BOTH_DB;
+        } else if (keepRecentSearch && FileProtectionData.isAddedRecentSearch(account, dialogId)) {
+            dbSelector = DbSelector.BOTH_DB;
+        } else {
+            dbSelector = DbSelector.MEMORY_DB;
+        }
+        setDbSelector(dbSelector);
     }
 
     private interface StatementFunction<R> {

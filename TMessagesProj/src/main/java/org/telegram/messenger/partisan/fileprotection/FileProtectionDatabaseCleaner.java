@@ -43,7 +43,7 @@ public class FileProtectionDatabaseCleaner {
             deletedCount = 0;
             loadRecentSearchDialogIds();
             clearTable(new TableInfo("users") {{ keepRecentSearch = true; }});
-            clearTable(new TableInfo("chats") {{ keepRecentSearch = true; }});
+            clearTable(new TableInfo("chats") {{ keepRecentSearch = true; dialogIdFormat = DialogIdFormat.CHAT_ID; }});
             clearTable(new TableInfo("contacts"));
             clearTable(new TableInfo("messages_v2"));
             clearTable(new TableInfo("dialogs") {{ dialogIdColumn = "did"; }});

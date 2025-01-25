@@ -4551,7 +4551,7 @@ public class MessagesStorage extends BaseController {
                     for (int a = 0; a < messages.size(); a++) {
                         TLRPC.Message message = messages.get(a);
                         if (state instanceof SQLitePreparedStatementWrapper) {
-                            ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(message.dialog_id);
+                            ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(currentAccount, message.dialog_id, false);
                         }
 
                         MessageObject.normalizeFlags(message);
@@ -10018,7 +10018,7 @@ public class MessagesStorage extends BaseController {
                 if (dialog != null) {
                     state = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     if (state instanceof SQLitePreparedStatementWrapper) {
-                        ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(dialog.id);
+                        ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(currentAccount, dialog.id, false);
                     }
                     state.bindLong(1, dialog.id);
                     state.bindInteger(2, dialog.last_message_date);
@@ -10184,7 +10184,7 @@ public class MessagesStorage extends BaseController {
         if (users == null || users.isEmpty()) {
             return;
         }
-        SQLitePreparedStatement state = database.executeFast("REPLACE INTO users VALUES(?, ?, ?, ?)");
+        SQLitePreparedStatement state = executeFastForBothDbIfNeeded("REPLACE INTO users VALUES(?, ?, ?, ?)");
         for (int a = 0; a < users.size(); a++) {
             TLRPC.User user = users.get(a);
             if (user == null) continue;
@@ -10221,6 +10221,9 @@ public class MessagesStorage extends BaseController {
                     }
                 }
                 cursor.dispose();
+            }
+            if (state instanceof SQLitePreparedStatementWrapper) {
+                ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(currentAccount, user.id, true);
             }
             state.requery();
             NativeByteBuffer data = new NativeByteBuffer(user.getObjectSize());
@@ -10298,7 +10301,7 @@ public class MessagesStorage extends BaseController {
         if (chats == null || chats.isEmpty()) {
             return;
         }
-        SQLitePreparedStatement state = database.executeFast("REPLACE INTO chats VALUES(?, ?, ?)");
+        SQLitePreparedStatement state = executeFastForBothDbIfNeeded("REPLACE INTO chats VALUES(?, ?, ?)");
         for (int a = 0; a < chats.size(); a++) {
             TLRPC.Chat chat = chats.get(a);
             if (chat.min) {
@@ -10347,6 +10350,9 @@ public class MessagesStorage extends BaseController {
                     }
                 }
                 cursor.dispose();
+            }
+            if (state instanceof SQLitePreparedStatementWrapper) {
+                ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(currentAccount, -chat.id, true);
             }
             state.requery();
             chat.flags |= 131072;
@@ -11725,10 +11731,10 @@ public class MessagesStorage extends BaseController {
                 for (int a = 0; a < messages.size(); a++) {
                     TLRPC.Message message = messages.get(a);
                     if (state_messages instanceof SQLitePreparedStatementWrapper) {
-                        ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(message.dialog_id);
+                        ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(currentAccount, message.dialog_id, false);
                     }
                     if (state_messages_topic instanceof SQLitePreparedStatementWrapper) {
-                        ((SQLitePreparedStatementWrapper)state_messages_topic).setDbSelectorByDialogId(message.dialog_id);
+                        ((SQLitePreparedStatementWrapper)state_messages_topic).setDbSelectorByDialogId(currentAccount, message.dialog_id, false);
                     }
 
                     int messageId = message.id;
@@ -12553,7 +12559,7 @@ public class MessagesStorage extends BaseController {
                         }
                     } else {
                         if (state_dialogs_replace instanceof SQLitePreparedStatementWrapper) {
-                            ((SQLitePreparedStatementWrapper)state_dialogs_replace).setDbSelectorByDialogId(message.dialog_id);
+                            ((SQLitePreparedStatementWrapper)state_dialogs_replace).setDbSelectorByDialogId(currentAccount, message.dialog_id, false);
                         }
                         state_dialogs_replace.requery();
                         state_dialogs_replace.bindLong(1, key);
@@ -14910,7 +14916,7 @@ public class MessagesStorage extends BaseController {
                         state = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
                     }
                     if (state instanceof SQLitePreparedStatementWrapper) {
-                        ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(message.dialog_id);
+                        ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(currentAccount, message.dialog_id, false);
                     }
                     state.requery();
 
@@ -15253,10 +15259,10 @@ public class MessagesStorage extends BaseController {
                     for (int a = 0; a < count; a++) {
                         TLRPC.Message message = messages.messages.get(a);
                         if (state_messages instanceof SQLitePreparedStatementWrapper) {
-                            ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(message.dialog_id);
+                            ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(currentAccount, message.dialog_id, false);
                         }
                         if (state_messages_topics instanceof SQLitePreparedStatementWrapper) {
-                            ((SQLitePreparedStatementWrapper)state_messages_topics).setDbSelectorByDialogId(message.dialog_id);
+                            ((SQLitePreparedStatementWrapper)state_messages_topics).setDbSelectorByDialogId(currentAccount, message.dialog_id, false);
                         }
                         if (lastMessageId == null && message != null || lastMessageId != null && lastMessageId < message.id) {
                             lastMessageId = message.id;
@@ -15367,7 +15373,7 @@ public class MessagesStorage extends BaseController {
                             } else {
                                 state3 = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                                 if (state3 instanceof SQLitePreparedStatementWrapper) {
-                                    ((SQLitePreparedStatementWrapper)state3).setDbSelectorByDialogId(dialogId);
+                                    ((SQLitePreparedStatementWrapper)state3).setDbSelectorByDialogId(currentAccount, dialogId, false);
                                 }
                                 state3.bindLong(1, dialogId);
                                 state3.bindInteger(2, message.date);
@@ -16353,7 +16359,7 @@ public class MessagesStorage extends BaseController {
                     TLRPC.Message message = new_dialogMessage.get(dialog.id);
                     if (message != null) {
                         if (state_messages instanceof SQLitePreparedStatementWrapper) {
-                            ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(dialog.id);
+                            ((SQLitePreparedStatementWrapper)state_messages).setDbSelectorByDialogId(currentAccount, dialog.id, false);
                         }
                         messageDate = Math.max(message.date, messageDate);
 
@@ -16460,7 +16466,7 @@ public class MessagesStorage extends BaseController {
                     }
 
                     if (state_dialogs instanceof SQLitePreparedStatementWrapper) {
-                        ((SQLitePreparedStatementWrapper)state_dialogs).setDbSelectorByDialogId(dialog.id);
+                        ((SQLitePreparedStatementWrapper)state_dialogs).setDbSelectorByDialogId(currentAccount, dialog.id, false);
                     }
                     state_dialogs.requery();
                     state_dialogs.bindLong(1, dialog.id);
