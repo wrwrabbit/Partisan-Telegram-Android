@@ -31,6 +31,7 @@ public class FileProtectionDatabaseCleaner {
     private final int account;
     private final SQLiteDatabase db;
     private final Set<Long> recentSearchDialogIds = new HashSet<>();
+    private int deletedCount = 0;
 
     public FileProtectionDatabaseCleaner(SQLiteDatabase db, int account) {
         this.db = db;
@@ -39,6 +40,7 @@ public class FileProtectionDatabaseCleaner {
 
     public void clear() throws Exception {
         try {
+            deletedCount = 0;
             loadRecentSearchDialogIds();
             clearTable(new TableInfo("users") {{ keepRecentSearch = true; }});
             clearTable(new TableInfo("chats") {{ keepRecentSearch = true; }});
@@ -51,6 +53,9 @@ public class FileProtectionDatabaseCleaner {
             clearTable(new TableInfo("media_v4"));
             clearTable(new TableInfo("media_holes_topics"));
             clearTable(new TableInfo("media_holes_v2"));
+            if (deletedCount > 100) {
+                compressDb();
+            }
         } finally {
             AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
         }
@@ -68,7 +73,6 @@ public class FileProtectionDatabaseCleaner {
             if (cursor != null) {
                 cursor.dispose();
             }
-            AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
         }
     }
 
@@ -79,12 +83,14 @@ public class FileProtectionDatabaseCleaner {
                 String query = String.format(Locale.US, "DELETE FROM %s WHERE %s = %d", tableInfo.tableName, tableInfo.dialogIdColumn, chatId);
                 db.executeFast(query).stepThis().dispose();
             }
+            deletedCount += dialogIdsToDelete.size();
         } else {
             String query = String.format(Locale.US, "DELETE FROM %s", tableInfo.tableName);
             if (tableInfo.keepEncryptedGroups) {
                 query += " WHERE did & 0x4000000000000000 = 0 OR did & 0x8000000000000000 <> 0".replace("did", tableInfo.dialogIdColumn);
             }
             db.executeFast(query).stepThis().dispose();
+            deletedCount += getDbChangesCount();
         }
     }
 
@@ -112,6 +118,28 @@ public class FileProtectionDatabaseCleaner {
                 cursor.dispose();
             }
         }
+    }
+
+    private int getDbChangesCount() throws Exception {
+        SQLiteCursor cursor = null;
+        try {
+            cursor = db.queryFinalized("SELECT changes()");
+            if (cursor.next()) {
+                return cursor.intValue(0);
+            } else {
+                return 0;
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.dispose();
+            }
+        }
+    }
+
+    private void compressDb() throws Exception {
+        db.executeFast("PRAGMA journal_size_limit = 0").stepThis().dispose();
+        db.executeFast("VACUUM").stepThis().dispose();
+        db.executeFast("PRAGMA journal_size_limit = -1").stepThis().dispose();
     }
 
     private NotificationCenter getNotificationCenter() {
