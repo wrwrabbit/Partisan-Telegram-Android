@@ -12295,6 +12295,10 @@ public class MessagesController extends BaseController implements NotificationCe
     private int DIALOGS_LOAD_TYPE_CHANNEL = 2;
     private int DIALOGS_LOAD_TYPE_UNKNOWN = 3;
 
+    // If file protection enabled, there will be cached only secret and recently searched dialogs.
+    // fileProtectedDialogsLoaded forces loading of "real" dialogs.
+    private volatile boolean fileProtectedDialogsLoaded = false;
+
     public void processLoadedDialogs(final TLRPC.messages_Dialogs dialogsRes, ArrayList<TLRPC.EncryptedChat> encChats, ArrayList<TLRPC.UserFull> fullUsers, int folderId, int offset, int count, int loadType, boolean resetEnd, boolean migrate, boolean fromCache) {
         processLoadedDialogs(dialogsRes, encChats, fullUsers, folderId, offset, count, loadType, resetEnd, migrate, fromCache, null);
     }
@@ -12310,7 +12314,8 @@ public class MessagesController extends BaseController implements NotificationCe
                 FileLog.d("loaded folderId " + folderId + " loadType " + loadType + " count " + dialogsRes.dialogs.size());
             }
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
-            if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
+            if (loadType == DIALOGS_LOAD_TYPE_CACHE && (dialogsRes.dialogs.size() == 0 || getMessagesStorage().fileProtectionEnabled() && !fileProtectedDialogsLoaded)) {
+                fileProtectedDialogsLoaded = true;
                 AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
