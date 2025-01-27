@@ -7497,7 +7497,7 @@ public class MessagesStorage extends BaseController {
             cursor.dispose();
             cursor = null;
 
-            if (FakePasscodeUtils.isHidePeer(info.default_send_as, currentAccount)) {
+            if (info != null && FakePasscodeUtils.isHidePeer(info.default_send_as, currentAccount)) {
                 info.default_send_as = null;
             }
 
