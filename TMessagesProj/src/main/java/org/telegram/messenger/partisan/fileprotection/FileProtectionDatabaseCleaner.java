@@ -110,7 +110,7 @@ public class FileProtectionDatabaseCleaner {
                 if (tableInfo.keepEncryptedGroups && DialogObject.isEncryptedDialog(dialogId)) {
                     continue;
                 }
-                dialogIdsToDelete.add(dialogId);
+                dialogIdsToDelete.add(tableInfo.dialogIdFormat != DialogIdFormat.CHAT_ID ? dialogId : -dialogId);
             }
             return dialogIdsToDelete;
         } finally {
