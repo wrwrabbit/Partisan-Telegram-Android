@@ -195,8 +195,6 @@ public class MessageObject {
     public int audioProgressMs;
     public float bufferedProgress;
 
-    public Integer encryptedGroupVirtualMessageId;
-
     public float gifState;
     public int audioProgressSec;
     public int audioPlayerDuration;

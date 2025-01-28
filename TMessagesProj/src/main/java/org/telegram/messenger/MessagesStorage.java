@@ -9243,7 +9243,12 @@ public class MessagesStorage extends BaseController {
                 }
             }
             if (!replyMessageRandomOwners.isEmpty()) {
-                cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
+                boolean isEncryptedGroupInnerChat = SharedConfig.encryptedGroupsEnabled && EncryptedGroupUtils.isInnerEncryptedGroupChat(dialogId, currentAccount);
+                if (isEncryptedGroupInnerChat) {
+                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id, r.uid FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
+                } else {
+                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
+                }
                 while (cursor.next()) {
                     NativeByteBuffer data = cursor.byteBufferValue(0);
                     if (data != null) {
@@ -9252,7 +9257,11 @@ public class MessagesStorage extends BaseController {
                         data.reuse();
                         message.id = cursor.intValue(1);
                         message.date = cursor.intValue(2);
-                        message.dialog_id = dialogId;
+                        if (isEncryptedGroupInnerChat) {
+                            message.dialog_id = cursor.intValue(4);
+                        } else {
+                            message.dialog_id = dialogId;
+                        }
 
                         addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
 
