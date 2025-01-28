@@ -16677,7 +16677,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         if (messageObject.replyMessageObject != null && messageObject.replyMessageObject.isOutOwner()) {
                             name = AndroidUtilities.removeDiacritics(UserObject.getUserName(UserConfig.getInstance(currentAccount).getCurrentUser()));
                         } else {
-                            TLRPC.EncryptedChat echat = MessagesController.getInstance(currentAccount).getEncryptedChat(DialogObject.getEncryptedChatId(currentMessageObject.getDialogId()));
+                            TLRPC.EncryptedChat echat;
+                            if (isEncryptedGroup) {
+                                echat = MessagesController.getInstance(currentAccount).getEncryptedChat(DialogObject.getEncryptedChatId(messageObject.replyMessageObject.getDialogId()));
+                            } else {
+                                echat = MessagesController.getInstance(currentAccount).getEncryptedChat(DialogObject.getEncryptedChatId(currentMessageObject.getDialogId()));
+                            }
                             if (echat != null) {
                                 name = AndroidUtilities.removeDiacritics(UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(echat.user_id)));
                             }

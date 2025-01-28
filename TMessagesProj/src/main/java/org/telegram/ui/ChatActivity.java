@@ -14081,10 +14081,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     public void showFieldPanelForReply(MessageObject messageObjectToReply) {
-        if (isEncryptedGroup()) {
-            EncryptedGroupUtils.showNotImplementedDialog(this);
-            return;
-        }
         showFieldPanel(true, messageObjectToReply, null, null, null, true, 0, null, false, true);
     }
 
@@ -14267,7 +14263,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     if (messageObjectToReply.isOutOwner()) {
                         name = UserObject.getUserName(getUserConfig().getCurrentUser());
                     } else {
-                        TLRPC.User user = getMessagesController().getUser(messageObjectToReply.messageOwner.peer_id.user_id);
+                        TLRPC.User user = getMessagesController().getUser(messageObjectToReply.messageOwner.from_id.user_id);
                         name = UserObject.getUserName(user);
                     }
                 } else if (isEncryptedChat()) {
@@ -23116,7 +23112,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private boolean addMessage(int pos, MessageObject obj) {
         if (isEncryptedGroup()) {
-            updateMessageVirtualId(obj);
             int firstChatId = currentEncryptedGroup.getInnerEncryptedChatIds(false).get(0);
             boolean needAddMessage = !obj.isOut() || obj.getDialogId() == DialogObject.makeEncryptedDialogId(firstChatId);
             if (needAddMessage) {
@@ -23125,7 +23120,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 return true;
             } else {
                 Optional<Integer> visibleMessageId = messages.stream()
-                        .filter(m -> m.encryptedGroupVirtualMessageId != null && m.encryptedGroupVirtualMessageId.equals(obj.encryptedGroupVirtualMessageId))
+                        .filter(m -> m.messageOwner.random_id == obj.messageOwner.random_id)
                         .map(m -> m.getId())
                         .findAny();
                 if (visibleMessageId.isPresent()) {
@@ -23138,16 +23133,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             messages.add(pos, obj);
             return true;
         }
-    }
-
-    private void updateMessageVirtualId(MessageObject obj) {
-        if (currentEncryptedGroup == null) {
-            return;
-        }
-        int encryptedGroupId = currentEncryptedGroup.getInternalId();
-        int encryptedChatId = DialogObject.getEncryptedChatId(obj.getDialogId());
-        obj.encryptedGroupVirtualMessageId = getMessagesStorage()
-                .getEncryptedGroupVirtualMessageId(encryptedGroupId, encryptedChatId, obj.getId());
     }
 
     private AlertDialog quoteMessageUpdateAlert;

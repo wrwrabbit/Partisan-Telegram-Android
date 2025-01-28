@@ -6998,15 +6998,15 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 if (parentFragment != null && parentFragment.isEncryptedGroup()) {
                     MessageObject replyToMsg = params.replyToMsg;
                     Integer encryptedGroupId = parentFragment.getEncryptedGroupId();
-                    int virtualMessageId = 0;
+                    Long randomId = null;
                     if (encryptedGroupId != null) {
-                        virtualMessageId = accountInstance.getMessagesStorage().createEncryptedVirtualMessage(encryptedGroupId);
+                        randomId = SendMessagesHelper.getInstance(currentAccount).getNextRandomId();
                     }
                     for (TLRPC.EncryptedChat chat : parentFragment.getCurrentEncryptedChatList(true)) {
                         params.peer = DialogObject.makeEncryptedDialogId(chat.id);
                         params.replyToMsg = parentFragment.fixEncryptedGroupMessageObjectIfNeed(replyToMsg, params.peer);
                         params.encryptedGroupId = encryptedGroupId;
-                        params.encryptedGroupVirtualMessageId = virtualMessageId;
+                        params.randomId = randomId;
                         SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
                     }
                 } else {
