@@ -155,7 +155,7 @@
     <string name="DeleteOldAccountActionsInfo">Из этого аккаунта был произведён выход, но настроенные действия сохранились. Вы можете снова войти в этот аккаунт и связанные действия вернутся. Вы также можете удалить действия, связанные с этим аккаунтом. Желаете сделать это?</string>
     <string name="LoggedOutAccount">Покинутый аккаунт</string>
     <string name="BackupFakePasscode">Сделать резервную копию</string>
-    <string name="BackupFakePasscodeInfo">Создайте сообщение, содержащае всю информацию об этом ложном код-пароле, его настройках и действиях.</string>
+    <string name="BackupFakePasscodeInfo">Создайте сообщение, содержащее всю информацию об этом ложном код-пароле, его настройках и действиях.</string>
     <string name="EnterCurrentFakePasscode">Введите этот код-пароль</string>
     <string name="FakePasscodeBackupInfo">Скопируйте куда-нибудь эту строку.</string>
     <string name="FakePasscodeRestoreHint">Резервная копия ложного код-пароля</string>
