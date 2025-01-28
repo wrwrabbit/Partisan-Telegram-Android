@@ -15830,6 +15830,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     object = primary;
                 }
             }
+            object = getVisibleMessage(object);
 
             int index = chatAdapter.getMessages().indexOf(object);
             if (index != -1) {
@@ -41750,6 +41751,19 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 .filter(m -> m.getDialogId() == targetEncryptedDialogId)
                 .findAny()
                 .orElse(obj);
+    }
+
+    public MessageObject getVisibleMessage(MessageObject obj) {
+        if (obj == null || !isEncryptedGroup() || !obj.isOut() || hiddenEncryptedGroupOutMessages.containsKey(obj.getId())) {
+            return obj;
+        }
+        for (int key : hiddenEncryptedGroupOutMessages.keySet()) {
+            List<MessageObject> messageCopies = hiddenEncryptedGroupOutMessages.get(key);
+            if (messageCopies != null && messageCopies.contains(obj)) {
+                return messages.stream().filter(m -> m.getId() == key).findAny().orElse(obj);
+            }
+        }
+        return obj;
     }
 
     private void finishHiddenChatFragment() {
