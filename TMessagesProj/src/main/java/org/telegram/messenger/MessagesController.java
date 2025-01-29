@@ -1257,6 +1257,10 @@ public class MessagesController extends BaseController implements NotificationCe
                             return true;
                         }
                     }
+                } else if (accountInstance.getMessagesStorage().isEncryptedGroup(dialogId)) {
+                    if ((flags & DIALOG_FILTER_FLAG_GROUPS) != 0) {
+                        return true;
+                    }
                 }
             } else if (dialogId < 0) {
                 TLRPC.Chat chat = messagesController.getChat(-dialogId);
