@@ -8040,7 +8040,7 @@ public class MessageObject {
         } else {
             channelSignatureProfiles = getDialogId() == UserObject.VERIFY;
         }
-        return !isSponsored() && (isFromChat() && isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null);
+        return !isSponsored() && (isFromChat() && isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null || EncryptedGroupUtils.isInnerEncryptedGroupChat(getDialogId(), currentAccount) && !isOutOwner());
     }
 
     public boolean isFromChat() {
