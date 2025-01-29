@@ -12318,7 +12318,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 FileLog.d("loaded folderId " + folderId + " loadType " + loadType + " count " + dialogsRes.dialogs.size());
             }
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
-            if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
+            if (loadType == DIALOGS_LOAD_TYPE_CACHE && (dialogsRes.dialogs.size() == 0 || loadType == DIALOGS_LOAD_TYPE_CACHE && getMessagesStorage().fileProtectionEnabled() && !fileProtectedDialogsLoaded)) {
                 AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
@@ -12340,12 +12340,11 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
                 });
-                return;
-            } else if (loadType == DIALOGS_LOAD_TYPE_CACHE && getMessagesStorage().fileProtectionEnabled() && !fileProtectedDialogsLoaded) {
-                fileProtectedDialogsLoaded = true;
-                AndroidUtilities.runOnUIThread(() -> {
-                    loadDialogs(folderId, 0, count, false);
-                });
+                if (dialogsRes.dialogs.size() == 0) {
+                    return;
+                } else {
+                    fileProtectedDialogsLoaded = true;
+                }
             }
 
             LongSparseArray<TLRPC.Dialog> new_dialogs_dict = new LongSparseArray<>();
