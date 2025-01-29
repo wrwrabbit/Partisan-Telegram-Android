@@ -92,8 +92,8 @@ public class Utils {
 
     public static void clearCache(Context context, Runnable callback) {
         Utilities.globalQueue.postRunnable(() -> {
-            AndroidUtilities.runOnUIThread(() -> clearWebBrowserCache(context));
-            BrowserHistory.clearHistory();
+            //AndroidUtilities.runOnUIThread(() -> clearWebBrowserCache(context));
+            //BrowserHistory.clearHistory();
 
             for (int a = 0; a < 8; a++) {
                 int type = -1;
