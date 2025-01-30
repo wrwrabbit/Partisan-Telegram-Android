@@ -2295,6 +2295,10 @@ public class SharedConfig {
         }
     }
 
+    public static boolean isConfigLoaded() {
+        return configLoaded;
+    }
+
     public static SharedPreferences getPreferences() {
         return ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
     }
