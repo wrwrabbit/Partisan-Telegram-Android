@@ -11633,7 +11633,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             x = layoutWidth - backgroundWidth + AndroidUtilities.dp(6);
                         }
                     } else {
-                        if ((isChat || currentMessageObject != null && currentMessageObject.forceAvatar || currentMessageObject.getDialogId() == UserObject.VERIFY) && isAvatarVisible && (!isPlayingRound || currentMessageObject.isVoiceTranscriptionOpen())) {
+                        if ((isChat || isEncryptedGroup || currentMessageObject != null && currentMessageObject.forceAvatar || currentMessageObject.getDialogId() == UserObject.VERIFY) && isAvatarVisible && (!isPlayingRound || currentMessageObject.isVoiceTranscriptionOpen())) {
                             x = AndroidUtilities.dp(63);
                         } else {
                             x = AndroidUtilities.dp(15);
@@ -18558,10 +18558,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         } else {
             int r;
             if (isRoundVideo) {
-                r = AndroidUtilities.dp(((isChat || messageObject != null && (messageObject.isRepostPreview || messageObject.forceAvatar) || messageObject.getDialogId() == UserObject.VERIFY) && isAvatarVisible ? 48 : 0) + 3);
+                r = AndroidUtilities.dp(((isChat || isEncryptedGroup || messageObject != null && (messageObject.isRepostPreview || messageObject.forceAvatar) || messageObject.getDialogId() == UserObject.VERIFY) && isAvatarVisible ? 48 : 0) + 3);
                 r += (int) (AndroidUtilities.dp(6) * (1f - getVideoTranscriptionProgress()));
             } else {
-                r = AndroidUtilities.dp(((isChat || messageObject != null && (messageObject.isRepostPreview || messageObject.forceAvatar) || messageObject.getDialogId() == UserObject.VERIFY) && isAvatarVisible ? 48 : 0) + (!mediaBackground ? 3 : 9));
+                r = AndroidUtilities.dp(((isChat || isEncryptedGroup || messageObject != null && (messageObject.isRepostPreview || messageObject.forceAvatar) || messageObject.getDialogId() == UserObject.VERIFY) && isAvatarVisible ? 48 : 0) + (!mediaBackground ? 3 : 9));
             }
             if (currentMessagesGroup != null && !currentMessagesGroup.isDocuments) {
                 if (currentPosition.leftSpanOffset != 0) {

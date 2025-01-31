@@ -54,6 +54,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeMessages;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.SQLite.SQLiteException;
 import org.telegram.SQLite.SQLitePreparedStatement;
@@ -8814,6 +8815,10 @@ public class MessagesController extends BaseController implements NotificationCe
         if (dialogs == null) {
             return new ArrayList<>();
         }
+        if (folderId == 0) {
+            PartisanLog.d("fileProtectedDialogsLoaded: getDialogs count " + dialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: allDialogs count " + allDialogs.size());
+        }
         return dialogs;
     }
 
@@ -12319,6 +12324,7 @@ public class MessagesController extends BaseController implements NotificationCe
             }
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && (dialogsRes.dialogs.size() == 0 || loadType == DIALOGS_LOAD_TYPE_CACHE && getMessagesStorage().fileProtectionEnabled() && !fileProtectedDialogsLoaded)) {
+                PartisanLog.d("fileProtectedDialogsLoaded: " + fileProtectedDialogsLoaded);
                 AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
@@ -12343,6 +12349,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (dialogsRes.dialogs.size() == 0) {
                     return;
                 } else {
+                    PartisanLog.d("fileProtectedDialogsLoaded: enabled");
                     fileProtectedDialogsLoaded = true;
                 }
             }
@@ -12781,6 +12788,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     allDialogs.add(dialog);
                 }
+                PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                 sortDialogs(migrate ? chatsDict : null);
 
                 putAllNeededDraftDialogs();
@@ -13381,6 +13389,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     allDialogs.add(dialog);
                 }
+                PartisanLog.d("fileProtectedDialogsLoaded: (processDialogsUpdate) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                 if (dialogsRes.messages.stream().noneMatch(m -> FakePasscodeUtils.isHideMessage(currentAccount, m.dialog_id, m.id))) {
                     sortDialogs(null);
                     getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -16295,6 +16304,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 allDialogs.add(dialog);
                             }
                         }
+                        PartisanLog.d("fileProtectedDialogsLoaded: (loadPinnedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                         sortDialogs(null);
                         getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
                     }
@@ -20264,6 +20274,7 @@ public class MessagesController extends BaseController implements NotificationCe
             }
             dialogs_dict.put(dialogId, dialog);
             allDialogs.add(dialog);
+            PartisanLog.d("fileProtectedDialogsLoaded: (updateInterfaceWithMessages) added a dialog to allDialogs, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
             ArrayList<MessageObject> arrayList = new ArrayList<MessageObject>();
             for (int i = 0; i < messages.size(); ++i) {
                 MessageObject msg = messages.get(i);

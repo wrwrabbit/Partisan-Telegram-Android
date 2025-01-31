@@ -92,8 +92,8 @@ public class Utils {
 
     public static void clearCache(Context context, Runnable callback) {
         Utilities.globalQueue.postRunnable(() -> {
-            //AndroidUtilities.runOnUIThread(() -> clearWebBrowserCache(context));
-            //BrowserHistory.clearHistory();
+            AndroidUtilities.runOnUIThread(() -> clearWebBrowserCache(context));
+            BrowserHistory.clearHistory();
 
             for (int a = 0; a < 8; a++) {
                 int type = -1;
@@ -197,20 +197,22 @@ public class Utils {
     public static void clearWebBrowserCache(Context context) {
         ApplicationLoader.applicationContext.deleteDatabase("webview.db");
         ApplicationLoader.applicationContext.deleteDatabase("webviewCache.db");
-        WebStorage.getInstance().deleteAllData();
         try {
             WebView webView = new WebView(context);
             webView.clearCache(true);
             webView.clearHistory();
             webView.destroy();
         } catch (Exception e) {}
-        try {
-            File dir = new File(ApplicationLoader.applicationContext.getApplicationInfo().dataDir, "app_webview");
-            if (dir.exists()) {
-                WebBrowserSettings.deleteDirectory(dir, false);
+        if (SharedConfig.inappBrowser) { // Don't delete data from mini-apps if the user don't use inappBrowser
+            WebStorage.getInstance().deleteAllData();
+            try {
+                File dir = new File(ApplicationLoader.applicationContext.getApplicationInfo().dataDir, "app_webview");
+                if (dir.exists()) {
+                    WebBrowserSettings.deleteDirectory(dir, false);
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
             }
-        } catch (Exception e) {
-            FileLog.e(e);
         }
         try {
             File dir = new File(ApplicationLoader.applicationContext.getApplicationInfo().dataDir, "cache/WebView");

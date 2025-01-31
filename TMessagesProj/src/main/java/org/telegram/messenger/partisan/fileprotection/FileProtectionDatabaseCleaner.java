@@ -20,6 +20,7 @@ public class FileProtectionDatabaseCleaner {
         public final String tableName;
         public String dialogIdColumn = "uid";
         public boolean keepRecentSearch = false;
+        public boolean keepUsersWithSecretChats = false;
         public boolean keepEncryptedGroups = true;
         public DialogIdFormat dialogIdFormat = DialogIdFormat.DIALOG_ID;
 
@@ -30,7 +31,8 @@ public class FileProtectionDatabaseCleaner {
 
     private final int account;
     private final SQLiteDatabase db;
-    private final Set<Long> recentSearchDialogIds = new HashSet<>();
+    private final RecentSearchCache recentSearchDialogIds = new RecentSearchCache();
+    private UsersWithSecretChatsCache usersWithSecretChats;
     private int deletedCount = 0;
 
     public FileProtectionDatabaseCleaner(SQLiteDatabase db, int account) {
@@ -41,8 +43,9 @@ public class FileProtectionDatabaseCleaner {
     public void clear() throws Exception {
         try {
             deletedCount = 0;
-            loadRecentSearchDialogIds();
-            clearTable(new TableInfo("users") {{ keepRecentSearch = true; }});
+            recentSearchDialogIds.load(db);
+            usersWithSecretChats = UsersWithSecretChatsCache.getOrCreateInstance(account, db);
+            clearTable(new TableInfo("users") {{ keepRecentSearch = true; keepUsersWithSecretChats = true; }});
             clearTable(new TableInfo("chats") {{ keepRecentSearch = true; dialogIdFormat = DialogIdFormat.CHAT_ID; }});
             clearTable(new TableInfo("contacts"));
             clearTable(new TableInfo("messages_v2"));
@@ -61,23 +64,8 @@ public class FileProtectionDatabaseCleaner {
         }
     }
 
-    private void loadRecentSearchDialogIds() throws Exception {
-        SQLiteCursor cursor = null;
-        try {
-            cursor = db.queryFinalized("SELECT did FROM search_recent WHERE 1");
-            recentSearchDialogIds.clear();
-            while (cursor.next()) {
-                recentSearchDialogIds.add(cursor.longValue(0));
-            }
-        } finally {
-            if (cursor != null) {
-                cursor.dispose();
-            }
-        }
-    }
-
     private void clearTable(TableInfo tableInfo) throws Exception {
-        if (tableInfo.keepRecentSearch) {
+        if (tableInfo.keepRecentSearch || tableInfo.keepUsersWithSecretChats) {
             Set<Long> dialogIdsToDelete = loadDialogIdsToDelete(tableInfo);
             for (Long chatId : dialogIdsToDelete) {
                 String query = String.format(Locale.US, "DELETE FROM %s WHERE %s = %d", tableInfo.tableName, tableInfo.dialogIdColumn, chatId);
@@ -105,6 +93,9 @@ public class FileProtectionDatabaseCleaner {
                     dialogId = -dialogId;
                 }
                 if (tableInfo.keepRecentSearch && recentSearchDialogIds.contains(dialogId)) {
+                    continue;
+                }
+                if (tableInfo.keepUsersWithSecretChats && usersWithSecretChats.contains(dialogId)) {
                     continue;
                 }
                 if (tableInfo.keepEncryptedGroups && DialogObject.isEncryptedDialog(dialogId)) {

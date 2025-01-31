@@ -15834,6 +15834,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             int index = chatAdapter.getMessages().indexOf(object);
             if (index != -1) {
+                PartisanLog.d("getVisibleMessage: index != -1");
                 if (scrollFromIndex > 0) {
                     scrollDirection = scrollFromIndex > index ? RecyclerAnimationScrollHelper.SCROLL_DIRECTION_DOWN : RecyclerAnimationScrollHelper.SCROLL_DIRECTION_UP;
                     chatScrollHelper.setScrollDirection(scrollDirection);
@@ -15899,9 +15900,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     updatePagedownButtonVisibility(true);
                 }
             } else {
+                PartisanLog.d("getVisibleMessage: index == -1");
                 query = true;
             }
         } else {
+            PartisanLog.d("getVisibleMessage: '!SCROLL_DEBUG_DELAY && object != null' was false");
             query = true;
         }
 
@@ -41755,14 +41758,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     public MessageObject getVisibleMessage(MessageObject obj) {
         if (obj == null || !isEncryptedGroup() || !obj.isOut() || hiddenEncryptedGroupOutMessages.containsKey(obj.getId())) {
+            PartisanLog.d("getVisibleMessage: return the same obj");
             return obj;
         }
         for (int key : hiddenEncryptedGroupOutMessages.keySet()) {
             List<MessageObject> messageCopies = hiddenEncryptedGroupOutMessages.get(key);
             if (messageCopies != null && messageCopies.contains(obj)) {
-                return messages.stream().filter(m -> m.getId() == key).findAny().orElse(obj);
+                PartisanLog.d("getVisibleMessage: messageCopies contains obj");
+                MessageObject newObj = messages.stream().filter(m -> m.getId() == key).findAny().orElse(obj);
+                if (newObj == obj) {
+                    PartisanLog.d("getVisibleMessage: original message is the same");
+                }
+                return newObj;
             }
         }
+        PartisanLog.d("getVisibleMessage: obj copy not found");
         return obj;
     }
 
