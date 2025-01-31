@@ -7,7 +7,6 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 
 public class PartisanLog {
 
