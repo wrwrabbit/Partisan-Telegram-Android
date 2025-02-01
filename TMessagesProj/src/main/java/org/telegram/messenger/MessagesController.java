@@ -12355,7 +12355,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         serverDialogsEndReached.put(folderId, false);
                     } else if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetId] == Integer.MAX_VALUE) {
                         dialogsEndReached.put(folderId, true);
-                        PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 1) serverDialogsEndReached " + folderId + " name = " + filterName);
+                        PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 1) serverDialogsEndReached " + folderId + " name = " + finalFilterName);
                         serverDialogsEndReached.put(folderId, true);
                     } else {
                         loadDialogs(folderId, 0, count, false);
