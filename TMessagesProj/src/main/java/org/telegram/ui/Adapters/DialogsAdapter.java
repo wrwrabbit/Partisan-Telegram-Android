@@ -482,6 +482,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         oldItems.addAll(itemInternals);
         updateItemList();
         ArrayList<ItemInternal> newItems = new ArrayList<>(itemInternals);
+        PartisanLog.d("fileProtectedDialogsLoaded: (updateList) oldItems count = " + oldItems.size());
         itemInternals = oldItems;
 
         DiffUtil.Callback callback = new DiffUtil.Callback() {
@@ -511,6 +512,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             if (saveScrollPosition != null) {
                 saveScrollPosition.run();
             }
+            PartisanLog.d("fileProtectedDialogsLoaded: (updateList) newItems count = " + newItems.size());
             itemInternals = newItems;
             result.dispatchUpdatesTo(this);
         } else {
@@ -524,6 +526,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     if (saveScrollPosition != null) {
                         saveScrollPosition.run();
                     }
+                    PartisanLog.d("fileProtectedDialogsLoaded: (updateList) newItems count = " + newItems.size());
                     itemInternals = newItems;
                     result.dispatchUpdatesTo(this);
                     if (updateListPending) {
@@ -540,6 +543,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     public void notifyDataSetChanged() {
         if (isCalculatingDiff) {
             itemInternals = new ArrayList<>();
+            PartisanLog.d("fileProtectedDialogsLoaded: (notifyDataSetChanged) itemInternals count = " + 0);
         }
         isCalculatingDiff = false;
         updateItemList();
@@ -1548,6 +1552,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 }
             }
         }
+        PartisanLog.d("fileProtectedDialogsLoaded: (updateItemList) itemInternals count = " + itemInternals.size());
     }
 
     public int getItemHeight(int position) {
