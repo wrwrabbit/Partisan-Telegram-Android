@@ -8038,6 +8038,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (loadFromCache || !getMessagesController().isServerDialogsEndReached(folderId)) {
                 load = true;
             }
+            PartisanLog.d("fileProtectedDialogsLoaded: loadFromCache = " + loadFromCache + " load = " + load);
         }
         if (load || loadArchived) {
             boolean loadFinal = load;

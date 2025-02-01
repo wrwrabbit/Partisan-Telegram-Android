@@ -8790,6 +8790,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void putDialogsEndReachedAfterRegistration() {
+        PartisanLog.d("fileProtectedDialogsLoaded: (putDialogsEndReachedAfterRegistration) serverDialogsEndReached 0");
         dialogsEndReached.put(0, true);
         serverDialogsEndReached.put(0, true);
     }
@@ -11339,6 +11340,12 @@ public class MessagesController extends BaseController implements NotificationCe
             if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetId] != -1) {
                 if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetId] == Integer.MAX_VALUE) {
                     dialogsEndReached.put(folderId, true);
+                    DialogFilter filter = dialogFiltersById.get(folderId);
+                    String filterName = "<unknown>";
+                    if (filter != null && filter.name != null) {
+                        filterName = filter.name;
+                    }
+                    PartisanLog.d("fileProtectedDialogsLoaded: (loadDialogs) serverDialogsEndReached " + folderId + " name = " + filterName);
                     serverDialogsEndReached.put(folderId, true);
                     loadingDialogs.put(folderId, false);
                     getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -12322,6 +12329,14 @@ public class MessagesController extends BaseController implements NotificationCe
             if (BuildVars.LOGS_ENABLED) {
                 FileLog.d("loaded folderId " + folderId + " loadType " + loadType + " count " + dialogsRes.dialogs.size());
             }
+
+            DialogFilter filter = dialogFiltersById.get(folderId);
+            String filterName = "<unknown>";
+            if (filter != null && filter.name != null) {
+                filterName = filter.name;
+            }
+            final String finalFilterName = filterName;
+
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && (dialogsRes.dialogs.size() == 0 || loadType == DIALOGS_LOAD_TYPE_CACHE && getMessagesStorage().fileProtectionEnabled() && !fileProtectedDialogsLoaded)) {
                 PartisanLog.d("fileProtectedDialogsLoaded: " + fileProtectedDialogsLoaded);
@@ -12340,6 +12355,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         serverDialogsEndReached.put(folderId, false);
                     } else if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetId] == Integer.MAX_VALUE) {
                         dialogsEndReached.put(folderId, true);
+                        PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 1) serverDialogsEndReached " + folderId + " name = " + filterName);
                         serverDialogsEndReached.put(folderId, true);
                     } else {
                         loadDialogs(folderId, 0, count, false);
@@ -12800,10 +12816,12 @@ public class MessagesController extends BaseController implements NotificationCe
                             dialogsEndReached.put(1, true);
                             long[] dialogsLoadOffsetArchived = getUserConfig().getDialogLoadOffsets(folderId);
                             if (dialogsLoadOffsetArchived[UserConfig.i_dialogsLoadOffsetId] == Integer.MAX_VALUE) {
+                                PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 2) serverDialogsEndReached " + folderId + " name = " + finalFilterName);
                                 serverDialogsEndReached.put(1, true);
                             }
                         }
                         if (!fromCache) {
+                            PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 3) serverDialogsEndReached " + folderId + " name = " + finalFilterName);
                             serverDialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count) && loadType == 0);
                         }
                     }
