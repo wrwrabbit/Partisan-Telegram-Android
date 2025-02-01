@@ -42,6 +42,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -210,6 +211,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     @Override
     public int getItemCount() {
         currentCount = itemInternals.size();
+        PartisanLog.d("fileProtectedDialogsLoaded: DialogsAdapter currentCount = " + currentCount);
         return currentCount;
     }
 
