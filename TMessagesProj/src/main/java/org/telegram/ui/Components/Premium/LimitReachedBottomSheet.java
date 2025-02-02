@@ -1707,22 +1707,21 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
                         continue;
                     }
 
-                    if (MessagesStorage.getInstance(currentAccount).isEncryptedGroup(dialog.id)) {
-                        PartisanLog.d("pinnedDebug: pinned encrypted group");
-                    } else if (DialogObject.isEncryptedDialog(dialog.id)) {
-                        PartisanLog.d("pinnedDebug: pinned encrypted chat");
-                    } else if (DialogObject.isChannel(dialog)) {
-                        PartisanLog.d("pinnedDebug: pinned channel");
-                    } else if (DialogObject.isChatDialog(dialog.id)) {
-                        PartisanLog.d("pinnedDebug: pinned chat");
-                    } else if (DialogObject.isUserDialog(dialog.id)) {
-                        PartisanLog.d("pinnedDebug: pinned user");
-                    } else {
-                        PartisanLog.d("pinnedDebug: pinned unknown");
-                    }
-
                     if (dialog.pinned) {
                         pinnedCount++;
+                        if (MessagesStorage.getInstance(currentAccount).isEncryptedGroup(dialog.id)) {
+                            PartisanLog.d("pinnedDebug: pinned encrypted group");
+                        } else if (DialogObject.isEncryptedDialog(dialog.id)) {
+                            PartisanLog.d("pinnedDebug: pinned encrypted chat");
+                        } else if (DialogObject.isChannel(dialog)) {
+                            PartisanLog.d("pinnedDebug: pinned channel");
+                        } else if (DialogObject.isChatDialog(dialog.id)) {
+                            PartisanLog.d("pinnedDebug: pinned chat");
+                        } else if (DialogObject.isUserDialog(dialog.id)) {
+                            PartisanLog.d("pinnedDebug: pinned user");
+                        } else {
+                            PartisanLog.d("pinnedDebug: pinned unknown");
+                        }
                     }
                 }
                 currentValue = pinnedCount;
