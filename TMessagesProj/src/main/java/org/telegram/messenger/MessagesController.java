@@ -12332,10 +12332,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 FileLog.d("loaded folderId " + folderId + " loadType " + loadType + " count " + dialogsRes.dialogs.size());
             }
 
-            // Clone allDialogs to avoid ConcurrentModificationException
-            Set<Long> oldDialogIds = getMessagesStorage().fileProtectionEnabled() ? new ArrayList<>(allDialogs).stream().map(d -> d.id).collect(Collectors.toSet()) : null;
-
-
             DialogFilter filter = dialogFiltersById.get(folderId);
             String filterName = "<unknown>";
             if (filter != null && filter.name != null) {
@@ -12817,7 +12813,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
                 if (loadType != DIALOGS_LOAD_TYPE_CHANNEL && loadType != DIALOGS_LOAD_TYPE_UNKNOWN) {
                     if (!migrate) {
-                        dialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().fileProtectionEnabled() || dialogsRes.dialogs.stream().allMatch(d -> oldDialogIds.contains(d.id) || !dialogs_dict.containsKey(d.id)))) && loadType == 0);
+                        dialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().fileProtectionEnabled() || dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id)))) && loadType == 0);
                         if (archivedDialogsCount > 0 && archivedDialogsCount < 20 && folderId == 0) {
                             dialogsEndReached.put(1, true);
                             long[] dialogsLoadOffsetArchived = getUserConfig().getDialogLoadOffsets(folderId);
@@ -12828,7 +12824,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                         if (!fromCache) {
                             PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 3) serverDialogsEndReached " + folderId + " name = " + finalFilterName);
-                            serverDialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().fileProtectionEnabled() || dialogsRes.dialogs.stream().allMatch(d -> oldDialogIds.contains(d.id) || !dialogs_dict.containsKey(d.id)))) && loadType == 0);
+                            serverDialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().fileProtectionEnabled() || dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id)))) && loadType == 0);
                         }
                     }
                 }
