@@ -48,14 +48,17 @@ import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.ChannelBoostsController;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stories;
@@ -1703,6 +1706,21 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
                     if (dialog instanceof TLRPC.TL_dialogFolder) {
                         continue;
                     }
+
+                    if (MessagesStorage.getInstance(currentAccount).isEncryptedGroup(dialog.id)) {
+                        PartisanLog.d("pinnedDebug: pinned encrypted group");
+                    } else if (DialogObject.isEncryptedDialog(dialog.id)) {
+                        PartisanLog.d("pinnedDebug: pinned encrypted chat");
+                    } else if (DialogObject.isChannel(dialog)) {
+                        PartisanLog.d("pinnedDebug: pinned channel");
+                    } else if (DialogObject.isChatDialog(dialog.id)) {
+                        PartisanLog.d("pinnedDebug: pinned chat");
+                    } else if (DialogObject.isUserDialog(dialog.id)) {
+                        PartisanLog.d("pinnedDebug: pinned user");
+                    } else {
+                        PartisanLog.d("pinnedDebug: pinned unknown");
+                    }
+
                     if (dialog.pinned) {
                         pinnedCount++;
                     }
