@@ -16215,7 +16215,8 @@ public class MessagesController extends BaseController implements NotificationCe
 
                     int pinnedNum = firstIsFolder ? 1 : 0;
                     // It looks like there is a bug in the original app here. We fixed pinning all encrypted dialogs and reordering their position.
-                    if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+                    boolean needFixPinning = !FakePasscodeUtils.isFakePasscodeActivated() || getMessagesStorage().fileProtectionEnabled();
+                    if (needFixPinning) {
                         Comparator<TLRPC.Dialog> pinnedNumComparator = Comparator.comparingInt(dlg -> dlg.pinnedNum);
                         dialogs = dialogs.stream()
                                 .filter(dlg -> dlg.pinned)
@@ -16231,8 +16232,10 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (dialog instanceof TLRPC.TL_dialogFolder) {
                             continue;
                         }
-                        if (DialogObject.isEncryptedDialog(dialog.id) && (FakePasscodeUtils.isFakePasscodeActivated() || dialog.pinned)) {
-                            int targetPosition = !FakePasscodeUtils.isFakePasscodeActivated()
+                        if (DialogObject.isEncryptedDialog(dialog.id)
+                                && (FakePasscodeUtils.isFakePasscodeActivated() || dialog.pinned)
+                                && (!SharedConfig.encryptedGroupsEnabled || !EncryptedGroupUtils.isInnerEncryptedGroupChat(dialog.id, currentAccount) && !getMessagesStorage().isEncryptedGroup(dialog.id))) {
+                            int targetPosition = needFixPinning
                                     ? Math.max(targetCount - dialog.pinnedNum, 0)
                                     : pinnedNum;
                             if (targetPosition < newPinnedDialogs.size()) {
