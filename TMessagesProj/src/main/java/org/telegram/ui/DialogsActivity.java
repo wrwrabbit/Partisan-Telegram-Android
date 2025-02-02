@@ -9215,6 +9215,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (filter != null) {
             return filter.pinnedDialogs.indexOfKey(dialog.id) >= 0;
         }
+        PartisanLog.d("pinnedDebug: isDialogPinned dialog = " + dialog.id + " pinned = " + dialog.pinned);
         return dialog.pinned;
     }
 

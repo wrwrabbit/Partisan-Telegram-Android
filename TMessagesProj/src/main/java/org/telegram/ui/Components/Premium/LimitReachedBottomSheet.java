@@ -1712,7 +1712,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
                         if (MessagesStorage.getInstance(currentAccount).isEncryptedGroup(dialog.id)) {
                             PartisanLog.d("pinnedDebug: pinned encrypted group");
                         } else if (DialogObject.isEncryptedDialog(dialog.id)) {
-                            PartisanLog.d("pinnedDebug: pinned encrypted chat");
+                            PartisanLog.d("pinnedDebug: pinned encrypted chat " + dialog.id);
                         } else if (DialogObject.isChannel(dialog)) {
                             PartisanLog.d("pinnedDebug: pinned channel");
                         } else if (DialogObject.isChatDialog(dialog.id)) {

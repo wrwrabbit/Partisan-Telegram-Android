@@ -299,6 +299,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
                     pinned = filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0;
                 } else {
+                    PartisanLog.d("pinnedDebug: item internal pinned = " + dialog.id);
                     pinned = dialog.pinned;
                 }
                 isFolder = dialog.isFolder;
