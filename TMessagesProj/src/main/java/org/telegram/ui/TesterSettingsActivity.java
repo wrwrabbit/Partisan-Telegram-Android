@@ -1,6 +1,9 @@
 package org.telegram.ui;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -8,16 +11,23 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
+import org.telegram.messenger.FileLog;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -40,6 +50,12 @@ import org.telegram.ui.DialogBuilder.DialogTemplate;
 import org.telegram.ui.DialogBuilder.DialogType;
 import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -97,6 +113,7 @@ public class TesterSettingsActivity extends BaseFragment {
     private int saveLogcatAfterRestartRow;
     private int showEncryptedChatsFromEncryptedGroupsRow;
     private int enableSecretGroupsRow;
+    private int sendDbRow;
 
     public static boolean showPlainBackup;
 
@@ -300,10 +317,67 @@ public class TesterSettingsActivity extends BaseFragment {
             } else if (position == enableSecretGroupsRow) {
                 SharedConfig.toggleSecretGroups();
                 ((TextCheckCell) view).setChecked(SharedConfig.encryptedGroupsEnabled);
+            } else if (position == sendDbRow) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    sendDB();
+                }
             }
         });
 
         return fragmentView;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void sendDB() {
+        if (getParentActivity() == null) {
+            return;
+        }
+        AlertDialog progressDialog = new AlertDialog(getParentActivity(), 3);
+        progressDialog.setCanCancel(false);
+        progressDialog.show();
+        try {
+            progressDialog.dismiss();
+        } catch (Exception ignore) {
+
+        }
+        File filesDir = ApplicationLoader.getFilesDirFixed();
+        if (currentAccount != 0) {
+            filesDir = new File(filesDir, "account" + currentAccount + "/");
+            filesDir.mkdirs();
+        }
+        File cacheFile = new File(filesDir, "cache4.db");
+        File sdCard = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+        File dir = new File(sdCard.getAbsolutePath() + "/logs");
+
+        File tempCacheFile = new File(dir, "cache4.db");
+        try {
+            Files.copy(cacheFile.toPath(), tempCacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        Uri uri;
+        if (Build.VERSION.SDK_INT >= 24) {
+            uri = FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", tempCacheFile);
+        } else {
+            uri = Uri.fromFile(tempCacheFile);
+        }
+
+        Intent i = new Intent(Intent.ACTION_SEND);
+        if (Build.VERSION.SDK_INT >= 24) {
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
+        i.setType("message/rfc822");
+        i.putExtra(Intent.EXTRA_EMAIL, "");
+        i.putExtra(Intent.EXTRA_SUBJECT, "Tg cache DB");
+        i.putExtra(Intent.EXTRA_STREAM, uri);
+        if (getParentActivity() != null) {
+            try {
+                getParentActivity().startActivityForResult(Intent.createChooser(i, "Select email application."), 500);
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        }
     }
 
     @Override
@@ -344,6 +418,11 @@ public class TesterSettingsActivity extends BaseFragment {
         saveLogcatAfterRestartRow = rowCount++;
         showEncryptedChatsFromEncryptedGroupsRow = rowCount++;
         enableSecretGroupsRow = rowCount++;
+        if (BuildVars.DEBUG_PRIVATE_VERSION) {
+            sendDbRow = rowCount++;
+        } else {
+            sendDbRow = -1;
+        }
     }
 
     @Override
@@ -489,6 +568,8 @@ public class TesterSettingsActivity extends BaseFragment {
                         textCell.setText("Check Verification Updates", true);
                     } else if (position == resetVerificationLastCheckTimeRow) {
                         textCell.setText("Reset Verification Last Check Time", true);
+                    } else if (position == sendDbRow) {
+                        textCell.setText("Send DB", true);
                     }
                     break;
                 }
@@ -506,7 +587,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == phoneOverrideRow || position == resetSecurityIssuesRow
                     || position == activateAllSecurityIssuesRow || position == editSavedChannelsRow
                     || position == resetUpdateRow || position == checkVerificationUpdatesRow
-                    || position == resetVerificationLastCheckTimeRow) {
+                    || position == resetVerificationLastCheckTimeRow || position == sendDbRow) {
                 return 1;
             }
             return 0;
