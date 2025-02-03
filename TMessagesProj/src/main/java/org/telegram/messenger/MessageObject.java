@@ -2014,15 +2014,18 @@ public class MessageObject {
                 }
             }
         } else {
-            AnimatedEmojiSpan[] aspans = ((Spannable) messageText).getSpans(0, messageText.length(), AnimatedEmojiSpan.class);
-            if (aspans != null && aspans.length > 0) {
-                totalAnimatedEmojiCount = aspans.length;
-                for (int a = 0; a < aspans.length; a++) {
-                    aspans[a].replaceFontMetrics(Theme.chat_msgTextPaint.getFontMetricsInt(), (int) (Theme.chat_msgTextPaint.getTextSize() + dp(4)), -1);
-                    aspans[a].full = false;
+            try {
+                AnimatedEmojiSpan[] aspans = ((Spannable) messageText).getSpans(0, messageText.length(), AnimatedEmojiSpan.class);
+                if (aspans != null && aspans.length > 0) {
+                    totalAnimatedEmojiCount = aspans.length;
+                    for (int a = 0; a < aspans.length; a++) {
+                        aspans[a].replaceFontMetrics(Theme.chat_msgTextPaint.getFontMetricsInt(), (int) (Theme.chat_msgTextPaint.getTextSize() + dp(4)), -1);
+                        aspans[a].full = false;
+                    }
+                } else {
+                    totalAnimatedEmojiCount = 0;
                 }
-            } else {
-                totalAnimatedEmojiCount = 0;
+            } catch (ClassCastException ignore) { // fix "((Spannable) messageText)" crash
             }
         }
     }
