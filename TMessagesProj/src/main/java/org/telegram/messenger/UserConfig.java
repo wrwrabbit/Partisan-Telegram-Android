@@ -21,7 +21,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import com.google.android.exoplayer2.util.Log;
 
-import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SecurityIssue;
 import org.telegram.tgnet.SerializedData;
@@ -120,6 +119,7 @@ public class UserConfig extends BaseController {
     public boolean showSecuritySuggestions = false;
     public long lastSecuritySuggestionsShow = 0;
     public boolean fileProtectionEnabled = false;
+    public boolean disableFileProtectionAfterRestart = false;
     private final Map<Integer, Boolean> temporarilyLoadedPinnedDialogs = new ConcurrentHashMap<>();
 
     private static ObjectMapper jsonMapper = null;
@@ -299,6 +299,7 @@ public class UserConfig extends BaseController {
                     editor.putBoolean("showSecuritySuggestions", showSecuritySuggestions);
                     editor.putLong("lastSecuritySuggestionsShow", lastSecuritySuggestionsShow);
                     editor.putBoolean("fileProtectionEnabled", fileProtectionEnabled);
+                    editor.putBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
                     String savedChannelsStr = savedChannels.stream().reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
                     editor.putString("savedChannels", savedChannelsStr);
                     String pinnedSavedChannelsStr = pinnedSavedChannels.stream().reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
@@ -471,6 +472,7 @@ public class UserConfig extends BaseController {
             if (SharedConfig.fileProtectionForAllAccountsEnabled) { // Don't enable file protection for accounts if global file protection enabled.
                 fileProtectionEnabled = false;
             }
+            disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
             String savedChannelsStr = preferences.getString("savedChannels", defaultChannels);
             savedChannels = new HashSet<>(Arrays.asList(savedChannelsStr.split(",")));
             savedChannels.remove("");
@@ -651,6 +653,7 @@ public class UserConfig extends BaseController {
         showSecuritySuggestions = false;
         lastSecuritySuggestionsShow = 0;
         fileProtectionEnabled = false;
+        disableFileProtectionAfterRestart = false;
         registeredForPush = false;
         contactsSavedCount = 0;
         lastSendMessageId = -210000;

@@ -132,8 +132,7 @@ import org.telegram.messenger.partisan.appmigration.MigrationIntentHandler;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionPostRestartCleaner;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.update.UpdateChecker;
 import org.telegram.messenger.partisan.update.UpdateData;
@@ -1606,6 +1605,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadProgressChanged);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadFailed);
         SecurityChecker.checkSecurityIssuesAndSave(this, currentAccount, false);
+        Utilities.globalQueue.postRunnable(() -> new FileProtectionPostRestartCleaner().checkAndClean(), 1000);
         if (updateLayout != null && updateLayout.isCancelIcon() && SharedConfig.pendingPtgAppUpdate != null && getUpdateAccountNum() != currentAccount) {
             NotificationCenter.getInstance(getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoaded);
             NotificationCenter.getInstance(getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoadProgressChanged);
