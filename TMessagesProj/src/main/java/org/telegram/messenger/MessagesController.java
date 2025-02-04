@@ -12823,8 +12823,16 @@ public class MessagesController extends BaseController implements NotificationCe
                             }
                         }
                         if (!fromCache) {
-                            PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 3) serverDialogsEndReached " + folderId + " name = " + finalFilterName);
                             serverDialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().fileProtectionEnabled() || dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id)))) && loadType == 0);
+                            if (dialogsRes.dialogs.size() != 0 && dialogsRes.dialogs.size() != count) {
+                                if (!getMessagesStorage().fileProtectionEnabled()) {
+                                    PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 3) serverDialogsEndReached " + folderId + " name = " + finalFilterName + " file protection was disabled.");
+                                } else if (!dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id))) {
+                                    PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 3) serverDialogsEndReached " + folderId + " name = " + finalFilterName + " !dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id)).");
+                                } else {
+                                    PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs 3) serverDialogsEndReached " + folderId + " name = " + finalFilterName + " NOT.");
+                                }
+                            }
                         }
                     }
                 }
