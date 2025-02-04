@@ -735,7 +735,7 @@ public class UserConfig extends BaseController {
 
     public long[] getDialogLoadOffsets(int folderId) {
         if (getMessagesStorage().fileProtectionEnabled()) {
-            return new long[]{-1, -1, -1, -1, -1, -1};
+            return getFileProtectionDialogLoadOffsets(folderId);
         }
         SharedPreferences preferences = getPreferences();
         int dialogsLoadOffsetId = preferences.getInt("2dialogsLoadOffsetId" + (folderId == 0 ? "" : folderId), hasValidDialogLoadIds ? 0 : -1);
@@ -748,6 +748,10 @@ public class UserConfig extends BaseController {
     }
 
     public void setDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
+        if (getMessagesStorage().fileProtectionEnabled()) {
+            setFileProtectionDialogsLoadOffset(folderId, dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess);
+            return;
+        }
         SharedPreferences.Editor editor = getPreferences().edit();
         editor.putInt("2dialogsLoadOffsetId" + (folderId == 0 ? "" : folderId), dialogsLoadOffsetId);
         editor.putInt("2dialogsLoadOffsetDate" + (folderId == 0 ? "" : folderId), dialogsLoadOffsetDate);
@@ -815,6 +819,23 @@ public class UserConfig extends BaseController {
         Set<SecurityIssue> securityIssues = new HashSet<>(getUserConfig().currentSecurityIssues);
         securityIssues.removeAll(getUserConfig().getIgnoredSecurityIssues());
         return securityIssues;
+    }
+
+    private Map<Integer, long[]> fileProtectionDialogLoadOffsets = Collections.synchronizedMap(new HashMap<>());
+
+    private long[] getFileProtectionDialogLoadOffsets(int folderId) {
+        if (fileProtectionDialogLoadOffsets.containsKey(folderId)) {
+            return fileProtectionDialogLoadOffsets.get(folderId);
+        } else if (hasValidDialogLoadIds) {
+            return new long[]{0, 0, 0, 0, 0, 0};
+        } else {
+            return new long[]{-1, -1, -1, -1, -1, -1};
+        }
+    }
+
+    private void setFileProtectionDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
+        long[] offsets = {dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess};
+        fileProtectionDialogLoadOffsets.put(folderId, offsets);
     }
 
     int globalTtl = 0;
