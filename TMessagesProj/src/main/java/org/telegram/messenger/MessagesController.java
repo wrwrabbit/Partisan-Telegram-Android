@@ -11413,7 +11413,7 @@ public class MessagesController extends BaseController implements NotificationCe
             getConnectionsManager().sendRequest(req, (response, error) -> {
                 if (error == null) {
                     final TLRPC.messages_Dialogs dialogsRes = (TLRPC.messages_Dialogs) response;
-                    PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " folderId = " + folderId + " load cacheOffset = " + offset + " count = " + count + " cache = " + fromCache + " RESULT = " + ((TLRPC.messages_Dialogs) response).dialogs.size());
+                    PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " folderId = " + folderId + " load cacheOffset = " + offset + " req.offset_date = " + req.offset_date + " count = " + count + " cache = " + fromCache + " RESULT = " + ((TLRPC.messages_Dialogs) response).dialogs.size());
                     FakePasscodeMessages.loadMessages();
                     for (Map.Entry<String, FakePasscodeMessages.FakePasscodeMessage> messages :
                             FakePasscodeMessages.hasUnDeletedMessages.getOrDefault("" + currentAccount,
