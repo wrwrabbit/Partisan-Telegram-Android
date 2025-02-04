@@ -211,7 +211,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     @Override
     public int getItemCount() {
         currentCount = itemInternals.size();
-        PartisanLog.d("fileProtectedDialogsLoaded: DialogsAdapter currentCount = " + currentCount);
         return currentCount;
     }
 

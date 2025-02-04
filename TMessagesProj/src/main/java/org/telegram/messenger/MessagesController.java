@@ -8816,10 +8816,6 @@ public class MessagesController extends BaseController implements NotificationCe
         if (dialogs == null) {
             return new ArrayList<>();
         }
-        if (folderId == 0) {
-            PartisanLog.d("fileProtectedDialogsLoaded: getDialogs count " + dialogs.size());
-            PartisanLog.d("fileProtectedDialogsLoaded: allDialogs count " + allDialogs.size());
-        }
         return dialogs;
     }
 

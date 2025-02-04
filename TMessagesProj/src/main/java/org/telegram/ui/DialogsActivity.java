@@ -11198,9 +11198,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
         if (dialogsType == DIALOGS_TYPE_DEFAULT) {
             ArrayList<TLRPC.Dialog> dialogs = (ArrayList<TLRPC.Dialog>) Utils.filterDialogs(messagesController.getDialogs(folderId), Optional.of(currentAccount));
-            if (folderId == 0) {
-                PartisanLog.d("fileProtectedDialogsLoaded: DIALOGS_TYPE_DEFAULT folder = " + folderId + " count " + dialogs.size());
-            }
             if (!dialogs.isEmpty() && dialogs.get(0) instanceof TLRPC.TL_dialogFolder) {
                 TLRPC.TL_dialogFolder folder = (TLRPC.TL_dialogFolder)dialogs.get(0);
                 if (Utils.filterDialogs(messagesController.getDialogs((int)folder.id), Optional.of(currentAccount)).isEmpty()) {
