@@ -385,7 +385,7 @@ public class Utils {
                 }
                 return SpannableString.valueOf(builder);
             } else {
-                return leaveEmpty ? "" : message;
+                return leaveEmpty ? SpannableString.valueOf("") : message;
             }
         } else {
             CharSequence fixed = message;
@@ -426,7 +426,7 @@ public class Utils {
                 if (startIndex > 0) {
                     return message.subSequence(0, startIndex);
                 } else {
-                    return leaveEmpty ? "" : message;
+                    return leaveEmpty ? SpannableString.valueOf("") : message;
                 }
             }
         }
