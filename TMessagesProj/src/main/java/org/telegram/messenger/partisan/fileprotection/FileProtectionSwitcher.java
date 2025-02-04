@@ -52,11 +52,15 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
         fragment.showDialog(enablingFileProtectionDialog);
 
         if (!enableForAllAccounts && valuesPerAccounts.isEmpty()) {
+            if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+                SharedConfig.setDisableFileProtectionAfterRestart(true);
+            }
             SharedConfig.setFileProtectionForAllAccounts(enableForAllAccounts);
             Utils.foreachActivatedAccountInstance(accountInstance -> {
                 UserConfig userConfig = accountInstance.getUserConfig();
                 if (userConfig.fileProtectionEnabled) {
                     userConfig.fileProtectionEnabled = false;
+                    userConfig.disableFileProtectionAfterRestart = true;
                     userConfig.clearPinnedDialogsLoaded();
                     accountInstance.getUserConfig().saveConfig(false);
                 }
@@ -89,6 +93,9 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     }
 
     private void updateConfigs() {
+        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+            SharedConfig.setDisableFileProtectionAfterRestart(true);
+        }
         SharedConfig.setFileProtectionForAllAccounts(enableForAllAccounts);
         Utils.foreachActivatedAccountInstance(accountInstance -> {
             boolean enabledInConfig = valuesPerAccounts.getOrDefault(accountInstance.getCurrentAccount(), false);
@@ -97,6 +104,9 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
             UserConfig userConfig = accountInstance.getUserConfig();
             if (userConfig.fileProtectionEnabled != enabledForAccountOrGlobally) {
                 userConfig.clearPinnedDialogsLoaded();
+            }
+            if (userConfig.fileProtectionEnabled && !enabledInConfig) {
+                userConfig.disableFileProtectionAfterRestart = true;
             }
             userConfig.fileProtectionEnabled = enabledInConfig;
             userConfig.saveConfig(false);
