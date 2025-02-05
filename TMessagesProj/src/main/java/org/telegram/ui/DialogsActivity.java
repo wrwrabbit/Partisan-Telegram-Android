@@ -258,6 +258,7 @@ import org.telegram.ui.Stories.UserListPoller;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Arrays;

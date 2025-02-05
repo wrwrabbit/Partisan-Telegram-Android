@@ -31520,7 +31520,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         boolean dialogShowingAllowed = !ChatObject.isChannelAndNotMegaGroup(currentChat)
                 || visibleReaction != null && visibleReaction.isStar;
         AlertsCreator.showConfirmDangerousActionDialogIfNeed(this, dialogShowingAllowed, () -> {
-            ChatMessageCell cell = cellArg;
+            View cell = cellArg;
             if (visibleReaction != null && visibleReaction.isStar) {
                 closeMenu();
                 if (cell == null) {
@@ -31563,11 +31563,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 StarsController.PendingPaidReactions pending = StarsController.getInstance(currentAccount).sendPaidReaction(primaryMessage, ChatActivity.this, +1, true, true, null);
                 if (pending != null && cell instanceof BaseCell) {
-                    finalStarReactionsOverlay overlay = getStarReactionsOverlay();
+                    final StarReactionsOverlay overlay = getStarReactionsOverlay();
                     overlay.setMessageCell((BaseCell)cell);
                     pending.setOverlay(overlay);
                     overlay.show();
-                    finalint[] loc = new int[2], loc2 = new int[2];
+                    final int[] loc = new int[2], loc2 = new int[2];
                     cell.getLocationInWindow(loc);
                     overlay.getLocationInWindow(loc2);
                     overlay.tap(loc[0] - loc2[0] + x, loc[1] - loc2[1] + y, false, true);
@@ -31582,8 +31582,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
 
             ReactionsEffectOverlay.removeCurrent(false);
-            finalint currentChosenReactions = primaryMessage.getChoosenReactions().size();
-            finalboolean added = primaryMessage.selectReaction(visibleReaction, bigEmoji, fromDoubleTap);
+            final int currentChosenReactions = primaryMessage.getChoosenReactions().size();
+            final boolean added = primaryMessage.selectReaction(visibleReaction, bigEmoji, fromDoubleTap);
             int messageIdForCell = primaryMessage.getId();
             if (groupedMessagesMap.get(primaryMessage.getGroupId()) != null) {
                 int flags = primaryMessage.shouldDrawReactionsInLayout() ? MessageObject.POSITION_FLAG_BOTTOM | MessageObject.POSITION_FLAG_LEFT : MessageObject.POSITION_FLAG_BOTTOM | MessageObject.POSITION_FLAG_RIGHT;
@@ -31596,7 +31596,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             int finalMessageIdForCell = messageIdForCell;
 
             if (added) {
-                ChatMessageCell tempCell = findMessageCell(finalMessageIdForCell, true);
+                View tempCell = findMessageCell(finalMessageIdForCell, true);
                 showMultipleReactionsPromo(tempCell, visibleReaction, currentChosenReactions);
                 if (!fromDoubleTap) {
                     ReactionsEffectOverlay.show(ChatActivity.this, reactionsLayout, tempCell, fromView, x, y, visibleReaction, currentAccount, reactionsLayout != null ? (bigEmoji ? ReactionsEffectOverlay.LONG_ANIMATION : ReactionsEffectOverlay.ONLY_MOVE_ANIMATION) : ReactionsEffectOverlay.SHORT_ANIMATION);

@@ -18,6 +18,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,15 +51,15 @@ public class PrivacyChecker implements NotificationCenter.NotificationCenterDele
     }
 
     private static void setupPrivacySettings(int account, int rulesType, Runnable onError, Runnable onSuccess) {
-        TLRPC.TL_account_setPrivacy req = new TLRPC.TL_account_setPrivacy();
+        TL_account.setPrivacy req = new TL_account.setPrivacy();
         if (rulesType == PRIVACY_RULES_TYPE_PHONE) {
             req.key = new TLRPC.TL_inputPrivacyKeyPhoneNumber();
-            TLRPC.TL_account_setPrivacy req2 = new TLRPC.TL_account_setPrivacy();
+            TL_account.setPrivacy req2 = new TL_account.setPrivacy();
             req2.key = new TLRPC.TL_inputPrivacyKeyAddedByPhone();
             req2.rules.add(new TLRPC.TL_inputPrivacyValueAllowContacts());
             ConnectionsManager.getInstance(account).sendRequest(req2, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 if (error == null) {
-                    TLRPC.TL_account_privacyRules privacyRules = (TLRPC.TL_account_privacyRules) response;
+                    TL_account.privacyRules privacyRules = (TL_account.privacyRules) response;
                     ContactsController.getInstance(account).setPrivacyRules(privacyRules.rules, PRIVACY_RULES_TYPE_ADDED_BY_PHONE);
                 }
             }), ConnectionsManager.RequestFlagFailOnServerErrors);
@@ -82,7 +83,7 @@ public class PrivacyChecker implements NotificationCenter.NotificationCenterDele
 
         ConnectionsManager.getInstance(account).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             if (error == null) {
-                TLRPC.TL_account_privacyRules privacyRules = (TLRPC.TL_account_privacyRules) response;
+                TL_account.privacyRules privacyRules = (TL_account.privacyRules) response;
                 MessagesController.getInstance(account).putUsers(privacyRules.users, false);
                 MessagesController.getInstance(account).putChats(privacyRules.chats, false);
                 ContactsController.getInstance(account).setPrivacyRules(privacyRules.rules, rulesType);

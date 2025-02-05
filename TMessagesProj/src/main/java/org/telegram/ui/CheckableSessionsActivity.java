@@ -22,6 +22,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -230,14 +231,14 @@ public abstract class CheckableSessionsActivity extends BaseFragment implements 
         if (!silent) {
             loading = true;
         }
-        TLRPC.TL_account_getAuthorizations req = new TLRPC.TL_account_getAuthorizations();
+        TL_account.getAuthorizations req = new TL_account.getAuthorizations();
         int reqId = ConnectionsManager.getInstance(selectedAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             loading = false;
             int oldItemsCount = listAdapter.getItemCount();
             if (error == null) {
                 sessions.clear();
                 passwordSessions.clear();
-                TLRPC.TL_account_authorizations res = (TLRPC.TL_account_authorizations) response;
+                TL_account.authorizations res = (TL_account.authorizations) response;
                 for (int a = 0, N = res.authorizations.size(); a < N; a++) {
                     TLRPC.TL_authorization authorization = res.authorizations.get(a);
                     if ((authorization.flags & 1) != 0) {

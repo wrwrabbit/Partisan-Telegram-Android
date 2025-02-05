@@ -348,7 +348,9 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
             req.filter.exclude_read = (folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) != 0;
             req.filter.exclude_archived = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED) != 0;
             req.filter.id = folder.id;
-            req.filter.title = folder.name;
+            req.filter.title = new TLRPC.TL_textWithEntities();
+            req.filter.title.text = folder.name;
+            req.filter.title.entities = folder.entities;
             fillPeerArray(folder.alwaysShow, req.filter.include_peers);
             fillPeerArray(folder.neverShow, req.filter.exclude_peers);
             fillPeerArray(pinnedDialogs, req.filter.pinned_peers);

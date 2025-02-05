@@ -1033,7 +1033,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             }
         }
         if (service.privateCall != null) {
-            TLRPC.PhoneCall call = service.privateCall;
+            TL_phone.PhoneCall call = service.privateCall;
             if (isChatOrAccountHidden(call.participant_id, account)) {
                 return true;
             }
