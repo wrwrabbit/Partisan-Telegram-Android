@@ -1535,7 +1535,7 @@ public class DatabaseMigrationHelper {
             version = 159;
         }
 
-        if (version == 159) {
+        if (version == 159 || version == 160) { // ptg increased version to 160 in 5291690a
             database.executeFast("ALTER TABLE dialog_filter ADD COLUMN entities BLOB").stepThis().dispose();
             database.executeFast("PRAGMA user_version = 160").stepThis().dispose();
             version = 160;
