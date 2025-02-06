@@ -12319,9 +12319,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 FileLog.d("loaded folderId " + folderId + " loadType " + loadType + " count " + dialogsRes.dialogs.size());
             }
 
-            // Clone allDialogs to avoid ConcurrentModificationException
-            Set<Long> oldDialogIds = getMessagesStorage().fileProtectionEnabled() ? new ArrayList<>(allDialogs).stream().map(d -> d.id).collect(Collectors.toSet()) : null;
-
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
                 AndroidUtilities.runOnUIThread(() -> {

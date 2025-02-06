@@ -136,8 +136,8 @@ import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrationDialogs;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.tgnet.ConnectionsManager;
@@ -7054,9 +7054,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else if (!AndroidUtilities.needShowPasscode(false)) {
             checkOtherPtg();
             checkPtgPermissions();
-            if (!anyPtgDialogShown) {
-                FileProtectionNewFeatureDialog.showDialogIfNeeded(this);
-            }
+            showPtgDialog(FileProtectionNewFeatureDialog.createDialogIfNeeded(this), true);
+            showPtgDialog(FileProtectionTemporaryDisabledDialog.createDialogIfNeeded(this), true);
         }
     }
 
@@ -7131,7 +7130,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void showPtgDialog(AlertDialog dialog, boolean showUsingFragmentMethod) {
-        if (anyPtgDialogShown) {
+        if (anyPtgDialogShown || dialog == null) {
             return;
         }
         anyPtgDialogShown = true;
@@ -7800,7 +7799,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return !AppMigrationDialogs.needShowNewerPtgDialog(getContext())
                 && !getOlderPtgStatus().needShowDialog()
                 && !needCameraPermission()
-                && !FileProtectionNewFeatureDialog.needShow();
+                && !FileProtectionNewFeatureDialog.needShow()
+                && !FileProtectionTemporaryDisabledDialog.needShow();
     }
 
     private boolean needCameraPermission() {
