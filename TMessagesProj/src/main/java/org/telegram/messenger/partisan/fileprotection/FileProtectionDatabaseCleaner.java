@@ -129,7 +129,10 @@ public class FileProtectionDatabaseCleaner {
 
     private void compressDb() throws Exception {
         db.executeFast("PRAGMA journal_size_limit = 0").stepThis().dispose();
-        db.executeFast("VACUUM").stepThis().dispose();
+        try {
+            db.executeFast("VACUUM").stepThis().dispose();
+        } catch (Exception ignore) {
+        }
         db.executeFast("PRAGMA journal_size_limit = -1").stepThis().dispose();
     }
 
