@@ -13,11 +13,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -44,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -374,7 +377,16 @@ public class TesterSettingsActivity extends BaseFragment {
     private boolean isDialogEndReached() {
         MessagesController controller = getMessagesController();
         return controller.isDialogsEndReached(0) && controller.isServerDialogsEndReached(0)
-                && controller.isDialogsEndReached(1) && controller.isServerDialogsEndReached(1);
+                && (!hasArchive() || controller.isDialogsEndReached(1) && controller.isServerDialogsEndReached(1));
+    }
+
+    private boolean hasArchive() {
+        MessagesController controller = MessagesController.getInstance(currentAccount);
+        if (controller.dialogs_dict.get(DialogObject.makeFolderDialogId(1)) == null) {
+            return false;
+        }
+        List<TLRPC.Dialog> dialogs = controller.getDialogs(1);
+        return dialogs != null && !dialogs.isEmpty();
     }
 
     private List<TLRPC.Dialog> getAllDialogs() {

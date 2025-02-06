@@ -326,20 +326,8 @@ public class MessagesStorage extends BaseController {
         }
         try {
             if (fileProtectionEnabled()) {
-                if (cacheFile.length() <= 128 * 1024 * 1024) { // allow only small databases
-                    database = new SQLiteDatabaseWrapper(cacheFile.getPath());
-                    storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
-                } else {
-                    database = new SQLiteDatabase(cacheFile.getPath());
-                    if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-                        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
-                        editor.apply();
-
-                        SharedConfig.setFileProtectionForAllAccounts(false);
-                    }
-                }
+                database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
                 database = new SQLiteDatabase(cacheFile.getPath());
             }
@@ -10780,6 +10768,10 @@ public class MessagesStorage extends BaseController {
     }
 
     public boolean fileProtectionEnabled() {
+        return fileProtectionEnabledByConfig() && !databaseFileSizeExceedsMaximumForRam();
+    }
+
+    private boolean fileProtectionEnabledByConfig() {
         if (FakePasscodeUtils.isFakePasscodeActivated() && !SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
             return false;
         }
@@ -10791,6 +10783,14 @@ public class MessagesStorage extends BaseController {
         } else {
             return getUserConfig().getPreferences().getBoolean("fileProtectionEnabled", false);
         }
+    }
+
+    private boolean databaseFileSizeExceedsMaximumForRam() {
+        return cacheFile.length() > 128 * 1024 * 1024;
+    }
+
+    public boolean fileProtectionDisabledBecauseOfFileSize() {
+        return fileProtectionEnabledByConfig() && databaseFileSizeExceedsMaximumForRam();
     }
 
     public void clearFileProtectedDb() {
