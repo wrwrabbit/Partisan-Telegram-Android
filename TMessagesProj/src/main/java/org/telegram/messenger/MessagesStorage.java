@@ -10712,7 +10712,7 @@ public class MessagesStorage extends BaseController {
     }
 
     private boolean databaseFileSizeExceedsMaximumForRam() {
-        return cacheFile.length() > 128 * 1024 * 1024;
+        return cacheFile != null && cacheFile.exists() && cacheFile.length() > 128 * 1024 * 1024;
     }
 
     public boolean fileProtectionDisabledBecauseOfFileSize() {
