@@ -783,7 +783,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private SparseArray<ArrayList<MessageObject>> messagesByDaysSorted = new SparseArray<>();
     private LongSparseArray<MessageObject> conversionMessages = new LongSparseArray<>();
     public ArrayList<MessageObject> messages = new ArrayList<>();
-    public Map<Integer, List<MessageObject>> hiddenEncryptedGroupOutMessages = new HashMap<>();
+    public Map<Long, List<MessageObject>> hiddenEncryptedGroupOutMessages = new HashMap<>();
     private SparseArray<MessageObject> waitingForReplies = new SparseArray<>();
     private LongSparseArray<ArrayList<MessageObject>> polls = new LongSparseArray<>();
     private LongSparseArray<MessageObject.GroupedMessages> groupedMessagesMap = new LongSparseArray<>();
@@ -23222,21 +23222,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private boolean addMessage(int pos, MessageObject obj) {
         if (isEncryptedGroup()) {
-            int firstChatId = currentEncryptedGroup.getInnerEncryptedChatIds(false).get(0);
-            boolean needAddMessage = !obj.isOut() || obj.getDialogId() == DialogObject.makeEncryptedDialogId(firstChatId);
+            boolean needAddMessage = !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id);
             if (needAddMessage) {
                 messages.add(obj);
                 messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
+                if (obj.isOut()) {
+                    hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
+                }
                 return true;
             } else {
-                Optional<Integer> visibleMessageId = messages.stream()
-                        .filter(m -> m.messageOwner.random_id == obj.messageOwner.random_id)
-                        .map(m -> m.getId())
-                        .findAny();
-                if (visibleMessageId.isPresent()) {
-                    List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.computeIfAbsent(visibleMessageId.get(), k -> new ArrayList<>());
-                    massageCopies.add(obj);
-                }
+                List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
+                massageCopies.add(obj);
                 return false;
             }
         } else {
@@ -29133,8 +29129,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         Map<TLRPC.EncryptedChat, List<MessageObject>> encryptedGroupMessages = new HashMap<>();
         for (MessageObject message : srcMessages) {
             List<MessageObject> messageCopies;
-            if (message.isOut() && hiddenEncryptedGroupOutMessages.containsKey(message.getId())) {
-                messageCopies = new ArrayList<>(hiddenEncryptedGroupOutMessages.get(message.getId()));
+            if (message.isOut()) {
+                long randomId = message.messageOwner.random_id;
+                messageCopies = new ArrayList<>(hiddenEncryptedGroupOutMessages.computeIfAbsent(randomId, k -> new ArrayList<>()));
                 messageCopies.add(message);
             } else {
                 messageCopies = Collections.singletonList(message);
@@ -29154,8 +29151,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private void forEachMessageCopy(MessageObject message, Consumer<MessageObject> action) {
         if (isEncryptedGroup() && message.isOut()) {
-            if (hiddenEncryptedGroupOutMessages.containsKey(message.getId())) {
-                hiddenEncryptedGroupOutMessages.get(message.getId()).stream().forEach(action);
+            if (hiddenEncryptedGroupOutMessages.containsKey(message.messageOwner.random_id)) {
+                hiddenEncryptedGroupOutMessages.get(message.messageOwner.random_id).stream().forEach(action);
             }
         }
         action.accept(message);
@@ -41715,10 +41712,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     public MessageObject fixEncryptedGroupMessageObjectIfNeed(MessageObject obj, long targetEncryptedDialogId) {
-        if (obj == null || !isEncryptedGroup() || !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.getId())) {
+        if (obj == null || !isEncryptedGroup() || !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id)) {
             return obj;
         }
-        List<MessageObject> hiddenMessageCopies = hiddenEncryptedGroupOutMessages.get(obj.getId());
+        List<MessageObject> hiddenMessageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
         return hiddenMessageCopies.stream()
                 .filter(m -> m.getDialogId() == targetEncryptedDialogId)
                 .findAny()
@@ -41726,20 +41723,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     public MessageObject getVisibleMessage(MessageObject obj) {
-        if (obj == null || !isEncryptedGroup() || !obj.isOut() || hiddenEncryptedGroupOutMessages.containsKey(obj.getId())) {
+        if (obj == null || !isEncryptedGroup() || !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id)) {
             PartisanLog.d("getVisibleMessage: return the same obj");
             return obj;
         }
-        for (int key : hiddenEncryptedGroupOutMessages.keySet()) {
-            List<MessageObject> messageCopies = hiddenEncryptedGroupOutMessages.get(key);
-            if (messageCopies != null && messageCopies.contains(obj)) {
-                PartisanLog.d("getVisibleMessage: messageCopies contains obj");
-                MessageObject newObj = messages.stream().filter(m -> m.getId() == key).findAny().orElse(obj);
-                if (newObj == obj) {
-                    PartisanLog.d("getVisibleMessage: original message is the same");
-                }
-                return newObj;
+        List<MessageObject> messageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
+        if (messageCopies != null && messageCopies.contains(obj)) {
+            PartisanLog.d("getVisibleMessage: messageCopies contains obj");
+            MessageObject newObj = messages.stream()
+                    .filter(m -> m.messageOwner.random_id == obj.messageOwner.random_id)
+                    .findAny()
+                    .orElse(obj);
+            if (newObj == obj) {
+                PartisanLog.d("getVisibleMessage: original message is the same");
             }
+            return newObj;
         }
         PartisanLog.d("getVisibleMessage: obj copy not found");
         return obj;
