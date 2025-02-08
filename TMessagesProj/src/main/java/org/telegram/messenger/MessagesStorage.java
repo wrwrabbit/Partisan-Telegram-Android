@@ -500,8 +500,6 @@ public class MessagesStorage extends BaseController {
             "enc_chats",
             "enc_groups",
             "enc_group_inner_chats",
-            "enc_group_virtual_messages",
-            "enc_group_virtual_messages_to_messages_v2",
             "channel_users_v2",
             "channel_admins_v3",
             "contacts",
@@ -10641,49 +10639,6 @@ public class MessagesStorage extends BaseController {
                 encryptedChatIds.add(id);
             }
             return encryptedChatIds;
-        });
-    }
-
-    public Integer getEncryptedGroupVirtualMessageId(int encryptedGroupId, int encryptedChatId, int realMessageId) {
-        String sql = "SELECT virtual_message_id " +
-                "FROM enc_group_virtual_messages_to_messages_v2 " +
-                "WHERE encrypted_group_id = ? AND encrypted_chat_id = ? AND real_message_id = ?";
-        Object[] args = {encryptedGroupId, encryptedChatId, realMessageId};
-        return partisanSelect(sql, args, cursor -> {
-            if (cursor.next()) {
-                return cursor.intValue(0);
-            }
-            return null;
-        });
-    }
-
-    public int createEncryptedVirtualMessage(int encryptedGroupId) {
-        String sql = "SELECT MAX(virtual_message_id) FROM enc_group_virtual_messages WHERE encrypted_group_id = ?";
-        Object[] args = {encryptedGroupId};
-        int prevVirtualMessageId = partisanSelect(sql, args, cursor -> {
-            if (cursor.next()) {
-                return cursor.intValue(0);
-            }
-            return 0;
-        });
-        int virtualMessageId = prevVirtualMessageId + 1;
-        partisanExecute("INSERT INTO enc_group_virtual_messages VALUES(?, ?)", state -> {
-            int pointer = 1;
-            state.bindInteger(pointer++, encryptedGroupId);
-            state.bindInteger(pointer++, virtualMessageId);
-            state.step();
-        });
-        return virtualMessageId;
-    }
-
-    public void addEncryptedVirtualMessageMapping(int encryptedGroupId, int virtualMessageId, int encryptedChatId, int realMessageId) throws Exception {
-        partisanExecute("INSERT INTO enc_group_virtual_messages_to_messages_v2 VALUES(?, ?, ?, ?)", state -> {
-            int pointer = 1;
-            state.bindInteger(pointer++, encryptedGroupId);
-            state.bindInteger(pointer++, virtualMessageId);
-            state.bindInteger(pointer++, encryptedChatId);
-            state.bindInteger(pointer++, realMessageId);
-            state.step();
         });
     }
 
