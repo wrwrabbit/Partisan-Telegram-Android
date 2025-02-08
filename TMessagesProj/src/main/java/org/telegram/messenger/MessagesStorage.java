@@ -15,7 +15,6 @@ import static org.telegram.messenger.MessagesController.LOAD_FORWARD;
 import static org.telegram.messenger.MessagesController.LOAD_FROM_UNREAD;
 
 import android.appwidget.AppWidgetManager;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
@@ -327,6 +326,9 @@ public class MessagesStorage extends BaseController {
                 database = new SQLiteDatabaseWrapper(cacheFile.getPath());
                 storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
+                if (isFileProtectionDisabledBecauseOfFileSize()) {
+                    fileProtectionDisabledBecauseOfFileSize = true;
+                }
                 database = new SQLiteDatabase(cacheFile.getPath());
             }
             database.executeFast("PRAGMA secure_delete = ON").stepThis().dispose();
@@ -10715,8 +10717,10 @@ public class MessagesStorage extends BaseController {
         return cacheFile != null && cacheFile.exists() && cacheFile.length() > 128 * 1024 * 1024;
     }
 
-    public boolean fileProtectionDisabledBecauseOfFileSize() {
-        return fileProtectionEnabledByConfig() && databaseFileSizeExceedsMaximumForRam();
+    private static volatile boolean fileProtectionDisabledBecauseOfFileSize = false;
+
+    public boolean isFileProtectionDisabledBecauseOfFileSize() {
+        return fileProtectionDisabledBecauseOfFileSize || fileProtectionEnabledByConfig() && databaseFileSizeExceedsMaximumForRam();
     }
 
     public void clearFileProtectedDb() {

@@ -27,7 +27,7 @@ public class FileProtectionTemporaryDisabledDialog {
         AlertDialog dialog = builder.create();
         dialog.setCanCancel(false);
         dialog.setCancelable(false);
-        DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_NEGATIVE, LocaleController.getString(R.string.Cancel), 5, (dlg, which) -> {
+        dialog.setNeutralButton(LocaleController.getString(R.string.Cancel), (dlg, which) -> {
             dialogShowed = true;
         });
         dialog.setNegativeButton(LocaleController.getString(R.string.Disable), (dlg, which) -> {
@@ -55,7 +55,7 @@ public class FileProtectionTemporaryDisabledDialog {
         }
         boolean[] fileProtectionTemporaryDisabledForAnyAccount = new boolean[] {false};
         Utils.foreachActivatedAccountInstance(accountInstance -> {
-            if (accountInstance.getMessagesStorage().fileProtectionDisabledBecauseOfFileSize()) {
+            if (accountInstance.getMessagesStorage().isFileProtectionDisabledBecauseOfFileSize()) {
                 fileProtectionTemporaryDisabledForAnyAccount[0] = true;
             }
         });
