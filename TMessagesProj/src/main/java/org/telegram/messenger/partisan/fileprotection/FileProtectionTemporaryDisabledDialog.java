@@ -25,14 +25,13 @@ public class FileProtectionTemporaryDisabledDialog {
         builder.setTitle(LocaleController.getString(R.string.FileProtectionDisabledTitle));
         builder.setMessage(AndroidUtilities.replaceTags(LocaleController.getString(R.string.FileProtectionDisabledDetails)));
         AlertDialog dialog = builder.create();
-        dialog.setCanCancel(false);
-        dialog.setCancelable(false);
-        dialog.setNeutralButton(LocaleController.getString(R.string.Cancel), (dlg, which) -> {
+        dialog.setCanCancel(true);
+        dialog.setCancelable(true);
+        dialog.setOnShowListener(d -> {
             dialogShowed = true;
         });
         dialog.setNegativeButton(LocaleController.getString(R.string.Disable), (dlg, which) -> {
             new FileProtectionSwitcher(fragment).changeForAllAccounts(false);
-            dialogShowed = true;
         });
         dialog.setPositiveButton(LocaleController.getString(R.string.FileProtectionEnableAgain), (dlg, which) -> {
             if (SharedConfig.fileProtectionForAllAccountsEnabled) {
@@ -44,7 +43,6 @@ public class FileProtectionTemporaryDisabledDialog {
                 );
                 new FileProtectionSwitcher(fragment).changeForMultipleAccounts(values);
             }
-            dialogShowed = true;
         });
         return dialog;
     }
