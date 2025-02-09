@@ -4,6 +4,7 @@ import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PartisanMessagesInterceptionController {
     private List<MessageInterceptor> interceptors = new ArrayList<>();
@@ -39,5 +40,11 @@ public class PartisanMessagesInterceptionController {
             finalResult = finalResult.merge(newResult);
         }
         return finalResult;
+    }
+
+    public static ArrayList<TLRPC.Message> filterMessages(int accountNum, ArrayList<TLRPC.Message> arr) {
+        return arr.stream()
+                .filter(message -> PartisanMessagesInterceptionController.intercept(accountNum, message).isAllowMessageSaving())
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }

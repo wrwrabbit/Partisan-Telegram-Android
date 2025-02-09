@@ -10709,7 +10709,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 }
                             }
                         }
-                        res.messages = filterMessages(res.messages);
+                        res.messages = PartisanMessagesInterceptionController.filterMessages(currentAccount, res.messages);
                         for (TLRPC.Message m : res.messages) {
                             Utils.fixTlrpcMessage(m);
                         }
@@ -21284,13 +21284,6 @@ public class MessagesController extends BaseController implements NotificationCe
         }
 
         return maxId;
-    }
-
-
-    private ArrayList<TLRPC.Message> filterMessages(ArrayList<TLRPC.Message> arr) {
-        return arr.stream()
-                .filter(message -> PartisanMessagesInterceptionController.intercept(currentAccount, message).isAllowMessageSaving())
-                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public void deleteMessagesRange(long dialogId, long channelId, int minDate, int maxDate, boolean forAll, Runnable callback) {
