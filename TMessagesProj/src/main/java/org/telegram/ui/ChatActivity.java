@@ -183,6 +183,7 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.UserMessagesDeleter;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.findmessages.FindMessagesController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
@@ -3812,10 +3813,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         boolean isRegex = ((DialogCheckBox) views.get(1)).isChecked();
                         boolean isCaseSensitive = ((DialogCheckBox) views.get(2)).isChecked();
                         boolean isDeleteAll = ((DialogCheckBox) views.get(3)).isChecked();
+                        UserMessagesDeleter deleter;
                         if (isDeleteAll) {
-                            getMessagesController().deleteAllMessagesFromDialogByUser(UserConfig.getInstance(currentAccount).clientUserId, did, getTopicId(), null);
+                            deleter = new UserMessagesDeleter(currentAccount, getUserConfig().clientUserId, did, getTopicId(), null);
                         } else {
-                            getMessagesController().deleteAllMessagesFromDialogByUser(UserConfig.getInstance(currentAccount).clientUserId, did, getTopicId(), msg -> {
+                            deleter = new UserMessagesDeleter(currentAccount, getUserConfig().clientUserId, did, getTopicId(), msg -> {
                                 String msgText;
                                 if (msg.caption != null) {
                                     msgText = msg.caption.toString();
@@ -3849,6 +3851,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 }
                             });
                         }
+                        deleter.start();
                     };
                     template.addCheckboxTemplate(false, LocaleController.getString("Regex", R.string.Regex));
                     template.addCheckboxTemplate(false, LocaleController.getString("CaseSensitive", R.string.CaseSensitive));
