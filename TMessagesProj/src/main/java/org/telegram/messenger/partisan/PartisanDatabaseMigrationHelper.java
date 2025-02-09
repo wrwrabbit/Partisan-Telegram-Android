@@ -85,8 +85,9 @@ public class PartisanDatabaseMigrationHelper {
         }
 
         if (currentVersion == 3) {
-            database.executeFast("DROP TABLE IF EXISTS enc_group_virtual_messages").stepThis().dispose();
+            database.executeFast("DROP INDEX IF EXISTS enc_group_virtual_messages_to_messages_v2_idx").stepThis().dispose();
             database.executeFast("DROP TABLE IF EXISTS enc_group_virtual_messages_to_messages_v2").stepThis().dispose();
+            database.executeFast("DROP TABLE IF EXISTS enc_group_virtual_messages").stepThis().dispose();
 
             increaseVersion();
         }
