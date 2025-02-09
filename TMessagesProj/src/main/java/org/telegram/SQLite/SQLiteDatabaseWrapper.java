@@ -14,7 +14,7 @@ import java.util.Set;
 public class SQLiteDatabaseWrapper extends SQLiteDatabase {
     private final Set<String> sqlPrefixesForBothDB = new HashSet<>(Arrays.asList(
             "PRAGMA", "CREATE TABLE", "CREATE INDEX", "VACUUM", "DROP TABLE", "DELETE FROM", "UPDATE", "CREATE INDEX",
-            "CREATE UNIQUE INDEX", "ALTER TABLE"
+            "CREATE UNIQUE INDEX", "ALTER TABLE", "DROP INDEX"
     ));
     private final Set<String> sqlPrefixesForSpecificDB = new HashSet<>(Arrays.asList(
             "INSERT INTO", "REPLACE INTO", "SELECT"
