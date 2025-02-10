@@ -13,9 +13,9 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 
 public class FileProtectionNewFeatureDialog {
-    public static void showDialogIfNeeded(BaseFragment fragment) {
+    public static AlertDialog createDialogIfNeeded(BaseFragment fragment) {
         if (!needShow()) {
-            return;
+            return null;
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
@@ -32,7 +32,7 @@ public class FileProtectionNewFeatureDialog {
             new FileProtectionSwitcher(fragment).changeForAllAccounts(true);
             deleteNeedShowPreference();
         });
-        fragment.showDialog(dialog);
+        return dialog;
     }
 
     public static boolean needShow() {

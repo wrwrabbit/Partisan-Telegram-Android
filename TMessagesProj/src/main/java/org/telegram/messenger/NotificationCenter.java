@@ -268,7 +268,7 @@ public class NotificationCenter {
 
     //partisan
     public static final int dialogDeletedByAction = totalEvents++;
-    public static final int dialogCleared = totalEvents++;
+    public static final int userMessagesDeleted = totalEvents++;
     public static final int appDidLogoutByAction = totalEvents++;
     public static final int fakePasscodeActivated = totalEvents++;
     public static final int dialogsHidingChanged = totalEvents++;

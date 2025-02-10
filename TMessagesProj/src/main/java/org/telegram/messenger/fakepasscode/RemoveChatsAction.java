@@ -17,6 +17,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
+import org.telegram.messenger.partisan.UserMessagesDeleter;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.TLRPC;
@@ -225,12 +226,13 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
                 if (entry.isExitFromChat) {
                     synchronized (pendingRemovalChats) {
                         if (pendingRemovalChats.isEmpty()) {
-                            getNotificationCenter().addObserver(this, NotificationCenter.dialogCleared);
+                            getNotificationCenter().addObserver(this, NotificationCenter.userMessagesDeleted);
                         }
                         pendingRemovalChats.add(entry.chatId);
                     }
                 }
-                getMessagesController().deleteAllMessagesFromDialogByUser(getUserConfig().clientUserId, entry.chatId, 0, null);
+                new UserMessagesDeleter(accountNum, getUserConfig().clientUserId, entry.chatId, 0, null)
+                        .start();
             } else if (entry.isExitFromChat) {
                 Utils.deleteDialog(accountNum, entry.chatId, entry.isDeleteFromCompanion);
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogDeletedByAction, entry.chatId);
@@ -348,7 +350,9 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
             req.filter.exclude_read = (folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) != 0;
             req.filter.exclude_archived = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED) != 0;
             req.filter.id = folder.id;
-            req.filter.title = folder.name;
+            req.filter.title = new TLRPC.TL_textWithEntities();
+            req.filter.title.text = folder.name;
+            req.filter.title.entities = folder.entities;
             fillPeerArray(folder.alwaysShow, req.filter.include_peers);
             fillPeerArray(folder.neverShow, req.filter.exclude_peers);
             fillPeerArray(pinnedDialogs, req.filter.pinned_peers);
@@ -493,7 +497,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (account == accountNum) {
-            if (id == NotificationCenter.dialogCleared) {
+            if (id == NotificationCenter.userMessagesDeleted) {
                 if (args.length > 0 && args[0] instanceof Long) {
                     deletePendingChat((long)args[0]);
                 }
@@ -539,7 +543,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
             }
             pendingRemovalChats.remove(dialogId);
             if (pendingRemovalChats.isEmpty()) {
-                getNotificationCenter().removeObserver(this, NotificationCenter.dialogCleared);
+                getNotificationCenter().removeObserver(this, NotificationCenter.userMessagesDeleted);
             }
         }
 

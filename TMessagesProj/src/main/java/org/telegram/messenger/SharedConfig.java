@@ -987,14 +987,6 @@ public class SharedConfig {
             migrateFakePasscode();
             migrateBadPasscodeAttempts();
             migrateSharedConfig();
-
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && debugWebView) {
-                    WebView.setWebContentsDebuggingEnabled(true);
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
         }
     }
 

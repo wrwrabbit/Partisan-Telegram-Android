@@ -622,6 +622,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 if (checkCell.itemId == item.id) {
                     checkCell.setChecked(item.checked);
                 }
+                checkCell.setEnabled(item.enabled, null);
                 checkCell.setTextAndCheck(item.text, item.checked, divider);
                 checkCell.itemId = item.id;
                 if (viewType == VIEW_TYPE_CHECKRIPPLE) {
@@ -886,6 +887,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                     // add status text
                     title = UserObject.getUserName(user, currentAccount);
                 }
+                profileCell.allowBotOpenButton(item.checked, item.object2 instanceof Utilities.Callback ? (Utilities.Callback) item.object2 : null);
                 profileCell.setRectangularAvatar(item.red);
                 profileCell.setData(object, null, title, s, false, false);
                 profileCell.useSeparator = divider;

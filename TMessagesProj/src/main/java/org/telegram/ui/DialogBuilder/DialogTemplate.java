@@ -3,6 +3,8 @@ package org.telegram.ui.DialogBuilder;
 import android.content.DialogInterface;
 import android.view.View;
 
+import org.telegram.ui.ActionBar.AlertDialog;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -13,7 +15,7 @@ public class DialogTemplate {
     public List<ViewTemplate> viewTemplates = new ArrayList<>();
     public DialogType type;
     public Consumer<List<View>> positiveListener;
-    public DialogInterface.OnClickListener negativeListener;
+    public AlertDialog.OnButtonClickListener negativeListener;
 
     public void addEditTemplate(String text, String name, boolean singleLine) {
         EditTemplate editTemplate = new EditTemplate();

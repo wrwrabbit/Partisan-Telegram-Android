@@ -11,6 +11,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 
 import java.io.File;
 import java.util.HashSet;
@@ -100,10 +101,10 @@ public class SecurityChecker {
     }
 
     public static void checkTwoStepVerificationEnabled(int account, TwoStepVerificationHandler handler) {
-        TLRPC.TL_account_getPassword req = new TLRPC.TL_account_getPassword();
+        TL_account.getPassword req = new TL_account.getPassword();
         ConnectionsManager.getInstance(account).sendRequest(req, (response, error) -> {
             if (response != null) {
-                TLRPC.TL_account_password password = (TLRPC.TL_account_password) response;
+                TL_account.Password password = (TL_account.Password) response;
                 handler.handle(false, password.has_password);
             } else {
                 handler.handle(true, false);
