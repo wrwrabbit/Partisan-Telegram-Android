@@ -13,13 +13,11 @@ import org.telegram.ui.ChatActivity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
 public class UserMessagesDeleter implements NotificationCenter.NotificationCenterDelegate {
-
     private final long userId;
     private final long dialogId;
     private final long topicId;
@@ -175,7 +173,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private void loadNewMessagesIfNeeded(List<MessageObject> messages) {
-        if (System.currentTimeMillis() < loadingTimeout) {
+        if (loadingTimeout == null && System.currentTimeMillis() < loadingTimeout) {
             int maxId = messages.stream().mapToInt(MessageObject::getId).max().orElse(0);
             int minDate = messages.stream().mapToInt(m -> m.messageOwner.date).min().orElse(0);
             log("loadNewMessagesIfNeeded: maxId = " + maxId);
