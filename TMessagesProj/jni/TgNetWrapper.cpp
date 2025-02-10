@@ -104,6 +104,7 @@ jint getTimeDifference(JNIEnv *env, jclass c, jint instanceNum) {
 void sendRequest(JNIEnv *env, jclass c, jint instanceNum, jlong object, jint flags, jint datacenterId, jint connectionType, jboolean immediate, jint token) {
     TL_api_request *request = new TL_api_request();
     request->request = (NativeByteBuffer *) (intptr_t) object;
+    if (LOGS_ENABLED) DEBUG_D("request %p (%p) (%x) sendRequest", request, request->request, token);
     ConnectionsManager::getInstance(instanceNum).sendRequest(request, ([instanceNum, token](TLObject *response, TL_error *error, int32_t networkType, int64_t responseTime, int64_t msgId, int32_t dcId) {
         TL_api_response *resp = (TL_api_response *) response;
         jlong ptr = 0;

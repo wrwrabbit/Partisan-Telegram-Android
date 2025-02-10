@@ -42,6 +42,8 @@ jclass jclass_ByteBuffer = nullptr;
 jmethodID jclass_ByteBuffer_allocateDirect = nullptr;
 #endif
 
+#pragma GCC optimize ("O0")
+
 static bool done = false;
 
 ConnectionsManager::ConnectionsManager(int32_t instance) {
@@ -1377,7 +1379,7 @@ void ConnectionsManager::processServerResponse(TLObject *message, int64_t messag
                         static std::string integrityCheckClassic = "INTEGRITY_CHECK_CLASSIC_";
                         bool processEvenFailed = error->error_code == 500 && error->error_message.find(authRestart) != std::string::npos;
                         bool isWorkerBusy = error->error_code == 500 && error->error_message.find(workerBusy) != std::string::npos;
-                        if (LOGS_ENABLED) DEBUG_E("request %p rpc error %d: %s", request, error->error_code, error->error_message.c_str());
+                        if (LOGS_ENABLED) DEBUG_E("request %p (%s) rpc error %d: %s", request, typeid(*request->rawRequest).name(), error->error_code, error->error_message.c_str());
 
                         if (error->error_code == 401 && error->error_message.find(authKeyPermEmpty) != std::string::npos) {
                             discardResponse = true;
@@ -1945,6 +1947,7 @@ void ConnectionsManager::detachConnection(ConnectionSocket *connection) {
 int32_t ConnectionsManager::sendRequestInternal(TLObject *object, onCompleteFunc onComplete, onQuickAckFunc onQuickAck, onRequestClearFunc onClear, uint32_t flags, uint32_t datacenterId, ConnectionType connectionType, bool immediate) {
     auto request = new Request(instanceNum, lastRequestToken++, connectionType, flags, datacenterId, onComplete, onQuickAck, nullptr, onClear);
     request->rawRequest = object;
+    if (LOGS_ENABLED) DEBUG_D("request %p (%s) sendRequestInternal", request, typeid(*request->rawRequest).name());
     request->rpcRequest = wrapInLayer(object, getDatacenterWithId(datacenterId), request);
     auto cancelledIterator = tokensToBeCancelled.find(request->requestToken);
     if (cancelledIterator != tokensToBeCancelled.end()) {
@@ -1977,6 +1980,7 @@ int32_t ConnectionsManager::sendRequest(TLObject *object, onCompleteFunc onCompl
     scheduleTask([&, requestToken, object, onComplete, onQuickAck, onClear, flags, datacenterId, connectionType, immediate] {
         auto request = new Request(instanceNum, requestToken, connectionType, flags, datacenterId, onComplete, onQuickAck, nullptr, onClear);
         request->rawRequest = object;
+        if (LOGS_ENABLED) DEBUG_D("request %p (%s) sendRequestInternal", request, typeid(*request->rawRequest).name());
         request->rpcRequest = wrapInLayer(object, getDatacenterWithId(datacenterId), request);
         auto cancelledIterator = tokensToBeCancelled.find(request->requestToken);
         if (cancelledIterator != tokensToBeCancelled.end()) {
@@ -2003,6 +2007,7 @@ void ConnectionsManager::sendRequest(TLObject *object, onCompleteFunc onComplete
         if (LOGS_ENABLED) DEBUG_D("send request %p - %s", object, typeid(*object).name());
         auto request = new Request(instanceNum, requestToken, connectionType, flags, datacenterId, onComplete, onQuickAck, onWriteToSocket, onClear);
         request->rawRequest = object;
+        if (LOGS_ENABLED) DEBUG_D("request %p (%s) sendRequestInternal", request, typeid(*request->rawRequest).name());
         request->rpcRequest = wrapInLayer(object, getDatacenterWithId(datacenterId), request);
         if (LOGS_ENABLED) DEBUG_D("send request wrapped %p - %s", request->rpcRequest.get(), typeid(*(request->rpcRequest.get())).name());
         auto cancelledIterator = tokensToBeCancelled.find(request->requestToken);
@@ -2458,6 +2463,8 @@ inline void addMessageToDatacenter(uint32_t datacenterId, NetworkMessage *networ
 #define MAX_DOWNLOAD_REQUESTS 16 * 2
 #define MAX_UPLOAD_REQUESTS 10 * 3
 
+#pragma GCC optimize ("O0")
+__attribute__((optimize("O0")))
 void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t dc) {
     genericMessagesToDatacenters.clear();
     genericMediaMessagesToDatacenters.clear();
@@ -2959,6 +2966,7 @@ void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t 
         if (!hasPendingRequestsForConnection(connection)) {
             connection->resetLastEventTime();
         }
+        if (LOGS_ENABLED) DEBUG_D("request %p (%s) runningRequests.push_back", request, typeid(*request->rawRequest).name());
         runningRequests.push_back(std::move(*iter));
 
         switch (request->connectionType & 0x0000ffff) {

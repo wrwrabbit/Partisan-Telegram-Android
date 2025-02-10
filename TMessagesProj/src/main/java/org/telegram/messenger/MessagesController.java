@@ -7928,7 +7928,9 @@ public class MessagesController extends BaseController implements NotificationCe
             req.id = getInputPeer(chat);
         }
         getConnectionsManager().sendRequest(req, (response, error) -> {
-
+            if (error != null) {
+                PartisanLog.d("TL_contacts_block");
+            }
         });
     }
 

@@ -9389,6 +9389,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (count == 1) {
                 long did = selectedDialogs.get(0);
                 user = getMessagesController().getUser(did);
+                getMessagesController().blockPeer(did);
             } else {
                 user = null;
             }
