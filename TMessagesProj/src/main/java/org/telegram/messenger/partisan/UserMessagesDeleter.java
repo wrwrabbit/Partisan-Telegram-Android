@@ -19,6 +19,7 @@ import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 public class UserMessagesDeleter implements NotificationCenter.NotificationCenterDelegate {
+
     private final long userId;
     private final long dialogId;
     private final long topicId;
@@ -51,10 +52,12 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
 
     public void start() {
         if (!DialogObject.isEncryptedDialog(dialogId)) {
+            log("start regular chat messages deletion");
             startSearchingMessages();
             loadingTimeout = System.currentTimeMillis() + 10_000;
             startLoadingMessages();
         } else {
+            log("start encrypted chat messages deletion");
             startLoadingMessages();
         }
     }
@@ -75,20 +78,24 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         if (args == null) {
             return;
         }
+        log("didReceivedNotification " + id);
         if (id == NotificationCenter.messagesDidLoad) {
             if ((int) args[10] == deleteAllMessagesGuid) {
                 ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[2];
+                log("messagesDidLoad:  " + messages.size());
                 if (processLoadedMessages(messages)) {
                     loadNewMessagesIfNeeded(messages);
                 }
             }
         } else if (id == NotificationCenter.loadingMessagesFailed) {
             if ((Integer) args[0] == deleteAllMessagesGuid) {
+                log("loadingMessagesFailed");
                 finishDeletion();
             }
-        } else if (id == NotificationCenter.chatSearchResultsAvailableAll && Objects.equals(args[0], deleteAllMessagesGuid)) {
+        } else if (id == NotificationCenter.chatSearchResultsAvailableAll) {
             if ((int)args[0] == deleteAllMessagesGuid) {
                 ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[1];
+                log("chatSearchResultsAvailableAll:  " + messages.size());
                 if (processLoadedMessages(messages)) {
                     searchNewMessages(messages);
                 }
@@ -97,11 +104,13 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private boolean processLoadedMessages(ArrayList<MessageObject> messages) {
+        log("processLoadedMessages:  " + messages.size());
         if (!messages.isEmpty()) {
             deleteMessages(getMessagesToDelete(messages));
             getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
             return true;
         } else {
+            log("processLoadedMessages: empty");
             finishDeletion();
             return false;
         }
@@ -146,8 +155,10 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
 
     private void deleteMessages(MessagesToDelete messagesToDelete) {
         if (messagesToDelete == null || messagesToDelete.messagesIds.isEmpty()) {
+            log("deleteMessages: was null or empty");
             return;
         }
+        log("deleteMessages: " + messagesToDelete.messagesIds.size() + " " + messagesToDelete.randoms.size());
 
         boolean isEncryptedDialog = DialogObject.isEncryptedDialog(dialogId);
         ArrayList<Long> randoms = isEncryptedDialog ? messagesToDelete.randoms : null;
@@ -167,13 +178,16 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         if (System.currentTimeMillis() < loadingTimeout) {
             int maxId = messages.stream().mapToInt(MessageObject::getId).max().orElse(0);
             int minDate = messages.stream().mapToInt(m -> m.messageOwner.date).min().orElse(0);
+            log("loadNewMessagesIfNeeded: maxId = " + maxId);
             loadMessages(maxId, minDate);
         } else {
+            log("loadNewMessagesIfNeeded: timeout");
             getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
         }
     }
 
     private void loadMessages(int maxId, int minDate) {
+        log("load messages. maxId = " + maxId + ", minDate = " + minDate);
         getMessagesController().loadMessages(dialogId, 0, false,
                 100, maxId, 0, true, minDate,
                 deleteAllMessagesGuid, DialogObject.isEncryptedDialog(dialogId) ? 2 : 0, 0,
@@ -181,17 +195,20 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private void searchNewMessages(List<MessageObject> messages) {
+        log("search new messages");
         int maxId = messages.stream().mapToInt(MessageObject::getId).max().orElse(0);
         searchMessages(maxId);
     }
 
     private void searchMessages(int maxId) {
+        log("search messages. maxId = " + maxId);
         getMediaDataController().searchMessagesInChat("", dialogId, 0, deleteAllMessagesGuid,
                 0, 0, getMessagesController().getUser(userId),
                 getMessagesController().getChat(dialogId), null, maxId);
     }
 
     private void finishDeletion() {
+        log("deletion finished");
         getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.loadingMessagesFailed);
         getNotificationCenter().removeObserver(this, NotificationCenter.chatSearchResultsAvailableAll);
@@ -208,5 +225,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
 
     private NotificationCenter getNotificationCenter() {
         return NotificationCenter.getInstance(accountNum);
+    }
+
+    private void log(String message) {
+        PartisanLog.d("UserMessagesDeleter(" + hashCode() + "): " + message);
     }
 }
