@@ -4311,7 +4311,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 chat = null;
             }
             if (!FakePasscodeUtils.isFakePasscodeActivated() && (!ChatObject.isChannel(chat) || chat.megagroup)
-                    && !isEncryptedGroup() && SharedConfig.showDeleteMyMessages) {
+                    && !isEncryptedChat() && !isEncryptedGroup() && SharedConfig.showDeleteMyMessages) {
                 headerItem.lazilyAddSubItem(delete_messages, R.drawable.msg_delete, LocaleController.getString(R.string.DeleteMyMessages));
             }
             if (!isTopic && getUserConfig().isChannelSavingAllowed(chat)) {
