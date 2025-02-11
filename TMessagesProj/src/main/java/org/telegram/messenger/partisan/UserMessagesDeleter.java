@@ -137,18 +137,29 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         if (messageObject == null || messageObject.getDialogId() != dialogId || messageObject.messageOwner == null
                 || messageObject.messageOwner instanceof TLRPC.TL_messageService
                 || messageObject.messageText.toString().equals(LocaleController.getString(R.string.ActionMigrateFromGroup))) {
+            log("isNeedDeleteMessage main filter");
             return false;
         }
 
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             TLRPC.Chat chat = getMessagesController().getChat(dialogId);
             needDeleteMessage = messageObject.canEditMessage(chat);
+            if (!needDeleteMessage) {
+                log("isNeedDeleteMessage can't edit message");
+            }
         } else {
-            needDeleteMessage = messageObject.messageOwner.from_id != null && messageObject.messageOwner.from_id.user_id == userId;
+            TLRPC.Peer peer = messageObject.messageOwner.from_id;
+            needDeleteMessage = peer != null && peer.user_id == userId;
+            if (!needDeleteMessage) {
+                log("isNeedDeleteMessage wrong user_id");
+            }
         }
 
-        if (condition != null) {
-            needDeleteMessage = needDeleteMessage && condition.test(messageObject);
+        if (needDeleteMessage && condition != null) {
+            needDeleteMessage = condition.test(messageObject);
+            if (!needDeleteMessage) {
+                log("isNeedDeleteMessage condition failed");
+            }
         }
 
         return needDeleteMessage;
