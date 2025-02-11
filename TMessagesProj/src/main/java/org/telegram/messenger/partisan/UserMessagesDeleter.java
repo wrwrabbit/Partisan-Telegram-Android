@@ -49,13 +49,13 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     public void start() {
-        if (!DialogObject.isEncryptedDialog(dialogId)) {
-            log("start regular chat messages deletion");
-            startSearchingMessages();
-            loadingTimeout = System.currentTimeMillis() + 10_000;
+        if (onlyLoadMessages()) {
+            log("start only load chat messages deletion");
             startLoadingMessages();
         } else {
-            log("start encrypted chat messages deletion");
+            log("start load + search chat messages deletion");
+            startSearchingMessages();
+            loadingTimeout = System.currentTimeMillis() + 10_000;
             startLoadingMessages();
         }
     }
@@ -83,6 +83,8 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
                 log("messagesDidLoad:  " + messages.size());
                 if (processLoadedMessages(messages)) {
                     loadNewMessagesIfNeeded(messages);
+                } else if (onlyLoadMessages()) {
+                    finishDeletion();
                 }
             }
         } else if (id == NotificationCenter.loadingMessagesFailed) {
@@ -96,20 +98,21 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
                 log("chatSearchResultsAvailableAll:  " + messages.size());
                 if (processLoadedMessages(messages)) {
                     searchNewMessages(messages);
+                } else {
+                    finishDeletion();
                 }
             }
         }
     }
 
     private boolean processLoadedMessages(ArrayList<MessageObject> messages) {
-        log("processLoadedMessages:  " + messages.size());
+        log("processLoadedMessages: " + messages.size());
         if (!messages.isEmpty()) {
             deleteMessages(getMessagesToDelete(messages));
             getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
             return true;
         } else {
             log("processLoadedMessages: empty");
-            finishDeletion();
             return false;
         }
     }
@@ -203,6 +206,10 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         getMediaDataController().searchMessagesInChat("", dialogId, 0, deleteAllMessagesGuid,
                 0, 0, getMessagesController().getUser(userId),
                 getMessagesController().getChat(dialogId), null, maxId);
+    }
+
+    boolean onlyLoadMessages() {
+        return DialogObject.isEncryptedDialog(dialogId);
     }
 
     private void finishDeletion() {
