@@ -179,7 +179,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private void loadNewMessagesIfNeeded(List<MessageObject> messages) {
-        if (loadingTimeout == null && System.currentTimeMillis() < loadingTimeout) {
+        if (loadingTimeout == null || System.currentTimeMillis() < loadingTimeout) {
             int maxId = messages.stream().mapToInt(MessageObject::getId).max().orElse(0);
             int minDate = messages.stream().mapToInt(m -> m.messageOwner.date).min().orElse(0);
             log("loadNewMessagesIfNeeded: maxId = " + maxId);
