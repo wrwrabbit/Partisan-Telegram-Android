@@ -4,6 +4,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +38,7 @@ public class TerminateOtherSessionsAction extends AccountAction {
         }
         Set<Long> notTerminatedSessions = Collections.synchronizedSet(new HashSet<>(sessionsToTerminate));
         for (Long session : sessionsToTerminate) {
-            TLRPC.TL_account_resetAuthorization req = new TLRPC.TL_account_resetAuthorization();
+            TL_account.resetAuthorization req = new TL_account.resetAuthorization();
             req.hash = session;
             ConnectionsManager.getInstance(accountNum).sendRequest(req, (response, error) -> {
                 notTerminatedSessions.remove(session);
@@ -50,14 +51,14 @@ public class TerminateOtherSessionsAction extends AccountAction {
 
     private void terminateExceptSelectedSessions(FakePasscode fakePasscode) {
         fakePasscode.actionsResult.actionsPreventsLogoutAction.add(this);
-        TLRPC.TL_account_getAuthorizations req = new TLRPC.TL_account_getAuthorizations();
+        TL_account.getAuthorizations req = new TL_account.getAuthorizations();
         ConnectionsManager.getInstance(accountNum).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             if (response != null) {
-                TLRPC.TL_account_authorizations res = (TLRPC.TL_account_authorizations) response;
+                TL_account.authorizations res = (TL_account.authorizations) response;
                 Set<TLRPC.TL_authorization> notTerminatedAuthorizations = Collections.synchronizedSet(new HashSet<>(res.authorizations));
                 for (TLRPC.TL_authorization authorization : res.authorizations) {
                     if ((authorization.flags & 1) == 0 && !sessions.contains(authorization.hash)) {
-                        TLRPC.TL_account_resetAuthorization terminateReq = new TLRPC.TL_account_resetAuthorization();
+                        TL_account.resetAuthorization terminateReq = new TL_account.resetAuthorization();
                         terminateReq.hash = authorization.hash;
                         ConnectionsManager.getInstance(accountNum).sendRequest(terminateReq, (tResponse, tError) -> {
                             notTerminatedAuthorizations.remove(authorization);

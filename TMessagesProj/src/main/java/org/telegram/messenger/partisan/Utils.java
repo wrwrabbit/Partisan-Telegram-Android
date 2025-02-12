@@ -202,20 +202,22 @@ public class Utils {
     public static void clearWebBrowserCache(Context context) {
         ApplicationLoader.applicationContext.deleteDatabase("webview.db");
         ApplicationLoader.applicationContext.deleteDatabase("webviewCache.db");
-        WebStorage.getInstance().deleteAllData();
         try {
             WebView webView = new WebView(context);
             webView.clearCache(true);
             webView.clearHistory();
             webView.destroy();
         } catch (Exception e) {}
-        try {
-            File dir = new File(ApplicationLoader.applicationContext.getApplicationInfo().dataDir, "app_webview");
-            if (dir.exists()) {
-                WebBrowserSettings.deleteDirectory(dir, false);
+        if (SharedConfig.inappBrowser) { // Don't delete data from mini-apps if the user don't use inappBrowser
+            WebStorage.getInstance().deleteAllData();
+            try {
+                File dir = new File(ApplicationLoader.applicationContext.getApplicationInfo().dataDir, "app_webview");
+                if (dir.exists()) {
+                    WebBrowserSettings.deleteDirectory(dir, false);
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
             }
-        } catch (Exception e) {
-            FileLog.e(e);
         }
         try {
             File dir = new File(ApplicationLoader.applicationContext.getApplicationInfo().dataDir, "cache/WebView");
@@ -388,7 +390,7 @@ public class Utils {
                 }
                 return SpannableString.valueOf(builder);
             } else {
-                return leaveEmpty ? "" : message;
+                return leaveEmpty ? SpannableString.valueOf("") : message;
             }
         } else {
             CharSequence fixed = message;
@@ -429,7 +431,7 @@ public class Utils {
                 if (startIndex > 0) {
                     return message.subSequence(0, startIndex);
                 } else {
-                    return leaveEmpty ? "" : message;
+                    return leaveEmpty ? SpannableString.valueOf("") : message;
                 }
             }
         }
