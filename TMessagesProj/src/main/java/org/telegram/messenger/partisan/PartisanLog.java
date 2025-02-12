@@ -9,7 +9,6 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.SharedConfig;
 
 public class PartisanLog {
-
     public static void handleException(Exception e) {
         e("error", e);
         if (BuildVars.DEBUG_PRIVATE_VERSION) {
@@ -36,7 +35,11 @@ public class PartisanLog {
     }
 
     public static boolean logsAllowed() {
-        return isLogsEnabled() && isTesterSettingsActivated();
+        try {
+            return isLogsEnabled() && isTesterSettingsActivated();
+        } catch (Exception ignore) {
+            return false;
+        }
     }
 
     private static boolean isLogsEnabled() {
