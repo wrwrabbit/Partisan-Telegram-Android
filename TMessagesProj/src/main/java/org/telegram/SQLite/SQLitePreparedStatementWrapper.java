@@ -1,6 +1,11 @@
 package org.telegram.SQLite;
 
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.MessagesStorage;
+import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionData;
+import org.telegram.messenger.partisan.fileprotection.UsersWithSecretChatsCache;
 import org.telegram.tgnet.NativeByteBuffer;
 
 import java.nio.ByteBuffer;
@@ -20,7 +25,24 @@ public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
     }
 
     public void setDbSelectorByDialogId(long dialogId) {
-        setDbSelector(DialogObject.isEncryptedDialog(dialogId) ? DbSelector.BOTH_DB : DbSelector.MEMORY_DB);
+        setDbSelectorByDialogId(dialogId, UserConfig.selectedAccount, false, false);
+    }
+
+    public void setDbSelectorByDialogId(long dialogId, int account, boolean keepRecentSearch, boolean keepUsersWithEncryptedChats) {
+        DbSelector dbSelector = DbSelector.MEMORY_DB;
+        if (DialogObject.isEncryptedDialog(dialogId)) {
+            dbSelector = DbSelector.BOTH_DB;
+        }
+        if (dbSelector == DbSelector.MEMORY_DB && keepRecentSearch && FileProtectionData.isAddedRecentSearch(account, dialogId)) {
+            dbSelector = DbSelector.BOTH_DB;
+        }
+        if (dbSelector == DbSelector.MEMORY_DB && keepUsersWithEncryptedChats) {
+            SQLiteDatabase database = MessagesStorage.getInstance(account).getDatabase();
+            if (UsersWithSecretChatsCache.getOrCreateInstance(account, database).contains(dialogId)) {
+                dbSelector = DbSelector.BOTH_DB;
+            }
+        }
+        setDbSelector(dbSelector);
     }
 
     private interface StatementFunction<R> {

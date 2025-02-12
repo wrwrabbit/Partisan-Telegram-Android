@@ -87,9 +87,11 @@ public class MigrationZipReceiver {
     private boolean finishReceivingMigrationIfNeed() {
         if (AppMigrator.appAlreadyHasAccounts()) {
             if (SharedConfig.filesCopiedFromOldTelegram) { // already migrated
+                PartisanLog.d("appAlreadyHasAccounts: filesCopiedFromOldTelegram");
                 finishReceivingMigration(null);
             } else {
                 finishReceivingMigration("alreadyHasAccounts");
+                PartisanLog.d("appAlreadyHasAccounts: error = alreadyHasAccounts");
             }
             return true;
         } else if (isSourceAppVersionGreater()) {
