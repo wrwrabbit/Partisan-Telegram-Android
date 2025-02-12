@@ -73,6 +73,7 @@ public abstract class AbstractMaskedPasscodeScreen {
                 passcode.onDelete();
             }
             SharedConfig.fakePasscodes.clear();
+            SharedConfig.needShowMaskedPasscodeScreenTutorial = false;
             SharedConfig.saveConfig();
             delegate.passcodeEntered("");
         });
