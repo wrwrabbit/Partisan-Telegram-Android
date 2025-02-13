@@ -15,7 +15,6 @@ import static org.telegram.messenger.MessagesController.LOAD_FORWARD;
 import static org.telegram.messenger.MessagesController.LOAD_FROM_UNREAD;
 
 import android.appwidget.AppWidgetManager;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
@@ -41,6 +40,8 @@ import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanDatabaseMigrationHelper;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionDatabaseCleaner;
+import org.telegram.messenger.partisan.fileprotection.UsersWithSecretChatsCache;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
@@ -322,21 +323,12 @@ public class MessagesStorage extends BaseController {
         }
         try {
             if (fileProtectionEnabled()) {
-                if (cacheFile.length() <= 128 * 1024 * 1024) { // allow only small databases
-                    database = new SQLiteDatabaseWrapper(cacheFile.getPath());
-                    storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
-                } else {
-                    database = new SQLiteDatabase(cacheFile.getPath());
-                    if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-                        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
-                        editor.apply();
-
-                        SharedConfig.setFileProtectionForAllAccounts(false);
-                    }
-                }
+                database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
+                if (isFileProtectionDisabledBecauseOfFileSize()) {
+                    fileProtectionDisabledBecauseOfFileSize = true;
+                }
                 database = new SQLiteDatabase(cacheFile.getPath());
             }
             database.executeFast("PRAGMA secure_delete = ON").stepThis().dispose();
@@ -510,8 +502,6 @@ public class MessagesStorage extends BaseController {
             "enc_chats",
             "enc_groups",
             "enc_group_inner_chats",
-            "enc_group_virtual_messages",
-            "enc_group_virtual_messages_to_messages_v2",
             "channel_users_v2",
             "channel_admins_v3",
             "contacts",
@@ -7496,7 +7486,7 @@ public class MessagesStorage extends BaseController {
             cursor.dispose();
             cursor = null;
 
-            if (FakePasscodeUtils.isHidePeer(info.default_send_as, currentAccount)) {
+            if (info != null && FakePasscodeUtils.isHidePeer(info.default_send_as, currentAccount)) {
                 info.default_send_as = null;
             }
 
@@ -9242,7 +9232,12 @@ public class MessagesStorage extends BaseController {
                 }
             }
             if (!replyMessageRandomOwners.isEmpty()) {
-                cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
+                boolean isEncryptedGroupInnerChat = SharedConfig.encryptedGroupsEnabled && EncryptedGroupUtils.isInnerEncryptedGroupChat(dialogId, currentAccount);
+                if (isEncryptedGroupInnerChat) {
+                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id, r.uid FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
+                } else {
+                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
+                }
                 while (cursor.next()) {
                     NativeByteBuffer data = cursor.byteBufferValue(0);
                     if (data != null) {
@@ -9251,7 +9246,11 @@ public class MessagesStorage extends BaseController {
                         data.reuse();
                         message.id = cursor.intValue(1);
                         message.date = cursor.intValue(2);
-                        message.dialog_id = dialogId;
+                        if (isEncryptedGroupInnerChat) {
+                            message.dialog_id = cursor.intValue(4);
+                        } else {
+                            message.dialog_id = dialogId;
+                        }
 
                         addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
 
@@ -10014,6 +10013,9 @@ public class MessagesStorage extends BaseController {
                 data3.reuse();
                 data4.reuse();
                 data5.reuse();
+                if (fileProtectionEnabled()) {
+                    UsersWithSecretChatsCache.getOrCreateInstance(currentAccount, database).add(user.id);
+                }
                 if (dialog != null) {
                     state = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     if (state instanceof SQLitePreparedStatementWrapper) {
@@ -10183,7 +10185,7 @@ public class MessagesStorage extends BaseController {
         if (users == null || users.isEmpty()) {
             return;
         }
-        SQLitePreparedStatement state = database.executeFast("REPLACE INTO users VALUES(?, ?, ?, ?)");
+        SQLitePreparedStatement state = executeFastForBothDbIfNeeded("REPLACE INTO users VALUES(?, ?, ?, ?)");
         for (int a = 0; a < users.size(); a++) {
             TLRPC.User user = users.get(a);
             if (user == null) continue;
@@ -10220,6 +10222,9 @@ public class MessagesStorage extends BaseController {
                     }
                 }
                 cursor.dispose();
+            }
+            if (state instanceof SQLitePreparedStatementWrapper) {
+                ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(user.id, currentAccount, true, true);
             }
             state.requery();
             NativeByteBuffer data = new NativeByteBuffer(user.getObjectSize());
@@ -10297,7 +10302,7 @@ public class MessagesStorage extends BaseController {
         if (chats == null || chats.isEmpty()) {
             return;
         }
-        SQLitePreparedStatement state = database.executeFast("REPLACE INTO chats VALUES(?, ?, ?)");
+        SQLitePreparedStatement state = executeFastForBothDbIfNeeded("REPLACE INTO chats VALUES(?, ?, ?)");
         for (int a = 0; a < chats.size(); a++) {
             TLRPC.Chat chat = chats.get(a);
             if (chat.min) {
@@ -10346,6 +10351,9 @@ public class MessagesStorage extends BaseController {
                     }
                 }
                 cursor.dispose();
+            }
+            if (state instanceof SQLitePreparedStatementWrapper) {
+                ((SQLitePreparedStatementWrapper)state).setDbSelectorByDialogId(-chat.id, currentAccount, true, false);
             }
             state.requery();
             chat.flags |= 131072;
@@ -10636,49 +10644,6 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public Integer getEncryptedGroupVirtualMessageId(int encryptedGroupId, int encryptedChatId, int realMessageId) {
-        String sql = "SELECT virtual_message_id " +
-                "FROM enc_group_virtual_messages_to_messages_v2 " +
-                "WHERE encrypted_group_id = ? AND encrypted_chat_id = ? AND real_message_id = ?";
-        Object[] args = {encryptedGroupId, encryptedChatId, realMessageId};
-        return partisanSelect(sql, args, cursor -> {
-            if (cursor.next()) {
-                return cursor.intValue(0);
-            }
-            return null;
-        });
-    }
-
-    public int createEncryptedVirtualMessage(int encryptedGroupId) {
-        String sql = "SELECT MAX(virtual_message_id) FROM enc_group_virtual_messages WHERE encrypted_group_id = ?";
-        Object[] args = {encryptedGroupId};
-        int prevVirtualMessageId = partisanSelect(sql, args, cursor -> {
-            if (cursor.next()) {
-                return cursor.intValue(0);
-            }
-            return 0;
-        });
-        int virtualMessageId = prevVirtualMessageId + 1;
-        partisanExecute("INSERT INTO enc_group_virtual_messages VALUES(?, ?)", state -> {
-            int pointer = 1;
-            state.bindInteger(pointer++, encryptedGroupId);
-            state.bindInteger(pointer++, virtualMessageId);
-            state.step();
-        });
-        return virtualMessageId;
-    }
-
-    public void addEncryptedVirtualMessageMapping(int encryptedGroupId, int virtualMessageId, int encryptedChatId, int realMessageId) throws Exception {
-        partisanExecute("INSERT INTO enc_group_virtual_messages_to_messages_v2 VALUES(?, ?, ?, ?)", state -> {
-            int pointer = 1;
-            state.bindInteger(pointer++, encryptedGroupId);
-            state.bindInteger(pointer++, virtualMessageId);
-            state.bindInteger(pointer++, encryptedChatId);
-            state.bindInteger(pointer++, realMessageId);
-            state.step();
-        });
-    }
-
     private interface SQLitePreparedStatementConsumer {
         void accept(SQLitePreparedStatement state) throws SQLiteException;
     }
@@ -10731,6 +10696,10 @@ public class MessagesStorage extends BaseController {
     }
 
     public boolean fileProtectionEnabled() {
+        return fileProtectionEnabledByConfig() && !databaseFileSizeExceedsMaximumForRam();
+    }
+
+    private boolean fileProtectionEnabledByConfig() {
         if (FakePasscodeUtils.isFakePasscodeActivated() && !SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
             return false;
         }
@@ -10744,53 +10713,25 @@ public class MessagesStorage extends BaseController {
         }
     }
 
-    public void clearFileProtectedDb() {
-        SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
-                ? ((SQLiteDatabaseWrapper)database).getFileDatabase()
-                : database;
-        clearFileProtectedDb(db);
+    private boolean databaseFileSizeExceedsMaximumForRam() {
+        return cacheFile != null && cacheFile.exists() && cacheFile.length() > 128 * 1024 * 1024;
     }
 
-    public void clearFileProtectedDb(SQLiteDatabase db) {
-        storageQueue.postRunnable(() -> {
-            SQLiteCursor cursor = null;
+    private static volatile boolean fileProtectionDisabledBecauseOfFileSize = false;
+
+    public boolean isFileProtectionDisabledBecauseOfFileSize() {
+        return fileProtectionDisabledBecauseOfFileSize || fileProtectionEnabledByConfig() && databaseFileSizeExceedsMaximumForRam();
+    }
+
+    public void clearFileProtectedDb() {
+        Utilities.cacheClearQueue.postRunnable(() -> {
+            SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
+                    ? ((SQLiteDatabaseWrapper) database).getFileDatabase()
+                    : database;
             try {
-                cursor = db.queryFinalized("SELECT did FROM search_recent WHERE 1");
-                Set<Long> recentSearchDialogIds = new HashSet<>();
-                while (cursor.next()) {
-                    recentSearchDialogIds.add(cursor.longValue(0));
-                }
-                cursor.dispose();
-                cursor = null;
-                cursor = db.queryFinalized("SELECT uid FROM chats WHERE 1");
-                Set<Long> chatIdsToDelete = new HashSet<>();
-                while (cursor.next()) {
-                    long chatId = cursor.longValue(0);
-                    if (!recentSearchDialogIds.contains(chatId)) {
-                        chatIdsToDelete.add(chatId);
-                    }
-                }
-                cursor.dispose();
-                cursor = null;
-
-                for (Long chatId : recentSearchDialogIds) {
-                    db.executeFast("DELETE FROM chats WHERE uid = " + chatId).stepThis().dispose();
-                }
-
-                String notEncryptedGroupCheck = "did & 0x4000000000000000 = 0 OR did & 0x8000000000000000 <> 0";
-                db.executeFast("DELETE FROM contacts").stepThis().dispose();
-                db.executeFast("DELETE FROM messages_v2 WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
-                db.executeFast("DELETE FROM dialogs WHERE " + notEncryptedGroupCheck).stepThis().dispose();
-                db.executeFast("DELETE FROM messages_holes WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
-                db.executeFast("DELETE FROM messages_topics WHERE " + notEncryptedGroupCheck.replace("did", "uid")).stepThis().dispose();
-                db.executeFast("DELETE FROM messages_holes_topics").stepThis().dispose();
+                new FileProtectionDatabaseCleaner(db, currentAccount).clear();
             } catch (Exception e) {
                 checkSQLException(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-                AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
             }
         });
     }

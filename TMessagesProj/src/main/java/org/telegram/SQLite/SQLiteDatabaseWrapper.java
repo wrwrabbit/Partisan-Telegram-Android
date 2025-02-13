@@ -14,13 +14,14 @@ import java.util.Set;
 public class SQLiteDatabaseWrapper extends SQLiteDatabase {
     private final Set<String> sqlPrefixesForBothDB = new HashSet<>(Arrays.asList(
             "PRAGMA", "CREATE TABLE", "CREATE INDEX", "VACUUM", "DROP TABLE", "DELETE FROM", "UPDATE", "CREATE INDEX",
-            "CREATE UNIQUE INDEX", "ALTER TABLE"
+            "CREATE UNIQUE INDEX", "ALTER TABLE", "DROP INDEX"
     ));
     private final Set<String> sqlPrefixesForSpecificDB = new HashSet<>(Arrays.asList(
             "INSERT INTO", "REPLACE INTO", "SELECT"
     ));
     private final Set<String> onlyMemoryTables = new HashSet<>(Arrays.asList(
-            "messages_v2", "chats", "contacts", "dialogs", "messages_holes", "messages_topics", "messages_holes_topics"
+            "messages_v2", "chats", "contacts", "dialogs", "messages_holes", "messages_topics", "messages_holes_topics",
+            "users", "media_v4", "media_holes_topics", "media_holes_v2"
     ));
 
     private final SQLiteDatabase fileDatabase;

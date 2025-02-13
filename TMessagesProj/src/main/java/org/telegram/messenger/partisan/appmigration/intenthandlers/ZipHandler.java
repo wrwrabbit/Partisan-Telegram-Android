@@ -19,7 +19,6 @@ public class ZipHandler extends AbstractIntentHandler {
     public boolean needHandleIntent(Intent intent, Activity activity) {
         return intent.hasExtra("zipPassword")
                 && !receivingZip
-                && !AppMigrator.appAlreadyHasAccounts()
                 && activity.getCallingActivity() != null
                 && isVerifiedSignature(intent, activity);
     }

@@ -45,6 +45,7 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionData;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -778,6 +779,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         recentSearchObject.date = (int) (System.currentTimeMillis() / 1000);
         filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
+        FileProtectionData.addAddedRecentSearch(currentAccount, did);
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
                 SQLitePreparedStatement state = MessagesStorage.getInstance(currentAccount).getDatabase().executeFast("REPLACE INTO search_recent VALUES(?, ?)");

@@ -92,6 +92,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -4505,7 +4506,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     Bundle args1 = new Bundle();
                     args1.putBoolean("scrollToTopOnResume", true);
                     if (DialogObject.isEncryptedDialog(did)) {
-                        args1.putInt("enc_id", DialogObject.getEncryptedChatId(did));
+                        if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args1, did, profileActivity.getCurrentAccount())) {
+                            return true;
+                        }
                     } else {
                         if (DialogObject.isUserDialog(did)) {
                             args1.putLong("user_id", did);

@@ -195,8 +195,6 @@ public class MessageObject {
     public int audioProgressMs;
     public float bufferedProgress;
 
-    public Integer encryptedGroupVirtualMessageId;
-
     public float gifState;
     public int audioProgressSec;
     public int audioPlayerDuration;
@@ -2016,15 +2014,18 @@ public class MessageObject {
                 }
             }
         } else {
-            AnimatedEmojiSpan[] aspans = ((Spannable) messageText).getSpans(0, messageText.length(), AnimatedEmojiSpan.class);
-            if (aspans != null && aspans.length > 0) {
-                totalAnimatedEmojiCount = aspans.length;
-                for (int a = 0; a < aspans.length; a++) {
-                    aspans[a].replaceFontMetrics(Theme.chat_msgTextPaint.getFontMetricsInt(), (int) (Theme.chat_msgTextPaint.getTextSize() + dp(4)), -1);
-                    aspans[a].full = false;
+            try {
+                AnimatedEmojiSpan[] aspans = ((Spannable) messageText).getSpans(0, messageText.length(), AnimatedEmojiSpan.class);
+                if (aspans != null && aspans.length > 0) {
+                    totalAnimatedEmojiCount = aspans.length;
+                    for (int a = 0; a < aspans.length; a++) {
+                        aspans[a].replaceFontMetrics(Theme.chat_msgTextPaint.getFontMetricsInt(), (int) (Theme.chat_msgTextPaint.getTextSize() + dp(4)), -1);
+                        aspans[a].full = false;
+                    }
+                } else {
+                    totalAnimatedEmojiCount = 0;
                 }
-            } else {
-                totalAnimatedEmojiCount = 0;
+            } catch (ClassCastException ignore) { // fix "((Spannable) messageText)" crash
             }
         }
     }
@@ -8019,7 +8020,7 @@ public class MessageObject {
         } else {
             channelSignatureProfiles = getDialogId() == UserObject.VERIFY;
         }
-        return !isSponsored() && (isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null);
+        return !isSponsored() && (isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null || EncryptedGroupUtils.isInnerEncryptedGroupChat(getDialogId(), currentAccount) && !isOutOwner());
     }
 
     private boolean needDrawAvatarInternal() {
@@ -8042,7 +8043,7 @@ public class MessageObject {
         } else {
             channelSignatureProfiles = getDialogId() == UserObject.VERIFY;
         }
-        return !isSponsored() && (isFromChat() && isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null);
+        return !isSponsored() && (isFromChat() && isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null || EncryptedGroupUtils.isInnerEncryptedGroupChat(getDialogId(), currentAccount) && !isOutOwner());
     }
 
     public boolean isFromChat() {

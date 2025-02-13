@@ -183,6 +183,7 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.UserMessagesDeleter;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.findmessages.FindMessagesController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
@@ -779,7 +780,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private SparseArray<ArrayList<MessageObject>> messagesByDaysSorted = new SparseArray<>();
     private LongSparseArray<MessageObject> conversionMessages = new LongSparseArray<>();
     public ArrayList<MessageObject> messages = new ArrayList<>();
-    public Map<Integer, List<MessageObject>> hiddenEncryptedGroupOutMessages = new HashMap<>();
+    public Map<Long, List<MessageObject>> hiddenEncryptedGroupOutMessages = new HashMap<>();
     private SparseArray<MessageObject> waitingForReplies = new SparseArray<>();
     private LongSparseArray<ArrayList<MessageObject>> polls = new LongSparseArray<>();
     private LongSparseArray<MessageObject.GroupedMessages> groupedMessagesMap = new LongSparseArray<>();
@@ -3791,10 +3792,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         boolean isRegex = ((DialogCheckBox) views.get(1)).isChecked();
                         boolean isCaseSensitive = ((DialogCheckBox) views.get(2)).isChecked();
                         boolean isDeleteAll = ((DialogCheckBox) views.get(3)).isChecked();
-                        if(isDeleteAll){
-                            getMessagesController().deleteAllMessagesFromDialogByUser(UserConfig.getInstance(currentAccount).clientUserId, did, getTopicId(), null);
-                        }else {
-                            getMessagesController().deleteAllMessagesFromDialogByUser(UserConfig.getInstance(currentAccount).clientUserId, did, getTopicId(), msg -> {
+                        UserMessagesDeleter deleter;
+                        if (isDeleteAll) {
+                            deleter = new UserMessagesDeleter(currentAccount, getUserConfig().clientUserId, did, getTopicId(), null);
+                        } else {
+                            deleter = new UserMessagesDeleter(currentAccount, getUserConfig().clientUserId, did, getTopicId(), msg -> {
                                 String msgText;
                                 if (msg.caption != null) {
                                     msgText = msg.caption.toString();
@@ -3828,6 +3830,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 }
                             });
                         }
+                        deleter.start();
                     };
                     template.addCheckboxTemplate(false, LocaleController.getString("Regex", R.string.Regex));
                     template.addCheckboxTemplate(false, LocaleController.getString("CaseSensitive", R.string.CaseSensitive));
@@ -4287,7 +4290,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 chat = null;
             }
             if (!FakePasscodeUtils.isFakePasscodeActivated() && (!ChatObject.isChannel(chat) || chat.megagroup)
-                    && !isEncryptedGroup() && SharedConfig.showDeleteMyMessages) {
+                    && !isEncryptedChat() && !isEncryptedGroup() && SharedConfig.showDeleteMyMessages) {
                 headerItem.lazilyAddSubItem(delete_messages, R.drawable.msg_delete, LocaleController.getString(R.string.DeleteMyMessages));
             }
             if (!isTopic && getUserConfig().isChannelSavingAllowed(chat)) {
@@ -14081,10 +14084,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     public void showFieldPanelForReply(MessageObject messageObjectToReply) {
-        if (isEncryptedGroup()) {
-            EncryptedGroupUtils.showNotImplementedDialog(this);
-            return;
-        }
         showFieldPanel(true, messageObjectToReply, null, null, null, true, 0, null, false, true);
     }
 
@@ -14267,7 +14266,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     if (messageObjectToReply.isOutOwner()) {
                         name = UserObject.getUserName(getUserConfig().getCurrentUser());
                     } else {
-                        TLRPC.User user = getMessagesController().getUser(messageObjectToReply.messageOwner.peer_id.user_id);
+                        TLRPC.User user = getMessagesController().getUser(messageObjectToReply.messageOwner.from_id.user_id);
                         name = UserObject.getUserName(user);
                     }
                 } else if (isEncryptedChat()) {
@@ -15834,9 +15833,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     object = primary;
                 }
             }
+            object = getVisibleMessage(object);
 
             int index = chatAdapter.getMessages().indexOf(object);
             if (index != -1) {
+                PartisanLog.d("getVisibleMessage: index != -1");
                 if (scrollFromIndex > 0) {
                     scrollDirection = scrollFromIndex > index ? RecyclerAnimationScrollHelper.SCROLL_DIRECTION_DOWN : RecyclerAnimationScrollHelper.SCROLL_DIRECTION_UP;
                     chatScrollHelper.setScrollDirection(scrollDirection);
@@ -15902,9 +15903,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     updatePagedownButtonVisibility(true);
                 }
             } else {
+                PartisanLog.d("getVisibleMessage: index == -1");
                 query = true;
             }
         } else {
+            PartisanLog.d("getVisibleMessage: '!SCROLL_DEBUG_DELAY && object != null' was false");
             query = true;
         }
 
@@ -19413,6 +19416,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 waitingForLoad.remove(index);
             }
             ArrayList<MessageObject> messArr = (ArrayList<MessageObject>) args[2];
+            if (isEncryptedGroup() && messArr.isEmpty() && !messages.isEmpty()) {
+                return;
+            }
             if (messages.isEmpty() && messArr.size() == 1 && MessageObject.isSystemSignUp(messArr.get(0))) {
                 forceHistoryEmpty = true;
                 endReached[0] = endReached[1] = true;
@@ -23116,38 +23122,23 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private boolean addMessage(int pos, MessageObject obj) {
         if (isEncryptedGroup()) {
-            updateMessageVirtualId(obj);
-            int firstChatId = currentEncryptedGroup.getInnerEncryptedChatIds(false).get(0);
-            boolean needAddMessage = !obj.isOut() || obj.getDialogId() == DialogObject.makeEncryptedDialogId(firstChatId);
+            boolean needAddMessage = !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id);
             if (needAddMessage) {
                 messages.add(obj);
                 messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
+                if (obj.isOut()) {
+                    hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
+                }
                 return true;
             } else {
-                Optional<Integer> visibleMessageId = messages.stream()
-                        .filter(m -> m.encryptedGroupVirtualMessageId != null && m.encryptedGroupVirtualMessageId.equals(obj.encryptedGroupVirtualMessageId))
-                        .map(m -> m.getId())
-                        .findAny();
-                if (visibleMessageId.isPresent()) {
-                    List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.computeIfAbsent(visibleMessageId.get(), k -> new ArrayList<>());
-                    massageCopies.add(obj);
-                }
+                List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
+                massageCopies.add(obj);
                 return false;
             }
         } else {
             messages.add(pos, obj);
             return true;
         }
-    }
-
-    private void updateMessageVirtualId(MessageObject obj) {
-        if (currentEncryptedGroup == null) {
-            return;
-        }
-        int encryptedGroupId = currentEncryptedGroup.getInternalId();
-        int encryptedChatId = DialogObject.getEncryptedChatId(obj.getDialogId());
-        obj.encryptedGroupVirtualMessageId = getMessagesStorage()
-                .getEncryptedGroupVirtualMessageId(encryptedGroupId, encryptedChatId, obj.getId());
     }
 
     private AlertDialog quoteMessageUpdateAlert;
@@ -28967,8 +28958,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         Map<TLRPC.EncryptedChat, List<MessageObject>> encryptedGroupMessages = new HashMap<>();
         for (MessageObject message : srcMessages) {
             List<MessageObject> messageCopies;
-            if (message.isOut() && hiddenEncryptedGroupOutMessages.containsKey(message.getId())) {
-                messageCopies = new ArrayList<>(hiddenEncryptedGroupOutMessages.get(message.getId()));
+            if (message.isOut()) {
+                long randomId = message.messageOwner.random_id;
+                messageCopies = new ArrayList<>(hiddenEncryptedGroupOutMessages.computeIfAbsent(randomId, k -> new ArrayList<>()));
                 messageCopies.add(message);
             } else {
                 messageCopies = Collections.singletonList(message);
@@ -28988,8 +28980,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private void forEachMessageCopy(MessageObject message, Consumer<MessageObject> action) {
         if (isEncryptedGroup() && message.isOut()) {
-            if (hiddenEncryptedGroupOutMessages.containsKey(message.getId())) {
-                hiddenEncryptedGroupOutMessages.get(message.getId()).stream().forEach(action);
+            if (hiddenEncryptedGroupOutMessages.containsKey(message.messageOwner.random_id)) {
+                hiddenEncryptedGroupOutMessages.get(message.messageOwner.random_id).stream().forEach(action);
             }
         }
         action.accept(message);
@@ -32501,10 +32493,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if ((messagePreviewParams == null && (!fragment.isQuote || replyingMessageObject == null) || fragment.isQuote && replyingMessageObject == null) && forwardingMessage == null && selectedMessagesIds[0].size() == 0 && selectedMessagesIds[1].size() == 0) {
             return false;
         }
-        if (dids.stream().anyMatch(did -> getMessagesStorage().isEncryptedGroup(did.dialogId))) {
-            EncryptedGroupUtils.showNotImplementedDialog(this);
-            return false;
-        }
         ArrayList<MessageObject> fmessages = new ArrayList<>();
         if (forwardingMessage != null) {
             if (forwardingMessageGroup != null) {
@@ -32585,7 +32573,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 Bundle args = new Bundle();
                 args.putBoolean("scrollToTopOnResume", scrollToTopOnResume);
                 if (DialogObject.isEncryptedDialog(did)) {
-                    args.putInt("enc_id", DialogObject.getEncryptedChatId(did));
+                    if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, did, currentAccount)) {
+                        return true;
+                    }
                 } else {
                     if (DialogObject.isUserDialog(did)) {
                         args.putLong("user_id", did);
@@ -41759,14 +41749,35 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     public MessageObject fixEncryptedGroupMessageObjectIfNeed(MessageObject obj, long targetEncryptedDialogId) {
-        if (obj == null || !isEncryptedGroup() || !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.getId())) {
+        if (obj == null || !isEncryptedGroup() || !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id)) {
             return obj;
         }
-        List<MessageObject> hiddenMessageCopies = hiddenEncryptedGroupOutMessages.get(obj.getId());
+        List<MessageObject> hiddenMessageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
         return hiddenMessageCopies.stream()
                 .filter(m -> m.getDialogId() == targetEncryptedDialogId)
                 .findAny()
                 .orElse(obj);
+    }
+
+    public MessageObject getVisibleMessage(MessageObject obj) {
+        if (obj == null || !isEncryptedGroup() || !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id)) {
+            PartisanLog.d("getVisibleMessage: return the same obj");
+            return obj;
+        }
+        List<MessageObject> messageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
+        if (messageCopies != null && messageCopies.contains(obj)) {
+            PartisanLog.d("getVisibleMessage: messageCopies contains obj");
+            MessageObject newObj = messages.stream()
+                    .filter(m -> m.messageOwner.random_id == obj.messageOwner.random_id)
+                    .findAny()
+                    .orElse(obj);
+            if (newObj == obj) {
+                PartisanLog.d("getVisibleMessage: original message is the same");
+            }
+            return newObj;
+        }
+        PartisanLog.d("getVisibleMessage: obj copy not found");
+        return obj;
     }
 
     private void finishHiddenChatFragment() {

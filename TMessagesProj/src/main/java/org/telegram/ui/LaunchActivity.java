@@ -132,6 +132,8 @@ import org.telegram.messenger.partisan.appmigration.MigrationIntentHandler;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionPostRestartCleaner;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.update.UpdateChecker;
 import org.telegram.messenger.partisan.update.UpdateData;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
@@ -1603,6 +1605,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadProgressChanged);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadFailed);
         SecurityChecker.checkSecurityIssuesAndSave(this, currentAccount, false);
+        Utilities.globalQueue.postRunnable(() -> new FileProtectionPostRestartCleaner().checkAndClean(), 1000);
         if (updateLayout != null && updateLayout.isCancelIcon() && SharedConfig.pendingPtgAppUpdate != null && getUpdateAccountNum() != currentAccount) {
             NotificationCenter.getInstance(getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoaded);
             NotificationCenter.getInstance(getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoadProgressChanged);
@@ -3151,11 +3154,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
             } else if (push_enc_id != 0) {
                 Bundle args = new Bundle();
-                Integer encryptedGroupId = MessagesStorage.getInstance(currentAccount).getEncryptedGroupIdByInnerEncryptedChatId(push_enc_id);
-                if (encryptedGroupId != null) {
-                    args.putInt("enc_group_id", encryptedGroupId);
-                } else {
-                    args.putInt("enc_id", push_enc_id);
+                if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, DialogObject.makeEncryptedDialogId(push_enc_id), currentAccount)) {
+                    return true;
                 }
                 ChatActivity fragment = new ChatActivity(args);
                 if (getActionBarLayout().presentFragment(new INavigationLayout.NavigationParams(fragment).setNoAnimation(true))) {
@@ -5976,7 +5976,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.closeChats);
                 }
                 if (DialogObject.isEncryptedDialog(did)) {
-                    args.putInt("enc_id", DialogObject.getEncryptedChatId(did));
+                    if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, did, account)) {
+                        return false;
+                    }
                 } else if (DialogObject.isUserDialog(did)) {
                     args.putLong("user_id", did);
                 } else {

@@ -2474,14 +2474,31 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
         } else {
             boolean canSendVoiceMessages = true;
-            TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat((int) peer);
-            long userId = encryptedChat.user_id;
-            if (DialogObject.isUserDialog(userId)) {
-                TLRPC.User sendToUser = getMessagesController().getUser(userId);
-                if (sendToUser != null) {
-                    TLRPC.UserFull userFull = getMessagesController().getUserFull(userId);
-                    if (userFull != null) {
-                        canSendVoiceMessages = !userFull.voice_messages_forbidden;
+            TLRPC.EncryptedChat tempEncryptedChat = getMessagesController().getEncryptedChat((int) peer);
+            List<TLRPC.EncryptedChat> encryptedChats;
+            if (tempEncryptedChat != null) {
+                encryptedChats = Collections.singletonList(tempEncryptedChat);
+            } else {
+                encryptedChats = new ArrayList<>();
+                EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(peer));
+                if (encryptedGroup != null) {
+                    for (int encryptedChatId : encryptedGroup.getInitializedInnerEncryptedChatIds()) {
+                        TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedChatId);
+                        if (encryptedChat != null) {
+                            encryptedChats.add(encryptedChat);
+                        }
+                    }
+                }
+            }
+            for (TLRPC.EncryptedChat encryptedChat : encryptedChats) {
+                long userId = encryptedChat.user_id;
+                if (DialogObject.isUserDialog(userId)) {
+                    TLRPC.User sendToUser = getMessagesController().getUser(userId);
+                    if (sendToUser != null) {
+                        TLRPC.UserFull userFull = getMessagesController().getUserFull(userId);
+                        if (userFull != null) {
+                            canSendVoiceMessages = !userFull.voice_messages_forbidden;
+                        }
                     }
                 }
             }
@@ -4005,7 +4022,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
             newMsg.silent = !notify || MessagesController.getNotificationsSettings(currentAccount).getBoolean("silent_" + peer, false);
             if (newMsg.random_id == 0) {
-                newMsg.random_id = getNextRandomId();
+                if (sendMessageParams.randomId != null) {
+                    newMsg.random_id = sendMessageParams.randomId;
+                } else {
+                    newMsg.random_id = getNextRandomId();
+                }
             }
             if (quick_reply_shortcut != null || quick_reply_shortcut_id != 0) {
                 if (quick_reply_shortcut_id != 0) {
@@ -4284,14 +4305,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             } else if (videoEditedInfo != null && videoEditedInfo.notReadyYet) {
                 newMsgObj.videoEditedInfo.notReadyYet = videoEditedInfo.notReadyYet;
             }
-
-            if (sendMessageParams.encryptedGroupId != null && sendMessageParams.encryptedGroupVirtualMessageId != null) {
-                int encryptedGroupId = sendMessageParams.encryptedGroupId;
-                int virtualMessageId = sendMessageParams.encryptedGroupVirtualMessageId;
-                int encryptedChatId = DialogObject.getEncryptedChatId(peer);
-                getMessagesStorage().addEncryptedVirtualMessageMapping(encryptedGroupId, virtualMessageId, encryptedChatId, newMsg.id);
-            }
-
             if (groupId == 0) {
                 ArrayList<MessageObject> objArr = new ArrayList<>();
                 objArr.add(newMsgObj);
@@ -5331,8 +5344,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             return false;
         }
         sendMessageParams.encryptedGroupId = encryptedGroup.getInternalId();
-        sendMessageParams.encryptedGroupVirtualMessageId = getMessagesStorage()
-                .createEncryptedVirtualMessage(sendMessageParams.encryptedGroupId);
+        sendMessageParams.randomId = getNextRandomId();
         for (int encryptedChatId : encryptedGroup.getInnerEncryptedChatIds(true)) {
             sendMessageParams.peer = DialogObject.makeEncryptedDialogId(encryptedChatId);
             sendMessage(sendMessageParams);
@@ -9741,7 +9753,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public TL_stories.StoryItem sendingStory;
         public Integer autoDeleteDelay;
         public Integer encryptedGroupId;
-        public Integer encryptedGroupVirtualMessageId;
+        public Long randomId;
         public ChatActivity.ReplyQuote replyQuote;
         public boolean invert_media;
         public String quick_reply_shortcut;

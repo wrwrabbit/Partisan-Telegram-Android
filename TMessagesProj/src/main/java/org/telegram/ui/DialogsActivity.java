@@ -129,14 +129,15 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrationDialogs;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.tgnet.ConnectionsManager;
@@ -7053,9 +7054,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else if (!AndroidUtilities.needShowPasscode(false)) {
             checkOtherPtg();
             checkPtgPermissions();
-            if (!anyPtgDialogShown) {
-                FileProtectionNewFeatureDialog.showDialogIfNeeded(this);
-            }
+            showPtgDialog(FileProtectionNewFeatureDialog.createDialogIfNeeded(this), true);
+            showPtgDialog(FileProtectionTemporaryDisabledDialog.createDialogIfNeeded(this), true);
         }
     }
 
@@ -7130,7 +7130,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void showPtgDialog(AlertDialog dialog, boolean showUsingFragmentMethod) {
-        if (anyPtgDialogShown) {
+        if (anyPtgDialogShown || dialog == null) {
             return;
         }
         anyPtgDialogShown = true;
@@ -7799,7 +7799,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return !AppMigrationDialogs.needShowNewerPtgDialog(getContext())
                 && !getOlderPtgStatus().needShowDialog()
                 && !needCameraPermission()
-                && !FileProtectionNewFeatureDialog.needShow();
+                && !FileProtectionNewFeatureDialog.needShow()
+                && !FileProtectionTemporaryDisabledDialog.needShow();
     }
 
     private boolean needCameraPermission() {
@@ -8222,22 +8223,16 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else {
             Bundle args = new Bundle();
             if (DialogObject.isEncryptedDialog(dialogId)) {
-                EncryptedGroup encryptedGroup = getMessagesController()
-                        .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
-                if (encryptedGroup != null) {
-                    if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
-                        EncryptedGroupUtils.showSecretGroupJoinDialog(encryptedGroup, this, currentAccount, () -> {
-                            Bundle args2 = new Bundle();
-                            args2.putInt("enc_group_id", encryptedGroup.getInternalId());
-                            args2.putBoolean("just_created_chat", true);
-                            presentFragment(new ChatActivity(args2), false);
-                        });
-                        return;
-                    } else {
-                        args.putInt("enc_group_id", encryptedGroup.getInternalId());
-                    }
-                } else {
-                    args.putInt("enc_id", DialogObject.getEncryptedChatId(dialogId));
+                if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, dialogId, currentAccount)) {
+                    EncryptedGroup encryptedGroup = getMessagesController()
+                            .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+                    EncryptedGroupUtils.showSecretGroupJoinDialog(encryptedGroup, this, currentAccount, () -> {
+                        Bundle args2 = new Bundle();
+                        args2.putInt("enc_group_id", encryptedGroup.getInternalId());
+                        args2.putBoolean("just_created_chat", true);
+                        presentFragment(new ChatActivity(args2), false);
+                    });
+                    return;
                 }
             } else if (DialogObject.isUserDialog(dialogId)) {
                 args.putLong("user_id", dialogId);
@@ -11201,6 +11196,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
         if (dialogsType == DIALOGS_TYPE_DEFAULT) {
             ArrayList<TLRPC.Dialog> dialogs = (ArrayList<TLRPC.Dialog>) Utils.filterDialogs(messagesController.getDialogs(folderId), Optional.of(currentAccount));
+            if (folderId == 0) {
+                PartisanLog.d("fileProtectedDialogsLoaded: DIALOGS_TYPE_DEFAULT count " + dialogs.size());
+            }
             if (!dialogs.isEmpty() && dialogs.get(0) instanceof TLRPC.TL_dialogFolder) {
                 TLRPC.TL_dialogFolder folder = (TLRPC.TL_dialogFolder)dialogs.get(0);
                 if (Utils.filterDialogs(messagesController.getDialogs((int)folder.id), Optional.of(currentAccount)).isEmpty()) {
