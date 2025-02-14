@@ -1,6 +1,8 @@
 package org.telegram.messenger.partisan.secretgroups.action;
 
 import org.telegram.tgnet.AbstractSerializedData;
+import org.telegram.tgnet.InputSerializedData;
+import org.telegram.tgnet.OutputSerializedData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +16,7 @@ public class CreateGroupAction extends EncryptedGroupAction {
     public Long ownerUserId;
 
     @Override
-    public void readParams(AbstractSerializedData stream, boolean exception) {
+    public void readParams(InputSerializedData stream, boolean exception) {
         externalGroupId = stream.readInt64(exception);
         name = stream.readString(exception);
         ownerUserId = stream.readInt64(exception);
@@ -25,7 +27,7 @@ public class CreateGroupAction extends EncryptedGroupAction {
     }
 
     @Override
-    public void serializeToStream(AbstractSerializedData stream) {
+    public void serializeToStream(OutputSerializedData stream) {
         stream.writeInt32(constructor);
 
         stream.writeInt64(externalGroupId);
