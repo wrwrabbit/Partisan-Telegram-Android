@@ -19,13 +19,11 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import com.google.android.exoplayer2.util.Log;
-
-import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SecurityIssue;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,7 +56,7 @@ public class UserConfig extends BaseController {
     public int lastHintsSyncTime;
     public boolean draftsLoaded;
     public boolean unreadDialogsLoaded = true;
-    public TLRPC.TL_account_tmpPassword tmpPassword;
+    public TL_account.tmpPassword tmpPassword;
     public int ratingLoadTime;
     public int botRatingLoadTime;
     public int webappRatingLoadTime;
@@ -120,6 +118,7 @@ public class UserConfig extends BaseController {
     public boolean showSecuritySuggestions = false;
     public long lastSecuritySuggestionsShow = 0;
     public boolean fileProtectionEnabled = false;
+    public boolean disableFileProtectionAfterRestart = false;
     private final Map<Integer, Boolean> temporarilyLoadedPinnedDialogs = new ConcurrentHashMap<>();
 
     private static ObjectMapper jsonMapper = null;
@@ -299,6 +298,7 @@ public class UserConfig extends BaseController {
                     editor.putBoolean("showSecuritySuggestions", showSecuritySuggestions);
                     editor.putLong("lastSecuritySuggestionsShow", lastSecuritySuggestionsShow);
                     editor.putBoolean("fileProtectionEnabled", fileProtectionEnabled);
+                    editor.putBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
                     String savedChannelsStr = savedChannels.stream().reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
                     editor.putString("savedChannels", savedChannelsStr);
                     String pinnedSavedChannelsStr = pinnedSavedChannels.stream().reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
@@ -471,6 +471,7 @@ public class UserConfig extends BaseController {
             if (SharedConfig.fileProtectionForAllAccountsEnabled) { // Don't enable file protection for accounts if global file protection enabled.
                 fileProtectionEnabled = false;
             }
+            disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
             String savedChannelsStr = preferences.getString("savedChannels", defaultChannels);
             savedChannels = new HashSet<>(Arrays.asList(savedChannelsStr.split(",")));
             savedChannels.remove("");
@@ -535,7 +536,7 @@ public class UserConfig extends BaseController {
                 byte[] bytes = Base64.decode(string, Base64.DEFAULT);
                 if (bytes != null) {
                     SerializedData data = new SerializedData(bytes);
-                    tmpPassword = TLRPC.TL_account_tmpPassword.TLdeserialize(data, data.readInt32(false), false);
+                    tmpPassword = TL_account.tmpPassword.TLdeserialize(data, data.readInt32(false), false);
                     data.cleanup();
                 }
             }
@@ -651,6 +652,7 @@ public class UserConfig extends BaseController {
         showSecuritySuggestions = false;
         lastSecuritySuggestionsShow = 0;
         fileProtectionEnabled = false;
+        disableFileProtectionAfterRestart = false;
         registeredForPush = false;
         contactsSavedCount = 0;
         lastSendMessageId = -210000;
@@ -735,7 +737,7 @@ public class UserConfig extends BaseController {
 
     public long[] getDialogLoadOffsets(int folderId) {
         if (getMessagesStorage().fileProtectionEnabled()) {
-            return new long[]{-1, -1, -1, -1, -1, -1};
+            return getFileProtectionDialogLoadOffsets(folderId);
         }
         SharedPreferences preferences = getPreferences();
         int dialogsLoadOffsetId = preferences.getInt("2dialogsLoadOffsetId" + (folderId == 0 ? "" : folderId), hasValidDialogLoadIds ? 0 : -1);
@@ -748,6 +750,10 @@ public class UserConfig extends BaseController {
     }
 
     public void setDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
+        if (getMessagesStorage().fileProtectionEnabled()) {
+            setFileProtectionDialogsLoadOffset(folderId, dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess);
+            return;
+        }
         SharedPreferences.Editor editor = getPreferences().edit();
         editor.putInt("2dialogsLoadOffsetId" + (folderId == 0 ? "" : folderId), dialogsLoadOffsetId);
         editor.putInt("2dialogsLoadOffsetDate" + (folderId == 0 ? "" : folderId), dialogsLoadOffsetDate);
@@ -815,6 +821,23 @@ public class UserConfig extends BaseController {
         Set<SecurityIssue> securityIssues = new HashSet<>(getUserConfig().currentSecurityIssues);
         securityIssues.removeAll(getUserConfig().getIgnoredSecurityIssues());
         return securityIssues;
+    }
+
+    private Map<Integer, long[]> fileProtectionDialogLoadOffsets = Collections.synchronizedMap(new HashMap<>());
+
+    private long[] getFileProtectionDialogLoadOffsets(int folderId) {
+        if (fileProtectionDialogLoadOffsets.containsKey(folderId)) {
+            return fileProtectionDialogLoadOffsets.get(folderId);
+        } else if (hasValidDialogLoadIds) {
+            return new long[]{0, 0, 0, 0, 0, 0};
+        } else {
+            return new long[]{-1, -1, -1, -1, -1, -1};
+        }
+    }
+
+    private void setFileProtectionDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
+        long[] offsets = {dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess};
+        fileProtectionDialogLoadOffsets.put(folderId, offsets);
     }
 
     int globalTtl = 0;

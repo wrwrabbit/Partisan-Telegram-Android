@@ -1,6 +1,7 @@
 package org.telegram.messenger.partisan.secretgroups;
 
 import android.content.DialogInterface;
+import android.os.Bundle;
 import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -278,5 +279,21 @@ public class EncryptedGroupUtils {
     public static boolean encryptedGroupsEnabled() {
         return !FakePasscodeUtils.isFakePasscodeActivated()
                 && SharedConfig.encryptedGroupsEnabled;
+    }
+
+    public static boolean putEncIdOrEncGroupIdInBundle(Bundle bundle, long dialogId, int account) {
+        EncryptedGroup encryptedGroup = MessagesController.getInstance(account)
+                .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+        if (encryptedGroup != null) {
+            if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
+                return false;
+            } else {
+                bundle.putInt("enc_group_id", encryptedGroup.getInternalId());
+                return true;
+            }
+        } else {
+            bundle.putInt("enc_id", DialogObject.getEncryptedChatId(dialogId));
+            return true;
+        }
     }
 }
