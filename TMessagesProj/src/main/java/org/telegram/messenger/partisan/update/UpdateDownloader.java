@@ -38,6 +38,8 @@ public class UpdateDownloader implements NotificationCenter.NotificationCenterDe
         );
         log("Update file loading started");
         getFileLoader().loadFile(SharedConfig.pendingPtgAppUpdate.document, messageObject, FileLoader.PRIORITY_NORMAL, 1);
+        getNotificationCenter().addObserver(this, NotificationCenter.fileLoaded);
+        getNotificationCenter().addObserver(this, NotificationCenter.fileLoadFailed);
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.updateDownloadingStarted);
     }
 
