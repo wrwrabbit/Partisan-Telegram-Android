@@ -27,7 +27,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.partisan.update.UpdateChecker;
+import org.telegram.messenger.partisan.update.UpdateDownloader;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.IUpdateLayout;
@@ -44,9 +44,9 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
     private TextView updateSizeTextView;
     private AnimatorSet updateTextAnimator;
 
-    private Activity activity;
-    private ViewGroup sideMenu;
-    private ViewGroup sideMenuContainer;
+    private final Activity activity;
+    private final ViewGroup sideMenu;
+    private final ViewGroup sideMenuContainer;
 
     private Runnable onUpdateLayoutClicked;
 
@@ -122,14 +122,14 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                 onUpdateLayoutClicked.run();
             }
             if (updateLayoutIcon.getIcon() == MediaActionDrawable.ICON_DOWNLOAD) {
-                UpdateChecker.startUpdateDownloading(currentAccount);
+                new UpdateDownloader(currentAccount).startUpdateDownloading();
                 updateAppUpdateViews(currentAccount,  true);
             } else if (updateLayoutIcon.getIcon() == MediaActionDrawable.ICON_CANCEL) {
                 FileLoader.getInstance(currentAccount).cancelLoadFile(SharedConfig.pendingPtgAppUpdate.document);
                 updateAppUpdateViews(currentAccount, true);
             } else {
                 if (!AndroidUtilities.openForView(SharedConfig.pendingPtgAppUpdate.document, true, activity)) {
-                    UpdateChecker.startUpdateDownloading(currentAccount);
+                    new UpdateDownloader(currentAccount).startUpdateDownloading();
                 }
             }
         });
@@ -175,7 +175,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                 setUpdateText(LocaleController.getString(R.string.AppUpdateNow), animated);
                 showSize = false;
             } else {
-                if (FileLoader.getInstance(LaunchActivity.getUpdateAccountNum()).isLoadingFile(fileName) || UpdateChecker.isUpdateChecking) {
+                if (FileLoader.getInstance(LaunchActivity.getUpdateAccountNum()).isLoadingFile(fileName) || UpdateDownloader.isUpdateChecking) {
                     updateLayoutIcon.setIcon(MediaActionDrawable.ICON_CANCEL, true, animated);
                     updateLayoutIcon.setProgress(0, false);
                     Float p = ImageLoader.getInstance().getFileProgress(fileName);
