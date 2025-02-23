@@ -67,7 +67,8 @@ public class UpdateDownloader implements NotificationCenter.NotificationCenterDe
                 getNotificationCenter().removeObserver(this, NotificationCenter.fileLoadFailed);
             }
         } else if (id == NotificationCenter.fileLoadFailed) {
-            if (isUpdatePath((String) args[0])) {
+            final int canceled = (int)args[1];
+            if (isUpdatePath((String) args[0]) && canceled != 1) {
                 log("update load failed");
                 if (loadAttempt == 0) {
                     loadAttempt++;
