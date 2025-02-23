@@ -12903,6 +12903,13 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (!fromCache && !migrate && totalDialogsLoadCount < 400 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != -1 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != Integer.MAX_VALUE) {
                     loadDialogs(folderId, 0, 100, false);
                 }
+                if (fromCache && getMessagesStorage().fileProtectionEnabled()) {
+                    if (!dialogsEndReached.get(folderId)) {
+                        loadDialogs(folderId, -1, 100, true);
+                    } else {
+                        loadDialogs(folderId, 0, 100, false);
+                    }
+                }
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
 
                 if (migrate) {
