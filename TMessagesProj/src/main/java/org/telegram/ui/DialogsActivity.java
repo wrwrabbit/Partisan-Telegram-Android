@@ -2854,12 +2854,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (!dialogsLoaded[currentAccount]) {
             MessagesController messagesController = accountInstance.getMessagesController();
             messagesController.loadGlobalNotificationsSettings();
-            for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-                if (!dialogsLoaded[i]) {
-                    MessagesController controller = AccountInstance.getInstance(i).getMessagesController();
-                    controller.loadDialogs(0, 0, 100, true);
-                }
-            }
             messagesController.loadHintDialogs();
             messagesController.loadUserInfo(accountInstance.getUserConfig().getCurrentUser(), false, 0);
             accountInstance.getContactsController().checkInviteText();
