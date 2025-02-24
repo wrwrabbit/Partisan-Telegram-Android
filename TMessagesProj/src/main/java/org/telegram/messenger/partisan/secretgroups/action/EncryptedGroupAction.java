@@ -1,11 +1,12 @@
 package org.telegram.messenger.partisan.secretgroups.action;
 
 import org.telegram.tgnet.AbstractSerializedData;
+import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.TLObject;
 
 public abstract class EncryptedGroupAction extends TLObject {
 
-    public static EncryptedGroupAction TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+    public static EncryptedGroupAction TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
         EncryptedGroupAction result = null;
         switch (constructor) {
             case 0x44498b93:
