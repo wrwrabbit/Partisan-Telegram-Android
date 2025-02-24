@@ -9,12 +9,12 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -136,6 +136,14 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         return getMessagesController().getUser(encryptedChat.user_id);
     }
 
+    private InnerEncryptedChat getInnerChat(int index) {
+        if (index >= getInnerEncryptedChatIds().size()) {
+            return null;
+        }
+        int encryptedChatId = getInnerEncryptedChatIds().get(index);
+        return encryptedGroup.getInnerChatByEncryptedChatId(encryptedChatId);
+    }
+
     private long getDialogId(int index) {
         if (index >= getInnerEncryptedChatIds().size()) {
             return 0;
@@ -200,7 +208,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                 case VIEW_TYPE_GROUP_MEMBER:
                 default:
                 {
-                    view = new EncryptedGroupMemberCell(mContext, currentAccount);
+                    view = new EncryptedGroupMemberCell(mContext, encryptedGroup, currentAccount);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 }
@@ -215,7 +223,8 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                     EncryptedGroupMemberCell cell = (EncryptedGroupMemberCell) holder.itemView;
                     int index = position - firstMemberRow;
                     TLRPC.User user = getUser(index);
-                    cell.setUser(user, position != lastMemberRow);
+                    InnerEncryptedChat innerChat = getInnerChat(index);
+                    cell.setUserAndInnerChat(user, innerChat, position != lastMemberRow);
                     break;
                 }
             }

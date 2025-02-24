@@ -1,37 +1,45 @@
 package org.telegram.ui.Cells;
 
+import static org.telegram.messenger.LocaleController.getString;
+
 import android.content.Context;
 import android.graphics.Canvas;
-import android.text.TextUtils;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChatState;
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.LayoutHelper;
 
 public class EncryptedGroupMemberCell extends FrameLayout {
-    private final TextView textView;
+    private final SimpleTextView nameTextView;
+    private final SimpleTextView statusTextView;
     private final BackupImageView imageView;
     private final AvatarDrawable avatarDrawable;
 
     private boolean needDivider;
+    private EncryptedGroup currentEncryptedGroup;
     private final int currentAccount;
 
-    public EncryptedGroupMemberCell(Context context, int currentAccount) {
+    public EncryptedGroupMemberCell(Context context, EncryptedGroup encryptedGroup, int currentAccount) {
         super(context);
 
+        this.currentEncryptedGroup = encryptedGroup;
         this.currentAccount = currentAccount;
 
         avatarDrawable = new AvatarDrawable();
@@ -41,16 +49,17 @@ public class EncryptedGroupMemberCell extends FrameLayout {
         imageView.setRoundRadius(AndroidUtilities.dp(18));
         addView(imageView, LayoutHelper.createFrame(36, 36, Gravity.LEFT | Gravity.TOP, 14, 6, 0, 0));
 
-        textView = new TextView(context);
-        textView.setTextColor(Theme.getColor(Theme.key_chats_menuItemText));
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
-        textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        textView.setLines(1);
-        textView.setMaxLines(1);
-        textView.setSingleLine(true);
-        textView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
-        textView.setEllipsize(TextUtils.TruncateAt.END);
-        addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP, 72, 0, 60, 0));
+        nameTextView = new SimpleTextView(context);
+        nameTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+        nameTextView.setTypeface(AndroidUtilities.bold());
+        nameTextView.setTextSize(16);
+        nameTextView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP);
+        addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 20, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 28 : 64, 10, LocaleController.isRTL ? 64 : 28, 0));
+
+        statusTextView = new SimpleTextView(context);
+        statusTextView.setTextSize(15);
+        statusTextView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP);
+        addView(statusTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 20, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 28 : 64, 32, LocaleController.isRTL ? 64 : 28, 0));
 
         setWillNotDraw(false);
     }
@@ -63,7 +72,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        textView.setTextColor(Theme.getColor(Theme.key_chats_menuItemText));
+        nameTextView.setTextColor(Theme.getColor(Theme.key_chats_menuItemText));
     }
 
     public void setDivider(boolean divider) {
@@ -71,12 +80,28 @@ public class EncryptedGroupMemberCell extends FrameLayout {
         setWillNotDraw(!divider);
     }
 
-    public void setUser(TLRPC.User user, boolean divider) {
+    public void setUserAndInnerChat(TLRPC.User user, InnerEncryptedChat innerChat, boolean divider) {
         if (user == null) {
             return;
         }
         avatarDrawable.setInfo(user);
-        textView.setText(ContactsController.formatName(user.first_name, user.last_name));
+        nameTextView.setText(ContactsController.formatName(user.first_name, user.last_name));
+
+        if (currentEncryptedGroup.getOwnerUserId() == user.id) {
+            statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+            statusTextView.setText(LocaleController.getString(R.string.ChannelCreator));
+        } else if (innerChat.getState() == InnerEncryptedChatState.INITIALIZED) {
+            if (user.id == UserConfig.getInstance(currentAccount).getClientUserId() || user.status != null && user.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime() || MessagesController.getInstance(currentAccount).onlinePrivacy.containsKey(user.id)) {
+                statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+                statusTextView.setText(getString(R.string.Online));
+            } else {
+                statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
+                statusTextView.setText(LocaleController.formatUserStatus(currentAccount, user));
+            }
+        } else {
+            statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
+            statusTextView.setText(innerChat.getState().toString());
+        }
         imageView.getImageReceiver().setCurrentAccount(currentAccount);
         imageView.setForUserOrChat(user, avatarDrawable);
         needDivider = divider;
