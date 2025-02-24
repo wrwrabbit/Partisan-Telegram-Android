@@ -11,6 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.SQLite.SQLiteCursor;
+import org.telegram.SQLite.SQLiteDatabase;
+import org.telegram.SQLite.SQLiteDatabaseWrapper;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
@@ -46,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -100,6 +102,7 @@ public class TesterSettingsActivity extends BaseFragment {
     private int saveLogcatAfterRestartRow;
     private int showEncryptedChatsFromEncryptedGroupsRow;
     private int enableSecretGroupsRow;
+    private int dbSizeRow;
 
     public static boolean showPlainBackup;
 
@@ -322,6 +325,7 @@ public class TesterSettingsActivity extends BaseFragment {
 
         phoneOverrideRow = -1;
         forceAllowScreenshotsRow = -1;
+        dbSizeRow = -1;
 
         sessionTerminateActionWarningRow = rowCount++;
         updateChannelIdRow = rowCount++;
@@ -347,6 +351,9 @@ public class TesterSettingsActivity extends BaseFragment {
         saveLogcatAfterRestartRow = rowCount++;
         showEncryptedChatsFromEncryptedGroupsRow = rowCount++;
         enableSecretGroupsRow = rowCount++;
+        if (getMessagesStorage().fileProtectionEnabled()) {
+            dbSizeRow = rowCount++;
+        }
     }
 
     @Override
@@ -406,6 +413,24 @@ public class TesterSettingsActivity extends BaseFragment {
             config.showSecuritySuggestions = !issues.isEmpty();
             config.saveConfig(false);
         }
+    }
+
+    private Long getMemoryDbSize() {
+        Long dbSize = null;
+        SQLiteDatabase database = getMessagesStorage().getDatabase();
+        if (database instanceof SQLiteDatabaseWrapper) {
+            SQLiteDatabaseWrapper wrapper = (SQLiteDatabaseWrapper)database;
+            SQLiteDatabase memoryDatabase = wrapper.getMemoryDatabase();
+            try {
+                SQLiteCursor cursor = memoryDatabase.queryFinalized("select page_count * page_size from pragma_page_count(), pragma_page_size()");
+                if (cursor.next()) {
+                    dbSize = cursor.longValue(0);
+                }
+                cursor.dispose();
+            } catch (Exception ignore) {
+            }
+        }
+        return dbSize;
     }
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
@@ -501,6 +526,9 @@ public class TesterSettingsActivity extends BaseFragment {
                         textCell.setText("Check Verification Updates", true);
                     } else if (position == resetVerificationLastCheckTimeRow) {
                         textCell.setText("Reset Verification Last Check Time", true);
+                    } else if (position == dbSizeRow) {
+                        Long databaseSize = getMemoryDbSize();
+                        textCell.setTextAndValue("Memory DB size", databaseSize != null ? AndroidUtilities.formatFileSize(databaseSize) : "error", true);
                     }
                     break;
                 }
@@ -518,7 +546,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == phoneOverrideRow || position == resetSecurityIssuesRow
                     || position == activateAllSecurityIssuesRow || position == editSavedChannelsRow
                     || position == resetUpdateRow || position == checkVerificationUpdatesRow
-                    || position == resetVerificationLastCheckTimeRow) {
+                    || position == resetVerificationLastCheckTimeRow || position == dbSizeRow) {
                 return 1;
             }
             return 0;
