@@ -153,7 +153,8 @@ public class FileProtectionActivity extends BaseFragment {
 
     private boolean isChanged() {
         for (FileProtectionAccountCellInfo cellInfo : accounts) {
-            if (cellInfo.getUserConfig().fileProtectionEnabled != cellInfo.fileProtectionEnabled) {
+            if (cellInfo.getUserConfig().fileProtectionEnabled != cellInfo.fileProtectionEnabled
+                    && !(cellInfo.fileProtectionEnabled && SharedConfig.fileProtectionForAllAccountsEnabled)) {
                 return true;
             }
         }
