@@ -98,6 +98,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -5338,6 +5339,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
     }
 
+    private final Map<Long, Map<Long, Long>> encryptedGroupMediaGroupIds = new HashMap<>();
+
     private boolean sendMessageToEncryptedGroupIfNeeded(SendMessageParams sendMessageParams) {
         long dialogId = sendMessageParams.peer;
         if (!DialogObject.isEncryptedDialog(dialogId) || !SharedConfig.encryptedGroupsEnabled) {
@@ -5349,8 +5352,18 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
         sendMessageParams.encryptedGroupId = encryptedGroup.getInternalId();
         sendMessageParams.randomId = getNextRandomId();
+        Long originalMediaGroupId = null;
+        if (sendMessageParams.params != null && sendMessageParams.params.containsKey("groupId")) {
+            originalMediaGroupId = Utilities.parseLong(sendMessageParams.params.get("groupId"));
+        }
         for (int encryptedChatId : encryptedGroup.getInnerEncryptedChatIds(true)) {
             sendMessageParams.peer = DialogObject.makeEncryptedDialogId(encryptedChatId);
+            if (originalMediaGroupId != null) {
+                Map<Long, Long> groupIdsByEncryptedChat = encryptedGroupMediaGroupIds.computeIfAbsent(originalMediaGroupId, key -> new HashMap<>());
+                long newMediaGroupId = groupIdsByEncryptedChat.computeIfAbsent(sendMessageParams.peer, key -> Utilities.random.nextLong());
+                sendMessageParams.params = new HashMap<>(sendMessageParams.params);
+                sendMessageParams.params.put("groupId", Long.toString(newMediaGroupId));
+            }
             sendMessage(sendMessageParams);
         }
         return true;
