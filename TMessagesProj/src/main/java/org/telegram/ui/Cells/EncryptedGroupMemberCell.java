@@ -1,5 +1,6 @@
 package org.telegram.ui.Cells;
 
+import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.getString;
 
 import android.content.Context;
@@ -29,7 +30,7 @@ import org.telegram.ui.Components.LayoutHelper;
 public class EncryptedGroupMemberCell extends FrameLayout {
     private final SimpleTextView nameTextView;
     private final SimpleTextView statusTextView;
-    private final BackupImageView imageView;
+    private final BackupImageView avatarImageView;
     private final AvatarDrawable avatarDrawable;
 
     private boolean needDivider;
@@ -45,9 +46,9 @@ public class EncryptedGroupMemberCell extends FrameLayout {
         avatarDrawable = new AvatarDrawable();
         avatarDrawable.setTextSize(AndroidUtilities.dp(12));
 
-        imageView = new BackupImageView(context);
-        imageView.setRoundRadius(AndroidUtilities.dp(18));
-        addView(imageView, LayoutHelper.createFrame(36, 36, Gravity.LEFT | Gravity.TOP, 14, 6, 0, 0));
+        avatarImageView = new BackupImageView(context);
+        avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
+        addView(avatarImageView, LayoutHelper.createFrame(46, 46, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 14, 6, LocaleController.isRTL ? 14 : 0, 0));
 
         nameTextView = new SimpleTextView(context);
         nameTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
@@ -66,7 +67,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(View.MeasureSpec.makeMeasureSpec(View.MeasureSpec.getSize(widthMeasureSpec), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(48), View.MeasureSpec.EXACTLY));
+        super.onMeasure(View.MeasureSpec.makeMeasureSpec(View.MeasureSpec.getSize(widthMeasureSpec), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(dp(58) + (needDivider ? 1 : 0), View.MeasureSpec.EXACTLY));
     }
 
     @Override
@@ -102,8 +103,8 @@ public class EncryptedGroupMemberCell extends FrameLayout {
             statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
             statusTextView.setText(innerChat.getState().toString());
         }
-        imageView.getImageReceiver().setCurrentAccount(currentAccount);
-        imageView.setForUserOrChat(user, avatarDrawable);
+        avatarImageView.getImageReceiver().setCurrentAccount(currentAccount);
+        avatarImageView.setForUserOrChat(user, avatarDrawable);
         needDivider = divider;
         setWillNotDraw(!divider);
     }
