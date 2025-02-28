@@ -20544,7 +20544,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 updateBottomOverlay();
             }
 
-            if (newRowsCount == 0 && (mergeDialogId != 0 && loadIndex == 0 || isEncryptedChat() && !getEndReached(did, 0))) {
+            if (newRowsCount == 0 && (mergeDialogId != 0 && loadIndex == 0 || isEncryptedChat() && !getEndReached(did, 0)) && !isEncryptedGroup()) {
                 first = true;
                 if (chatListView != null) {
                     chatListView.setEmptyView(null);
