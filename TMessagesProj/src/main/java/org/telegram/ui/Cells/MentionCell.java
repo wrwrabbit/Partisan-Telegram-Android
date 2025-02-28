@@ -141,7 +141,7 @@ public class MentionCell extends LinearLayout {
         } else {
             imageView.setImageDrawable(avatarDrawable);
         }
-        nameTextView.setText(chat.title);
+        nameTextView.setText(UserConfig.getChatTitleOverride(UserConfig.selectedAccount, chat));
         String username;
         if ((username = ChatObject.getPublicUsername(chat)) != null) {
             usernameTextView.setText("@" + username);
