@@ -19991,8 +19991,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (obj.messageOwner.date != 0) {
                     setMaxDate(loadIndex, Math.max(getMaxDate(loadIndex, loadIndex), obj.messageOwner.date), dialogId);
-                    if (getMinDate(obj.getDialogId(), loadIndex) == 0 || obj.messageOwner.date < getMinDate(obj.getDialogId(), loadIndex)) {
-                        setMinDate(loadIndex, obj.messageOwner.date, obj.getDialogId());
+                    if (getMinDate(dialogId, loadIndex) == 0 || obj.messageOwner.date < getMinDate(dialogId, loadIndex)) {
+                        setMinDate(loadIndex, obj.messageOwner.date, dialogId);
                     }
                 }
 
@@ -24378,7 +24378,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     setMaxMessageId(0, Math.max(messageId, getMaxMessageId(dialogId, 0)), dialogId);
                     setMinMessageId(0, Math.min(messageId, getMinMessageId(dialogId, 0)), dialogId);
                 }
-                setMaxDate(0, Math.max(getMaxDate(obj.getDialogId(), 0), obj.messageOwner.date), obj.getDialogId());
+                setMaxDate(0, Math.max(getMaxDate(dialogId, 0), obj.messageOwner.date), dialogId);
                 messagesDict[0].put(messageId, obj);
                 ArrayList<MessageObject> dayArray;
                 if (isAd && !messages.isEmpty()) {
