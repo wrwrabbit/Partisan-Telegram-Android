@@ -116,7 +116,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         rowCount = 0;
 
         firstMemberRow = rowCount;
-        lastMemberRow = firstMemberRow + getInnerEncryptedChatIds().size() - 1;
+        lastMemberRow = firstMemberRow + getInnerEncryptedChatIds().size();
         rowCount = lastMemberRow + 1;
     }
 
@@ -221,10 +221,14 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
             switch (holder.getItemViewType()) {
                 case VIEW_TYPE_GROUP_MEMBER: {
                     EncryptedGroupMemberCell cell = (EncryptedGroupMemberCell) holder.itemView;
-                    int index = position - firstMemberRow;
-                    TLRPC.User user = getUser(index);
-                    InnerEncryptedChat innerChat = getInnerChat(index);
-                    cell.setUserAndInnerChat(user, innerChat, position != lastMemberRow);
+                    if (position == firstMemberRow) {
+                        cell.setUserAndInnerChat(getUserConfig().getCurrentUser(), null, position != lastMemberRow);
+                    } else {
+                        int index = position - firstMemberRow - 1;
+                        TLRPC.User user = getUser(index);
+                        InnerEncryptedChat innerChat = getInnerChat(index);
+                        cell.setUserAndInnerChat(user, innerChat, position != lastMemberRow);
+                    }
                     break;
                 }
             }
