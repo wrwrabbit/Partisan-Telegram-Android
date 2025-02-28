@@ -48,12 +48,14 @@ public class FileProtectionActivity extends BaseFragment {
     private int rowCount;
 
     private final List<FileProtectionAccountCellInfo> accounts = new ArrayList<>();
+    private boolean fileProtectionWorksWhenFakePasscodeActivated;
 
     private static final int done_button = 1;
 
     @Override
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
+        fileProtectionWorksWhenFakePasscodeActivated = SharedConfig.fileProtectionWorksWhenFakePasscodeActivated;
         updateRows();
         return true;
     }
@@ -75,11 +77,7 @@ public class FileProtectionActivity extends BaseFragment {
                         finishFragment();
                     }
                 } else if (id == done_button) {
-                    if (isChanged()) {
-                        processDone();
-                    } else {
-                        finishFragment();
-                    }
+                    processDone();
                 }
             }
         });
@@ -101,9 +99,9 @@ public class FileProtectionActivity extends BaseFragment {
                 return;
             }
             if (position == worksWithFakePasscodeRow) {
-                SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+                fileProtectionWorksWhenFakePasscodeActivated = !fileProtectionWorksWhenFakePasscodeActivated;
                 TextCheckCell textCell = (TextCheckCell) view;
-                textCell.setChecked(SharedConfig.fileProtectionWorksWhenFakePasscodeActivated);
+                textCell.setChecked(fileProtectionWorksWhenFakePasscodeActivated);
             }
             if (firstAccountRow <= position && position <= lastAccountRow) {
                 CheckBoxUserCell userCell = ((CheckBoxUserCell) view);
@@ -152,10 +150,20 @@ public class FileProtectionActivity extends BaseFragment {
     }
 
     private boolean isChanged() {
+        return fileProtectedAccountsChanged()
+                || fileProtectionWorksWhenFakePasscodeActivated != SharedConfig.fileProtectionWorksWhenFakePasscodeActivated;
+    }
+
+    private boolean fileProtectedAccountsChanged() {
         for (FileProtectionAccountCellInfo cellInfo : accounts) {
-            if (cellInfo.getUserConfig().fileProtectionEnabled != cellInfo.fileProtectionEnabled
-                    && !(cellInfo.fileProtectionEnabled && SharedConfig.fileProtectionForAllAccountsEnabled)) {
-                return true;
+            if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+                if (!cellInfo.fileProtectionEnabled) {
+                    return true;
+                }
+            } else {
+                if (cellInfo.getUserConfig().fileProtectionEnabled != cellInfo.fileProtectionEnabled) {
+                    return true;
+                }
             }
         }
         return false;
@@ -181,9 +189,17 @@ public class FileProtectionActivity extends BaseFragment {
     }
 
     private void processDone() {
+        if (!fileProtectedAccountsChanged()) {
+            SharedConfig.fileProtectionWorksWhenFakePasscodeActivated = fileProtectionWorksWhenFakePasscodeActivated;
+            SharedConfig.saveConfig();
+            finishFragment();
+            return;
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setMessage(LocaleController.getString(R.string.ApplicationWillBeRestarted));
         builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialogInterface, i) -> {
+            SharedConfig.fileProtectionWorksWhenFakePasscodeActivated = fileProtectionWorksWhenFakePasscodeActivated;
+            SharedConfig.saveConfig();
             Map<Integer, Boolean> map = new HashMap<>();
             for (FileProtectionAccountCellInfo cellInfo : accounts) {
                 map.put(cellInfo.accountNum, cellInfo.fileProtectionEnabled);
@@ -265,7 +281,7 @@ public class FileProtectionActivity extends BaseFragment {
                 case 1: {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
                     if (position == worksWithFakePasscodeRow) {
-                        textCell.setTextAndCheck(LocaleController.getString(R.string.WorksWithFakePasscodes), SharedConfig.fileProtectionWorksWhenFakePasscodeActivated, true);
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.WorksWithFakePasscodes), fileProtectionWorksWhenFakePasscodeActivated, true);
                     }
                     break;
                 }
