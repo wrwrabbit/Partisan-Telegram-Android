@@ -19634,7 +19634,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (load_type == 0 && isCache && messArr.size() < count) {
                     postponedScrollToLastMessageQueryIndex = lastLoadIndex;
                     waitingForLoad.add(lastLoadIndex);
-                    getMessagesController().loadMessages(dialog_id, mergeDialogId, false, count, 0, 0, false, 0, classGuid, 0, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
+                    final int countFinal = count;
+                    forEachDialogId(dialog_id ->
+                        getMessagesController().loadMessages(dialog_id, mergeDialogId, false, countFinal, 0, 0, false, 0, classGuid, 0, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic)
+                    );
                     return;
                 }
 
