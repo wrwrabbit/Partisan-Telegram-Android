@@ -15998,7 +15998,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             waitingForLoad.add(lastLoadIndex);
             postponedScrollToLastMessageQueryIndex = lastLoadIndex;
             fakePostponedScroll = false;
-            postponedScrollMinMessageId = getMinMessageId(object.getDialogId(), 0);
+            postponedScrollMinMessageId = object != null ? getMinMessageId(object.getDialogId(), 0) : getMinMessageIdForAllChats(0);
             postponedScrollMessageId = id;
             getMessagesController().loadMessages(loadIndex == 0 ? dialog_id : mergeDialogId, 0, false, ((isThreadChat() && !isTopic) || AndroidUtilities.isTablet()) ? 30 : 20, startLoadFromMessageId, 0, true, 0, classGuid, 3, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
         } else {
@@ -41912,6 +41912,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     .mapToInt(values -> values[index])
                     .max()
                     .orElse(Integer.MIN_VALUE);
+        }
+    }
+
+    private int getMinMessageIdForAllChats(int index) {
+        if (!isEncryptedChat()) {
+            return getMinMessageIdMinimal(index);
+        } else {
+            return getMinMessageIdMaximal(index);
         }
     }
 
