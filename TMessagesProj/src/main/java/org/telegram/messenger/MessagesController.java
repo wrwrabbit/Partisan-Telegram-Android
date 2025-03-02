@@ -19932,6 +19932,12 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isDialogMuted(long dialogId, long topicId, TLRPC.Chat chat) {
+        if (getMessagesStorage().isEncryptedGroup(dialogId)) {
+            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+            if (encryptedGroup != null) {
+                return encryptedGroup.getInnerEncryptedChatIds(false).stream().anyMatch(innerId -> isDialogMuted(DialogObject.makeEncryptedDialogId(innerId), 0));
+            }
+        }
         int mute_type = notificationsPreferences.getInt("notify2_" + NotificationsController.getSharedPrefKey(dialogId, topicId), -1);
         if (mute_type == -1) {
             Boolean forceChannel;

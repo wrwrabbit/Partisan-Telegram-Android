@@ -67,6 +67,7 @@ import androidx.core.graphics.drawable.IconCompat;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -5781,6 +5782,17 @@ public class NotificationsController extends BaseController {
     }
 
     public void setDialogNotificationsSettings(long dialog_id, long topicId, int setting) {
+        if (getMessagesStorage().isEncryptedGroup(dialog_id)) {
+            EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(dialog_id));
+            if (encryptedGroup != null) {
+
+            }
+            for (int innerChatId : encryptedGroup.getInnerEncryptedChatIds(false)) {
+                NotificationsController.getInstance(UserConfig.selectedAccount).setDialogNotificationsSettings(DialogObject.makeEncryptedDialogId(innerChatId), topicId, setting);
+            }
+            return;
+        }
+
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
         SharedPreferences.Editor editor = preferences.edit();
         TLRPC.Dialog dialog = MessagesController.getInstance(UserConfig.selectedAccount).dialogs_dict.get(dialog_id);

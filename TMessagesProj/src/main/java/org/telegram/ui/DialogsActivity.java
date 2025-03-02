@@ -9315,10 +9315,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (getParentActivity() == null) {
             return;
         }
-        if (action == mute && selectedDialogs.stream().anyMatch(dialogId -> getMessagesStorage().isEncryptedGroup(dialogId))) {
-            EncryptedGroupUtils.showNotImplementedDialog(this);
-            return;
-        }
         MessagesController.DialogFilter filter;
         boolean containsFilter = (viewPages[0].dialogsType == 7 || viewPages[0].dialogsType == 8) && (!actionBar.isActionModeShowed() || actionBar.isActionModeShowed(null));
         if (containsFilter) {
