@@ -160,7 +160,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
             avatarImageView.setForUserOrChat(user, avatarDrawable);
         } else {
             final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-            this.name = chat == null ? "" : chat.title;
+            this.name = chat == null ? "" : UserConfig.getChatTitleOverride(currentAccount, chat);
             avatarDrawable.setInfo(chat);
             avatarImageView.setForUserOrChat(chat, avatarDrawable);
         }
