@@ -95,8 +95,8 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         listView.setOnItemClickListener((view, position, x, y) -> {
             if (firstMemberRow != -1 && firstMemberRow <= position && position <= lastMemberRow) {
                 Bundle args = new Bundle();
-                int index = position - firstMemberRow;
-                TLRPC.User user = getUser(position - firstMemberRow);
+                int index = positionToChatIndex(position);
+                TLRPC.User user = getUser(index);
                 if (user == null) {
                     return;
                 }
@@ -125,7 +125,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     }
 
     private TLRPC.User getUser(int index) {
-        if (index >= getInnerEncryptedChatIds().size()) {
+        if (index < 0 || index >= getInnerEncryptedChatIds().size()) {
             return null;
         }
         int encryptedChatId = getInnerEncryptedChatIds().get(index);
@@ -181,6 +181,10 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         }
     }
 
+    private int positionToChatIndex(int position) {
+        return position - firstMemberRow - 1;
+    }
+
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
         private final static int VIEW_TYPE_GROUP_MEMBER = 0;
 
@@ -224,7 +228,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                     if (position == firstMemberRow) {
                         cell.setUserAndInnerChat(getUserConfig().getCurrentUser(), null, position != lastMemberRow);
                     } else {
-                        int index = position - firstMemberRow - 1;
+                        int index = positionToChatIndex(position);
                         TLRPC.User user = getUser(index);
                         InnerEncryptedChat innerChat = getInnerChat(index);
                         cell.setUserAndInnerChat(user, innerChat, position != lastMemberRow);
