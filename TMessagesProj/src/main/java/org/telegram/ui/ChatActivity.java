@@ -19524,8 +19524,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 long did = (Long) args[0];
                 setEndReached(0, true, did);
                 setEndReached(1, true, did);
-                setForwardEndReached(0, true);
-                setForwardEndReached(1, true);
+                setForwardEndReached(0, true, did);
+                setForwardEndReached(1, true, did);
                 firstLoading = false;
                 showProgressView(false);
                 checkDispatchHideSkeletons(true);
@@ -19749,13 +19749,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             int newRowsCount = 0;
 
             if (load_type != 0 && (isThreadChat() && !isTopic && first_unread_id != 0 || startLoadFromMessageId != 0 || last_message_id != 0)) {
-                setForwardEndReached(loadIndex, false);
+                setForwardEndReached(loadIndex, false, did);
                 hideForwardEndReached = false;
             }
             if ((load_type == 1 || load_type == 3) && loadIndex == 1) {
                 setEndReached(0, true, did);
                 setCacheEndReached(0, true, did);
-                setForwardEndReached(0, false);
+                setForwardEndReached(0, false, did);
                 hideForwardEndReached = false;
                 setMinMessageId(0, 0, did);
                 checkDispatchHideSkeletons(true);
@@ -19763,10 +19763,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (chatMode == MODE_SCHEDULED || chatMode == MODE_QUICK_REPLIES) {
                 setEndReached(0, true, did);
                 setCacheEndReached(0, true, did);
-                setForwardEndReached(0, true);
+                setForwardEndReached(0, true, did);
             }
             if ((!isThreadChat() || isTopic) && ChatObject.isChannel(currentChat) && !getMessagesController().dialogs_dict.containsKey(dialog_id) && load_type == 2 && loadIndex == 0) {
-                setForwardEndReached(0, false);
+                setForwardEndReached(0, false, did);
                 hideForwardEndReached = true;
             }
 
