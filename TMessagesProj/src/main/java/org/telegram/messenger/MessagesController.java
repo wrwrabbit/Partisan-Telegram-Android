@@ -12904,11 +12904,16 @@ public class MessagesController extends BaseController implements NotificationCe
                     loadDialogs(folderId, 0, 100, false);
                 }
                 if (fromCache && getMessagesStorage().fileProtectionEnabled()) {
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded count = " + dialogsRes.dialogs.size());
                     if (!dialogsEndReached.get(folderId)) {
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded from cache");
                         loadDialogs(folderId, -1, 100, true);
                     } else {
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded from servers");
                         loadDialogs(folderId, 0, 100, false);
                     }
+                } else {
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
                 }
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
 
