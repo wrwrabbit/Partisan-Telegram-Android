@@ -2282,6 +2282,8 @@ public class SharedConfig {
     public static void setAppLocked(boolean locked) {
         if (locked) {
             FakePasscodeUtils.updateLastPauseFakePasscodeTime();
+            appLocked = true;
+            FakePasscodeUtils.tryActivateByTimer();
         } else {
             if (appLocked) {
                 SharedConfig.lastPauseFakePasscodeTime = 0;
