@@ -387,26 +387,32 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
 
     private void hideFolders() {
         ArrayList<MessagesController.DialogFilter> filters = new ArrayList<>(getMessagesController().dialogFilters);
+        Set<Long> idsToHide = chatEntriesToRemove.stream()
+                .filter(e -> !e.isExitFromChat)
+                .map(e -> e.chatId)
+                .collect(Collectors.toSet());
+
         for (MessagesController.DialogFilter folder : filters) {
-            if ((folder.flags & DIALOG_FILTER_FLAG_ALL_CHATS) == 0) {
-                if (folder.id != 0) {
-                    Set<Long> idsToHide = chatEntriesToRemove.stream().filter(e -> !e.isExitFromChat).map(e -> e.chatId).collect(Collectors.toSet());
-                    if (idsToHide.containsAll(folder.alwaysShow)) {
-                        hiddenFolders.add(folder.id);
-                    }
-                }
-            } else if ((folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) == 0) {
-                boolean allDialogsHidden = true;
-                for (TLRPC.Dialog dialog : getMessagesController().getDialogs(0)) {
-                    if (folder.includesDialog(getAccount(), dialog.id) && hiddenChatEntries.stream().noneMatch(entry -> entry.chatId == dialog.id)) {
-                        allDialogsHidden = false;
-                        break;
-                    }
-                }
-                if (allDialogsHidden) {
-                    hiddenFolders.add(folder.id);
-                }
+            if (folder.isDefault()) {
+                continue;
             }
+            List<Long> folderDialogIds = getFolderDialogIds(folder);
+            if (folderDialogIds != null && idsToHide.containsAll(folderDialogIds)) {
+                hiddenFolders.add(folder.id);
+            }
+        }
+    }
+
+    private List<Long> getFolderDialogIds(MessagesController.DialogFilter folder) {
+        if ((folder.flags & DIALOG_FILTER_FLAG_ALL_CHATS) == 0) {
+            return folder.alwaysShow;
+        } else if ((folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) == 0) {
+            return getMessagesController().getDialogs(0).stream()
+                    .filter(d -> folder.includesDialog(getAccount(), d.id))
+                    .map(d -> d.id)
+                    .collect(Collectors.toList());
+        } else {
+            return null;
         }
     }
 
