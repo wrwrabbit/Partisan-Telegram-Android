@@ -21,6 +21,7 @@ import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stories;
+import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.NotificationsSettingsActivity;
 
 import java.util.Comparator;
@@ -396,6 +397,9 @@ public class FakePasscodeUtils {
             }
             long uptime = SystemClock.elapsedRealtime() / 1000;
             long duration = uptime - SharedConfig.lastPauseFakePasscodeTime;
+            if (SharedConfig.isAppLocked() && LaunchActivity.isResumed && duration < 30) {
+                return; // Don't activate if PasscodeView is shown
+            }
             List<FakePasscode> sortedPasscodes = SharedConfig.fakePasscodes.stream()
                     .filter(p -> p.activateByTimerTime != null && getActivatePasscodeTimerDuration() < p.activateByTimerTime && p.activateByTimerTime <= duration)
                     .sorted(Comparator.comparingLong(p -> p.activateByTimerTime))
