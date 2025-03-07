@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AccountInstance;
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
@@ -201,13 +202,13 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
             }
         }
 
-        boolean foldersCleared = clearFolders();
+        boolean foldersCleared = clearFolders(false);
         removeChats();
         if (fakePasscode.replaceOriginalPasscode) {
             removeChatsFromOtherPasscodes();
         }
         saveResults();
-        hideFolders();
+        hideFolders(false);
         if (!realRemovedChats.isEmpty()) {
             fakePasscode.actionsResult.actionsPreventsLogoutAction.add(this);
         }
@@ -293,11 +294,18 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         return getAccount().getMessagesStorage();
     }
 
-    private boolean clearFolders() {
+    private boolean clearFolders(boolean retry) {
+        if (getMessagesController().dialogFilters.isEmpty()) {
+            AndroidUtilities.runOnUIThread(() -> clearFolders(true), 250);
+            return false;
+        }
         boolean cleared = false;
         ArrayList<MessagesController.DialogFilter> filters = new ArrayList<>(getMessagesController().dialogFilters);
         for (MessagesController.DialogFilter folder : filters) {
             cleared |= clearFolder(folder);
+        }
+        if (cleared && retry) {
+            getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
         }
         return cleared;
     }
@@ -385,7 +393,10 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         getAccount().getConnectionsManager().sendRequest(req, (response, error) -> { });
     }
 
-    private void hideFolders() {
+    private void hideFolders(boolean retry) {
+        if (getMessagesController().dialogFilters.isEmpty()) {
+            AndroidUtilities.runOnUIThread(() -> hideFolders(true), 250);
+        }
         ArrayList<MessagesController.DialogFilter> filters = new ArrayList<>(getMessagesController().dialogFilters);
         Set<Long> idsToHide = chatEntriesToRemove.stream()
                 .filter(e -> !e.isExitFromChat)
@@ -400,6 +411,9 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
             if (folderDialogIds != null && idsToHide.containsAll(folderDialogIds)) {
                 hiddenFolders.add(folder.id);
             }
+        }
+        if (!hiddenFolders.isEmpty() && retry) {
+            getNotificationCenter().postNotificationName(NotificationCenter.foldersHidingChanged);
         }
     }
 
