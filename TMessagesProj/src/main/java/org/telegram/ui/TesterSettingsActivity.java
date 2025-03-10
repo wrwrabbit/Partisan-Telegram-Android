@@ -103,6 +103,7 @@ public class TesterSettingsActivity extends BaseFragment {
     private int showEncryptedChatsFromEncryptedGroupsRow;
     private int enableSecretGroupsRow;
     private int dbSizeRow;
+    private int accountNumRow;
 
     public static boolean showPlainBackup;
 
@@ -354,6 +355,7 @@ public class TesterSettingsActivity extends BaseFragment {
         if (getMessagesStorage().fileProtectionEnabled()) {
             dbSizeRow = rowCount++;
         }
+        accountNumRow = rowCount++;
     }
 
     @Override
@@ -529,6 +531,8 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == dbSizeRow) {
                         Long databaseSize = getMemoryDbSize();
                         textCell.setTextAndValue("Memory DB size", databaseSize != null ? AndroidUtilities.formatFileSize(databaseSize) : "error", true);
+                    } else if (position == accountNumRow) {
+                        textCell.setTextAndValue("Account num", Integer.toString(currentAccount), true);
                     }
                     break;
                 }
@@ -546,7 +550,8 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == phoneOverrideRow || position == resetSecurityIssuesRow
                     || position == activateAllSecurityIssuesRow || position == editSavedChannelsRow
                     || position == resetUpdateRow || position == checkVerificationUpdatesRow
-                    || position == resetVerificationLastCheckTimeRow || position == dbSizeRow) {
+                    || position == resetVerificationLastCheckTimeRow || position == dbSizeRow
+                    || position == accountNumRow) {
                 return 1;
             }
             return 0;
