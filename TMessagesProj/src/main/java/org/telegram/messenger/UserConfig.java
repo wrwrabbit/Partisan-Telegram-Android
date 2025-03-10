@@ -21,6 +21,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SecurityIssue;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
@@ -639,6 +640,11 @@ public class UserConfig extends BaseController {
 
     public void clearConfig() {
         getPreferences().edit().clear().apply();
+
+        if (currentUser != null) {
+            // Delete account files after logging out to prevent data extraction using them
+            Utilities.globalQueue.postRunnable(() -> Utils.deleteAccountFiles(currentAccount), 3000);
+        }
 
         sharingMyLocationUntil = 0;
         lastMyLocationShareTime = 0;

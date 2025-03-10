@@ -565,4 +565,47 @@ public class Utils {
             }
         }
     }
+
+    public static void deleteAccountFiles(int accountNum) {
+        if (accountNum == 0) {
+            deleteZeroAccountFiles();
+            return;
+        }
+        File filesDir = ApplicationLoader.getFilesDirFixed();
+        filesDir = new File(filesDir, "account" + accountNum + "/");
+        if (!filesDir.exists()) {
+            return;
+        }
+        File[] files = filesDir.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            file.delete();
+        }
+    }
+
+    private static void deleteZeroAccountFiles() {
+        File filesDir = ApplicationLoader.getFilesDirFixed();
+        String[] fileNamesToDelete = new String[] {
+                "cache4.db",
+                "cache4.db-shm",
+                "cache4.db-wal",
+                "dc1conf.dat",
+                "dc2conf.dat",
+                "dc3conf.dat",
+                "dc4conf.dat",
+                "dc5conf.dat",
+                "file_to_path.db",
+                "file_to_path_backup.db",
+                "stats2.dat",
+                "tgnet.dat"
+        };
+        for (String filename : fileNamesToDelete) {
+            File file = new File(filesDir, filename);
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+    }
 }
