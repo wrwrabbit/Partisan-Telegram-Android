@@ -396,6 +396,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
     private void hideFolders(boolean retry) {
         if (getMessagesController().dialogFilters.isEmpty()) {
             AndroidUtilities.runOnUIThread(() -> hideFolders(true), 250);
+            return;
         }
         ArrayList<MessagesController.DialogFilter> filters = new ArrayList<>(getMessagesController().dialogFilters);
         Set<Long> idsToHide = chatEntriesToRemove.stream()
@@ -408,7 +409,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
                 continue;
             }
             List<Long> folderDialogIds = getFolderDialogIds(folder);
-            if (folderDialogIds != null && idsToHide.containsAll(folderDialogIds)) {
+            if (folderDialogIds != null && !folderDialogIds.isEmpty() && idsToHide.containsAll(folderDialogIds)) {
                 hiddenFolders.add(folder.id);
             }
         }
