@@ -4410,7 +4410,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                         RemoveAfterReadingMessages.delays.putIfAbsent("" + currentAccount, 5 * 1000);
                         AlertsCreator.createScheduleDeleteTimePickerDialog(parentActivity, RemoveAfterReadingMessages.delays.get("" + currentAccount),
                                 (notify, delay) -> {
-                                    sendMessageInternal(notify, 0, false, delay);
+                                    sendMessageInternal(notify, 0, 0, false, delay);
                                     RemoveAfterReadingMessages.delays.put("" + currentAccount, delay);
                                     RemoveAfterReadingMessages.save();
                                 });
@@ -4652,7 +4652,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 RemoveAfterReadingMessages.delays.putIfAbsent("" + currentAccount, 5 * 1000);
                 AlertsCreator.createScheduleDeleteTimePickerDialog(parentActivity, RemoveAfterReadingMessages.delays.get("" + currentAccount),
                         (notify, delay) -> {
-                            sendMessageInternal(notify, 0, false, delay);
+                            sendMessageInternal(notify, 0, 0, false, delay);
                             RemoveAfterReadingMessages.delays.put("" + currentAccount, delay);
                             RemoveAfterReadingMessages.save();
                             if (messageSendPreview != null) {
@@ -6783,8 +6783,8 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
         }
     }
 
-    private void sendMessageInternal(boolean notify, int scheduleDate, boolean allowConfirm) {
-        sendMessageInternal(notify, scheduleDate, allowConfirm, null);
+    private boolean sendMessageInternal(boolean notify, int scheduleDate, long payStars, boolean allowConfirm) {
+        return sendMessageInternal(notify, scheduleDate, payStars, allowConfirm, null);
     }
 
     protected boolean showConfirmAlert(Runnable onConfirmed) {
@@ -7195,8 +7195,8 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
         return false;
     }
 
-    public boolean processSendingText(CharSequence text, boolean notify, int scheduleDate) {
-        return processSendingText(text, notify, scheduleDate, null);
+    public boolean processSendingText(CharSequence text, boolean notify, long payStars, int scheduleDate) {
+        return processSendingText(text, notify, scheduleDate, payStars, null);
     }
 
     private void applyStoryToSendMessageParams(SendMessagesHelper.SendMessageParams params) {

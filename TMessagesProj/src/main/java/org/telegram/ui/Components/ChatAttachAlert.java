@@ -544,7 +544,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             return false;
         }
 
-        // If scheduleDate < 0 then it is autoDeleteDelay
         void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, long effectId, boolean invertMedia, boolean forceDocument, long payStars);
         default void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, long effectId, boolean invertMedia, boolean forceDocument, long payStars, Integer autoDeleteDelay) {
             didPressedButton(button, arg, notify, scheduleDate, effectId, invertMedia, forceDocument, payStars);
@@ -4166,7 +4165,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             documentLayout.setDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
                 @Override
                 public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars) {
-                    didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia, null);
+                    didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, null);
                 }
 
                 @Override
