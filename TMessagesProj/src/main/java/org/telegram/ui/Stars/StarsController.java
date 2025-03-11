@@ -1750,7 +1750,7 @@ public class StarsController {
         }
         final MessagesController messagesController = MessagesController.getInstance(currentAccount);
         Long peer = messagesController.getPaidReactionsDialogId();
-        return peer != null ? peer : 0;
+        return peer != null ? peer : (!FakePasscodeUtils.isFakePasscodeActivated() ? UserObject.ANONYMOUS : 0);
     }
 
     public long getPaidReactionsDialogId(MessageId id, TLRPC.MessageReactions reactions) {
@@ -1763,7 +1763,7 @@ public class StarsController {
         }
         final MessagesController messagesController = MessagesController.getInstance(currentAccount);
         Long peer = messagesController.getPaidReactionsDialogId();
-        return peer != null ? peer : 0;
+        return peer != null ? peer : (!FakePasscodeUtils.isFakePasscodeActivated() ? UserObject.ANONYMOUS : 0);
     }
 
     public class PendingPaidReactions {
