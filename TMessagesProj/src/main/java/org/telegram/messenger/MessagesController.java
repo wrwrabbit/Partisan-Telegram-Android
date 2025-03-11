@@ -12420,6 +12420,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
+                PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " cache dialogs were empty, encChats = " + (encChats != null ? encChats.size() : 0) + ", encGroups = " + (encryptedGroups != null ? encryptedGroups.size() : 0));
                 AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
@@ -12906,10 +12907,10 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (fromCache && getMessagesStorage().fileProtectionEnabled()) {
                     PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded count = " + dialogsRes.dialogs.size());
                     if (!dialogsEndReached.get(folderId)) {
-                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded from cache");
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from cache");
                         loadDialogs(folderId, -1, 100, true);
                     } else {
-                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded from servers");
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from servers");
                         loadDialogs(folderId, 0, 100, false);
                     }
                 } else {
