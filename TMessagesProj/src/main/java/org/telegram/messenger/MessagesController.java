@@ -12904,17 +12904,17 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (!fromCache && !migrate && totalDialogsLoadCount < 400 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != -1 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != Integer.MAX_VALUE) {
                     loadDialogs(folderId, 0, 100, false);
                 }
-                if (fromCache && getMessagesStorage().fileProtectionEnabled()) {
+                if (getMessagesStorage().fileProtectionEnabled()) {
                     PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded count = " + dialogsRes.dialogs.size());
                     if (!dialogsEndReached.get(folderId)) {
                         PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from cache");
                         loadDialogs(folderId, -1, 100, true);
-                    } else {
+                    } else if (fromCache) {
                         PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from servers");
                         loadDialogs(folderId, 0, 100, false);
+                    } else {
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
                     }
-                } else {
-                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
                 }
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
 
