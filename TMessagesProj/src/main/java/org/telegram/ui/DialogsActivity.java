@@ -8122,6 +8122,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             boolean loadArchivedFromCacheFinal = loadArchivedFromCache;
             AndroidUtilities.runOnUIThread(() -> {
                 if (loadFinal) {
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from dialog activity, fromCache = " + loadFromCacheFinal);
                     getMessagesController().loadDialogs(folderId, -1, 100, loadFromCacheFinal);
                 }
                 if (loadArchivedFinal) {

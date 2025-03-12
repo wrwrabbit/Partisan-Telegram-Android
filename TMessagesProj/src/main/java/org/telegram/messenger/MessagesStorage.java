@@ -15995,8 +15995,10 @@ public class MessagesStorage extends BaseController {
                     }
 
                     ArrayList<Pair<Long, Long>> dialogsToLoadGroupMessages = new ArrayList<>();
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load dialogs! Folder = " + fid + ", offset = " + off + ", count = " + cnt);
                     cursor = database.queryFinalized(String.format(Locale.US, "SELECT d.did, d.last_mid, d.unread_count, d.date, m.data, m.read_state, m.mid, m.send_state, s.flags, m.date, d.pts, d.inbox_max, d.outbox_max, m.replydata, d.pinned, d.unread_count_i, d.flags, d.folder_id, d.data, d.unread_reactions, d.last_mid_group, d.ttl_period FROM dialogs as d LEFT JOIN messages_v2 as m ON d.last_mid = m.mid AND d.did = m.uid AND d.last_mid_group IS NULL LEFT JOIN dialog_settings as s ON d.did = s.did WHERE d.folder_id = %d ORDER BY d.pinned DESC, d.date DESC LIMIT %d,%d", fid, off, cnt));
                     while (cursor.next()) {
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " a dialog found!");
                         long dialogId = cursor.longValue(0);
                         TLRPC.Dialog dialog;
                         if (DialogObject.isFolderDialogId(dialogId)) {
@@ -16125,6 +16127,7 @@ public class MessagesStorage extends BaseController {
                             }
                         }
                     }
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " dialogs loading finished!");
                     cursor.dispose();
                     cursor = null;
 
@@ -16252,6 +16255,7 @@ public class MessagesStorage extends BaseController {
                     });
                 }
 
+                PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " encryptedToLoad size = " + encryptedToLoad.size());
                 if (!encryptedToLoad.isEmpty()) {
                     getEncryptedChatsInternal(TextUtils.join(",", encryptedToLoad), encryptedChats, usersToLoad);
                     getEncryptedGroupsInternal(TextUtils.join(",", encryptedToLoad), encryptedGroups);

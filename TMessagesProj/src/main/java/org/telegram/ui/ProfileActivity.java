@@ -162,6 +162,7 @@ import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanVersion;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
@@ -4395,6 +4396,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             } else if (which == 11) { // Voip audio effects
                                 SharedConfig.toggleDisableVoiceAudioEffects();
                             } else if (which == 12) { // Clean app update
+                                PartisanLog.d("pendingPtgAppUpdate: reset 3");
                                 SharedConfig.pendingPtgAppUpdate = null;
                                 SharedConfig.saveConfig();
                                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);

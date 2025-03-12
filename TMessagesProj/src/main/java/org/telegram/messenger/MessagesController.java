@@ -2177,6 +2177,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             }
                             getTranslateController().checkDialogMessage(key);
                         } else {
+                            if (currentDialog.pinned && !newDialog.pinned) {
+                                PartisanLog.d("fileProtectedPinned: unpin 6");
+                            }
                             currentDialog.pinned = newDialog.pinned;
                             currentDialog.pinnedNum = newDialog.pinnedNum;
                             ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
@@ -11478,6 +11481,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     dialog.pinned = true;
                     dialog.pinnedNum = pinnedNum;
                 } else {
+                    if (dialog.pinned) {
+                        PartisanLog.d("fileProtectedPinned: unpin 5");
+                    }
                     dialog.pinned = false;
                     dialog.pinnedNum = 0;
                 }
@@ -12546,6 +12552,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
+                PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " cache dialogs were empty, encChats = " + (encChats != null ? encChats.size() : -1) + ", encGroups = " + (encGroups != null ? encGroups.size() : -1));
                 AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
@@ -12902,6 +12909,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (loadType != DIALOGS_LOAD_TYPE_CACHE) {
                             currentDialog.notify_settings = value.notify_settings;
                         }
+                        if (currentDialog.pinned && !value.pinned) {
+                            PartisanLog.d("fileProtectedPinned: unpin 4");
+                        }
                         currentDialog.pinned = value.pinned;
                         currentDialog.pinnedNum = value.pinnedNum;
                         ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
@@ -13029,17 +13039,18 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (!fromCache && !migrate && totalDialogsLoadCount < 400 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != -1 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != Integer.MAX_VALUE) {
                     loadDialogs(folderId, 0, 100, false);
                 }
-                if (fromCache && getMessagesStorage().fileProtectionEnabled()) {
-                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded count = " + dialogsRes.dialogs.size());
+                if (getMessagesStorage().fileProtectionEnabled()) {
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded count = " + dialogsRes.dialogs.size() + ". " +
+                            "Previous dialog count = " + allDialogs.size() + ", enc chats count = " + encryptedChats.size() + ", enc groups count = " + encryptedGroups.size());
                     if (!dialogsEndReached.get(folderId)) {
-                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded from cache");
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from cache");
                         loadDialogs(folderId, -1, 100, true);
-                    } else {
-                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded from servers");
+                    } else if (fromCache) {
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from servers");
                         loadDialogs(folderId, 0, 100, false);
+                    } else {
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
                     }
-                } else {
-                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
                 }
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
 
@@ -16230,6 +16241,9 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         int folderId = dialog.folder_id;
         ArrayList<TLRPC.Dialog> dialogs = getDialogs(folderId);
+        if (dialog.pinned && !pin) {
+            PartisanLog.d("fileProtectedPinned: unpin 3");
+        }
         dialog.pinned = pin;
         if (pin) {
             int maxPinnedNum = 0;
@@ -16447,6 +16461,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             continue;
                         }
                         maxPinnedNum = Math.max(dialog.pinnedNum, maxPinnedNum);
+                        if (dialog.pinned) {
+                            PartisanLog.d("fileProtectedPinned: unpin 2");
+                        }
                         dialog.pinned = false;
                         dialog.pinnedNum = 0;
                         changed = true;
@@ -17337,6 +17354,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     continue;
                 }
                 if (dialog.folder_id != folderPeer.folder_id) {
+                    if (dialog.pinned) {
+                        PartisanLog.d("fileProtectedPinned: unpin 1");
+                    }
                     dialog.pinned = false;
                     dialog.pinnedNum = 0;
                     dialog.folder_id = folderPeer.folder_id;

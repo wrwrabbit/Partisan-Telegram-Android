@@ -873,8 +873,11 @@ public class SharedConfig {
                 String update = preferences.getString("ptgAppUpdate", null);
                 if (update != null) {
                     pendingPtgAppUpdate = fromJson(update, UpdateData.class);
+                } else {
+                    PartisanLog.d("pendingPtgAppUpdate: reset 1");
                 }
             } catch (Exception e) {
+                PartisanLog.d("pendingPtgAppUpdate: reset 2");
                 PartisanLog.handleException(e);
             }
 
