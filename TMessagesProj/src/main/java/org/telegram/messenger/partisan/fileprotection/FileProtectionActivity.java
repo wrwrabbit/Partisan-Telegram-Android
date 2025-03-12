@@ -16,6 +16,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -131,22 +132,10 @@ public class FileProtectionActivity extends BaseFragment {
         worksWithFakePasscodeDelimiterRow = rowCount++;
         firstAccountRow = rowCount;
         accounts.clear();
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated()) {
-                accounts.add(new FileProtectionAccountCellInfo(a));
-                lastAccountRow = rowCount++;
-            }
+        for (int account : Utils.getActivatedAccountsSortedByLoginTime()) {
+            accounts.add(new FileProtectionAccountCellInfo(account));
+            lastAccountRow = rowCount++;
         }
-        Collections.sort(accounts, (o1, o2) -> {
-            long l1 = UserConfig.getInstance(o1.accountNum).loginTime;
-            long l2 = UserConfig.getInstance(o2.accountNum).loginTime;
-            if (l1 > l2) {
-                return 1;
-            } else if (l1 < l2) {
-                return -1;
-            }
-            return 0;
-        });
     }
 
     private boolean isChanged() {

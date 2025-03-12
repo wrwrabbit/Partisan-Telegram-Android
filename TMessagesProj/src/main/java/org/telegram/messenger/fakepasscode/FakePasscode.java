@@ -290,26 +290,11 @@ public class FakePasscode {
             accountActions.stream().forEach(AccountActions::checkIdHash);
         }
         if (targetCount > getHideOrLogOutCount()) {
-            List<Integer> configIds = new ArrayList<>();
-            for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-                if (UserConfig.getInstance(a).isClientActivated()) {
-                    configIds.add(a);
-                }
-            }
-            Collections.sort(configIds, (o1, o2) -> {
-                long l1 = UserConfig.getInstance(o1).loginTime;
-                long l2 = UserConfig.getInstance(o2).loginTime;
-                if (l1 > l2) {
-                    return 1;
-                } else if (l1 < l2) {
-                    return -1;
-                }
-                return 0;
-            });
-            for (int i = configIds.size() - 1; i >= 0; i--) {
-                AccountActions actions = getAccountActions(configIds.get(i));
+            List<Integer> accounts = Utils.getActivatedAccountsSortedByLoginTime();
+            for (int i = accounts.size() - 1; i >= 0; i--) {
+                AccountActions actions = getAccountActions(accounts.get(i));
                 if (actions == null) {
-                    actions = getOrCreateAccountActions(configIds.get(i));
+                    actions = getOrCreateAccountActions(accounts.get(i));
                     if (!FakePasscodeUtils.isHideAccount(i)) {
                         actions.toggleHideAccountAction();
                         if (targetCount <= getHideOrLogOutCount()) {
@@ -319,8 +304,8 @@ public class FakePasscode {
                 }
             }
             if (targetCount > getHideOrLogOutCount()) {
-                for (int i = configIds.size() - 1; i >= 0; i--) {
-                    AccountActions actions = getOrCreateAccountActions(configIds.get(i));
+                for (int i = accounts.size() - 1; i >= 0; i--) {
+                    AccountActions actions = getOrCreateAccountActions(accounts.get(i));
                     if (!FakePasscodeUtils.isHideAccount(i) && actions != null && !actions.isLogOut()) {
                         actions.toggleHideAccountAction();
                         if (targetCount <= getHideOrLogOutCount()) {
