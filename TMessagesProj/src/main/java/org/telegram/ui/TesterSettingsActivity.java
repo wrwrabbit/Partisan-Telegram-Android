@@ -23,6 +23,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -281,6 +282,7 @@ public class TesterSettingsActivity extends BaseFragment {
                 AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
                 showDialog(dialog);
             } else if (position == resetUpdateRow) {
+                PartisanLog.d("pendingPtgAppUpdate: reset 4");
                 SharedConfig.pendingPtgAppUpdate = null;
                 SharedConfig.saveConfig();
                 Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
