@@ -2155,6 +2155,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             }
                             getTranslateController().checkDialogMessage(key);
                         } else {
+                            if (currentDialog.pinned && !newDialog.pinned) {
+                                PartisanLog.d("fileProtectedPinned: unpin 6");
+                            }
                             currentDialog.pinned = newDialog.pinned;
                             currentDialog.pinnedNum = newDialog.pinnedNum;
                             ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
@@ -11352,6 +11355,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     dialog.pinned = true;
                     dialog.pinnedNum = pinnedNum;
                 } else {
+                    if (dialog.pinned) {
+                        PartisanLog.d("fileProtectedPinned: unpin 5");
+                    }
                     dialog.pinned = false;
                     dialog.pinnedNum = 0;
                 }
@@ -12776,6 +12782,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else {
                         if (loadType != DIALOGS_LOAD_TYPE_CACHE) {
                             currentDialog.notify_settings = value.notify_settings;
+                        }
+                        if (currentDialog.pinned && !value.pinned) {
+                            PartisanLog.d("fileProtectedPinned: unpin 4");
                         }
                         currentDialog.pinned = value.pinned;
                         currentDialog.pinnedNum = value.pinnedNum;
@@ -16134,6 +16143,9 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         int folderId = dialog.folder_id;
         ArrayList<TLRPC.Dialog> dialogs = getDialogs(folderId);
+        if (dialog.pinned && !pin) {
+            PartisanLog.d("fileProtectedPinned: unpin 3");
+        }
         dialog.pinned = pin;
         if (pin) {
             int maxPinnedNum = 0;
@@ -16351,6 +16363,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             continue;
                         }
                         maxPinnedNum = Math.max(dialog.pinnedNum, maxPinnedNum);
+                        if (dialog.pinned) {
+                            PartisanLog.d("fileProtectedPinned: unpin 2");
+                        }
                         dialog.pinned = false;
                         dialog.pinnedNum = 0;
                         changed = true;
@@ -17241,6 +17256,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     continue;
                 }
                 if (dialog.folder_id != folderPeer.folder_id) {
+                    if (dialog.pinned) {
+                        PartisanLog.d("fileProtectedPinned: unpin 1");
+                    }
                     dialog.pinned = false;
                     dialog.pinnedNum = 0;
                     dialog.folder_id = folderPeer.folder_id;
