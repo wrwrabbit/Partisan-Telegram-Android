@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.android.exoplayer2.util.Log;
+import com.google.common.collect.Lists;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -289,36 +290,21 @@ public class FakePasscode {
         if (targetCount > getHideOrLogOutCount()) {
             accountActions.stream().forEach(AccountActions::checkIdHash);
         }
-        if (targetCount > getHideOrLogOutCount()) {
-            List<Integer> accounts = Utils.getActivatedAccountsSortedByLoginTime();
-            for (int i = accounts.size() - 1; i >= 0; i--) {
-                AccountActions actions = getAccountActions(accounts.get(i));
-                if (actions == null) {
-                    actions = getOrCreateAccountActions(accounts.get(i));
-                    if (!FakePasscodeUtils.isHideAccount(i)) {
-                        actions.toggleHideAccountAction();
-                        if (targetCount <= getHideOrLogOutCount()) {
-                            break;
-                        }
-                    }
-                }
-            }
-            if (targetCount > getHideOrLogOutCount()) {
-                for (int i = accounts.size() - 1; i >= 0; i--) {
-                    AccountActions actions = getOrCreateAccountActions(accounts.get(i));
-                    if (!FakePasscodeUtils.isHideAccount(i) && actions != null && !actions.isLogOut()) {
-                        actions.toggleHideAccountAction();
-                        if (targetCount <= getHideOrLogOutCount()) {
-                            break;
-                        }
-                    }
-                }
-            }
-            SharedConfig.saveConfig();
-            return true;
-        } else {
+        if (replaceOriginalPasscode || targetCount <= getHideOrLogOutCount()) {
             return false;
         }
+        List<Integer> accounts = Utils.getActivatedAccountsSortedByLoginTime();
+        for (int account : Lists.reverse(accounts)) {
+            AccountActions actions = getOrCreateAccountActions(account);
+            if (actions != null && !actions.isLogOut()) {
+                actions.toggleHideAccountAction();
+                if (targetCount <= getHideOrLogOutCount()) {
+                    break;
+                }
+            }
+        }
+        SharedConfig.saveConfig();
+        return true;
     }
 
     private void disableHidingForDeactivatedAccounts() {
