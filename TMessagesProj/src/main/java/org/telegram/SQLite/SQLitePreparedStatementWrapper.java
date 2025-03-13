@@ -1,7 +1,6 @@
 package org.telegram.SQLite;
 
 import org.telegram.messenger.DialogObject;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionData;
@@ -54,11 +53,18 @@ public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
     }
 
     private <R> R executeFunction(StatementFunction<R> function) throws SQLiteException {
+        return executeFunction(function, null);
+    }
+
+    private <R> R executeFunction(StatementFunction<R> function, DbSelector currentSelector) throws SQLiteException {
         R result = null;
         if (statements.isEmpty()) {
             throw new RuntimeException();
         }
-        if (dbSelector == DbSelector.BOTH_DB) {
+        if (currentSelector == null) {
+            currentSelector = dbSelector;
+        }
+        if (currentSelector == DbSelector.BOTH_DB) {
             Map<DbSelector, R> results = new HashMap<>();
             for (Map.Entry<DbSelector, SQLitePreparedStatement> pair : statements.entrySet()) {
                 DbSelector selector = pair.getKey();
@@ -69,16 +75,20 @@ public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
                     ? results.get(DbSelector.FILE_DB)
                     : results.get(DbSelector.MEMORY_DB);
         } else {
-            result = function.apply(statements.get(dbSelector));
+            result = function.apply(statements.get(currentSelector));
         }
         return result;
     }
 
-    private void executeProcedure(StatementProcedure function) throws SQLiteException {
+    private void executeProcedure(StatementProcedure procedure) throws SQLiteException {
+        executeProcedure(procedure, null);
+    }
+
+    private void executeProcedure(StatementProcedure procedure, DbSelector currentSelector) throws SQLiteException {
         executeFunction(statement -> {
-            function.apply(statement);
+            procedure.apply(statement);
             return 0;
-        });
+        }, currentSelector);
     }
 
     @Override
@@ -102,7 +112,8 @@ public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
 
     @Override
     public SQLitePreparedStatement stepThis() throws SQLiteException {
-        return executeFunction(SQLitePreparedStatement::stepThis);
+        executeFunction(SQLitePreparedStatement::stepThis);
+        return this;
     }
 
     @Override
@@ -113,7 +124,7 @@ public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
     @Override
     public void dispose() {
         try {
-            executeProcedure(SQLitePreparedStatement::dispose);
+            executeProcedure(SQLitePreparedStatement::dispose, DbSelector.BOTH_DB);
         } catch (SQLiteException ignore) {
         }
     }
@@ -126,7 +137,7 @@ public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
     @Override
     public void finalizeQuery() {
         try {
-            executeProcedure(SQLitePreparedStatement::finalizeQuery);
+            executeProcedure(SQLitePreparedStatement::finalizeQuery, DbSelector.BOTH_DB);
         } catch (SQLiteException ignore) {
         }
     }

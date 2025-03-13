@@ -144,6 +144,11 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            externalNativeBuild {
+                cmake {
+                    arguments.add("-DDEBUG_VERSION=ON")
+                }
+            }
         }
 
         debug {
@@ -158,6 +163,11 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            externalNativeBuild {
+                cmake {
+                    arguments.add("-DDEBUG_VERSION=ON")
+                }
+            }
         }
 
         HA_private {
@@ -171,6 +181,11 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            externalNativeBuild {
+                cmake {
+                    arguments.add("-DDEBUG_VERSION=OFF")
+                }
+            }
         }
 
         HA_public {
@@ -184,6 +199,11 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            externalNativeBuild {
+                cmake {
+                    arguments.add("-DDEBUG_VERSION=OFF")
+                }
+            }
         }
 
         HA_hardcore {
@@ -197,6 +217,11 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            externalNativeBuild {
+                cmake {
+                    arguments.add("-DDEBUG_VERSION=OFF")
+                }
+            }
         }
 
         standalone {
@@ -210,6 +235,11 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "false"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            externalNativeBuild {
+                cmake {
+                    arguments.add("-DDEBUG_VERSION=OFF")
+                }
+            }
         }
 
         release {
@@ -224,6 +254,11 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "false"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            externalNativeBuild {
+                cmake {
+                    arguments.add("-DDEBUG_VERSION=OFF")
+                }
+            }
         }
     }
     namespace 'org.telegram.messenger'
