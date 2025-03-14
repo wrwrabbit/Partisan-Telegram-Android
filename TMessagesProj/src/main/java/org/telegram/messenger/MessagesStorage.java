@@ -15946,6 +15946,7 @@ public class MessagesStorage extends BaseController {
     }
 
     public void getDialogs(int folderId, int offset, int count, boolean loadDraftsPeersAndFolders) {
+        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " getDialogs from cache, offset = " + offset + ", count = " + count);
         long[] draftsDialogIds;
         if (loadDraftsPeersAndFolders) {
             LongSparseArray<LongSparseArray<TLRPC.DraftMessage>> drafts = getMediaDataController().getDrafts();

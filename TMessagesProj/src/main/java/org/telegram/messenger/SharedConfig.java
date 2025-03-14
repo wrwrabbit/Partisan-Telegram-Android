@@ -878,6 +878,9 @@ public class SharedConfig {
                 }
             } catch (Exception e) {
                 PartisanLog.d("pendingPtgAppUpdate: reset 2");
+                PartisanLog.d("pendingPtgAppUpdate string = \n\n"
+                        + preferences.getString("ptgAppUpdate", null)
+                        + "\n\n");
                 PartisanLog.handleException(e);
             }
 
