@@ -12553,7 +12553,7 @@ public class MessagesController extends BaseController implements NotificationCe
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
                 PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " cache dialogs were empty, encChats = " + (encChats != null ? encChats.size() : -1) + ", encGroups = " + (encGroups != null ? encGroups.size() : -1));
-                `AndroidUtilities.runOnUIThread(() -> {`
+                AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
                         for (int i = 0; i < fullUsers.size(); i++) {
