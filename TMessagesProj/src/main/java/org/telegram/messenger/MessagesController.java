@@ -12915,6 +12915,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
                 if (getMessagesStorage().fileProtectionEnabled()) {
                     PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded count = " + dialogsRes.dialogs.size() + ". " +
+                            "From cache = " + fromCache + ", new enc chats = " + (encChats != null ? encChats.size() : -1) + ", new enc groups = " + (encGroups != null ? encGroups.size() : -1) +
                             "Previous dialog count = " + allDialogs.size() + ", enc chats count = " + encryptedChats.size() + ", enc groups count = " + encryptedGroups.size());
                     if (!dialogsEndReached.get(folderId)) {
                         PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from cache");
