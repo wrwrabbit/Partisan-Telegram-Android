@@ -11549,6 +11549,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void loadDialogs(final int folderId, int offset, int count, boolean fromCache, Runnable onEmptyCallback) {
         if (loadingDialogs.get(folderId) || resetingDialogs) {
+            PartisanLog.d("fileProtectedEncryptedChats: loadDialogs return account = " + currentAccount + ", folder = " + folderId + ". ");
             return;
         }
         loadingDialogs.put(folderId, true);
@@ -13040,8 +13041,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     loadDialogs(folderId, 0, 100, false);
                 }
                 if (getMessagesStorage().fileProtectionEnabled()) {
-                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " loaded count = " + dialogsRes.dialogs.size() + ". " +
-                            "From cache = " + fromCache + ", new enc chats = " + (encChats != null ? encChats.size() : -1) + ", new enc groups = " + (encGroups != null ? encGroups.size() : -1) +
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + ", folder = " + folderId + ", loaded count = " + dialogsRes.dialogs.size() + ". " +
+                            "From cache = " + fromCache + ", new enc chats = " + (encChats != null ? encChats.size() : -1) + ", new enc groups = " + (encGroups != null ? encGroups.size() : -1) + ". " +
                             "Previous dialog count = " + allDialogs.size() + ", enc chats count = " + encryptedChats.size() + ", enc groups count = " + encryptedGroups.size());
                     if (!dialogsEndReached.get(folderId)) {
                         PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from cache");
