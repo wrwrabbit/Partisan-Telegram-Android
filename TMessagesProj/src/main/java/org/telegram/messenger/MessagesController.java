@@ -15,8 +15,6 @@ import static org.telegram.messenger.NotificationsController.TYPE_PRIVATE;
 import static org.telegram.messenger.NotificationsController.TYPE_REACTIONS_MESSAGES;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
 
-import static java.util.stream.Collectors.toCollection;
-
 import android.Manifest;
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
@@ -118,7 +116,6 @@ import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.WebViewRequestProps;
 
 import java.io.File;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -135,7 +132,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
@@ -452,6 +448,16 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public LongSparseIntArray getUnfilteredBlockedPeers() {
         return blockePeers;
+    }
+
+
+    private void loadDialogsWithFileProtection(int folderId, boolean fromCache) {
+        if (loadingDialogs.get(folderId) || resetingDialogs) {
+            AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, fromCache), 100);
+            return;
+        }
+        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + (fromCache ? " load from cache" : " load from servers"));
+        loadDialogs(folderId, fromCache ? -1 : 0, 100, fromCache);
     }
 
     private final CacheFetcher<Integer, TLRPC.TL_help_appConfig> appConfigFetcher = new CacheFetcher<Integer, TLRPC.TL_help_appConfig>() {
@@ -13045,11 +13051,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             "From cache = " + fromCache + ", new enc chats = " + (encChats != null ? encChats.size() : -1) + ", new enc groups = " + (encGroups != null ? encGroups.size() : -1) + ". " +
                             "Previous dialog count = " + allDialogs.size() + ", enc chats count = " + encryptedChats.size() + ", enc groups count = " + encryptedGroups.size());
                     if (!dialogsEndReached.get(folderId)) {
-                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from cache");
-                        AndroidUtilities.runOnUIThread(() -> loadDialogs(folderId, -1, 100, true));
+                        AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, true));
                     } else if (fromCache) {
-                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from servers");
-                        AndroidUtilities.runOnUIThread(() -> loadDialogs(folderId, 0, 100, false));
+                        AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, false));
                     } else {
                         PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
                     }
