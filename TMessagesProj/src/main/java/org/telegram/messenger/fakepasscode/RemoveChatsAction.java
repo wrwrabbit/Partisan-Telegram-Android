@@ -360,7 +360,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         req.id = folder.id;
         getAccount().getConnectionsManager().sendRequest(req, (response, error) -> {
             Utilities.globalQueue.postRunnable(() -> {
-                hiddenFolders.remove(folder.id);
+                hiddenFolders.removeIf(id -> id == folder.id);
                 RemoveChatsResult result = fakePasscode.actionsResult.getRemoveChatsResult(accountNum);
                 if (result != null) {
                     result.hiddenFolders.remove(folder.id);
