@@ -712,6 +712,9 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
         int h = 0;
         if (isSearching()) {
             for (TLObject peer : searchResult) {
+                if (FakePasscodeUtils.isHidePeer(peer, currentAccount)) {
+                    continue;
+                }
                 long did;
                 if (peer instanceof TLRPC.User) {
                     final TLRPC.User user = (TLRPC.User) peer;
