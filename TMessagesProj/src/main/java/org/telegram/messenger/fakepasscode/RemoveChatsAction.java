@@ -363,7 +363,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
                 hiddenFolders.removeIf(id -> id == folder.id);
                 RemoveChatsResult result = fakePasscode.actionsResult.getRemoveChatsResult(accountNum);
                 if (result != null) {
-                    result.hiddenFolders.remove(folder.id);
+                    result.hiddenFolders.removeIf(id -> id == folder.id);
                 }
             }, 1000);
         });
