@@ -32,6 +32,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
@@ -68,7 +69,7 @@ public class FiltersListBottomSheet extends BottomSheet implements NotificationC
         this.selectedDialogs = selectedDialogs;
         this.fragment = baseFragment;
 //        dialogFilters = getCanAddDialogFilters(baseFragment, selectedDialogs);
-        dialogFilters = new ArrayList<>(baseFragment.getMessagesController().dialogFilters);
+        dialogFilters = new ArrayList<>(FakePasscodeUtils.filterFolders(baseFragment.getMessagesController().dialogFilters, fragment.getCurrentAccount()));
         for (int i = 0; i < dialogFilters.size(); ++i) {
             if (dialogFilters.get(i).isDefault()) {
                 dialogFilters.remove(i);
@@ -332,7 +333,7 @@ public class FiltersListBottomSheet extends BottomSheet implements NotificationC
 
     public static ArrayList<MessagesController.DialogFilter> getCanAddDialogFilters(BaseFragment fragment, ArrayList<Long> selectedDialogs) {
         ArrayList<MessagesController.DialogFilter> result = new ArrayList<>();
-        ArrayList<MessagesController.DialogFilter> filters = fragment.getMessagesController().dialogFilters;
+        ArrayList<MessagesController.DialogFilter> filters = (ArrayList<MessagesController.DialogFilter>) FakePasscodeUtils.filterFolders(fragment.getMessagesController().dialogFilters, fragment.getCurrentAccount());
         for (int a = 0, N = filters.size(); a < N; a++) {
             MessagesController.DialogFilter filter = filters.get(a);
             if (!getDialogsCount(fragment, filter, selectedDialogs, true, true).isEmpty() && !filter.isDefault()) {
