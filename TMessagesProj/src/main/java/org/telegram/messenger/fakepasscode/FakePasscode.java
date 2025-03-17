@@ -282,15 +282,29 @@ public class FakePasscode {
         return (int)getFilteredAccountActions().stream().filter(AccountActions::isHideAccount).count();
     }
 
+    private int getMaxAccountCount() {
+        boolean hasPremium = getFilteredAccountActions()
+                .stream()
+                .filter(a -> !a.isLogOutOrHideAccount())
+                .anyMatch(a -> UserConfig.getInstance(a.accountNum).isPremium());
+        return hasPremium
+                ? UserConfig.FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT
+                : UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
+    }
+
+    private boolean isHidingCountCorrect() {
+        int notHiddenCount = UserConfig.getActivatedAccountsCount(true) - getHideOrLogOutCount();
+        return notHiddenCount <= getMaxAccountCount();
+    }
+
     public boolean autoAddAccountHidings() {
         disableHidingForDeactivatedAccounts();
         checkSingleAccountHidden();
 
-        int targetCount = UserConfig.getActivatedAccountsCount(true) - UserConfig.getFakePasscodeMaxAccountCount();
-        if (targetCount > getHideOrLogOutCount()) {
+        if (!isHidingCountCorrect()) {
             accountActions.stream().forEach(AccountActions::checkIdHash);
         }
-        if (replaceOriginalPasscode || targetCount <= getHideOrLogOutCount()) {
+        if (replaceOriginalPasscode || isHidingCountCorrect()) {
             return false;
         }
         List<Integer> accounts = Utils.getActivatedAccountsSortedByLoginTime();
@@ -298,7 +312,7 @@ public class FakePasscode {
             AccountActions actions = getOrCreateAccountActions(account);
             if (actions != null && !actions.isLogOut()) {
                 actions.toggleHideAccountAction();
-                if (targetCount <= getHideOrLogOutCount()) {
+                if (isHidingCountCorrect()) {
                     break;
                 }
             }

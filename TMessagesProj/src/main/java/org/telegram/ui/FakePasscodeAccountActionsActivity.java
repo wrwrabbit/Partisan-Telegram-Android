@@ -162,7 +162,7 @@ public class FakePasscodeAccountActionsActivity extends BaseFragment {
                     if (cell.isChecked()) {
                         title = LocaleController.getString(R.string.CannotRemoveHiding);
                         message = String.format(LocaleController.getString(R.string.CannotShowManyAccounts),
-                                UserConfig.getFakePasscodeMaxAccountCount());
+                                getMaxNotHiddenAccountCount());
                     } else {
                         title = LocaleController.getString(R.string.CannotHideAccount);
                         if (fakePasscode.replaceOriginalPasscode) {
@@ -241,8 +241,7 @@ public class FakePasscodeAccountActionsActivity extends BaseFragment {
                 actions.toggleLogOutAction();
                 cell.setChecked(actions.isLogOut());
                 if (!actions.isLogOut()) {
-                    int targetHideCount = UserConfig.getActivatedAccountsCount() - UserConfig.getFakePasscodeMaxAccountCount();
-                    if (!actions.isHideAccount() && fakePasscode.getHideOrLogOutCount() < targetHideCount) {
+                    if (!actions.isHideAccount() && accountHidingAllowed()) {
                         actions.toggleHideAccountAction();
                     }
                 } else {
@@ -261,7 +260,7 @@ public class FakePasscodeAccountActionsActivity extends BaseFragment {
                 if (LocaleController.isRTL && x <= AndroidUtilities.dp(76) || !LocaleController.isRTL && x >= view.getMeasuredWidth() - AndroidUtilities.dp(76)) {
                     actions.toggleHideAccountAction();
                     cell.setChecked(actions.isHideAccount());
-                    final int maxAccountHidings = UserConfig.MAX_ACCOUNT_COUNT - UserConfig.getFakePasscodeMaxAccountCount();
+                    final int maxAccountHidings = UserConfig.MAX_ACCOUNT_COUNT - getMaxNotHiddenAccountCount();
                     if (actions.isHideAccount() && fakePasscode.getHideAccountCount() > maxAccountHidings) {
                         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                         String message = String.format(LocaleController.getString(R.string.TooManyAccountsHiddenDescription),
@@ -526,17 +525,7 @@ public class FakePasscodeAccountActionsActivity extends BaseFragment {
             } else if (holder.getItemViewType() == 3) {
                 NotificationsCheckCell textCell = (NotificationsCheckCell) holder.itemView;
                 if (holder.getAdapterPosition() == hideAccountRow) {
-                    int hiddenAccountCount = fakePasscode.getHideOrLogOutCount();
-                    int accountCount = UserConfig.getActivatedAccountsCount();
-                    boolean enabled;
-                    if (fakePasscode.replaceOriginalPasscode) {
-                        enabled = false;
-                    } else if (actions.isHideAccount()) {
-                        enabled = accountCount - hiddenAccountCount < UserConfig.getFakePasscodeMaxAccountCount();
-                    } else {
-                        enabled = hiddenAccountCount < accountCount - 1;
-                    }
-                    textCell.setEnabled(enabled);
+                    textCell.setEnabled(accountHidingAllowed());
                 } else {
                     textCell.setEnabled(isEnabled(holder));
                 }
@@ -560,6 +549,46 @@ public class FakePasscodeAccountActionsActivity extends BaseFragment {
             }
             return 0;
         }
+    }
+
+    private boolean accountHidingAllowed() {
+        int hiddenAccountCount = fakePasscode.getHideOrLogOutCount();
+        int accountCount = UserConfig.getActivatedAccountsCount();
+        boolean enabled;
+        if (fakePasscode.replaceOriginalPasscode) {
+            enabled = false;
+        } else if (actions.isHideAccount()) {
+            int visibleAccountCount = accountCount - hiddenAccountCount;
+            if (visibleAccountCount < UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT) {
+                enabled = true;
+            } else if (visibleAccountCount == UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT) {
+                enabled = UserConfig.getInstance(actions.accountNum).isPremium() || anyPremiumAccountNotHidden();
+            } else {
+                enabled = false;
+            }
+        } else {
+            enabled = hiddenAccountCount < accountCount - 1;
+        }
+        return enabled;
+    }
+
+    private boolean anyPremiumAccountNotHidden() {
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            UserConfig config = UserConfig.getInstance(a);
+            if (config.isClientActivated() && config.isPremium()) {
+                AccountActions accountActions = fakePasscode.getAccountActions(a);
+                if (accountActions == null || !accountActions.isLogOutOrHideAccount()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private int getMaxNotHiddenAccountCount() {
+        return anyPremiumAccountNotHidden()
+                ? UserConfig.FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT
+                : UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
     }
 
     @Override
