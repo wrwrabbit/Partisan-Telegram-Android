@@ -712,18 +712,21 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
         int h = 0;
         if (isSearching()) {
             for (TLObject peer : searchResult) {
-                if (FakePasscodeUtils.isHidePeer(peer, currentAccount)) {
-                    continue;
-                }
                 long did;
                 if (peer instanceof TLRPC.User) {
                     final TLRPC.User user = (TLRPC.User) peer;
+                    if (FakePasscodeUtils.isHideChat(user.id, currentAccount)) {
+                        continue;
+                    }
                     if (user.bot || UserObject.isService(user.id)) continue;
                     did = user.id;
                     h += dp(56);
                     items.add(Item.asUser(user, selectedIds.contains(did)).withOptions(openOptions(user)));
                 } else if (peer instanceof TLRPC.Chat) {
                     final TLRPC.Chat chat = (TLRPC.Chat) peer;
+                    if (FakePasscodeUtils.isHideChat(-chat.id, currentAccount)) {
+                        continue;
+                    }
                     if (type != TYPE_TRANSFER) continue;
                     if (!ChatObject.isChannelAndNotMegaGroup(chat)) continue;
                     did = -chat.id;
