@@ -150,7 +150,6 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         boolean needDeleteMessage;
 
         if (messageObject == null || messageObject.getDialogId() != dialogId || messageObject.messageOwner == null
-                || messageObject.messageOwner instanceof TLRPC.TL_messageService
                 || messageObject.messageText.toString().equals(LocaleController.getString(R.string.ActionMigrateFromGroup))) {
             log("isNeedDeleteMessage main filter");
             return false;
