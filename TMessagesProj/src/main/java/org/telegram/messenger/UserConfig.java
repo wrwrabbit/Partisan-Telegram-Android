@@ -256,6 +256,9 @@ public class UserConfig extends BaseController {
 
     public static boolean hasPremiumOnAccounts() {
         for (int a = 0; a < MAX_ACCOUNT_COUNT; a++) {
+            if (FakePasscodeUtils.isHideAccount(a)) {
+                continue;
+            }
             if (AccountInstance.getInstance(a).getUserConfig().isClientActivated() && AccountInstance.getInstance(a).getUserConfig().getUserConfig().isPremium()) {
                 return true;
             }
@@ -265,10 +268,6 @@ public class UserConfig extends BaseController {
 
     public static int getMaxAccountCount() {
         return hasPremiumOnAccounts() ? 5 : 3;
-    }
-
-    public static int getFakePasscodeMaxAccountCount() {
-        return hasPremiumOnAccounts() ? FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT : FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
     }
 
     public int getNewMessageId() {

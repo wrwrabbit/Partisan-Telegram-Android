@@ -357,15 +357,21 @@ public class FakePasscodeUtils {
             return false;
         }
         boolean isCurrentAccountCorrect = false;
+        boolean hasPremium = false;
         int accountIndex = 0;
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated() && !FakePasscodeUtils.isHideAccount(a, false)) {
+            UserConfig userConfig = UserConfig.getInstance(a);
+            if (userConfig.isClientActivated() && !FakePasscodeUtils.isHideAccount(a, false)) {
                 if (a == UserConfig.selectedAccount) {
                     isCurrentAccountCorrect = true;
                     break;
                 }
                 accountIndex++;
-                if (accountIndex >= UserConfig.getFakePasscodeMaxAccountCount()) {
+                hasPremium |= userConfig.isPremium();
+                int maxAccountCount = hasPremium
+                        ? UserConfig.FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT
+                        : UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
+                if (accountIndex >= maxAccountCount) {
                     break;
                 }
             }
