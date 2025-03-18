@@ -30,6 +30,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.update.UpdateChecker;
+import org.telegram.messenger.partisan.update.UpdateDownloader;
 import org.telegram.messenger.web.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.IUpdateButton;
@@ -66,7 +67,7 @@ public class UpdateButton extends IUpdateButton {
                 FileLoader.getInstance(UserConfig.selectedAccount).cancelLoadFile(SharedConfig.pendingPtgAppUpdate.document);
                 update(true);
             } else {
-                UpdateChecker.startUpdateDownloading(UserConfig.selectedAccount);
+                new UpdateDownloader(UserConfig.selectedAccount).startUpdateDownloading();
             }
 
             AndroidUtilities.openForView(SharedConfig.pendingPtgAppUpdate.document, true, activity);
