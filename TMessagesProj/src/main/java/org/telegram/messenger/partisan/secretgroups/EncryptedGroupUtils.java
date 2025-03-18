@@ -257,6 +257,12 @@ public class EncryptedGroupUtils {
             return false;
         }
         EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+        if (encryptedGroup == null) {
+            try {
+                encryptedGroup = messagesStorage.loadEncryptedGroup(encryptedGroupId);
+            } catch (Exception ignore) {
+            }
+        }
         return encryptedGroup == null || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED;
     }
 
