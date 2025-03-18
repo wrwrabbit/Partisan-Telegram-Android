@@ -412,7 +412,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             }
         }
         getWindow().setBackgroundDrawableResource(R.drawable.transparent);
-        flagSecureReason = new FlagSecureReason(getWindow(), () -> SharedConfig.passcodeEnabled() && !SharedConfig.allowScreenCapture);
+        flagSecureReason = new FlagSecureReason(getWindow(), () -> SharedConfig.passcodeEnabled() && !SharedConfig.allowScreenCapture && (passcodeDialog == null || !passcodeDialog.isShowing()));
         flagSecureReason.attach();
 
         super.onCreate(savedInstanceState);
@@ -8520,6 +8520,12 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             }
         } else {
             fileOrDirectory.delete();
+        }
+    }
+
+    public void invalidateFlagSecureReason() {
+        if (flagSecureReason != null) {
+            flagSecureReason.invalidate();
         }
     }
 
