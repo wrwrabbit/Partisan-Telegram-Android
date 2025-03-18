@@ -51,10 +51,10 @@ import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChatState;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.RequestDelegate;
-import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.Vector;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
@@ -6910,7 +6910,7 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void updateUserInfoPremiumBlocked(long userId, boolean contact_require_premium) {
+    public void updateUserInfoContactBlocked(long userId, TL_account.RequirementToContact value) {
         storageQueue.postRunnable(() -> {
             SQLiteCursor cursor = null;
             SQLitePreparedStatement state = null;
@@ -6928,10 +6928,12 @@ public class MessagesStorage extends BaseController {
                 }
                 cursor.dispose();
                 cursor = null;
-                if (!exist || userFull == null || userFull.contact_require_premium == contact_require_premium) {
+                if (!exist || userFull == null) {
                     return;
                 }
-                userFull.contact_require_premium = contact_require_premium;
+                if (!UserObject.applyRequirementToContact(userFull, value)) {
+                    return;
+                }
                 state = database.executeFast("REPLACE INTO user_settings VALUES(?, ?, ?)");
                 NativeByteBuffer data = new NativeByteBuffer(userFull.getObjectSize());
                 userFull.serializeToStream(data);
@@ -12970,6 +12972,41 @@ public class MessagesStorage extends BaseController {
         });
     }
 
+    public void markMessageAsSendErrorWithParams(TLRPC.Message msg, long errorAllowedPriceStars, long errorNewPriceStars) {
+        final long selfId = getUserConfig().getClientUserId();
+        storageQueue.postRunnable(() -> {
+            SQLiteCursor cursor = null;
+            try {
+                final long messageId = msg.id;
+                final long dialogId = MessageObject.getDialogId(msg);
+                for (int i = 0; i < 2; ++i) {
+                    final String table = i == 0 ? "messages_v2" : "messages_topics";
+
+                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT data FROM messages_v2 WHERE mid = %d AND uid = %d LIMIT 1", messageId, dialogId));
+                    if (cursor.next()) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                            message.readAttachPath(data, selfId);
+                            data.reuse();
+
+
+                        }
+                    }
+
+                    database.executeFast(String.format(Locale.US, "UPDATE "+table+" SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, dialogId)).stepThis().dispose();
+                    database.executeFast(String.format(Locale.US, "UPDATE "+table+" SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, dialogId)).stepThis().dispose();
+                }
+            } catch (Exception e) {
+                checkSQLException(e);
+            } finally {
+                if (cursor != null) {
+                    cursor.dispose();
+                }
+            }
+        });
+    }
+
     public void setMessageSeq(int mid, int seq_in, int seq_out) {
         storageQueue.postRunnable(() -> {
             SQLitePreparedStatement state = null;
@@ -15909,6 +15946,7 @@ public class MessagesStorage extends BaseController {
     }
 
     public void getDialogs(int folderId, int offset, int count, boolean loadDraftsPeersAndFolders) {
+        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " getDialogs from cache, offset = " + offset + ", count = " + count);
         long[] draftsDialogIds;
         if (loadDraftsPeersAndFolders) {
             LongSparseArray<LongSparseArray<TLRPC.DraftMessage>> drafts = getMediaDataController().getDrafts();
@@ -15958,8 +15996,10 @@ public class MessagesStorage extends BaseController {
                     }
 
                     ArrayList<Pair<Long, Long>> dialogsToLoadGroupMessages = new ArrayList<>();
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load dialogs! Folder = " + fid + ", offset = " + off + ", count = " + cnt);
                     cursor = database.queryFinalized(String.format(Locale.US, "SELECT d.did, d.last_mid, d.unread_count, d.date, m.data, m.read_state, m.mid, m.send_state, s.flags, m.date, d.pts, d.inbox_max, d.outbox_max, m.replydata, d.pinned, d.unread_count_i, d.flags, d.folder_id, d.data, d.unread_reactions, d.last_mid_group, d.ttl_period FROM dialogs as d LEFT JOIN messages_v2 as m ON d.last_mid = m.mid AND d.did = m.uid AND d.last_mid_group IS NULL LEFT JOIN dialog_settings as s ON d.did = s.did WHERE d.folder_id = %d ORDER BY d.pinned DESC, d.date DESC LIMIT %d,%d", fid, off, cnt));
                     while (cursor.next()) {
+                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " a dialog found!");
                         long dialogId = cursor.longValue(0);
                         TLRPC.Dialog dialog;
                         if (DialogObject.isFolderDialogId(dialogId)) {
@@ -16088,6 +16128,7 @@ public class MessagesStorage extends BaseController {
                             }
                         }
                     }
+                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " dialogs loading finished!");
                     cursor.dispose();
                     cursor = null;
 
@@ -16215,6 +16256,7 @@ public class MessagesStorage extends BaseController {
                     });
                 }
 
+                PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " encryptedToLoad size = " + encryptedToLoad.size());
                 if (!encryptedToLoad.isEmpty()) {
                     getEncryptedChatsInternal(TextUtils.join(",", encryptedToLoad), encryptedChats, usersToLoad);
                     getEncryptedGroupsInternal(TextUtils.join(",", encryptedToLoad), encryptedGroups);
