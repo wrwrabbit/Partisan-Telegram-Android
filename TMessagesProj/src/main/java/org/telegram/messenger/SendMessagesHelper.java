@@ -5595,7 +5595,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
         for (int encryptedChatId : encryptedGroup.getInnerEncryptedChatIds(true)) {
             sendMessageParams.peer = DialogObject.makeEncryptedDialogId(encryptedChatId);
-            if (originalMediaGroupId != null) {
+            if (originalMediaGroupId != null && originalMediaGroupId != 0) {
                 Map<Long, Long> groupIdsByEncryptedChat = encryptedGroupMediaGroupIds.computeIfAbsent(originalMediaGroupId, key -> new HashMap<>());
                 long newMediaGroupId = groupIdsByEncryptedChat.computeIfAbsent(sendMessageParams.peer, key -> Utilities.random.nextLong());
                 sendMessageParams.params = new HashMap<>(sendMessageParams.params);
