@@ -15,6 +15,7 @@ import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
@@ -100,8 +101,26 @@ public class EncryptedGroupMemberCell extends FrameLayout {
                 statusTextView.setText(LocaleController.formatUserStatus(currentAccount, user));
             }
         } else {
-            statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
-            statusTextView.setText(innerChat.getState().toString());
+            statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+            if (SharedConfig.detailedEncryptedGroupMemberStatus) {
+                statusTextView.setText(innerChat.getState().toString());
+            } else {
+                switch (innerChat.getState()) {
+                    case CREATING_ENCRYPTED_CHAT:
+                    case NEED_SEND_INVITATION:
+                    case INVITATION_SENT:
+                        statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInvitationSent));
+                        break;
+                    case WAITING_SECONDARY_CHATS_CREATION:
+                    case NEED_SEND_SECONDARY_INVITATION:
+                        statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInitialization));
+                        break;
+                    case INITIALIZATION_FAILED:
+                    case CANCELLED:
+                        statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateCancelled));
+                        break;
+                }
+            }
         }
         avatarImageView.getImageReceiver().setCurrentAccount(currentAccount);
         avatarImageView.setForUserOrChat(user, avatarDrawable);
