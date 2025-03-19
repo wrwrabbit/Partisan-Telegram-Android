@@ -91,7 +91,13 @@ public class EncryptedGroupUtils {
         MessagesController messagesController = MessagesController.getInstance(account);
 
         EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+        if (encryptedGroup == null) {
+            return;
+        }
         TLRPC.Dialog encryptedGroupDialog = messagesController.getDialog(DialogObject.makeEncryptedDialogId(encryptedGroupId));
+        if (encryptedGroupDialog == null) {
+            return;
+        }
         encryptedGroupDialog.unread_count = 0;
         for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
             if (innerChat.getDialogId().isPresent()) {
@@ -111,6 +117,9 @@ public class EncryptedGroupUtils {
         MessagesController messagesController = MessagesController.getInstance(account);
 
         EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+        if (encryptedGroup == null) {
+            return;
+        }
         MessageObject lastMessage = null;
         for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
             if (!innerChat.getDialogId().isPresent()) {
@@ -249,13 +258,19 @@ public class EncryptedGroupUtils {
             return false;
         }
         MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
-        MessagesController messagesController = MessagesController.getInstance(accountNum);
 
         int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
         Integer encryptedGroupId = messagesStorage.getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
         if (encryptedGroupId == null) {
             return false;
         }
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId, accountNum);
+        return encryptedGroup == null || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED;
+    }
+
+    private static EncryptedGroup getOrLoadEncryptedGroup(int encryptedGroupId, int accountNum) {
+        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
+        MessagesController messagesController = MessagesController.getInstance(accountNum);
         EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
         if (encryptedGroup == null) {
             try {
@@ -263,7 +278,7 @@ public class EncryptedGroupUtils {
             } catch (Exception ignore) {
             }
         }
-        return encryptedGroup == null || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED;
+        return encryptedGroup;
     }
 
     public static boolean isInnerEncryptedGroupChat(long dialogId, int account) {
