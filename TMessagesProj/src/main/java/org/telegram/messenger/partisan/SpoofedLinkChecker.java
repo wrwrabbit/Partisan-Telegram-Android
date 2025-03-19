@@ -1,7 +1,9 @@
 package org.telegram.messenger.partisan;
 
 import android.net.Uri;
+import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.URLSpan;
 import android.util.Patterns;
@@ -13,6 +15,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.Cells.AboutLinkCell;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.LaunchActivity;
 
@@ -51,15 +54,11 @@ public class SpoofedLinkChecker {
                 return result;
             }
 
-            MessageObject messageObject = getLinkMessageObjectFromProgress();
-            if (messageObject == null) {
+            CharSequence text = getLinkMessageObjectFromProgress();
+            if (!(text instanceof Spannable)) {
                 return result;
             }
-            CharSequence text = messageObject.caption != null ? messageObject.caption : messageObject.messageText;
-            if (!(text instanceof SpannableString)) {
-                return result;
-            }
-            SpannableString spannableText = (SpannableString) text;
+            Spannable spannableText = (Spannable) text;
 
             URLSpan spoofedSpan = getSpans(spannableText).stream()
                     .filter(span -> isSpoofSpan(spannableText, span))
@@ -82,55 +81,92 @@ public class SpoofedLinkChecker {
         }
     }
 
-    private MessageObject getLinkMessageObjectFromProgress() {
+    private CharSequence getLinkMessageObjectFromProgress() {
+        CharSequence charSequence = getLinkCharSequenceFromChatMessageCell();
+        if (charSequence == null) {
+            charSequence = getLinkCharSequenceFromAboutLinkCell();
+        }
+        return charSequence;
+    }
+
+    private CharSequence getLinkCharSequenceFromChatMessageCell() {
         if (progress == null) {
             return null;
         }
+        MessageObject messageObject = null;
         ChatMessageCell cell = tryGetObjectFieldBySuffix(progress, "cell", ChatMessageCell.class);
+        if (cell == null) {
+            return null;
+        }
         if (cell.getCurrentMessagesGroup() != null) {
             MessageObject.GroupedMessages groupedMessages = cell.getCurrentMessagesGroup();
             if (!groupedMessages.messages.isEmpty()) {
-                return groupedMessages.messages.get(0);
+                messageObject = groupedMessages.messages.get(0);
             }
         }
-        return cell != null ? cell.getMessageObject() : null;
+        if (messageObject == null) {
+            messageObject = cell.getMessageObject();
+        }
+
+        if (messageObject == null) {
+            return null;
+        }
+        return messageObject.caption != null ? messageObject.caption : messageObject.messageText;
+    }
+
+    private CharSequence getLinkCharSequenceFromAboutLinkCell() {
+        if (progress == null) {
+            return null;
+        }
+        AboutLinkCell cell = tryGetObjectFieldBySuffix(progress, "this$0", AboutLinkCell.class);
+        if (cell == null) {
+            return null;
+        }
+        return tryGetObjectFieldBySuffix(cell, "stringBuilder", SpannableStringBuilder.class);
     }
 
     private static <T> T tryGetObjectFieldBySuffix(Object object, String suffix, Class<T> kind) {
         if (object == null) {
             return null;
         }
-        Class<?> clazz = object.getClass();
-        try {
-            Field[] fields = clazz.getDeclaredFields();
-            for (Field field : fields) {
-                if (!field.getName().endsWith(suffix)) {
-                    continue;
+        for (Class<?> clazz = object.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
+            try {
+                Field[] fields = clazz.getDeclaredFields();
+                for (Field field : fields) {
+                    if (!field.getName().endsWith(suffix)) {
+                        continue;
+                    }
+                    field.setAccessible(true);
+                    Object value = field.get(object);
+                    if (value != null && kind.isAssignableFrom(value.getClass())) {
+                        return (T) value;
+                    }
                 }
-                field.setAccessible(true);
-                Object value = field.get(object);
-                if (value != null && kind.isAssignableFrom(value.getClass())) {
-                    return (T) value;
-                }
+            } catch (IllegalAccessException e) {
+                return null;
             }
-            return null;
-        } catch (IllegalAccessException e) {
-            return null;
         }
+        return null;
     }
 
-    private List<URLSpan> getSpans(SpannableString spannableText) {
-        List<URLSpan> targetSpans;
-        URLSpan progressSpan = tryGetObjectFieldBySuffix(progress, "span", URLSpan.class);
+    private List<URLSpan> getSpans(Spannable spannableText) {
+        URLSpan progressSpan = getSpanFromProgress();
         if (progressSpan != null) {
-            targetSpans = Collections.singletonList(progressSpan);
+            return Collections.singletonList(progressSpan);
         } else {
-            targetSpans = getSpansByUrl(spannableText);
+            return getSpansByUrl(spannableText);
         }
-        return targetSpans;
     }
 
-    private List<URLSpan> getSpansByUrl(SpannableString spannableText) {
+    private URLSpan getSpanFromProgress() {
+        URLSpan progressSpan = tryGetObjectFieldBySuffix(progress, "span", URLSpan.class);
+        if (progressSpan == null) {
+            progressSpan = tryGetObjectFieldBySuffix(progress, "pressedLink", URLSpan.class);
+        }
+        return progressSpan;
+    }
+
+    private List<URLSpan> getSpansByUrl(Spannable spannableText) {
         URLSpan[] spans = spannableText.getSpans(0, spannableText.length(), URLSpan.class);
         List<URLSpan> matchedSpans = new ArrayList<>();
         for (URLSpan span : spans) {
@@ -142,7 +178,7 @@ public class SpoofedLinkChecker {
         return matchedSpans;
     }
 
-    private static boolean isSpoofSpan(SpannableString spannableText, URLSpan span) {
+    private static boolean isSpoofSpan(Spannable spannableText, URLSpan span) {
         String label = getSpanText(spannableText, span).toString();
 
         // avoid ' @username' workaround
@@ -171,7 +207,7 @@ public class SpoofedLinkChecker {
         }
     }
 
-    private static CharSequence getSpanText(SpannableString spannableText, URLSpan span) {
+    private static CharSequence getSpanText(Spannable spannableText, URLSpan span) {
         int start = spannableText.getSpanStart(span);
         int end = spannableText.getSpanEnd(span);
         return spannableText.subSequence(start, end);
