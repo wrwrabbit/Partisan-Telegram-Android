@@ -134,10 +134,11 @@ public class EncryptedGroupUtils {
             }
         }
         long groupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroupId);
-        ArrayList<MessageObject> lastMessages = lastMessage != null
-                ? new ArrayList<>(Collections.singletonList(lastMessage))
-                : null;
-        messagesController.dialogMessage.put(groupDialogId, lastMessages);
+        if (lastMessage != null) {
+            messagesController.dialogMessage.put(groupDialogId, new ArrayList<>(Collections.singletonList(lastMessage)));
+        } else {
+            messagesController.dialogMessage.remove(groupDialogId);
+        }
     }
 
     public static void updateEncryptedGroupLastMessageDate(int encryptedGroupId, int account) {
