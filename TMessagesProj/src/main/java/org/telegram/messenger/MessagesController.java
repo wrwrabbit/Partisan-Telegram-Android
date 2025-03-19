@@ -9232,8 +9232,10 @@ public class MessagesController extends BaseController implements NotificationCe
                 for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
                     if (innerChat.getDialogId().isPresent()) {
                         deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
+                        dialogMessage.remove(innerChat.getDialogId().get());
                     }
                 }
+                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), currentAccount);
             }
         }
         if (onlyHistory == 2) {
@@ -9325,6 +9327,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     int lastMessageId;
                     ArrayList<MessageObject> objects = dialogMessage.get(dialog.id);
                     dialogMessage.remove(dialog.id);
+                    EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
+                        EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                    });
                     if (objects != null && objects.size() > 0 && objects.get(0) != null) {
                         lastMessageId = objects.get(0).getId();
                         for (int i = 0; i < objects.size(); ++i) {
