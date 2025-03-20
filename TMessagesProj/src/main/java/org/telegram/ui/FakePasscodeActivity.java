@@ -60,6 +60,7 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeSerializer;
 import org.telegram.messenger.fakepasscode.SelectionMode;
 import org.telegram.messenger.fakepasscode.UpdateIdHashRunnable;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.MaskedMigrationIssue;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
 import org.telegram.messenger.partisan.masked_ptg.AbstractMaskedPasscodeScreen;
@@ -1054,22 +1055,11 @@ public class FakePasscodeActivity extends BaseFragment {
         firstAccountRow = rowCount;
         lastAccountRow = firstAccountRow - 1;
         accounts.clear();
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated()) {
-                accounts.add(new AccountActionsCellInfo(a));
-                lastAccountRow = rowCount++;
-            }
+
+        for (int account : Utils.getActivatedAccountsSortedByLoginTime()) {
+            accounts.add(new AccountActionsCellInfo(account));
+            lastAccountRow = rowCount++;
         }
-        Collections.sort(accounts, (o1, o2) -> {
-            long l1 = UserConfig.getInstance(o1.accountNum).loginTime;
-            long l2 = UserConfig.getInstance(o2.accountNum).loginTime;
-            if (l1 > l2) {
-                return 1;
-            } else if (l1 < l2) {
-                return -1;
-            }
-            return 0;
-        });
         if (fakePasscode != null) {
             for (AccountActions actions : fakePasscode.accountActions) {
                 if (actions.getAccountNum() == null) {

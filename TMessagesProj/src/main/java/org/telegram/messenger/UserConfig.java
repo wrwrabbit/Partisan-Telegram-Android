@@ -21,6 +21,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SecurityIssue;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
@@ -255,6 +256,9 @@ public class UserConfig extends BaseController {
 
     public static boolean hasPremiumOnAccounts() {
         for (int a = 0; a < MAX_ACCOUNT_COUNT; a++) {
+            if (FakePasscodeUtils.isHideAccount(a)) {
+                continue;
+            }
             if (AccountInstance.getInstance(a).getUserConfig().isClientActivated() && AccountInstance.getInstance(a).getUserConfig().getUserConfig().isPremium()) {
                 return true;
             }
@@ -264,10 +268,6 @@ public class UserConfig extends BaseController {
 
     public static int getMaxAccountCount() {
         return hasPremiumOnAccounts() ? 5 : 3;
-    }
-
-    public static int getFakePasscodeMaxAccountCount() {
-        return hasPremiumOnAccounts() ? FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT : FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
     }
 
     public int getNewMessageId() {
@@ -639,6 +639,11 @@ public class UserConfig extends BaseController {
 
     public void clearConfig() {
         getPreferences().edit().clear().apply();
+
+        if (currentUser != null) {
+            // Delete account files after logging out to prevent data extraction using them
+            Utilities.globalQueue.postRunnable(() -> Utils.deleteAccountFiles(currentAccount), 3000);
+        }
 
         sharingMyLocationUntil = 0;
         lastMyLocationShareTime = 0;

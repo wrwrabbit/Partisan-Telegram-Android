@@ -22,6 +22,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.masked_ptg.AbstractMaskedPasscodeScreen;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import org.telegram.messenger.partisan.masked_ptg.TutorialType;
+import org.telegram.ui.LaunchActivity;
 
 public class PasscodeView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
     private boolean showed = false;
@@ -261,6 +262,10 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
     }
 
     public void onShow(boolean fingerprint, boolean animated, int x, int y, Runnable onShow, Runnable onStart) {
+        Context context = getContext();
+        if (context instanceof LaunchActivity) {
+            ((LaunchActivity)context).invalidateFlagSecureReason();
+        }
         checkRetryTextView();
         Activity parentActivity = AndroidUtilities.findActivity(getContext());
         if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD) {

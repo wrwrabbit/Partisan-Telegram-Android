@@ -69,6 +69,7 @@ import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -2513,6 +2514,8 @@ public class NotificationsController extends BaseController {
                             msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGiftPremium) {
                             msg = messageObject.messageText.toString();
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
+                            msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) {
                             if (messageObject.messageOwner.action.video) {
                                 msg = LocaleController.getString(R.string.CallMessageVideoIncomingMissed);
@@ -4169,10 +4172,8 @@ public class NotificationsController extends BaseController {
                 mBuilder.setContentText(message);
                 if (!allowSummary) {
                     detailText = message;
-                    mBuilder.setStyle(new NotificationCompat.BigTextStyle().setBigContentTitle(name).setSummaryText(message));
-                } else {
-                    mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
                 }
+                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
             } else {
                 mBuilder.setContentText(detailText);
                 NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
@@ -4989,7 +4990,7 @@ public class NotificationsController extends BaseController {
 
             NotificationCompat.Action wearReplyAction = null;
 
-            if ((!isChannel || isSupergroup) && canReply && !SharedConfig.isWaitingForPasscodeEnter && selfUserId != dialogId && !UserObject.isReplyUser(dialogId)) {
+            if ((!isChannel || isSupergroup) && canReply && !SharedConfig.isWaitingForPasscodeEnter && selfUserId != dialogId && !UserObject.isReplyUser(dialogId) && MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(dialogId) <= 0) {
                 Intent replyIntent = new Intent(ApplicationLoader.applicationContext, WearReplyReceiver.class);
                 replyIntent.putExtra("dialog_id", dialogId);
                 replyIntent.putExtra("max_id", maxId);
@@ -5805,6 +5806,17 @@ public class NotificationsController extends BaseController {
     }
 
     public void setDialogNotificationsSettings(long dialog_id, long topicId, int setting) {
+        if (getMessagesStorage().isEncryptedGroup(dialog_id)) {
+            EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(dialog_id));
+            if (encryptedGroup != null) {
+
+            }
+            for (int innerChatId : encryptedGroup.getInnerEncryptedChatIds(false)) {
+                NotificationsController.getInstance(UserConfig.selectedAccount).setDialogNotificationsSettings(DialogObject.makeEncryptedDialogId(innerChatId), topicId, setting);
+            }
+            return;
+        }
+
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
         SharedPreferences.Editor editor = preferences.edit();
         TLRPC.Dialog dialog = MessagesController.getInstance(UserConfig.selectedAccount).dialogs_dict.get(dialog_id);

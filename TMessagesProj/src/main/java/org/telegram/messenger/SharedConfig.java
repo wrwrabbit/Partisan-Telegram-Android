@@ -885,8 +885,14 @@ public class SharedConfig {
                 String update = preferences.getString("ptgAppUpdate", null);
                 if (update != null) {
                     pendingPtgAppUpdate = fromJson(update, UpdateData.class);
+                } else {
+                    PartisanLog.d("pendingPtgAppUpdate: reset 1");
                 }
             } catch (Exception e) {
+                PartisanLog.d("pendingPtgAppUpdate: reset 2");
+                PartisanLog.d("pendingPtgAppUpdate string = \n\n"
+                        + preferences.getString("ptgAppUpdate", null)
+                        + "\n\n");
                 PartisanLog.handleException(e);
             }
 
@@ -2314,6 +2320,8 @@ public class SharedConfig {
     public static void setAppLocked(boolean locked) {
         if (locked) {
             FakePasscodeUtils.updateLastPauseFakePasscodeTime();
+            appLocked = true;
+            FakePasscodeUtils.tryActivateByTimer();
         } else {
             if (appLocked) {
                 SharedConfig.lastPauseFakePasscodeTime = 0;

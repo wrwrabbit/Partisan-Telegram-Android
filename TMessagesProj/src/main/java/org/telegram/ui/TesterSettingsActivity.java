@@ -1,6 +1,7 @@
 package org.telegram.ui;
 
 import android.content.Context;
+import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -11,15 +12,19 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.SQLite.SQLiteCursor;
+import org.telegram.SQLite.SQLiteDatabase;
+import org.telegram.SQLite.SQLiteDatabaseWrapper;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -47,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -103,6 +107,8 @@ public class TesterSettingsActivity extends BaseFragment {
     private int saveLogcatAfterRestartRow;
     private int showEncryptedChatsFromEncryptedGroupsRow;
     private int enableSecretGroupsRow;
+    private int dbSizeRow;
+    private int accountNumRow;
 
     public static boolean showPlainBackup;
 
@@ -280,6 +286,7 @@ public class TesterSettingsActivity extends BaseFragment {
                 AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
                 showDialog(dialog);
             } else if (position == resetUpdateRow) {
+                PartisanLog.d("pendingPtgAppUpdate: reset 4");
                 SharedConfig.pendingPtgAppUpdate = null;
                 SharedConfig.saveConfig();
                 Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
@@ -315,6 +322,19 @@ public class TesterSettingsActivity extends BaseFragment {
             } else if (position == enableSecretGroupsRow) {
                 SharedConfig.toggleSecretGroups();
                 ((TextCheckCell) view).setChecked(SharedConfig.encryptedGroupsEnabled);
+            } else if (position == dbSizeRow) {
+                List<Pair<String, Long>> tableSizes = getTableSizes();
+                String message = tableSizes.stream()
+                        .map(pair -> pair.first + " = " + AndroidUtilities.formatFileSize(pair.second) + "\n")
+                        .reduce(String::concat)
+                        .orElse("");
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                builder.setMessage(message);
+                builder.setTitle(LocaleController.getString(R.string.AppName));
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+                AlertDialog alertDialog = builder.create();
+                showDialog(alertDialog);
             }
         });
 
@@ -334,6 +354,7 @@ public class TesterSettingsActivity extends BaseFragment {
 
         phoneOverrideRow = -1;
         forceAllowScreenshotsRow = -1;
+        dbSizeRow = -1;
 
         sessionTerminateActionWarningRow = rowCount++;
         updateChannelIdRow = rowCount++;
@@ -365,6 +386,10 @@ public class TesterSettingsActivity extends BaseFragment {
         saveLogcatAfterRestartRow = rowCount++;
         showEncryptedChatsFromEncryptedGroupsRow = rowCount++;
         enableSecretGroupsRow = rowCount++;
+        if (getMessagesStorage().fileProtectionEnabled()) {
+            dbSizeRow = rowCount++;
+        }
+        accountNumRow = rowCount++;
     }
 
     @Override
@@ -424,6 +449,45 @@ public class TesterSettingsActivity extends BaseFragment {
             config.showSecuritySuggestions = !issues.isEmpty();
             config.saveConfig(false);
         }
+    }
+
+    private Long getMemoryDbSize() {
+        Long dbSize = null;
+        SQLiteDatabase database = getMessagesStorage().getDatabase();
+        if (database instanceof SQLiteDatabaseWrapper) {
+            SQLiteDatabaseWrapper wrapper = (SQLiteDatabaseWrapper)database;
+            SQLiteDatabase memoryDatabase = wrapper.getMemoryDatabase();
+            try {
+                SQLiteCursor cursor = memoryDatabase.queryFinalized("select page_count * page_size from pragma_page_count(), pragma_page_size()");
+                if (cursor.next()) {
+                    dbSize = cursor.longValue(0);
+                }
+                cursor.dispose();
+            } catch (Exception ignore) {
+            }
+        }
+        return dbSize;
+    }
+
+    private List<Pair<String, Long>> getTableSizes() {
+        List<Pair<String, Long>> tableSizes = new ArrayList<>();
+        SQLiteDatabase database = getMessagesStorage().getDatabase();
+        if (database instanceof SQLiteDatabaseWrapper) {
+            SQLiteDatabaseWrapper wrapper = (SQLiteDatabaseWrapper)database;
+            SQLiteDatabase memoryDatabase = wrapper.getMemoryDatabase();
+            try {
+                SQLiteCursor cursor = memoryDatabase.queryFinalized("SELECT name, SUM(pgsize) size FROM \"dbstat\" GROUP BY name ORDER BY size DESC LIMIT 20");
+                while (cursor.next()) {
+                    String name = cursor.stringValue(0);
+                    long size = cursor.longValue(1);
+                    tableSizes.add(new Pair<>(name, size));
+                }
+                cursor.dispose();
+            } catch (Exception e) {
+                PartisanLog.e("Error", e);
+            }
+        }
+        return tableSizes;
     }
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
@@ -524,6 +588,11 @@ public class TesterSettingsActivity extends BaseFragment {
                         textCell.setText("Reset Verification Last Check Time", true);
                     } else if (position == resetMaskedUpdateTagRow) {
                         textCell.setText("Reset Masked Update Tag", true);
+                    } else if (position == dbSizeRow) {
+                        Long databaseSize = getMemoryDbSize();
+                        textCell.setTextAndValue("Memory DB size", databaseSize != null ? AndroidUtilities.formatFileSize(databaseSize) : "error", true);
+                    } else if (position == accountNumRow) {
+                        textCell.setTextAndValue("Account num", Integer.toString(currentAccount), true);
                     }
                     break;
                 }
@@ -541,7 +610,9 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == phoneOverrideRow || position == resetSecurityIssuesRow
                     || position == activateAllSecurityIssuesRow || position == editSavedChannelsRow
                     || position == resetUpdateRow || position == checkVerificationUpdatesRow
-                    || position == resetVerificationLastCheckTimeRow || position == resetMaskedUpdateTagRow) {
+                    || position == resetVerificationLastCheckTimeRow || position == resetMaskedUpdateTagRow
+                    || position == dbSizeRow
+                    || position == accountNumRow) {
                 return 1;
             }
             return 0;

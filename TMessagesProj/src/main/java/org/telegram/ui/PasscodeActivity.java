@@ -216,8 +216,12 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     public PasscodeActivity(@PasscodeActivityType int type) {
         super();
         this.type = type;
-        if (type == TYPE_SETUP_CODE && !SharedConfig.fakePasscodes.isEmpty()) {
-            currentPasswordType = SharedConfig.passcodeType;
+        if (type == TYPE_SETUP_CODE) {
+            if (!SharedConfig.fakePasscodes.isEmpty()) {
+                currentPasswordType = SharedConfig.passcodeType;
+            } else {
+                currentPasswordType = MaskedPtgConfig.getDefaultPasscodeType();
+            }
         }
     }
 
