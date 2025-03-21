@@ -9089,5 +9089,6 @@
     <string name="FileProtectionEnableAgain">Enable again</string>
     <string name="InnerEncryptedChatStateInvitationSent">Invitation sent</string>
     <string name="InnerEncryptedChatStateInitialization">Initialization</string>
-    <string name="InnerEncryptedChatStateCancelled">Cancelled</string>
+    <string name="InnerEncryptedChatStateInvitationDeclined">Invitation declined</string>
+    <string name="InnerEncryptedChatStateMemberDeleted">Member deleted</string>
 </resources>
