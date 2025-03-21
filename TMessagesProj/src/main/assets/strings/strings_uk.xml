@@ -303,4 +303,6 @@
     <string name="InnerEncryptedChatStateInvitationSent">Запрошення надіслано</string>
     <string name="InnerEncryptedChatStateInitialization">Ініціалізація</string>
     <string name="InnerEncryptedChatStateCancelled">Скасовано</string>
+    <string name="InnerEncryptedChatStateInvitationDeclined">Запрошення відхилено</string>
+    <string name="InnerEncryptedChatStateMemberDeleted">Учасник видалено</string>
 </resources>
