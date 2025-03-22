@@ -20501,9 +20501,15 @@ public class MessagesController extends BaseController implements NotificationCe
             dialog.id = dialogId;
             int mid = dialog.top_message = lastMessage.getId();
             dialog.last_message_date = lastMessage.messageOwner.date;
+            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroupId, currentAccount);
+            });
             dialog.flags = ChatObject.isChannel(chat) ? 1 : 0;
             if (pendingUnreadCounter.get(dialogId, 0) > 0) {
                 dialog.unread_count = pendingUnreadCounter.get(dialogId);
+                EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                    EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroupId, currentAccount);
+                });
                 pendingUnreadCounter.delete(dialogId);
                 if (!isDialogMuted(dialogId, 0)) {
                     unreadUnmutedDialogs++;

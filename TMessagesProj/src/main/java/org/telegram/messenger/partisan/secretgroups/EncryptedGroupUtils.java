@@ -14,6 +14,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
+import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.tgnet.TLRPC;
@@ -90,12 +91,13 @@ public class EncryptedGroupUtils {
         }
         MessagesController messagesController = MessagesController.getInstance(account);
 
-        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId, account);
         if (encryptedGroup == null) {
             return;
         }
         TLRPC.Dialog encryptedGroupDialog = messagesController.getDialog(DialogObject.makeEncryptedDialogId(encryptedGroupId));
         if (encryptedGroupDialog == null) {
+            Utilities.globalQueue.postRunnable(() -> updateEncryptedGroupUnreadCount(encryptedGroupId, account), 100);
             return;
         }
         encryptedGroupDialog.unread_count = 0;
@@ -147,12 +149,13 @@ public class EncryptedGroupUtils {
         }
         MessagesController messagesController = MessagesController.getInstance(account);
 
-        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId, account);
         if (encryptedGroup == null) {
             return;
         }
         TLRPC.Dialog encryptedGroupDialog = messagesController.getDialog(DialogObject.makeEncryptedDialogId(encryptedGroupId));
         if (encryptedGroupDialog == null) {
+            Utilities.globalQueue.postRunnable(() -> updateEncryptedGroupLastMessageDate(encryptedGroupId, account), 100);
             return;
         }
         encryptedGroupDialog.last_message_date = encryptedGroup.getInnerChats().stream()
