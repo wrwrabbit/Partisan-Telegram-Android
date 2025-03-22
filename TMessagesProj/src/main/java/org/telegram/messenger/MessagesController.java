@@ -460,6 +460,30 @@ public class MessagesController extends BaseController implements NotificationCe
         loadDialogs(folderId, fromCache ? -1 : 0, 100, fromCache);
     }
 
+    void deleteEncryptedGroupInnerDialogsIfNeeded(long did, int onlyHistory, boolean revoke) {
+        if (DialogObject.isEncryptedDialog(did)) {
+            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
+            if (encryptedGroup != null) {
+                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
+                    if (innerChat.getDialogId().isPresent()) {
+                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
+                        dialogMessage.remove(innerChat.getDialogId().get());
+                        TLRPC.Dialog dialog = getDialog(innerChat.getDialogId().get());
+                        if (dialog != null) {
+                            dialog.unread_count = 0;
+                            TLRPC.EncryptedChat encryptedChat = getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
+                            if (encryptedChat != null) {
+                                TLRPC.User user = getUser(encryptedChat.user_id);
+                                getMessagesStorage().putEncryptedChat(encryptedChat, user, dialog);
+                            }
+                        }
+                    }
+                }
+                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), currentAccount);
+            }
+        }
+    }
+
     private final CacheFetcher<Integer, TLRPC.TL_help_appConfig> appConfigFetcher = new CacheFetcher<Integer, TLRPC.TL_help_appConfig>() {
         @Override
         protected void getRemote(int currentAccount, Integer arguments, long hash, Utilities.Callback4<Boolean, TLRPC.TL_help_appConfig, Long, Boolean> onResult) {
@@ -9226,18 +9250,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     protected void deleteDialog(long did, int first, int onlyHistory, int max_id, boolean revoke, TLRPC.InputPeer peer, long taskId) {
-        if (DialogObject.isEncryptedDialog(did)) {
-            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
-            if (encryptedGroup != null) {
-                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
-                    if (innerChat.getDialogId().isPresent()) {
-                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
-                        dialogMessage.remove(innerChat.getDialogId().get());
-                    }
-                }
-                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), currentAccount);
-            }
-        }
+        deleteEncryptedGroupInnerDialogsIfNeeded(did, onlyHistory, revoke);
         if (onlyHistory == 2) {
             if (did == getUserConfig().getClientUserId()) {
                 getSavedMessagesController().deleteAllDialogs();
