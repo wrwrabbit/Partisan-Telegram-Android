@@ -152,6 +152,9 @@ public class EncryptedGroupUtils {
             return;
         }
         TLRPC.Dialog encryptedGroupDialog = messagesController.getDialog(DialogObject.makeEncryptedDialogId(encryptedGroupId));
+        if (encryptedGroupDialog == null) {
+            return;
+        }
         encryptedGroupDialog.last_message_date = encryptedGroup.getInnerChats().stream()
                 .map(InnerEncryptedChat::getDialogId)
                 .filter(Optional::isPresent)
