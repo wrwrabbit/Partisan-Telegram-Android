@@ -324,7 +324,7 @@ public class MessagesStorage extends BaseController {
             createTable = true;
         }
         try {
-            if (fileProtectionEnabled()) {
+            if (fileProtectionShouldBeEnabled()) {
                 database = new SQLiteDatabaseWrapper(cacheFile.getPath());
                 storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
@@ -446,7 +446,7 @@ public class MessagesStorage extends BaseController {
         FileLog.e("Database restored = " + restored);
         if (restored) {
             try {
-                if (fileProtectionEnabled()) {
+                if (fileProtectionShouldBeEnabled()) {
                     database = new SQLiteDatabaseWrapper(cacheFile.getPath());
                 } else {
                     database = new SQLiteDatabase(cacheFile.getPath());
@@ -10742,7 +10742,7 @@ public class MessagesStorage extends BaseController {
     }
 
     private SQLitePreparedStatement executeFastForBothDbIfNeeded(String sql) throws SQLiteException {
-        if (database instanceof SQLiteDatabaseWrapper) {
+        if (fileProtectionEnabled()) {
             return ((SQLiteDatabaseWrapper)database).executeFastForBothDb(sql);
         } else {
             return database.executeFast(sql);
@@ -10750,6 +10750,10 @@ public class MessagesStorage extends BaseController {
     }
 
     public boolean fileProtectionEnabled() {
+        return database instanceof SQLiteDatabaseWrapper;
+    }
+
+    public boolean fileProtectionShouldBeEnabled() {
         return fileProtectionEnabledByConfig() && !databaseFileSizeExceedsMaximumForRam();
     }
 
@@ -10779,7 +10783,7 @@ public class MessagesStorage extends BaseController {
 
     public void clearFileProtectedDb() {
         Utilities.cacheClearQueue.postRunnable(() -> {
-            SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
+            SQLiteDatabase db = fileProtectionEnabled()
                     ? ((SQLiteDatabaseWrapper) database).getFileDatabase()
                     : database;
             try {

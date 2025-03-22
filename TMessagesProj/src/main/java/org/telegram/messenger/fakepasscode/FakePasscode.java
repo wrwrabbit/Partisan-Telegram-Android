@@ -145,6 +145,7 @@ public class FakePasscode {
         if (FakePasscodeUtils.isFakePasscodeActivated()) {
             FakePasscodeUtils.getActivatedFakePasscode().deactivate();
         }
+        setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(true);
         activationDate = ConnectionsManager.getInstance(UserConfig.selectedAccount).getCurrentTime();
         actionsResult = new ActionsResult();
         actionsResult.setActivated();
@@ -177,6 +178,7 @@ public class FakePasscode {
             SharedConfig.fakePasscodeActionsResult = null;
              SharedConfig.saveConfig();
         }
+        setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(false);
         AndroidUtilities.runOnUIThread(() -> {
             if (!oldActionResult.hiddenAccountEntries.isEmpty()) {
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.accountHidingChanged);
@@ -427,5 +429,18 @@ public class FakePasscode {
         SharedConfig.passcodeSalt = passcodeSalt;
         SharedConfig.setPasscode(passcodeHash);
         SharedConfig.fakePasscodes.remove(this);
+    }
+
+    private void setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(boolean disable) {
+        if (!SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
+            Utils.foreachActivatedAccountInstance(accountInstance -> {
+                UserConfig userConfig = accountInstance.getUserConfig();
+                if (userConfig.disableFileProtectionAfterRestartByFakePasscode != disable
+                        && (!disable || accountInstance.getMessagesStorage().fileProtectionEnabled())) {
+                    userConfig.disableFileProtectionAfterRestartByFakePasscode = disable;
+                    accountInstance.getUserConfig().saveConfig(false);
+                }
+            });
+        }
     }
 }
