@@ -179,16 +179,14 @@ public class FileProtectionActivity extends BaseFragment {
 
     private void processDone() {
         if (!fileProtectedAccountsChanged()) {
-            SharedConfig.fileProtectionWorksWhenFakePasscodeActivated = fileProtectionWorksWhenFakePasscodeActivated;
-            SharedConfig.saveConfig();
+            SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
             finishFragment();
             return;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setMessage(LocaleController.getString(R.string.ApplicationWillBeRestarted));
         builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialogInterface, i) -> {
-            SharedConfig.fileProtectionWorksWhenFakePasscodeActivated = fileProtectionWorksWhenFakePasscodeActivated;
-            SharedConfig.saveConfig();
+            SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
             Map<Integer, Boolean> map = new HashMap<>();
             for (FileProtectionAccountCellInfo cellInfo : accounts) {
                 map.put(cellInfo.accountNum, cellInfo.fileProtectionEnabled);

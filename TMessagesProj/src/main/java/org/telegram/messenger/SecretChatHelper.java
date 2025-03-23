@@ -19,6 +19,7 @@ import com.google.android.exoplayer2.util.Consumer;
 
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.InputSerializedData;
@@ -1146,6 +1147,9 @@ public class SecretChatHelper extends BaseController {
                         if (dialog != null) {
                             dialog.unread_count = 0;
                             getMessagesController().dialogMessage.remove(dialog.id);
+                            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
+                                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                            });
                         }
                         getMessagesStorage().getStorageQueue().postRunnable(() -> AndroidUtilities.runOnUIThread(() -> {
                             getNotificationsController().processReadMessages(null, did, 0, Integer.MAX_VALUE, false);

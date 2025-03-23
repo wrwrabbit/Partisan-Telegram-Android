@@ -78,6 +78,7 @@ import org.telegram.messenger.chromecast.ChromecastController;
 import org.telegram.messenger.chromecast.ChromecastFileServer;
 import org.telegram.messenger.chromecast.ChromecastMedia;
 import org.telegram.messenger.chromecast.ChromecastMediaVariations;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.AbstractSerializedData;
@@ -119,11 +120,15 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 public class MediaController implements AudioManager.OnAudioFocusChangeListener, NotificationCenter.NotificationCenterDelegate, SensorEventListener {
 
@@ -843,6 +848,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     }
 
     private ArrayList<VideoConvertMessage> videoConvertQueue = new ArrayList<>();
+    private Map<VideoConvertMessage, List<VideoConvertMessage>> encryptedGroupMessageCopies = Collections.synchronizedMap(new HashMap<>());
     private final Object videoQueueSync = new Object();
     private HashMap<String, MessageObject> generatingWaveform = new HashMap<>();
 
@@ -5732,6 +5738,9 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             new File(messageObject.messageOwner.attachPath).delete();
         }
         VideoConvertMessage videoConvertMessage = new VideoConvertMessage(messageObject, messageObject.videoEditedInfo, withForeground, forConversion);
+        if (addMessageCopyIfNeed(videoConvertMessage)) {
+            return true;
+        }
         videoConvertQueue.add(videoConvertMessage);
         if (videoConvertMessage.foreground) {
             foregroundConvertingMessages.add(videoConvertMessage);
@@ -5741,6 +5750,36 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             startVideoConvertFromQueue();
         }
         return true;
+    }
+
+    private boolean addMessageCopyIfNeed(VideoConvertMessage videoConvertMessage) {
+        if (videoConvertQueue.isEmpty()) {
+            return false;
+        }
+        int currentAccount = videoConvertMessage.currentAccount;
+        MessageObject messageObject = videoConvertMessage.messageObject;
+        if (!EncryptedGroupUtils.isInnerEncryptedGroupChat(messageObject.getDialogId(), currentAccount) && messageObject.videoEditedInfo != null) {
+            return false;
+        }
+        for (VideoConvertMessage queuedMessage : videoConvertQueue) {
+            if (queuedMessage.videoEditedInfo == null) {
+                continue;
+            }
+            if (Objects.equals(queuedMessage.videoEditedInfo.originalPath, videoConvertMessage.videoEditedInfo.originalPath)) {
+                List<VideoConvertMessage> messageCopies = encryptedGroupMessageCopies
+                        .computeIfAbsent(queuedMessage, key -> Collections.synchronizedList(new ArrayList<>()));
+                messageCopies.add(videoConvertMessage);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void forEachMessageCopy(VideoConvertMessage message, Consumer<VideoConvertMessage> action) {
+        action.accept(message);
+        for (VideoConvertMessage messageCopy : encryptedGroupMessageCopies.getOrDefault(message, new ArrayList<>())) {
+            action.accept(messageCopy);
+        }
     }
 
     public void cancelVideoConvert(MessageObject messageObject) {
@@ -5880,30 +5919,32 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         return false;
     }
 
-    private void didWriteData(final VideoConvertMessage message, final File file, final boolean last, final long lastFrameTimestamp, long availableSize, final boolean error, final float progress) {
-        final boolean firstWrite = message.videoEditedInfo.videoConvertFirstWrite;
-        if (firstWrite) {
-            message.videoEditedInfo.videoConvertFirstWrite = false;
-        }
-        AndroidUtilities.runOnUIThread(() -> {
-            if (error || last) {
-                boolean cancelled = message.videoEditedInfo.canceled;
-                synchronized (videoConvertSync) {
-                    message.videoEditedInfo.canceled = false;
-                }
-                videoConvertQueue.remove(message);
-                foregroundConvertingMessages.remove(message);
-                checkForegroundConvertMessage(cancelled || error);
-                startVideoConvertFromQueue();
+    private void didWriteData(final VideoConvertMessage originalMessage, final File file, final boolean last, final long lastFrameTimestamp, long availableSize, final boolean error, final float progress) {
+        forEachMessageCopy(originalMessage, message -> {
+            final boolean firstWrite = message.videoEditedInfo.videoConvertFirstWrite;
+            if (firstWrite) {
+                message.videoEditedInfo.videoConvertFirstWrite = false;
             }
-            if (error) {
-                NotificationCenter.getInstance(message.currentAccount).postNotificationName(NotificationCenter.filePreparingFailed, message.messageObject, file.toString(), progress, lastFrameTimestamp);
-            } else {
-                if (firstWrite) {
-                    NotificationCenter.getInstance(message.currentAccount).postNotificationName(NotificationCenter.filePreparingStarted, message.messageObject, file.toString(), progress, lastFrameTimestamp);
+            AndroidUtilities.runOnUIThread(() -> {
+                if (error || last) {
+                    boolean cancelled = message.videoEditedInfo.canceled;
+                    synchronized (videoConvertSync) {
+                        message.videoEditedInfo.canceled = false;
+                    }
+                    videoConvertQueue.remove(message);
+                    foregroundConvertingMessages.remove(message);
+                    checkForegroundConvertMessage(cancelled || error);
+                    startVideoConvertFromQueue();
                 }
-                NotificationCenter.getInstance(message.currentAccount).postNotificationName(NotificationCenter.fileNewChunkAvailable, message.messageObject, file.toString(), availableSize, last ? file.length() : 0, progress, lastFrameTimestamp);
-            }
+                if (error) {
+                    NotificationCenter.getInstance(message.currentAccount).postNotificationName(NotificationCenter.filePreparingFailed, message.messageObject, file.toString(), progress, lastFrameTimestamp);
+                } else {
+                    if (firstWrite) {
+                        NotificationCenter.getInstance(message.currentAccount).postNotificationName(NotificationCenter.filePreparingStarted, message.messageObject, file.toString(), progress, lastFrameTimestamp);
+                    }
+                    NotificationCenter.getInstance(message.currentAccount).postNotificationName(NotificationCenter.fileNewChunkAvailable, message.messageObject, file.toString(), availableSize, last ? file.length() : 0, progress, lastFrameTimestamp);
+                }
+            });
         });
     }
 
@@ -6076,6 +6117,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
 
         preferences.edit().putBoolean("isPreviousOk", true).apply();
         didWriteData(convertMessage, cacheFile, true, videoConvertor.getLastFrameTimestamp(), cacheFile.length(), error || canceled, 1f);
+        encryptedGroupMessageCopies.remove(convertMessage);
 
         return true;
     }

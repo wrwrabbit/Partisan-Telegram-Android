@@ -324,7 +324,7 @@ public class MessagesStorage extends BaseController {
             createTable = true;
         }
         try {
-            if (fileProtectionEnabled()) {
+            if (fileProtectionShouldBeEnabled()) {
                 database = new SQLiteDatabaseWrapper(cacheFile.getPath());
                 storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
@@ -446,7 +446,7 @@ public class MessagesStorage extends BaseController {
         FileLog.e("Database restored = " + restored);
         if (restored) {
             try {
-                if (fileProtectionEnabled()) {
+                if (fileProtectionShouldBeEnabled()) {
                     database = new SQLiteDatabaseWrapper(cacheFile.getPath());
                 } else {
                     database = new SQLiteDatabase(cacheFile.getPath());
@@ -10608,6 +10608,31 @@ public class MessagesStorage extends BaseController {
         });
     }
 
+    public EncryptedGroup loadEncryptedGroup(int encryptedGroupId) throws Exception {
+        SQLiteCursor cursor = database.queryFinalized("SELECT encrypted_group_id, name, owner_user_id, state, external_group_id FROM enc_groups " +
+                "WHERE encrypted_group_id = ?", encryptedGroupId);
+        EncryptedGroup result = null;
+        if (cursor.next()) {
+            try {
+                EncryptedGroup.EncryptedGroupBuilder builder = new EncryptedGroup.EncryptedGroupBuilder();
+                int id = cursor.intValue(0);
+                builder.setInternalId(id);
+                builder.setName(cursor.stringValue(1));
+                builder.setOwnerUserId(cursor.longValue(2));
+                EncryptedGroupState state = EncryptedGroupState.valueOf(cursor.stringValue(3));
+                builder.setState(state);
+                builder.setExternalId(cursor.longValue(4));
+                builder.setInnerChats(getEncryptedGroupInnerChats(id));
+                result = builder.create();
+            } catch (Exception e) {
+                checkSQLException(e);
+                PartisanLog.handleException(e);
+            }
+        }
+        cursor.dispose();
+        return result;
+    }
+
     public void updateEncryptedGroup(EncryptedGroup encryptedGroup) {
         partisanExecute("UPDATE enc_groups SET name = ?, state = ? WHERE encrypted_group_id = ?", state -> {
             state.bindString(1, encryptedGroup.getName());
@@ -10719,7 +10744,7 @@ public class MessagesStorage extends BaseController {
     }
 
     private SQLitePreparedStatement executeFastForBothDbIfNeeded(String sql) throws SQLiteException {
-        if (database instanceof SQLiteDatabaseWrapper) {
+        if (fileProtectionEnabled()) {
             return ((SQLiteDatabaseWrapper)database).executeFastForBothDb(sql);
         } else {
             return database.executeFast(sql);
@@ -10727,6 +10752,10 @@ public class MessagesStorage extends BaseController {
     }
 
     public boolean fileProtectionEnabled() {
+        return database instanceof SQLiteDatabaseWrapper;
+    }
+
+    public boolean fileProtectionShouldBeEnabled() {
         return fileProtectionEnabledByConfig() && !databaseFileSizeExceedsMaximumForRam();
     }
 
@@ -10756,7 +10785,7 @@ public class MessagesStorage extends BaseController {
 
     public void clearFileProtectedDb() {
         Utilities.cacheClearQueue.postRunnable(() -> {
-            SQLiteDatabase db = database instanceof SQLiteDatabaseWrapper
+            SQLiteDatabase db = fileProtectionEnabled()
                     ? ((SQLiteDatabaseWrapper) database).getFileDatabase()
                     : database;
             try {

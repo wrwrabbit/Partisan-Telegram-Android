@@ -461,6 +461,30 @@ public class MessagesController extends BaseController implements NotificationCe
         loadDialogs(folderId, fromCache ? -1 : 0, 100, fromCache);
     }
 
+    void deleteEncryptedGroupInnerDialogsIfNeeded(long did, int onlyHistory, boolean revoke) {
+        if (DialogObject.isEncryptedDialog(did)) {
+            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
+            if (encryptedGroup != null) {
+                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
+                    if (innerChat.getDialogId().isPresent()) {
+                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
+                        dialogMessage.remove(innerChat.getDialogId().get());
+                        TLRPC.Dialog dialog = getDialog(innerChat.getDialogId().get());
+                        if (dialog != null) {
+                            dialog.unread_count = 0;
+                            TLRPC.EncryptedChat encryptedChat = getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
+                            if (encryptedChat != null) {
+                                TLRPC.User user = getUser(encryptedChat.user_id);
+                                getMessagesStorage().putEncryptedChat(encryptedChat, user, dialog);
+                            }
+                        }
+                    }
+                }
+                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), currentAccount);
+            }
+        }
+    }
+
     private final CacheFetcher<Integer, TLRPC.TL_help_appConfig> appConfigFetcher = new CacheFetcher<Integer, TLRPC.TL_help_appConfig>() {
         @Override
         protected void getRemote(int currentAccount, Integer arguments, long hash, Utilities.Callback4<Boolean, TLRPC.TL_help_appConfig, Long, Boolean> onResult) {
@@ -9227,16 +9251,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     protected void deleteDialog(long did, int first, int onlyHistory, int max_id, boolean revoke, TLRPC.InputPeer peer, long taskId) {
-        if (DialogObject.isEncryptedDialog(did)) {
-            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
-            if (encryptedGroup != null) {
-                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
-                    if (innerChat.getDialogId().isPresent()) {
-                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
-                    }
-                }
-            }
-        }
+        deleteEncryptedGroupInnerDialogsIfNeeded(did, onlyHistory, revoke);
         if (onlyHistory == 2) {
             if (did == getUserConfig().getClientUserId()) {
                 getSavedMessagesController().deleteAllDialogs();
@@ -9326,6 +9341,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     int lastMessageId;
                     ArrayList<MessageObject> objects = dialogMessage.get(dialog.id);
                     dialogMessage.remove(dialog.id);
+                    EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
+                        EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                    });
                     if (objects != null && objects.size() > 0 && objects.get(0) != null) {
                         lastMessageId = objects.get(0).getId();
                         for (int i = 0; i < objects.size(); ++i) {
@@ -13047,7 +13065,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (!fromCache && !migrate && totalDialogsLoadCount < 400 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != -1 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != Integer.MAX_VALUE) {
                     loadDialogs(folderId, 0, 100, false);
                 }
-                if (getMessagesStorage().fileProtectionEnabled()) {
+                if (getMessagesStorage().fileProtectionShouldBeEnabled()) {
                     PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + ", folder = " + folderId + ", loaded count = " + dialogsRes.dialogs.size() + ". " +
                             "From cache = " + fromCache + ", new enc chats = " + (encChats != null ? encChats.size() : -1) + ", new enc groups = " + (encGroups != null ? encGroups.size() : -1) + ". " +
                             "Previous dialog count = " + allDialogs.size() + ", enc chats count = " + encryptedChats.size() + ", enc groups count = " + encryptedGroups.size());
@@ -20497,9 +20515,15 @@ public class MessagesController extends BaseController implements NotificationCe
             dialog.id = dialogId;
             int mid = dialog.top_message = lastMessage.getId();
             dialog.last_message_date = lastMessage.messageOwner.date;
+            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroupId, currentAccount);
+            });
             dialog.flags = ChatObject.isChannel(chat) ? 1 : 0;
             if (pendingUnreadCounter.get(dialogId, 0) > 0) {
                 dialog.unread_count = pendingUnreadCounter.get(dialogId);
+                EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                    EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroupId, currentAccount);
+                });
                 pendingUnreadCounter.delete(dialogId);
                 if (!isDialogMuted(dialogId, 0)) {
                     unreadUnmutedDialogs++;
