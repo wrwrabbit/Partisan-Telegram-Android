@@ -12,9 +12,11 @@ import android.widget.FrameLayout;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
@@ -44,7 +46,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
         this.currentAccount = currentAccount;
 
         avatarDrawable = new AvatarDrawable();
-        avatarDrawable.setTextSize(AndroidUtilities.dp(12));
+        avatarDrawable.setTextSize(AndroidUtilities.dp(18));
 
         avatarImageView = new BackupImageView(context);
         avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
@@ -83,6 +85,14 @@ public class EncryptedGroupMemberCell extends FrameLayout {
 
     public void setUserAndInnerChat(TLRPC.User user, InnerEncryptedChat innerChat, boolean divider) {
         if (user == null) {
+            nameTextView.setText(LocaleController.getString(R.string.HiddenName));
+            statusTextView.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
+            statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateMemberDeleted));
+            avatarDrawable.setInfo(innerChat.getUserId(), "?", "");
+            avatarImageView.getImageReceiver().setCurrentAccount(currentAccount);
+            avatarImageView.setForUserOrChat(null, avatarDrawable);
+            needDivider = divider;
+            setWillNotDraw(!divider);
             return;
         }
         avatarDrawable.setInfo(user);
@@ -100,8 +110,32 @@ public class EncryptedGroupMemberCell extends FrameLayout {
                 statusTextView.setText(LocaleController.formatUserStatus(currentAccount, user));
             }
         } else {
-            statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
-            statusTextView.setText(innerChat.getState().toString());
+            if (SharedConfig.detailedEncryptedGroupMemberStatus) {
+                statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+                statusTextView.setText(innerChat.getState().toString());
+            } else {
+                switch (innerChat.getState()) {
+                    case CREATING_ENCRYPTED_CHAT:
+                    case NEED_SEND_INVITATION:
+                    case INVITATION_SENT:
+                        statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+                        statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInvitationSent));
+                        break;
+                    case WAITING_SECONDARY_CHATS_CREATION:
+                    case NEED_SEND_SECONDARY_INVITATION:
+                        statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+                        statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInitialization));
+                        break;
+                    case INITIALIZATION_FAILED:
+                        statusTextView.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
+                        statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInvitationDeclined));
+                        break;
+                    case CANCELLED:
+                        statusTextView.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
+                        statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateMemberDeleted));
+                        break;
+                }
+            }
         }
         avatarImageView.getImageReceiver().setCurrentAccount(currentAccount);
         avatarImageView.setForUserOrChat(user, avatarDrawable);

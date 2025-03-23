@@ -116,40 +116,30 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         rowCount = 0;
 
         firstMemberRow = rowCount;
-        lastMemberRow = firstMemberRow + getInnerEncryptedChatIds().size();
+        lastMemberRow = firstMemberRow + encryptedGroup.getInnerChats().size();
         rowCount = lastMemberRow + 1;
     }
 
-    private List<Integer> getInnerEncryptedChatIds() {
-        return encryptedGroup.getInnerEncryptedChatIds(false);
-    }
-
     private TLRPC.User getUser(int index) {
-        if (index < 0 || index >= getInnerEncryptedChatIds().size()) {
+        if (index < 0 || index >= encryptedGroup.getInnerChats().size()) {
             return null;
         }
-        int encryptedChatId = getInnerEncryptedChatIds().get(index);
-        TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedChatId);
-        if (encryptedChat == null) {
-            return null;
-        }
-        return getMessagesController().getUser(encryptedChat.user_id);
+        long userId = encryptedGroup.getInnerChats().get(index).getUserId();
+        return getMessagesController().getUser(userId);
     }
 
     private InnerEncryptedChat getInnerChat(int index) {
-        if (index >= getInnerEncryptedChatIds().size()) {
+        if (index >= encryptedGroup.getInnerChats().size()) {
             return null;
         }
-        int encryptedChatId = getInnerEncryptedChatIds().get(index);
-        return encryptedGroup.getInnerChatByEncryptedChatId(encryptedChatId);
+        return encryptedGroup.getInnerChats().get(index);
     }
 
     private long getDialogId(int index) {
-        if (index >= getInnerEncryptedChatIds().size()) {
+        if (index >= encryptedGroup.getInnerChats().size()) {
             return 0;
         }
-        int encryptedChatId = getInnerEncryptedChatIds().get(index);
-        return DialogObject.makeEncryptedDialogId(encryptedChatId);
+        return encryptedGroup.getInnerChats().get(index).getDialogId().orElse(0L);
     }
 
     @Override

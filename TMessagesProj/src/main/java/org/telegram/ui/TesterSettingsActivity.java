@@ -106,6 +106,7 @@ public class TesterSettingsActivity extends BaseFragment {
     private int forceAllowScreenshotsRow;
     private int saveLogcatAfterRestartRow;
     private int showEncryptedChatsFromEncryptedGroupsRow;
+    private int detailedEncryptedGroupMemberStatusRow;
     private int enableSecretGroupsRow;
     private int dbSizeRow;
     private int accountNumRow;
@@ -319,6 +320,9 @@ public class TesterSettingsActivity extends BaseFragment {
             } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
                 SharedConfig.toggleShowEncryptedChatsFromEncryptedGroups();
                 ((TextCheckCell) view).setChecked(SharedConfig.showEncryptedChatsFromEncryptedGroups);
+            } else if (position == detailedEncryptedGroupMemberStatusRow) {
+                SharedConfig.toggleDetailedEncryptedGroupMemberStatus();
+                ((TextCheckCell) view).setChecked(SharedConfig.detailedEncryptedGroupMemberStatus);
             } else if (position == enableSecretGroupsRow) {
                 SharedConfig.toggleSecretGroups();
                 ((TextCheckCell) view).setChecked(SharedConfig.encryptedGroupsEnabled);
@@ -385,6 +389,7 @@ public class TesterSettingsActivity extends BaseFragment {
         }
         saveLogcatAfterRestartRow = rowCount++;
         showEncryptedChatsFromEncryptedGroupsRow = rowCount++;
+        detailedEncryptedGroupMemberStatusRow = rowCount++;
         enableSecretGroupsRow = rowCount++;
         if (getMessagesStorage().fileProtectionEnabled()) {
             dbSizeRow = rowCount++;
@@ -557,6 +562,9 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
                         textCell.setTextAndCheck("Show encrypted chats from encrypted groups",
                                 SharedConfig.showEncryptedChatsFromEncryptedGroups, true);
+                    } else if (position == detailedEncryptedGroupMemberStatusRow) {
+                        textCell.setTextAndCheck("Detailed Secret Group Member Status",
+                                SharedConfig.detailedEncryptedGroupMemberStatus, true);
                     } else if (position == enableSecretGroupsRow) {
                         textCell.setTextAndCheck("Secret groups enabled",
                                 SharedConfig.encryptedGroupsEnabled, true);
