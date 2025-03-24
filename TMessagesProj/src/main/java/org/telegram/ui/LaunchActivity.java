@@ -6690,6 +6690,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             onResumeStaticCallback = null;
         }
         if (!SharedConfig.isAppLocked()) {
+            FakePasscodeUtils.tryActivateByTimer(true);
             SharedConfig.lastPauseFakePasscodeTime = 0;
         }
         if (Theme.selectedAutoNightType == Theme.AUTO_NIGHT_TYPE_SYSTEM) {
@@ -6719,7 +6720,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     layersActionBarLayout.onResume();
                 }
             }
-        } else {
+        } else if (SharedConfig.isAppLocked()) { // ignore if app locked
             actionBarLayout.dismissDialogs();
             if (AndroidUtilities.isTablet()) {
                 if (rightActionBarLayout != null) {
