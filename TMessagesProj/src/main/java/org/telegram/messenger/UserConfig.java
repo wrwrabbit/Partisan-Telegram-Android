@@ -475,6 +475,9 @@ public class UserConfig extends BaseController {
             }
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
             disableFileProtectionAfterRestartByFakePasscode = preferences.getBoolean("disableFileProtectionAfterRestartByFakePasscode", disableFileProtectionAfterRestartByFakePasscode);
+            if (disableFileProtectionAfterRestart || disableFileProtectionAfterRestartByFakePasscode || SharedConfig.disableFileProtectionAfterRestart) {
+                preferences.edit().remove("2dialogsLoadOffsetId").apply();
+            }
             String savedChannelsStr = preferences.getString("savedChannels", defaultChannels);
             savedChannels = new HashSet<>(Arrays.asList(savedChannelsStr.split(",")));
             savedChannels.remove("");
