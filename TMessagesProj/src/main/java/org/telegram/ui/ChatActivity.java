@@ -4231,10 +4231,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }, getResourceProvider());
                 muteItem = headerItem.lazilyAddSwipeBackItem(R.drawable.msg_mute, null, null, chatNotificationsPopupWrapper.windowLayout);
                 muteItem.setOnClickListener(view -> {
-                    if (isEncryptedGroup()) {
-                        EncryptedGroupUtils.showNotImplementedDialog(ChatActivity.this);
-                        return;
-                    }
                     boolean muted = MessagesController.getInstance(currentAccount).isDialogMuted(dialog_id, getTopicId());
                     if (muted) {
                         updateTitleIcons(true);
@@ -23375,7 +23371,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (isEncryptedGroup()) {
             boolean needAddMessage = !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id);
             if (needAddMessage) {
-                messages.add(obj);
+                messages.add(pos, obj);
                 messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
                 if (obj.isOut()) {
                     hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());

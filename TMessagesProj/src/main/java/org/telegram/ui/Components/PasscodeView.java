@@ -35,7 +35,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             }
         } else if (id == NotificationCenter.fakePasscodeActivated) {
             if (FakePasscodeUtils.isFakePasscodeActivated() && !FakePasscodeUtils.getActivatedFakePasscode().passcodeEnabled()) {
-                appUnlocked();
+                forceDismiss();
             }
         }
     }
@@ -176,6 +176,15 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         va.setDuration(420);
         va.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
         va.start();
+    }
+
+    private void forceDismiss() {
+        if (delegate != null) {
+            delegate.didAcceptedPassword(this);
+        }
+        setVisibility(View.GONE);
+        onHidden();
+        setAlpha(0f);
     }
 
     private float shownT;

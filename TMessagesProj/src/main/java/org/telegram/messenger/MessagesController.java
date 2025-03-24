@@ -457,7 +457,7 @@ public class MessagesController extends BaseController implements NotificationCe
             AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, fromCache), 100);
             return;
         }
-        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + (fromCache ? " load from cache" : " load from servers"));
+        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + (fromCache ? " load from cache" : " load from servers"));
         loadDialogs(folderId, fromCache ? -1 : 0, 100, fromCache);
     }
 
@@ -9068,8 +9068,8 @@ public class MessagesController extends BaseController implements NotificationCe
             return new ArrayList<>();
         }
         if (folderId == 0) {
-            PartisanLog.d("fileProtectedDialogsLoaded: getDialogs count " + dialogs.size());
-            PartisanLog.d("fileProtectedDialogsLoaded: allDialogs count " + allDialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " getDialogs count " + dialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " allDialogs count " + allDialogs.size());
         }
         return dialogs;
     }
@@ -11574,7 +11574,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void loadDialogs(final int folderId, int offset, int count, boolean fromCache, Runnable onEmptyCallback) {
         if (loadingDialogs.get(folderId) || resetingDialogs) {
-            PartisanLog.d("fileProtectedEncryptedChats: loadDialogs return account = " + currentAccount + ", folder = " + folderId + ". ");
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " loadDialogs return folder = " + folderId + ". ");
             return;
         }
         loadingDialogs.put(folderId, true);
@@ -12578,7 +12578,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
-                PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " cache dialogs were empty, encChats = " + (encChats != null ? encChats.size() : -1) + ", encGroups = " + (encGroups != null ? encGroups.size() : -1));
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " cache dialogs were empty, encChats = " + (encChats != null ? encChats.size() : -1) + ", encGroups = " + (encGroups != null ? encGroups.size() : -1));
                 AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
@@ -13040,7 +13040,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     allDialogs.add(dialog);
                 }
-                PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (processLoadedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                 sortDialogs(migrate ? chatsDict : null);
 
                 putAllNeededDraftDialogs();
@@ -13066,7 +13066,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     loadDialogs(folderId, 0, 100, false);
                 }
                 if (getMessagesStorage().fileProtectionShouldBeEnabled()) {
-                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + ", folder = " + folderId + ", loaded count = " + dialogsRes.dialogs.size() + ". " +
+                    PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + ", folder = " + folderId + ", loaded count = " + dialogsRes.dialogs.size() + ". " +
                             "From cache = " + fromCache + ", new enc chats = " + (encChats != null ? encChats.size() : -1) + ", new enc groups = " + (encGroups != null ? encGroups.size() : -1) + ". " +
                             "Previous dialog count = " + allDialogs.size() + ", enc chats count = " + encryptedChats.size() + ", enc groups count = " + encryptedGroups.size());
                     if (!dialogsEndReached.get(folderId)) {
@@ -13074,7 +13074,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (fromCache) {
                         AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, false));
                     } else {
-                        PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
+                        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
                     }
                 }
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -13653,7 +13653,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     allDialogs.add(dialog);
                 }
-                PartisanLog.d("fileProtectedDialogsLoaded: (processDialogsUpdate) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (processDialogsUpdate) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                 if (dialogsRes.messages.stream().noneMatch(m -> FakePasscodeUtils.isHideMessage(currentAccount, m.dialog_id, m.id))) {
                     sortDialogs(null);
                     getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -16547,7 +16547,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 allDialogs.add(dialog);
                             }
                         }
-                        PartisanLog.d("fileProtectedDialogsLoaded: (loadPinnedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (loadPinnedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                         sortDialogs(null);
                         getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
                     }
@@ -20539,7 +20539,7 @@ public class MessagesController extends BaseController implements NotificationCe
             }
             dialogs_dict.put(dialogId, dialog);
             allDialogs.add(dialog);
-            PartisanLog.d("fileProtectedDialogsLoaded: (updateInterfaceWithMessages) added a dialog to allDialogs, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (updateInterfaceWithMessages) added a dialog to allDialogs, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
             ArrayList<MessageObject> arrayList = new ArrayList<MessageObject>();
             for (int i = 0; i < messages.size(); ++i) {
                 MessageObject msg = messages.get(i);

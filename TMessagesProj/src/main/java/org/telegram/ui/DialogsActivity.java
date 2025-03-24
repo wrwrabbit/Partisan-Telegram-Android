@@ -8125,7 +8125,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             boolean loadArchivedFromCacheFinal = loadArchivedFromCache;
             AndroidUtilities.runOnUIThread(() -> {
                 if (loadFinal) {
-                    PartisanLog.d("fileProtectedEncryptedChats: account = " + currentAccount + " load from dialog activity, fromCache = " + loadFromCacheFinal);
+                    PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " load from dialog activity, fromCache = " + loadFromCacheFinal);
                     getMessagesController().loadDialogs(folderId, -1, 100, loadFromCacheFinal);
                 }
                 if (loadArchivedFinal) {
@@ -11287,7 +11287,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (dialogsType == DIALOGS_TYPE_DEFAULT) {
             ArrayList<TLRPC.Dialog> dialogs = (ArrayList<TLRPC.Dialog>) Utils.filterDialogs(messagesController.getDialogs(folderId), Optional.of(currentAccount));
             if (folderId == 0) {
-                PartisanLog.d("fileProtectedDialogsLoaded: DIALOGS_TYPE_DEFAULT count " + dialogs.size());
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " DIALOGS_TYPE_DEFAULT count " + dialogs.size());
             }
             if (!dialogs.isEmpty() && dialogs.get(0) instanceof TLRPC.TL_dialogFolder) {
                 TLRPC.TL_dialogFolder folder = (TLRPC.TL_dialogFolder)dialogs.get(0);
