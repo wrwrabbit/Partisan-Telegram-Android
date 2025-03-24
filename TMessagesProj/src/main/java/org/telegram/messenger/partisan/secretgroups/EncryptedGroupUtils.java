@@ -85,6 +85,19 @@ public class EncryptedGroupUtils {
         }
     }
 
+    public static boolean doForEveryInnerDialogIdIfNeeded(long encryptedGroupDialogId, int account, Consumer<Long> action) {
+        MessagesController messagesController = MessagesController.getInstance(account);
+        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(DialogObject.getEncryptedChatId(encryptedGroupDialogId));
+        if (encryptedGroup == null) {
+            return false;
+        }
+
+        for (int innerChatId : encryptedGroup.getInnerEncryptedChatIds(false)) {
+            action.accept(DialogObject.makeEncryptedDialogId(innerChatId));
+        }
+        return true;
+    }
+
     public static void updateEncryptedGroupUnreadCount(int encryptedGroupId, int account) {
         if (isNotInitializedEncryptedGroup(encryptedGroupId, account)) {
             return;

@@ -68,6 +68,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -327,6 +328,10 @@ public class NotificationsController extends BaseController {
     }
 
     public void muteUntil(long did, long topicId, int selectedTimeInSeconds) {
+        if (EncryptedGroupUtils.doForEveryInnerDialogIdIfNeeded(did, currentAccount, innerDialogId -> muteUntil(innerDialogId, topicId, selectedTimeInSeconds))) {
+            return;
+        }
+
         if (did != 0) {
             SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
             SharedPreferences.Editor editor = preferences.edit();
@@ -5782,14 +5787,7 @@ public class NotificationsController extends BaseController {
     }
 
     public void setDialogNotificationsSettings(long dialog_id, long topicId, int setting) {
-        if (getMessagesStorage().isEncryptedGroup(dialog_id)) {
-            EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(dialog_id));
-            if (encryptedGroup != null) {
-
-            }
-            for (int innerChatId : encryptedGroup.getInnerEncryptedChatIds(false)) {
-                NotificationsController.getInstance(UserConfig.selectedAccount).setDialogNotificationsSettings(DialogObject.makeEncryptedDialogId(innerChatId), topicId, setting);
-            }
+        if (EncryptedGroupUtils.doForEveryInnerDialogIdIfNeeded(dialog_id, currentAccount, innerDialogId -> setDialogNotificationsSettings(innerDialogId, topicId, setting))) {
             return;
         }
 
@@ -6067,6 +6065,10 @@ public class NotificationsController extends BaseController {
     }
 
     public void muteDialog(long dialog_id, long topicId, boolean mute) {
+        if (EncryptedGroupUtils.doForEveryInnerDialogIdIfNeeded(dialog_id, currentAccount, innerDialogId -> muteDialog(innerDialogId, topicId, mute))) {
+            return;
+        }
+
         if (mute) {
             NotificationsController.getInstance(currentAccount).muteUntil(dialog_id, topicId, Integer.MAX_VALUE);
         } else {

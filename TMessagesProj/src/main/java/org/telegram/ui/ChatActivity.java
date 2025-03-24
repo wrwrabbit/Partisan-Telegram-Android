@@ -4213,10 +4213,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }, getResourceProvider());
                 muteItem = headerItem.lazilyAddSwipeBackItem(R.drawable.msg_mute, null, null, chatNotificationsPopupWrapper.windowLayout);
                 muteItem.setOnClickListener(view -> {
-                    if (isEncryptedGroup()) {
-                        EncryptedGroupUtils.showNotImplementedDialog(ChatActivity.this);
-                        return;
-                    }
                     boolean muted = MessagesController.getInstance(currentAccount).isDialogMuted(dialog_id, getTopicId());
                     if (muted) {
                         updateTitleIcons(true);
