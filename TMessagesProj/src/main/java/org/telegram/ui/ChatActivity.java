@@ -23255,7 +23255,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (isEncryptedGroup()) {
             boolean needAddMessage = !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id);
             if (needAddMessage) {
-                messages.add(obj);
+                messages.add(pos, obj);
                 messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
                 if (obj.isOut()) {
                     hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
