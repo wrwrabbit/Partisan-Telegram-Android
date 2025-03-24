@@ -328,7 +328,7 @@ public class NotificationsController extends BaseController {
     }
 
     public void muteUntil(long did, long topicId, int selectedTimeInSeconds) {
-        if (EncryptedGroupUtils.doForEveryInnerDialogIdIfNeeded(did, currentAccount, innerDialogId -> muteUntil(innerDialogId, topicId, selectedTimeInSeconds))) {
+        if (doForEveryInnerDialogIdIfNeeded(did, innerDialogId -> muteUntil(innerDialogId, topicId, selectedTimeInSeconds))) {
             return;
         }
 
@@ -5787,7 +5787,7 @@ public class NotificationsController extends BaseController {
     }
 
     public void setDialogNotificationsSettings(long dialog_id, long topicId, int setting) {
-        if (EncryptedGroupUtils.doForEveryInnerDialogIdIfNeeded(dialog_id, currentAccount, innerDialogId -> setDialogNotificationsSettings(innerDialogId, topicId, setting))) {
+        if (doForEveryInnerDialogIdIfNeeded(dialog_id, innerDialogId -> setDialogNotificationsSettings(innerDialogId, topicId, setting))) {
             return;
         }
 
@@ -6065,7 +6065,7 @@ public class NotificationsController extends BaseController {
     }
 
     public void muteDialog(long dialog_id, long topicId, boolean mute) {
-        if (EncryptedGroupUtils.doForEveryInnerDialogIdIfNeeded(dialog_id, currentAccount, innerDialogId -> muteDialog(innerDialogId, topicId, mute))) {
+        if (doForEveryInnerDialogIdIfNeeded(dialog_id, innerDialogId -> muteDialog(innerDialogId, topicId, mute))) {
             return;
         }
 
@@ -6239,5 +6239,9 @@ public class NotificationsController extends BaseController {
             }
         }
         return 0;
+    }
+
+    private boolean doForEveryInnerDialogIdIfNeeded(long encryptedGroupDialogId, Consumer<Long> action) {
+        return EncryptedGroupUtils.doForEveryInnerDialogIdIfNeeded(encryptedGroupDialogId, currentAccount, action);
     }
 }
