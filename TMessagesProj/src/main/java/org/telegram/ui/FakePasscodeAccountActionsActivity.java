@@ -193,17 +193,13 @@ public class FakePasscodeAccountActionsActivity extends BaseFragment {
                     actions.setFakePhone(((EditTextCaption)views.get(0)).getText().toString()
                             .replace("+", "").replace("-", "").replace(" ", ""));
                     SharedConfig.saveConfig();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    String value = actions.getFakePhone().isEmpty() ? LocaleController.getString(R.string.Disabled) : PhoneFormat.getInstance().format("+" + actions.getFakePhone());
-                    cell.setTextAndValue(LocaleController.getString(R.string.ActivationMessage), value, false);
                     if (listAdapter != null) {
                         listAdapter.notifyDataSetChanged();
                     }
                 };
                 template.negativeListener = (dlg, whichButton) -> {
                     actions.removeFakePhone();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(LocaleController.getString(R.string.ActivationMessage), LocaleController.getString(R.string.Disabled), false);
+                    SharedConfig.saveConfig();
                     if (listAdapter != null) {
                         listAdapter.notifyDataSetChanged();
                     }

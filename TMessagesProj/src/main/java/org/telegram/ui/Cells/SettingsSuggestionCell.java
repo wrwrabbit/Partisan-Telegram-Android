@@ -17,6 +17,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
@@ -94,7 +95,8 @@ public class SettingsSuggestionCell extends LinearLayout {
         currentType = type;
         if (type == TYPE_PHONE) {
             final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(UserConfig.getInstance(currentAccount).clientUserId);
-            textView.setText(LocaleController.formatString("CheckPhoneNumber", R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + user.phone)));
+            String fakePhone = FakePasscodeUtils.getFakePhoneNumber(currentAccount);
+            textView.setText(LocaleController.formatString("CheckPhoneNumber", R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + (fakePhone != null ? fakePhone : user.phone))));
             String text = LocaleController.getString(R.string.CheckPhoneNumberInfo);
             SpannableStringBuilder builder = new SpannableStringBuilder(text);
             int index1 = text.indexOf("**");
