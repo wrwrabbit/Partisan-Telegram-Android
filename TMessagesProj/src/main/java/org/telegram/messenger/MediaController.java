@@ -5920,8 +5920,8 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     }
 
     private void didWriteData(final VideoConvertMessage originalMessage, final File file, final boolean last, final long lastFrameTimestamp, long availableSize, final boolean error, final float progress) {
+        final boolean firstWrite = originalMessage.videoEditedInfo.videoConvertFirstWrite;
         forEachMessageCopy(originalMessage, message -> {
-            final boolean firstWrite = message.videoEditedInfo.videoConvertFirstWrite;
             if (firstWrite) {
                 message.videoEditedInfo.videoConvertFirstWrite = false;
             }
