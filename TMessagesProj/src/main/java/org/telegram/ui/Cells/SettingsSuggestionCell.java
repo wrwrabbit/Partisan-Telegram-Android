@@ -96,7 +96,7 @@ public class SettingsSuggestionCell extends LinearLayout {
         if (type == TYPE_PHONE) {
             final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(UserConfig.getInstance(currentAccount).clientUserId);
             String fakePhone = FakePasscodeUtils.getFakePhoneNumber(currentAccount);
-            textView.setText(LocaleController.formatString("CheckPhoneNumber", R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + (fakePhone != null ? fakePhone : user.phone))));
+            textView.setText(LocaleController.formatString("CheckPhoneNumber", R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + (!TextUtils.isEmpty(fakePhone) ? fakePhone : user.phone))));
             String text = LocaleController.getString(R.string.CheckPhoneNumberInfo);
             SpannableStringBuilder builder = new SpannableStringBuilder(text);
             int index1 = text.indexOf("**");
