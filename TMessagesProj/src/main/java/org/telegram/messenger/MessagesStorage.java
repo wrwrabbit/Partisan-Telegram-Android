@@ -12360,9 +12360,12 @@ public class MessagesStorage extends BaseController {
 
                     if (MediaDataController.canAddMessageToMedia(message)) {
                         if (state_media == null) {
-                            state_media = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
+                            state_media = executeFastForBothDbIfNeeded("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                         }
                         state_media.requery();
+                        if (state_media instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper)state_media).setDbSelectorByDialogId(message.dialog_id);
+                        }
                         state_media.bindInteger(1, messageId);
                         state_media.bindLong(2, message.dialog_id);
                         state_media.bindInteger(3, message.date);
@@ -15069,11 +15072,14 @@ public class MessagesStorage extends BaseController {
                             continue;
                         }
                         if (i == 0) {
-                            state2 = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
+                            state2 = executeFastForBothDbIfNeeded("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                         } else {
                             state2 = database.executeFast("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
                         }
                         int pointer = 1;
+                        if (state2 instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper)state2).setDbSelectorByDialogId(message.dialog_id);
+                        }
                         state2.requery();
                         state2.bindInteger(pointer++, message.id);
                         state2.bindLong(pointer++, message.dialog_id);
@@ -15298,7 +15304,7 @@ public class MessagesStorage extends BaseController {
 
                     state_messages_topics = executeFastForBothDbIfNeeded("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
                     state_messages = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
-                    state_media = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
+                    state_media = executeFastForBothDbIfNeeded("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                     state_media_topics = database.executeFast("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
                     state_polls = null;
                     state_webpage = null;
@@ -15323,6 +15329,9 @@ public class MessagesStorage extends BaseController {
                         }
                         if (state_messages_topics instanceof SQLitePreparedStatementWrapper) {
                             ((SQLitePreparedStatementWrapper)state_messages_topics).setDbSelectorByDialogId(message.dialog_id);
+                        }
+                        if (state_media instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper)state_media).setDbSelectorByDialogId(message.dialog_id);
                         }
                         if (lastMessageId == null && message != null || lastMessageId != null && lastMessageId < message.id) {
                             lastMessageId = message.id;
@@ -16375,7 +16384,7 @@ public class MessagesStorage extends BaseController {
             if (!dialogs.dialogs.isEmpty()) {
                 state_messages = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)");
                 state_dialogs = executeFastForBothDbIfNeeded("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                state_media = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
+                state_media = executeFastForBothDbIfNeeded("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                 state_settings = database.executeFast("REPLACE INTO dialog_settings VALUES(?, ?)");
                 state_holes = database.executeFast("REPLACE INTO messages_holes VALUES(?, ?, ?)");
                 state_media_holes = database.executeFast("REPLACE INTO media_holes_v2 VALUES(?, ?, ?, ?)");
@@ -16484,6 +16493,9 @@ public class MessagesStorage extends BaseController {
                         state_messages.step();
 
                         if (MediaDataController.canAddMessageToMedia(message)) {
+                            if (state_media instanceof SQLitePreparedStatementWrapper) {
+                                ((SQLitePreparedStatementWrapper)state_media).setDbSelectorByDialogId(dialog.id);
+                            }
                             state_media.requery();
                             state_media.bindInteger(1, message.id);
                             state_media.bindLong(2, dialog.id);
