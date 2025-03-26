@@ -2679,12 +2679,12 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
             }
 
             @Override
-            protected boolean sendMessageInternal(boolean notify, int scheduleDate, long payStars, boolean allowConfirm) {
+            protected boolean sendMessageInternal(boolean notify, int scheduleDate, long payStars, boolean allowConfirm, Integer autoDeleteDelay) {
                 if (MessagesController.getInstance(currentAccount).isFrozen()) {
                     AccountFrozenAlert.show(currentAccount);
                     return false;
                 }
-                return super.sendMessageInternal(notify, scheduleDate, payStars, allowConfirm);
+                return super.sendMessageInternal(notify, scheduleDate, payStars, allowConfirm, autoDeleteDelay);
             }
         };
         chatActivityEnterView.getEditField().useAnimatedTextDrawable();

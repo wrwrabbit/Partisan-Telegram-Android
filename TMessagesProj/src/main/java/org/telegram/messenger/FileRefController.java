@@ -1494,7 +1494,7 @@ public class FileRefController extends BaseController {
         } else if (response instanceof TLRPC.TL_help_appUpdate) {
             TLRPC.TL_help_appUpdate appUpdate = (TLRPC.TL_help_appUpdate) response;
             try {
-                SharedConfig.pendingAppUpdate = appUpdate;
+                //SharedConfig.pendingAppUpdate = appUpdate;
                 SharedConfig.saveConfig();
             } catch (Exception e) {
                 FileLog.e(e);
