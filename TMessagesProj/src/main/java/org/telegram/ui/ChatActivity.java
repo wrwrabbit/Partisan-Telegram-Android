@@ -309,6 +309,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("unchecked")
 public class ChatActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate, LocationActivity.LocationActivityDelegate, ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate, ChatActivityInterface, FloatingDebugProvider, AllowShowingActivityInterface, InstantCameraView.Delegate {
@@ -20182,10 +20183,19 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             MessageObject previous;
                             if (load_type == MessagesController.LOAD_FORWARD) {
                                 previous = messages.get(0);
+                            } else if (isEncryptedGroup()) {
+                                previous = null;
+                                for (int i = messages.size() - 1; i >= 0; i--) {
+                                    MessageObject otherMessage = messages.get(i);
+                                    if (otherMessage.getDialogId() == obj.getDialogId() && otherMessage.type != MessageObject.TYPE_DATE) {
+                                        previous = otherMessage;
+                                        break;
+                                    }
+                                }
                             } else {
                                 previous = messages.get(messages.size() - (reversed || !addDateObjects ? 1 : 2));
                             }
-                            if (previous.getGroupIdForUse() == obj.getGroupIdForUse()) {
+                            if (previous != null && previous.getGroupIdForUse() == obj.getGroupIdForUse()) {
                                 if (previous.localGroupId != 0) {
                                     obj.localGroupId = previous.localGroupId;
                                     groupedMessages = groupedMessagesMap.get(previous.localGroupId);
@@ -23387,8 +23397,23 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 return true;
             } else {
                 List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
-                massageCopies.add(obj);
-                return false;
+                /*
+                int originalIndex = IntStream.range(0, messages.size())
+                        .filter(i -> messages.get(i).messageOwner.random_id == obj.messageOwner.random_id)
+                        .findAny()
+                        .orElse(-1);
+
+                if (originalIndex != -1 && messages.get(originalIndex).getDialogId() > obj.getDialogId()) {
+                    // replace original message with smaller dialog id
+                    MessageObject newObj = messages.set(originalIndex, obj);
+                    massageCopies.add(newObj);
+                    return true;
+                } else {
+
+                 */
+                    massageCopies.add(obj);
+                    return false;
+                //}
             }
         } else {
             messages.add(pos, obj);
