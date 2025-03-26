@@ -4164,6 +4164,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                     @Override
                     public void toggleSound() {
+                        if (getMessagesStorage().isEncryptedGroup(dialog_id)) {
+                            EncryptedGroupUtils.showNotImplementedDialog(ChatActivity.this);
+                            return;
+                        }
                         SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
                         boolean enabled = !preferences.getBoolean("sound_enabled_" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), true);
                         preferences.edit().putBoolean("sound_enabled_" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), enabled).apply();
