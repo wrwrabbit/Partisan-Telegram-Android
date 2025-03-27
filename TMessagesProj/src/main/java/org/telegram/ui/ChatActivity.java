@@ -23277,23 +23277,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 return true;
             } else {
                 List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
-                /*
-                int originalIndex = IntStream.range(0, messages.size())
-                        .filter(i -> messages.get(i).messageOwner.random_id == obj.messageOwner.random_id)
-                        .findAny()
-                        .orElse(-1);
-
-                if (originalIndex != -1 && messages.get(originalIndex).getDialogId() > obj.getDialogId()) {
-                    // replace original message with smaller dialog id
-                    MessageObject newObj = messages.set(originalIndex, obj);
-                    massageCopies.add(newObj);
-                    return true;
-                } else {
-
-                 */
-                    massageCopies.add(obj);
-                    return false;
-                //}
+                massageCopies.add(obj);
+                return false;
             }
         } else {
             messages.add(pos, obj);
