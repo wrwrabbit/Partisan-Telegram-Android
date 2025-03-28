@@ -2,6 +2,7 @@ package org.telegram.messenger.partisan.masked_ptg.note;
 
 import android.content.Context;
 
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.masked_ptg.IMaskedPasscodeScreenFactory;
 import org.telegram.messenger.partisan.masked_ptg.AbstractMaskedPasscodeScreen;
 import org.telegram.messenger.partisan.masked_ptg.PasscodeEnteredDelegate;
@@ -40,5 +41,10 @@ public class NoteScreenFactory implements IMaskedPasscodeScreenFactory {
     @Override
     public int getDefaultPrimaryColor() {
         return Colors.primaryColor;
+    }
+
+    @Override
+    public int getDefaultPasscodeType() {
+        return SharedConfig.PASSCODE_TYPE_PASSWORD;
     }
 }

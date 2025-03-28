@@ -31,6 +31,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.browser.Browser;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.update.UpdateData;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -75,6 +76,7 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
             pressCount++;
             if (pressCount >= 10) {
                 setVisibility(GONE);
+                PartisanLog.d("pendingPtgAppUpdate: reset 5");
                 SharedConfig.pendingPtgAppUpdate = null;
                 SharedConfig.saveConfig();
             }
@@ -316,6 +318,7 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
                     final TLRPC.TL_help_appUpdate res = (TLRPC.TL_help_appUpdate) response;
                     if (!res.can_not_skip) {
                         setVisibility(GONE);
+                        PartisanLog.d("pendingPtgAppUpdate: reset 6");
                         SharedConfig.pendingPtgAppUpdate = null;
                         SharedConfig.saveConfig();
                     }

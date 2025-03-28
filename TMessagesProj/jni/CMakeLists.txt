@@ -316,8 +316,13 @@ target_compile_options(sqlite PUBLIC
         -fno-strict-aliasing -Os)
 set_target_properties(sqlite PROPERTIES
         ANDROID_ARM_MODE arm)
-target_compile_definitions(sqlite PUBLIC
-        NULL=0 SOCKLEN_T=socklen_t LOCALE_NOT_USED ANDROID_NDK DISABLE_IMPORTGL AVOID_TABLES ANDROID_TILE_BASED_DECODE HAVE_STRCHRNUL=0 ANDROID_ARMV6_IDCT)
+if (DEBUG_VERSION)
+    target_compile_definitions(sqlite PUBLIC
+            NULL=0 SOCKLEN_T=socklen_t LOCALE_NOT_USED ANDROID_NDK DISABLE_IMPORTGL AVOID_TABLES ANDROID_TILE_BASED_DECODE HAVE_STRCHRNUL=0 ANDROID_ARMV6_IDCT SQLITE_ENABLE_DBSTAT_VTAB)
+else ()
+    target_compile_definitions(sqlite PUBLIC
+            NULL=0 SOCKLEN_T=socklen_t LOCALE_NOT_USED ANDROID_NDK DISABLE_IMPORTGL AVOID_TABLES ANDROID_TILE_BASED_DECODE HAVE_STRCHRNUL=0 ANDROID_ARMV6_IDCT)
+endif ()
 
 #breakpad
 add_library(breakpad STATIC

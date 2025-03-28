@@ -16,7 +16,7 @@ public class FileProtectionPostRestartCleaner implements NotificationCenter.Noti
     public void checkAndClean() {
         Utils.foreachActivatedAccountInstance(accountInstance -> {
             UserConfig userConfig = accountInstance.getUserConfig();
-            if (userConfig.disableFileProtectionAfterRestart || SharedConfig.disableFileProtectionAfterRestart) {
+            if (userConfig.disableFileProtectionAfterRestart || userConfig.disableFileProtectionAfterRestartByFakePasscode || SharedConfig.disableFileProtectionAfterRestart) {
                 PartisanLog.d("Clean the database after disabling file protection for account " + accountInstance.getCurrentAccount());
                 accountsToClear.add(accountInstance.getCurrentAccount());
                 AndroidUtilities.runOnUIThread(() -> {
@@ -34,6 +34,7 @@ public class FileProtectionPostRestartCleaner implements NotificationCenter.Noti
             NotificationCenter.getInstance(account).removeObserver(this, NotificationCenter.onDatabaseReset);
             UserConfig userConfig = UserConfig.getInstance(account);
             userConfig.disableFileProtectionAfterRestart = false;
+            userConfig.disableFileProtectionAfterRestartByFakePasscode = false;
             userConfig.saveConfig(false);
             accountsToClear.remove(account);
             if (accountsToClear.isEmpty()) {

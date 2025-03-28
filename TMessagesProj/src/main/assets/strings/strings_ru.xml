@@ -266,7 +266,7 @@
     <string name="IssueInvalidPasscodeTypeDescription">Буквенно-цифровой пароль не разрешён в этом замаскированном приложении. Измените его на 4-циферный код-пароль.</string>
     <string name="IssuePasswordlessModeDescription">Ложные код-пароли с беспарольным режимом не разрешёны в замаскированном приложении. Отключите этот режим в код-паролях или удалите эти код-пароли.</string>
     <string name="IssueActivateByFingerprintDescription">Код-пароли с активацией по отпечатку пальца не разрешены в замаскированном приложении. Отключите эту опцию.</string>
-    <string name="PasswordToPinSwitchWarning">Если у Вас были ложные код-пароли, состоящие не из 4 цифры, их не получится ввести. Мы рекомендуем изменить их.</string>
+    <string name="PasswordToPinSwitchWarning">Если у Вас были ложные код-пароли, состоящие не из 4 цифр, их не получится ввести. Мы рекомендуем изменить их.</string>
     <string name="ContinueMaskedMigrationDescription">Кажется, Вы исправили все проблемы. Хотите возобновить миграцию?</string>
     <string name="NewEncryptedGroup">Создать секретную группу</string>
     <string name="AreYouSureClearHistoryWithSecretGroup">Вы точно хотите удалить историю секретной группы **%1$s** только для себя? У других участников она останется доступной.</string>
@@ -322,4 +322,8 @@
     <string name="FileProtectionDisabledTitle">Защита файлов отключена</string>
     <string name="FileProtectionDisabledDetails">Размер базы данных стал слишком большим. Защита файлов временно отключена. Вы можете снова включить эту функцию.</string>
     <string name="FileProtectionEnableAgain">Включить снова</string>
+    <string name="InnerEncryptedChatStateInvitationSent">Приглашение отправлено</string>
+    <string name="InnerEncryptedChatStateInitialization">Инициализация</string>
+    <string name="InnerEncryptedChatStateInvitationDeclined">Приглашение отклонено</string>
+    <string name="InnerEncryptedChatStateMemberDeleted">Участник удалён</string>
 </resources>

@@ -10,6 +10,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -54,22 +55,10 @@ public class MultiLogOutDialogBuilder {
         final LinearLayout linearLayout = new LinearLayout(fragment.getContext());
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         List<Integer> accounts = new ArrayList<>();
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated()) {
-                accounts.add(a);
-                selectedAccounts.add(a);
-            }
+        for (int account : Utils.getActivatedAccountsSortedByLoginTime()) {
+            accounts.add(account);
+            selectedAccounts.add(account);
         }
-        Collections.sort(accounts, (o1, o2) -> {
-            long l1 = UserConfig.getInstance(o1).loginTime;
-            long l2 = UserConfig.getInstance(o2).loginTime;
-            if (l1 > l2) {
-                return 1;
-            } else if (l1 < l2) {
-                return -1;
-            }
-            return 0;
-        });
         for (Integer a : accounts) {
             TLRPC.User u = UserConfig.getInstance(a).getCurrentUser();
             if (u != null) {

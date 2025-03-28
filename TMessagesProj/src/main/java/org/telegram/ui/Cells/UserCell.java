@@ -477,9 +477,9 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
             }
             if (!continueUpdate && currentName == null && lastName != null && (mask & MessagesController.UPDATE_MASK_NAME) != 0) {
                 if (currentUser != null) {
-                    newName = AndroidUtilities.removeDiacritics(UserObject.getUserName(currentUser, currentAccount));
+                    newName = AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(currentUser, currentAccount)));
                 } else {
-                    newName = AndroidUtilities.removeDiacritics(UserConfig.getChatTitleOverride(currentAccount, currentChat));
+                    newName = AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserConfig.getChatTitleOverride(currentAccount, currentChat)));
                 }
                 if (!newName.equals(lastName)) {
                     continueUpdate = true;
@@ -559,10 +559,10 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
             nameTextView.setText(currentName);
         } else {
             if (currentUser != null) {
-                lastName = AndroidUtilities.removeDiacritics(newName == null ? UserObject.getUserName(currentUser, currentAccount) : newName);
+                lastName = newName == null ? UserObject.getUserName(currentUser, currentAccount) : AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(newName));
             } else if (currentChat != null) {
                 String title = UserConfig.getChatTitleOverride(currentAccount, currentChat);
-                lastName = AndroidUtilities.removeDiacritics(newName == null ? title : newName);
+                lastName = AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(newName == null ? title : newName));
             } else {
                 lastName = "";
             }

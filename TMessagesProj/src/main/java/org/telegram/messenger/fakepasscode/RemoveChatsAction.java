@@ -3,11 +3,13 @@ package org.telegram.messenger.fakepasscode;
 import static org.telegram.messenger.MessagesController.DIALOG_FILTER_FLAG_ALL_CHATS;
 import static org.telegram.messenger.MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED;
 import static org.telegram.messenger.MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ;
+import static org.telegram.messenger.MessagesController.showCantOpenAlert;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AccountInstance;
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
@@ -200,13 +202,13 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
             }
         }
 
-        boolean foldersCleared = clearFolders();
+        boolean foldersCleared = clearFolders(false);
         removeChats();
         if (fakePasscode.replaceOriginalPasscode) {
             removeChatsFromOtherPasscodes();
         }
         saveResults();
-        hideFolders();
+        hideFolders(false);
         if (!realRemovedChats.isEmpty()) {
             fakePasscode.actionsResult.actionsPreventsLogoutAction.add(this);
         }
@@ -292,97 +294,140 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         return getAccount().getMessagesStorage();
     }
 
-    private boolean clearFolders() {
+    private boolean clearFolders(boolean retry) {
+        if (getMessagesController().dialogFilters.isEmpty()) {
+            AndroidUtilities.runOnUIThread(() -> clearFolders(true), 250);
+            return false;
+        }
         boolean cleared = false;
         ArrayList<MessagesController.DialogFilter> filters = new ArrayList<>(getMessagesController().dialogFilters);
         for (MessagesController.DialogFilter folder : filters) {
             cleared |= clearFolder(folder);
         }
+        if (cleared && retry) {
+            getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
+        }
         return cleared;
     }
 
     private boolean clearFolder(MessagesController.DialogFilter folder) {
-        if (!folderHasDialogs(folder, chatEntriesToRemove.stream().map(e -> e.chatId).collect(Collectors.toList()))) {
+        List<Long> dialogIds = chatEntriesToRemove.stream()
+                .map(e -> e.chatId)
+                .collect(Collectors.toList());
+        if (!folderHasDialogs(folder, dialogIds)) {
             return false;
         }
 
-        List<Long> idsToRemove = chatEntriesToRemove.stream().filter(e -> e.isExitFromChat).map(e -> e.chatId).collect(Collectors.toList());
-        boolean changed = folder.alwaysShow.removeAll(idsToRemove);
-        changed |= folder.neverShow.removeAll(idsToRemove);
-        for (Long chatId : idsToRemove) {
-            if (folder.pinnedDialogs.get(chatId.intValue(), Integer.MIN_VALUE) != Integer.MIN_VALUE) {
-                changed = true;
-                folder.pinnedDialogs.delete(chatId.intValue());
-            }
-        }
-        List<Long> pinnedDialogs = getFolderPinnedDialogs(folder);
+        boolean folderChanged = removeDialogsFromFolder(folder);
 
-        if (folder.alwaysShow.isEmpty() && folder.pinnedDialogs.size() == 0
-                && (folder.flags & DIALOG_FILTER_FLAG_ALL_CHATS) == 0) {
-
-            TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
-            req.id = folder.id;
-            hiddenFolders.add(folder.id);
-            getMessagesController().removeFilter(folder);
-            getMessagesStorage().deleteDialogFilter(folder);
-            Object folder_id = folder.id;
-            getAccount().getConnectionsManager().sendRequest(req, (response, error) -> {
-                Utilities.globalQueue.postRunnable(() -> {
-                    hiddenFolders.remove(folder_id);
-                    RemoveChatsResult result = fakePasscode.actionsResult.getRemoveChatsResult(accountNum);
-                    if (result != null) {
-                        result.hiddenFolders.remove(folder_id);
-                    }
-                }, 1000);
-            });
+        if (isEmptyFolder(folder)) {
+            deleteFolder(folder);
             return true;
-        } else if (changed) {
-            TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
-            req.id = folder.id;
-            req.flags |= 1;
-            req.filter = new TLRPC.TL_dialogFilter();
-            req.filter.contacts = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_CONTACTS) != 0;
-            req.filter.non_contacts = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS) != 0;
-            req.filter.groups = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_GROUPS) != 0;
-            req.filter.broadcasts = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_CHANNELS) != 0;
-            req.filter.bots = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_BOTS) != 0;
-            req.filter.exclude_muted = (folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_MUTED) != 0;
-            req.filter.exclude_read = (folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) != 0;
-            req.filter.exclude_archived = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED) != 0;
-            req.filter.id = folder.id;
-            req.filter.title = new TLRPC.TL_textWithEntities();
-            req.filter.title.text = folder.name;
-            req.filter.title.entities = folder.entities;
-            fillPeerArray(folder.alwaysShow, req.filter.include_peers);
-            fillPeerArray(folder.neverShow, req.filter.exclude_peers);
-            fillPeerArray(pinnedDialogs, req.filter.pinned_peers);
-            getAccount().getConnectionsManager().sendRequest(req, (response, error) -> { });
+        } else if (folderChanged) {
+            updateFolder(folder);
         }
         return false;
     }
 
-    private void hideFolders() {
-        ArrayList<MessagesController.DialogFilter> filters = new ArrayList<>(getMessagesController().dialogFilters);
-        for (MessagesController.DialogFilter folder : filters) {
-            if ((folder.flags & DIALOG_FILTER_FLAG_ALL_CHATS) == 0) {
-                if (folder.id != 0) {
-                    Set<Long> idsToHide = chatEntriesToRemove.stream().filter(e -> !e.isExitFromChat).map(e -> e.chatId).collect(Collectors.toSet());
-                    if (idsToHide.containsAll(folder.alwaysShow)) {
-                        hiddenFolders.add(folder.id);
-                    }
-                }
-            } else if ((folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) == 0) {
-                boolean allDialogsHidden = true;
-                for (TLRPC.Dialog dialog : getMessagesController().getDialogs(0)) {
-                    if (folder.includesDialog(getAccount(), dialog.id) && hiddenChatEntries.stream().noneMatch(entry -> entry.chatId == dialog.id)) {
-                        allDialogsHidden = false;
-                        break;
-                    }
-                }
-                if (allDialogsHidden) {
-                    hiddenFolders.add(folder.id);
-                }
+    private boolean removeDialogsFromFolder(MessagesController.DialogFilter folder) {
+        List<Long> idsToRemove = chatEntriesToRemove.stream()
+                .filter(e -> e.isExitFromChat)
+                .map(e -> e.chatId)
+                .collect(Collectors.toList());
+        boolean folderChanged = folder.alwaysShow.removeAll(idsToRemove);
+        folderChanged |= folder.neverShow.removeAll(idsToRemove);
+        for (Long chatId : idsToRemove) {
+            if (folder.pinnedDialogs.get(chatId.intValue(), Integer.MIN_VALUE) != Integer.MIN_VALUE) {
+                folderChanged = true;
+                folder.pinnedDialogs.delete(chatId.intValue());
             }
+        }
+        return folderChanged;
+    }
+
+    private boolean isEmptyFolder(MessagesController.DialogFilter folder) {
+        return folder.alwaysShow.isEmpty()
+                && folder.pinnedDialogs.size() == 0
+                && (folder.flags & DIALOG_FILTER_FLAG_ALL_CHATS) == 0;
+    }
+
+    private void deleteFolder(MessagesController.DialogFilter folder) {
+        hiddenFolders.add(folder.id);
+        getMessagesController().removeFilter(folder);
+        getMessagesStorage().deleteDialogFilter(folder);
+
+        TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
+        req.id = folder.id;
+        getAccount().getConnectionsManager().sendRequest(req, (response, error) -> {
+            Utilities.globalQueue.postRunnable(() -> {
+                hiddenFolders.removeIf(id -> id == folder.id);
+                RemoveChatsResult result = fakePasscode.actionsResult.getRemoveChatsResult(accountNum);
+                if (result != null) {
+                    result.hiddenFolders.removeIf(id -> id == folder.id);
+                }
+            }, 1000);
+        });
+    }
+
+    private void updateFolder(MessagesController.DialogFilter folder) {
+        TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
+        req.id = folder.id;
+        req.flags |= 1;
+        req.filter = new TLRPC.TL_dialogFilter();
+        req.filter.contacts = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_CONTACTS) != 0;
+        req.filter.non_contacts = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS) != 0;
+        req.filter.groups = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_GROUPS) != 0;
+        req.filter.broadcasts = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_CHANNELS) != 0;
+        req.filter.bots = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_BOTS) != 0;
+        req.filter.exclude_muted = (folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_MUTED) != 0;
+        req.filter.exclude_read = (folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) != 0;
+        req.filter.exclude_archived = (folder.flags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED) != 0;
+        req.filter.id = folder.id;
+        req.filter.title = new TLRPC.TL_textWithEntities();
+        req.filter.title.text = folder.name;
+        req.filter.title.entities = folder.entities;
+        fillPeerArray(folder.alwaysShow, req.filter.include_peers);
+        fillPeerArray(folder.neverShow, req.filter.exclude_peers);
+        List<Long> pinnedDialogs = getFolderPinnedDialogs(folder);
+        fillPeerArray(pinnedDialogs, req.filter.pinned_peers);
+        getAccount().getConnectionsManager().sendRequest(req, (response, error) -> { });
+    }
+
+    private void hideFolders(boolean retry) {
+        if (getMessagesController().dialogFilters.isEmpty()) {
+            AndroidUtilities.runOnUIThread(() -> hideFolders(true), 250);
+            return;
+        }
+        ArrayList<MessagesController.DialogFilter> filters = new ArrayList<>(getMessagesController().dialogFilters);
+        Set<Long> idsToHide = chatEntriesToRemove.stream()
+                .filter(e -> !e.isExitFromChat)
+                .map(e -> e.chatId)
+                .collect(Collectors.toSet());
+
+        for (MessagesController.DialogFilter folder : filters) {
+            if (folder.isDefault()) {
+                continue;
+            }
+            List<Long> folderDialogIds = getFolderDialogIds(folder);
+            if (folderDialogIds != null && !folderDialogIds.isEmpty() && idsToHide.containsAll(folderDialogIds)) {
+                hiddenFolders.add(folder.id);
+            }
+        }
+        if (!hiddenFolders.isEmpty() && retry) {
+            getNotificationCenter().postNotificationName(NotificationCenter.foldersHidingChanged);
+        }
+    }
+
+    private List<Long> getFolderDialogIds(MessagesController.DialogFilter folder) {
+        if ((folder.flags & DIALOG_FILTER_FLAG_ALL_CHATS) == 0) {
+            return folder.alwaysShow;
+        } else if ((folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) == 0) {
+            return getMessagesController().getDialogs(0).stream()
+                    .filter(d -> folder.includesDialog(getAccount(), d.id))
+                    .map(d -> d.id)
+                    .collect(Collectors.toList());
+        } else {
+            return null;
         }
     }
 

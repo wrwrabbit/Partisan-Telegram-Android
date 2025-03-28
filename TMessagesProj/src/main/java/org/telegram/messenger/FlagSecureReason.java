@@ -73,9 +73,7 @@ public class FlagSecureReason {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
             }
         } else {
-            if (FakePasscodeUtils.isFakePasscodeActivated() || SharedConfig.allowScreenCapture) {
-                window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-            }
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
         }
     }
 

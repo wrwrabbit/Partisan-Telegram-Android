@@ -53,7 +53,7 @@ public class FileProtectionDatabaseCleaner {
             clearTable(new TableInfo("messages_holes"));
             clearTable(new TableInfo("messages_topics"));
             clearTable(new TableInfo("messages_holes_topics"));
-            clearTable(new TableInfo("media_v4"));
+            clearTable(new TableInfo("media_v4") {{ keepUsersWithSecretChats = true; }});
             clearTable(new TableInfo("media_holes_topics"));
             clearTable(new TableInfo("media_holes_v2"));
             if (deletedCount > 100) {

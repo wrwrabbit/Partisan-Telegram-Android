@@ -30,6 +30,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     private int loadIndex = 1;
     private Long loadingTimeout = null;
 
+    private int minMessageId = Integer.MAX_VALUE;
+    private int maxMessageId = Integer.MIN_VALUE;
+
     private static class MessagesToDelete {
         public ArrayList<Integer> messagesIds = new ArrayList<>();
         public ArrayList<Long> randoms = new ArrayList<>();
@@ -49,6 +52,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     public void start() {
+        minMessageId = Integer.MAX_VALUE;
+        maxMessageId = Integer.MIN_VALUE;
+
         if (onlyLoadMessages()) {
             log("start only load chat messages deletion");
             startLoadingMessages();
@@ -108,9 +114,18 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     private boolean processLoadedMessages(ArrayList<MessageObject> messages) {
         log("processLoadedMessages: " + messages.size());
         if (!messages.isEmpty()) {
-            deleteMessages(getMessagesToDelete(messages));
-            getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
-            return true;
+            int currentMinId = messages.stream().mapToInt(m -> m.messageOwner.id).min().orElse(Integer.MAX_VALUE);
+            int currentMaxId = messages.stream().mapToInt(m -> m.messageOwner.id).max().orElse(Integer.MIN_VALUE);
+            if (currentMinId >= minMessageId && currentMaxId <= maxMessageId) {
+                log("processLoadedMessages: no new messages loaded");
+                return false;
+            } else {
+                minMessageId = Math.min(minMessageId, currentMinId);
+                maxMessageId = Math.max(maxMessageId, currentMaxId);
+                deleteMessages(getMessagesToDelete(messages));
+                getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
+                return true;
+            }
         } else {
             log("processLoadedMessages: empty");
             return false;
@@ -135,7 +150,6 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         boolean needDeleteMessage;
 
         if (messageObject == null || messageObject.getDialogId() != dialogId || messageObject.messageOwner == null
-                || messageObject.messageOwner instanceof TLRPC.TL_messageService
                 || messageObject.messageText.toString().equals(LocaleController.getString(R.string.ActionMigrateFromGroup))) {
             log("isNeedDeleteMessage main filter");
             return false;

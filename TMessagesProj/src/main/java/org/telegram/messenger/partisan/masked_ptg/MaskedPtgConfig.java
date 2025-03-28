@@ -35,6 +35,10 @@ public class MaskedPtgConfig {
         return FACTORY.allowNotHiddenNotifications();
     }
 
+    public static int getDefaultPasscodeType() {
+        return FACTORY.getDefaultPasscodeType();
+    }
+
     public static int getPrimaryColor(Context context) {
         if (PRIMARY_COLOR != null) {
             return PRIMARY_COLOR;

@@ -53,7 +53,7 @@ public class PartisanLog {
     }
 
     private static boolean isTesterSettingsActivated() {
-        if (SharedConfig.isTesterSettingsActivated()) {
+        if (SharedConfig.activatedTesterSettingType != 0) {
             return true;
         }
         if (SharedConfig.isConfigLoaded()) {

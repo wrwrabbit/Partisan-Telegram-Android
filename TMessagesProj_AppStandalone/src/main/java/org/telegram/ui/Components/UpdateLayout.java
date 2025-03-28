@@ -28,7 +28,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.appmigration.MaskedUpdateUtils;
-import org.telegram.messenger.partisan.update.UpdateChecker;
+import org.telegram.messenger.partisan.update.UpdateDownloader;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.IUpdateLayout;
@@ -45,9 +45,9 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
     private TextView updateSizeTextView;
     private AnimatorSet updateTextAnimator;
 
-    private Activity activity;
-    private ViewGroup sideMenu;
-    private ViewGroup sideMenuContainer;
+    private final Activity activity;
+    private final ViewGroup sideMenu;
+    private final ViewGroup sideMenuContainer;
 
     private Runnable onUpdateLayoutClicked;
 
@@ -128,7 +128,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                 if (botRequestTag == null) {
                     MaskedUpdateUtils.requestMaskedUpdateBuildWithWarning(currentAccount, activity);
                 } else if (SharedConfig.pendingPtgAppUpdate.isMaskedUpdateDocument()) {
-                    UpdateChecker.startUpdateDownloading(currentAccount);
+                    new UpdateDownloader(currentAccount).startUpdateDownloading();
                 }
                 updateAppUpdateViews(currentAccount,  true);
             } else if (updateLayoutIcon.getIcon() == MediaActionDrawable.ICON_CANCEL) {
@@ -136,7 +136,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                 updateAppUpdateViews(currentAccount, true);
             } else if (SharedConfig.pendingPtgAppUpdate.isMaskedUpdateDocument()) {
                 if (!AndroidUtilities.openForView(SharedConfig.pendingPtgAppUpdate.document, true, activity)) {
-                    UpdateChecker.startUpdateDownloading(currentAccount);
+                    new UpdateDownloader(currentAccount).startUpdateDownloading();
                 }
             }
         });
@@ -191,7 +191,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                     updateLayoutIcon.setIcon(MediaActionDrawable.ICON_WAIT_BUILD_MASKED_UPDATE, true, animated);
                     setUpdateText(LocaleController.getString(R.string.UpdateBuildWaiting), animated);
                     showSize = false;
-                } else if (FileLoader.getInstance(LaunchActivity.getUpdateAccountNum()).isLoadingFile(fileName) || UpdateChecker.isUpdateChecking) {
+                } else if (FileLoader.getInstance(LaunchActivity.getUpdateAccountNum()).isLoadingFile(fileName) || UpdateDownloader.isUpdateChecking) {
                     updateLayoutIcon.setIcon(MediaActionDrawable.ICON_CANCEL, true, animated);
                     updateLayoutIcon.setProgress(0, false);
                     Float p = ImageLoader.getInstance().getFileProgress(fileName);

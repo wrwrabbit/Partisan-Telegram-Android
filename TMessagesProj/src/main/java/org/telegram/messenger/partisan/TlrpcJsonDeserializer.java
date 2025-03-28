@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 
 import org.telegram.messenger.Utilities;
-import org.telegram.tgnet.AbstractSerializedData;
+import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 
@@ -78,7 +78,7 @@ public class TlrpcJsonDeserializer extends StdDeserializer<TLObject> {
         do {
             Method method;
             try {
-                method = clazz.getMethod("TLdeserialize", AbstractSerializedData.class, int.class, boolean.class);
+                method = clazz.getMethod("TLdeserialize", InputSerializedData.class, int.class, boolean.class);
             } catch (Exception ignore) {
                 method = null;
             }

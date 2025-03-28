@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.android.exoplayer2.util.Log;
+import com.google.common.collect.Lists;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -144,6 +145,7 @@ public class FakePasscode {
         if (FakePasscodeUtils.isFakePasscodeActivated()) {
             FakePasscodeUtils.getActivatedFakePasscode().deactivate();
         }
+        setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(true);
         activationDate = ConnectionsManager.getInstance(UserConfig.selectedAccount).getCurrentTime();
         actionsResult = new ActionsResult();
         actionsResult.setActivated();
@@ -176,6 +178,7 @@ public class FakePasscode {
             SharedConfig.fakePasscodeActionsResult = null;
              SharedConfig.saveConfig();
         }
+        setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(false);
         AndroidUtilities.runOnUIThread(() -> {
             if (!oldActionResult.hiddenAccountEntries.isEmpty()) {
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.accountHidingChanged);
@@ -281,59 +284,43 @@ public class FakePasscode {
         return (int)getFilteredAccountActions().stream().filter(AccountActions::isHideAccount).count();
     }
 
+    private int getMaxAccountCount() {
+        boolean hasPremium = getFilteredAccountActions()
+                .stream()
+                .filter(a -> !a.isLogOutOrHideAccount())
+                .anyMatch(a -> UserConfig.getInstance(a.accountNum).isPremium());
+        return hasPremium
+                ? UserConfig.FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT
+                : UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
+    }
+
+    private boolean isHidingCountCorrect() {
+        int notHiddenCount = UserConfig.getActivatedAccountsCount(true) - getHideOrLogOutCount();
+        return notHiddenCount <= getMaxAccountCount();
+    }
+
     public boolean autoAddAccountHidings() {
         disableHidingForDeactivatedAccounts();
         checkSingleAccountHidden();
 
-        int targetCount = UserConfig.getActivatedAccountsCount(true) - UserConfig.getFakePasscodeMaxAccountCount();
-        if (targetCount > getHideOrLogOutCount()) {
+        if (!isHidingCountCorrect()) {
             accountActions.stream().forEach(AccountActions::checkIdHash);
         }
-        if (targetCount > getHideOrLogOutCount()) {
-            List<Integer> configIds = new ArrayList<>();
-            for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-                if (UserConfig.getInstance(a).isClientActivated()) {
-                    configIds.add(a);
-                }
-            }
-            Collections.sort(configIds, (o1, o2) -> {
-                long l1 = UserConfig.getInstance(o1).loginTime;
-                long l2 = UserConfig.getInstance(o2).loginTime;
-                if (l1 > l2) {
-                    return 1;
-                } else if (l1 < l2) {
-                    return -1;
-                }
-                return 0;
-            });
-            for (int i = configIds.size() - 1; i >= 0; i--) {
-                AccountActions actions = getAccountActions(configIds.get(i));
-                if (actions == null) {
-                    actions = getOrCreateAccountActions(configIds.get(i));
-                    if (!FakePasscodeUtils.isHideAccount(i)) {
-                        actions.toggleHideAccountAction();
-                        if (targetCount <= getHideOrLogOutCount()) {
-                            break;
-                        }
-                    }
-                }
-            }
-            if (targetCount > getHideOrLogOutCount()) {
-                for (int i = configIds.size() - 1; i >= 0; i--) {
-                    AccountActions actions = getOrCreateAccountActions(configIds.get(i));
-                    if (!FakePasscodeUtils.isHideAccount(i) && actions != null && !actions.isLogOut()) {
-                        actions.toggleHideAccountAction();
-                        if (targetCount <= getHideOrLogOutCount()) {
-                            break;
-                        }
-                    }
-                }
-            }
-            SharedConfig.saveConfig();
-            return true;
-        } else {
+        if (replaceOriginalPasscode || isHidingCountCorrect()) {
             return false;
         }
+        List<Integer> accounts = Utils.getActivatedAccountsSortedByLoginTime();
+        for (int account : Lists.reverse(accounts)) {
+            AccountActions actions = getOrCreateAccountActions(account);
+            if (actions != null && !actions.isLogOut()) {
+                actions.toggleHideAccountAction();
+                if (isHidingCountCorrect()) {
+                    break;
+                }
+            }
+        }
+        SharedConfig.saveConfig();
+        return true;
     }
 
     private void disableHidingForDeactivatedAccounts() {
@@ -362,8 +349,15 @@ public class FakePasscode {
 
     private void checkPasswordlessMode() {
         passwordDisabled = passwordlessMode;
-        MediaDataController.getInstance(UserConfig.selectedAccount).buildShortcuts();
-        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.didSetPasscode);
+        if (passwordDisabled) {
+            SharedConfig.setAppLocked(false);
+            SharedConfig.isWaitingForPasscodeEnter = false;
+            SharedConfig.saveConfig();
+            MediaDataController.getInstance(UserConfig.selectedAccount).buildShortcuts();
+            AndroidUtilities.runOnUIThread(() -> {
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.didSetPasscode);
+            });
+        }
     }
 
     public boolean passcodeEnabled() {
@@ -442,5 +436,18 @@ public class FakePasscode {
         SharedConfig.passcodeSalt = passcodeSalt;
         SharedConfig.setPasscode(passcodeHash);
         SharedConfig.fakePasscodes.remove(this);
+    }
+
+    private void setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(boolean disable) {
+        if (!SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
+            Utils.foreachActivatedAccountInstance(accountInstance -> {
+                UserConfig userConfig = accountInstance.getUserConfig();
+                if (userConfig.disableFileProtectionAfterRestartByFakePasscode != disable
+                        && (!disable || accountInstance.getMessagesStorage().fileProtectionEnabled())) {
+                    userConfig.disableFileProtectionAfterRestartByFakePasscode = disable;
+                    accountInstance.getUserConfig().saveConfig(false);
+                }
+            });
+        }
     }
 }

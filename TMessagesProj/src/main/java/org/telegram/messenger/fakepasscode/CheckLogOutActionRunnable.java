@@ -2,6 +2,7 @@ package org.telegram.messenger.fakepasscode;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.Utils;
 
 public class CheckLogOutActionRunnable implements Runnable {
     private static final int DELAY = 500;
@@ -19,7 +20,7 @@ public class CheckLogOutActionRunnable implements Runnable {
     @Override
     public void run() {
         if (fakePasscode.actionsResult.actionsPreventsLogoutAction.isEmpty() || i == THRESHOLD / DELAY) {
-            AndroidUtilities.runOnUIThread(() -> {
+            Utils.runOnUIThreadAsSoonAsPossible(() -> {
                 action.execute(fakePasscode);
                 fakePasscode.checkClearAfterActivation();
             });

@@ -9,12 +9,12 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -95,8 +95,8 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         listView.setOnItemClickListener((view, position, x, y) -> {
             if (firstMemberRow != -1 && firstMemberRow <= position && position <= lastMemberRow) {
                 Bundle args = new Bundle();
-                int index = position - firstMemberRow;
-                TLRPC.User user = getUser(position - firstMemberRow);
+                int index = positionToChatIndex(position);
+                TLRPC.User user = getUser(index);
                 if (user == null) {
                     return;
                 }
@@ -116,32 +116,30 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         rowCount = 0;
 
         firstMemberRow = rowCount;
-        lastMemberRow = firstMemberRow + getInnerEncryptedChatIds().size() - 1;
+        lastMemberRow = firstMemberRow + encryptedGroup.getInnerChats().size();
         rowCount = lastMemberRow + 1;
     }
 
-    private List<Integer> getInnerEncryptedChatIds() {
-        return encryptedGroup.getInnerEncryptedChatIds(false);
+    private TLRPC.User getUser(int index) {
+        if (index < 0 || index >= encryptedGroup.getInnerChats().size()) {
+            return null;
+        }
+        long userId = encryptedGroup.getInnerChats().get(index).getUserId();
+        return getMessagesController().getUser(userId);
     }
 
-    private TLRPC.User getUser(int index) {
-        if (index >= getInnerEncryptedChatIds().size()) {
+    private InnerEncryptedChat getInnerChat(int index) {
+        if (index >= encryptedGroup.getInnerChats().size()) {
             return null;
         }
-        int encryptedChatId = getInnerEncryptedChatIds().get(index);
-        TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedChatId);
-        if (encryptedChat == null) {
-            return null;
-        }
-        return getMessagesController().getUser(encryptedChat.user_id);
+        return encryptedGroup.getInnerChats().get(index);
     }
 
     private long getDialogId(int index) {
-        if (index >= getInnerEncryptedChatIds().size()) {
+        if (index >= encryptedGroup.getInnerChats().size()) {
             return 0;
         }
-        int encryptedChatId = getInnerEncryptedChatIds().get(index);
-        return DialogObject.makeEncryptedDialogId(encryptedChatId);
+        return encryptedGroup.getInnerChats().get(index).getDialogId().orElse(0L);
     }
 
     @Override
@@ -173,6 +171,10 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         }
     }
 
+    private int positionToChatIndex(int position) {
+        return position - firstMemberRow - 1;
+    }
+
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
         private final static int VIEW_TYPE_GROUP_MEMBER = 0;
 
@@ -200,7 +202,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                 case VIEW_TYPE_GROUP_MEMBER:
                 default:
                 {
-                    view = new EncryptedGroupMemberCell(mContext, currentAccount);
+                    view = new EncryptedGroupMemberCell(mContext, encryptedGroup, currentAccount);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 }
@@ -213,9 +215,14 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
             switch (holder.getItemViewType()) {
                 case VIEW_TYPE_GROUP_MEMBER: {
                     EncryptedGroupMemberCell cell = (EncryptedGroupMemberCell) holder.itemView;
-                    int index = position - firstMemberRow;
-                    TLRPC.User user = getUser(index);
-                    cell.setUser(user, position != lastMemberRow);
+                    if (position == firstMemberRow) {
+                        cell.setUserAndInnerChat(getUserConfig().getCurrentUser(), null, position != lastMemberRow);
+                    } else {
+                        int index = positionToChatIndex(position);
+                        TLRPC.User user = getUser(index);
+                        InnerEncryptedChat innerChat = getInnerChat(index);
+                        cell.setUserAndInnerChat(user, innerChat, position != lastMemberRow);
+                    }
                     break;
                 }
             }
