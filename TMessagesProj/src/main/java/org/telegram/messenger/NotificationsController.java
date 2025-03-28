@@ -68,7 +68,6 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
@@ -329,7 +328,7 @@ public class NotificationsController extends BaseController {
     }
 
     public void muteUntil(long did, long topicId, int selectedTimeInSeconds) {
-        if (doForEveryInnerDialogIdIfNeeded(did, innerDialogId -> muteUntil(innerDialogId, topicId, selectedTimeInSeconds))) {
+        if (doForEachInnerDialogIdIfNeeded(did, innerDialogId -> muteUntil(innerDialogId, topicId, selectedTimeInSeconds))) {
             return;
         }
 
@@ -1883,6 +1882,8 @@ public class NotificationsController extends BaseController {
                         return messageObject.messageText.toString();
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGiftPremium) {
                         return messageObject.messageText.toString();
+                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesPrice || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesRefunded) {
+                        return messageObject.messageText.toString();
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) {
                         if (messageObject.messageOwner.action.video) {
                             return LocaleController.getString(R.string.CallMessageVideoIncomingMissed);
@@ -2513,6 +2514,8 @@ public class NotificationsController extends BaseController {
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGiftPremium) {
                             msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
+                            msg = messageObject.messageText.toString();
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesRefunded || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesPrice) {
                             msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) {
                             if (messageObject.messageOwner.action.video) {
@@ -5804,7 +5807,7 @@ public class NotificationsController extends BaseController {
     }
 
     public void setDialogNotificationsSettings(long dialog_id, long topicId, int setting) {
-        if (doForEveryInnerDialogIdIfNeeded(dialog_id, innerDialogId -> setDialogNotificationsSettings(innerDialogId, topicId, setting))) {
+        if (doForEachInnerDialogIdIfNeeded(dialog_id, innerDialogId -> setDialogNotificationsSettings(innerDialogId, topicId, setting))) {
             return;
         }
 
@@ -6082,7 +6085,7 @@ public class NotificationsController extends BaseController {
     }
 
     public void muteDialog(long dialog_id, long topicId, boolean mute) {
-        if (doForEveryInnerDialogIdIfNeeded(dialog_id, innerDialogId -> muteDialog(innerDialogId, topicId, mute))) {
+        if (doForEachInnerDialogIdIfNeeded(dialog_id, innerDialogId -> muteDialog(innerDialogId, topicId, mute))) {
             return;
         }
 
@@ -6258,7 +6261,7 @@ public class NotificationsController extends BaseController {
         return 0;
     }
 
-    private boolean doForEveryInnerDialogIdIfNeeded(long encryptedGroupDialogId, Consumer<Long> action) {
-        return EncryptedGroupUtils.doForEveryInnerDialogIdIfNeeded(encryptedGroupDialogId, currentAccount, action);
+    private boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, Consumer<Long> action) {
+        return EncryptedGroupUtils.doForEachInnerDialogIdIfNeeded(encryptedGroupDialogId, currentAccount, action);
     }
 }
