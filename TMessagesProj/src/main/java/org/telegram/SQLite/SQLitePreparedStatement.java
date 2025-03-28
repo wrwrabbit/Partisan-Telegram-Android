@@ -30,7 +30,7 @@ public class SQLitePreparedStatement {
         return sqliteStatementHandle;
     }
 
-    public SQLitePreparedStatement() { // For SQLitePreparedStatementMultiple
+    public SQLitePreparedStatement() { // For SQLitePreparedStatementWrapper
 
     }
 

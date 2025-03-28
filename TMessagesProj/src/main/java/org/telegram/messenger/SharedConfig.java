@@ -446,6 +446,7 @@ public class SharedConfig {
     public static boolean fileProtectionForAllAccountsEnabled = true;
     public static boolean disableFileProtectionAfterRestart = false;
     public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
+    public static boolean detailedEncryptedGroupMemberStatus = false;
 
     private static final int[] LOW_SOC = {
             -1775228513, // EXYNOS 850
@@ -873,8 +874,14 @@ public class SharedConfig {
                 String update = preferences.getString("ptgAppUpdate", null);
                 if (update != null) {
                     pendingPtgAppUpdate = fromJson(update, UpdateData.class);
+                } else {
+                    PartisanLog.d("pendingPtgAppUpdate: reset 1");
                 }
             } catch (Exception e) {
+                PartisanLog.d("pendingPtgAppUpdate: reset 2");
+                PartisanLog.d("pendingPtgAppUpdate string = \n\n"
+                        + preferences.getString("ptgAppUpdate", null)
+                        + "\n\n");
                 PartisanLog.handleException(e);
             }
 
@@ -963,6 +970,7 @@ public class SharedConfig {
             deleteMessagesForAllByDefault = preferences.getBoolean("deleteMessagesForAllByDefault", false);
             confirmDangerousActions = preferences.getBoolean("confirmDangerousActions", false);
             showEncryptedChatsFromEncryptedGroups = preferences.getBoolean("showEncryptedChatsFromEncryptedGroups", false);
+            detailedEncryptedGroupMemberStatus = preferences.getBoolean("detailedEncryptedGroupMemberStatus", false);
             encryptedGroupsEnabled = preferences.getBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
             fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
@@ -1060,6 +1068,14 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("showEncryptedChatsFromEncryptedGroups", showEncryptedChatsFromEncryptedGroups);
+        editor.commit();
+    }
+
+    public static void toggleDetailedEncryptedGroupMemberStatus() {
+        detailedEncryptedGroupMemberStatus = !detailedEncryptedGroupMemberStatus;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("detailedEncryptedGroupMemberStatus", detailedEncryptedGroupMemberStatus);
         editor.commit();
     }
 
@@ -2282,6 +2298,8 @@ public class SharedConfig {
     public static void setAppLocked(boolean locked) {
         if (locked) {
             FakePasscodeUtils.updateLastPauseFakePasscodeTime();
+            appLocked = true;
+            FakePasscodeUtils.tryActivateByTimer();
         } else {
             if (appLocked) {
                 SharedConfig.lastPauseFakePasscodeTime = 0;

@@ -266,7 +266,7 @@
     <string name="IssueInvalidPasscodeTypeDescription">Буквенно-цифровий пароль не дозволено в цій замаскованій програмі. Змініть його на 4-циферний код блокування.</string>
     <string name="IssuePasswordlessModeDescription">Фальшиві коди блокування з безпарольним режимом у замаскованій програмі. Вимкніть цей режим у код-паролях або видаліть ці паролі.</string>
     <string name="IssueActivateByFingerprintDescription">Коди блокування з активацією по відбитку пальця не дозволені в замаскованій програмі. Вимкніть цю опцію.</string>
-    <string name="PasswordToPinSwitchWarning">Якщо у Вас були фальшиві коди блокування, що складаються не з 4 цифри, їх не вдасться ввести. Ми рекомендуємо змінити їх.</string>
+    <string name="PasswordToPinSwitchWarning">Якщо у Вас були фальшиві коди блокування, що складаються не з 4 цифр, їх не вдасться ввести. Ми рекомендуємо змінити їх.</string>
     <string name="ContinueMaskedMigrationDescription">Здається, Ви вирішили всі проблеми. Бажаєте відновити міграцію?</string>
     <string name="NewEncryptedGroup">Створити секретну групу</string>
     <string name="AreYouSureClearHistoryWithSecretGroup">Ви точно хочете видалити історію секретної групи **%1$s** тільки для себе? В інших учасників вона залишиться доступною.</string>
@@ -300,4 +300,9 @@
     <string name="FileProtectionDisabledTitle">Захист файлів вимкнено</string>
     <string name="FileProtectionDisabledDetails">Розмір бази даних став занадто великим. Захист файлів тимчасово вимкнено. Ви можете увімкнути цю функцію знову.</string>
     <string name="FileProtectionEnableAgain">Увімкнути знову</string>
+    <string name="InnerEncryptedChatStateInvitationSent">Запрошення надіслано</string>
+    <string name="InnerEncryptedChatStateInitialization">Ініціалізація</string>
+    <string name="InnerEncryptedChatStateCancelled">Скасовано</string>
+    <string name="InnerEncryptedChatStateInvitationDeclined">Запрошення відхилено</string>
+    <string name="InnerEncryptedChatStateMemberDeleted">Учасник видалено</string>
 </resources>

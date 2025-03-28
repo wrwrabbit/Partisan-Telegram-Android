@@ -9082,10 +9082,13 @@
     <string name="FileProtectionInfo">File protection allows you to protect yourself from information extraction during phone inspection. Enabling this option may cause the application to work incorrectly. After enabling file protection, the message cache will be cleared and the application will reboot.</string>
     <string name="ApplicationWillBeRestarted">The application will be restarted.</string>
     <string name="WorksWithFakePasscodes">Works With Fake Passcodes</string>
-    <string name="NewFeatureTitle">Works With Fake Passcodes</string>
     <string name="NewPtelegramFeatureTitle">New PTelegram Feature</string>
     <string name="FileProtectionNewFeatureDetails">A new option has appeared in Partisan Telegram: "File protection".\n\nFile protection allows you to protect yourself from the extraction of various information by specialists during inspection. For example, they will not be able to extract the message cache. This option can significantly increase your security, but it also has disadvantages:\n- Enabling this option will clear the message cache. Correspondence will no longer be visible in the application if there is no access to the Internet.\n- The application may not work correctly due to the enabling of this option.\n\nWe recommend enabling file protection. You can change this setting later in the Partisan settings.</string>
     <string name="FileProtectionDisabledTitle">File protection is disabled</string>
     <string name="FileProtectionDisabledDetails">The database size has become too large. File protection is temporarily disabled. You can enable this feature again.</string>
     <string name="FileProtectionEnableAgain">Enable again</string>
+    <string name="InnerEncryptedChatStateInvitationSent">Invitation sent</string>
+    <string name="InnerEncryptedChatStateInitialization">Initialization</string>
+    <string name="InnerEncryptedChatStateInvitationDeclined">Invitation declined</string>
+    <string name="InnerEncryptedChatStateMemberDeleted">Member deleted</string>
 </resources>

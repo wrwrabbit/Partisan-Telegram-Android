@@ -157,6 +157,7 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
                 };
                 template.negativeListener = (dlg, whichButton) -> {
                     fakePasscode.activationMessage = "";
+                    SharedConfig.saveConfig();
                     TextSettingsCell cell = (TextSettingsCell) view;
                     cell.setTextAndValue(LocaleController.getString("ActivationMessage", R.string.ActivationMessage), LocaleController.getString("Disabled", R.string.Disabled), false);
                     if (listAdapter != null) {

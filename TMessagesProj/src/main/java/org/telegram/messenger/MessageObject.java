@@ -5991,7 +5991,7 @@ public class MessageObject {
                 name = UserObject.getUserName((TLRPC.User) object, UserConfig.selectedAccount).replace('\n', ' ');
                 id = "" + ((TLRPC.User) object).id;
             } else if (object instanceof TLRPC.Chat) {
-                name = ((TLRPC.Chat) object).title.replace('\n', ' ');
+                name = UserConfig.getChatTitleOverride(UserConfig.selectedAccount, ((TLRPC.Chat) object)).replace('\n', ' ');
                 id = "" + -((TLRPC.Chat) object).id;
             } else if (object instanceof TLRPC.TL_game) {
                 TLRPC.TL_game game = (TLRPC.TL_game) object;

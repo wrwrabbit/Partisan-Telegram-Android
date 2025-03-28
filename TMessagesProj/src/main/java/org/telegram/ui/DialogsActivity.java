@@ -2854,12 +2854,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (!dialogsLoaded[currentAccount]) {
             MessagesController messagesController = accountInstance.getMessagesController();
             messagesController.loadGlobalNotificationsSettings();
-            for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-                if (!dialogsLoaded[i]) {
-                    MessagesController controller = AccountInstance.getInstance(i).getMessagesController();
-                    controller.loadDialogs(0, 0, 100, true);
-                }
-            }
             messagesController.loadHintDialogs();
             messagesController.loadUserInfo(accountInstance.getUserConfig().getCurrentUser(), false, 0);
             accountInstance.getContactsController().checkInviteText();
@@ -8136,6 +8130,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             boolean loadArchivedFromCacheFinal = loadArchivedFromCache;
             AndroidUtilities.runOnUIThread(() -> {
                 if (loadFinal) {
+                    PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " load from dialog activity, fromCache = " + loadFromCacheFinal);
                     getMessagesController().loadDialogs(folderId, -1, 100, loadFromCacheFinal);
                 }
                 if (loadArchivedFinal) {
@@ -9319,10 +9314,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private void performSelectedDialogsAction(ArrayList<Long> selectedDialogs, int action, boolean alert, boolean longPress, HashSet<Long> dialogsIdsToRevoke) {
         if (getParentActivity() == null) {
-            return;
-        }
-        if (action == mute && selectedDialogs.stream().anyMatch(dialogId -> getMessagesStorage().isEncryptedGroup(dialogId))) {
-            EncryptedGroupUtils.showNotImplementedDialog(this);
             return;
         }
         MessagesController.DialogFilter filter;
@@ -11294,7 +11285,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (dialogsType == DIALOGS_TYPE_DEFAULT) {
             ArrayList<TLRPC.Dialog> dialogs = (ArrayList<TLRPC.Dialog>) Utils.filterDialogs(messagesController.getDialogs(folderId), Optional.of(currentAccount));
             if (folderId == 0) {
-                PartisanLog.d("fileProtectedDialogsLoaded: DIALOGS_TYPE_DEFAULT count " + dialogs.size());
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " DIALOGS_TYPE_DEFAULT count " + dialogs.size());
             }
             if (!dialogs.isEmpty() && dialogs.get(0) instanceof TLRPC.TL_dialogFolder) {
                 TLRPC.TL_dialogFolder folder = (TLRPC.TL_dialogFolder)dialogs.get(0);

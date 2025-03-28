@@ -5899,7 +5899,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     }
 
     public void checkAppUpdate(boolean force, Browser.Progress progress, Runnable updateAlreadyShown) {
-        if (!force && BuildVars.DEBUG_VERSION || !force && !BuildVars.CHECK_UPDATES) {
+        if (/* allow auto update check in debug version */  /*!force && BuildVars.DEBUG_VERSION || */!force && !BuildVars.CHECK_UPDATES) {
             return;
         }
         if (!force && Math.abs(System.currentTimeMillis() - SharedConfig.lastUpdateCheckTime) < MessagesController.getInstance(0).updateCheckDelay * 1000) {
@@ -6690,6 +6690,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             onResumeStaticCallback = null;
         }
         if (!SharedConfig.isAppLocked()) {
+            FakePasscodeUtils.tryActivateByTimer(true);
             SharedConfig.lastPauseFakePasscodeTime = 0;
         }
         if (Theme.selectedAutoNightType == Theme.AUTO_NIGHT_TYPE_SYSTEM) {
@@ -6719,7 +6720,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     layersActionBarLayout.onResume();
                 }
             }
-        } else {
+        } else if (SharedConfig.isAppLocked()) { // ignore if app locked
             actionBarLayout.dismissDialogs();
             if (AndroidUtilities.isTablet()) {
                 if (rightActionBarLayout != null) {

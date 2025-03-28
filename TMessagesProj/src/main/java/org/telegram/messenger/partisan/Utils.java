@@ -565,4 +565,67 @@ public class Utils {
             }
         }
     }
+
+    public static void deleteAccountFiles(int accountNum) {
+        if (accountNum == 0) {
+            deleteZeroAccountFiles();
+            return;
+        }
+        File filesDir = ApplicationLoader.getFilesDirFixed();
+        filesDir = new File(filesDir, "account" + accountNum + "/");
+        if (!filesDir.exists()) {
+            return;
+        }
+        File[] files = filesDir.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            file.delete();
+        }
+    }
+
+    private static void deleteZeroAccountFiles() {
+        File filesDir = ApplicationLoader.getFilesDirFixed();
+        String[] fileNamesToDelete = new String[] {
+                "cache4.db",
+                "cache4.db-shm",
+                "cache4.db-wal",
+                "dc1conf.dat",
+                "dc2conf.dat",
+                "dc3conf.dat",
+                "dc4conf.dat",
+                "dc5conf.dat",
+                "file_to_path.db",
+                "file_to_path_backup.db",
+                "stats2.dat",
+                "tgnet.dat"
+        };
+        for (String filename : fileNamesToDelete) {
+            File file = new File(filesDir, filename);
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    public static List<Integer> getActivatedAccountsSortedByLoginTime() {
+        List<Integer> accounts = new ArrayList<>();
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            if (UserConfig.getInstance(a).isClientActivated()) {
+                accounts.add(a);
+            }
+        }
+        Collections.sort(accounts, (o1, o2) -> {
+            long l1 = UserConfig.getInstance(o1).loginTime;
+            long l2 = UserConfig.getInstance(o2).loginTime;
+            if (l1 > l2) {
+                return 1;
+            } else if (l1 < l2) {
+                return -1;
+            }
+            return 0;
+        });
+        return accounts;
+    }
 }

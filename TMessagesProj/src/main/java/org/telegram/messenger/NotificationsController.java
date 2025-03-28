@@ -67,6 +67,7 @@ import androidx.core.graphics.drawable.IconCompat;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -326,6 +327,10 @@ public class NotificationsController extends BaseController {
     }
 
     public void muteUntil(long did, long topicId, int selectedTimeInSeconds) {
+        if (doForEachInnerDialogIdIfNeeded(did, innerDialogId -> muteUntil(innerDialogId, topicId, selectedTimeInSeconds))) {
+            return;
+        }
+
         if (did != 0) {
             SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
             SharedPreferences.Editor editor = preferences.edit();
@@ -5781,6 +5786,10 @@ public class NotificationsController extends BaseController {
     }
 
     public void setDialogNotificationsSettings(long dialog_id, long topicId, int setting) {
+        if (doForEachInnerDialogIdIfNeeded(dialog_id, innerDialogId -> setDialogNotificationsSettings(innerDialogId, topicId, setting))) {
+            return;
+        }
+
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
         SharedPreferences.Editor editor = preferences.edit();
         TLRPC.Dialog dialog = MessagesController.getInstance(UserConfig.selectedAccount).dialogs_dict.get(dialog_id);
@@ -6055,6 +6064,10 @@ public class NotificationsController extends BaseController {
     }
 
     public void muteDialog(long dialog_id, long topicId, boolean mute) {
+        if (doForEachInnerDialogIdIfNeeded(dialog_id, innerDialogId -> muteDialog(innerDialogId, topicId, mute))) {
+            return;
+        }
+
         if (mute) {
             NotificationsController.getInstance(currentAccount).muteUntil(dialog_id, topicId, Integer.MAX_VALUE);
         } else {
@@ -6225,5 +6238,9 @@ public class NotificationsController extends BaseController {
             }
         }
         return 0;
+    }
+
+    private boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, Consumer<Long> action) {
+        return EncryptedGroupUtils.doForEachInnerDialogIdIfNeeded(encryptedGroupDialogId, currentAccount, action);
     }
 }

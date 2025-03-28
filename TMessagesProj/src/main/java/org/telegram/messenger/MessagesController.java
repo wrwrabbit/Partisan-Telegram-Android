@@ -15,8 +15,6 @@ import static org.telegram.messenger.NotificationsController.TYPE_PRIVATE;
 import static org.telegram.messenger.NotificationsController.TYPE_REACTIONS_MESSAGES;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
 
-import static java.util.stream.Collectors.toCollection;
-
 import android.Manifest;
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
@@ -118,7 +116,6 @@ import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.WebViewRequestProps;
 
 import java.io.File;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -134,7 +131,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
@@ -450,6 +446,40 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public LongSparseIntArray getUnfilteredBlockedPeers() {
         return blockePeers;
+    }
+
+
+    private void loadDialogsWithFileProtection(int folderId, boolean fromCache) {
+        if (loadingDialogs.get(folderId) || resetingDialogs) {
+            AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, fromCache), 100);
+            return;
+        }
+        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + (fromCache ? " load from cache" : " load from servers"));
+        loadDialogs(folderId, fromCache ? -1 : 0, 100, fromCache);
+    }
+
+    void deleteEncryptedGroupInnerDialogsIfNeeded(long did, int onlyHistory, boolean revoke) {
+        if (DialogObject.isEncryptedDialog(did)) {
+            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
+            if (encryptedGroup != null) {
+                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
+                    if (innerChat.getDialogId().isPresent()) {
+                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
+                        dialogMessage.remove(innerChat.getDialogId().get());
+                        TLRPC.Dialog dialog = getDialog(innerChat.getDialogId().get());
+                        if (dialog != null) {
+                            dialog.unread_count = 0;
+                            TLRPC.EncryptedChat encryptedChat = getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
+                            if (encryptedChat != null) {
+                                TLRPC.User user = getUser(encryptedChat.user_id);
+                                getMessagesStorage().putEncryptedChat(encryptedChat, user, dialog);
+                            }
+                        }
+                    }
+                }
+                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), currentAccount);
+            }
+        }
     }
 
     private final CacheFetcher<Integer, TLRPC.TL_help_appConfig> appConfigFetcher = new CacheFetcher<Integer, TLRPC.TL_help_appConfig>() {
@@ -2155,6 +2185,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             }
                             getTranslateController().checkDialogMessage(key);
                         } else {
+                            if (currentDialog.pinned && !newDialog.pinned) {
+                                PartisanLog.d("fileProtectedPinned: unpin 6");
+                            }
                             currentDialog.pinned = newDialog.pinned;
                             currentDialog.pinnedNum = newDialog.pinnedNum;
                             ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
@@ -8908,8 +8941,8 @@ public class MessagesController extends BaseController implements NotificationCe
             return new ArrayList<>();
         }
         if (folderId == 0) {
-            PartisanLog.d("fileProtectedDialogsLoaded: getDialogs count " + dialogs.size());
-            PartisanLog.d("fileProtectedDialogsLoaded: allDialogs count " + allDialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " getDialogs count " + dialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " allDialogs count " + allDialogs.size());
         }
         return dialogs;
     }
@@ -9091,16 +9124,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     protected void deleteDialog(long did, int first, int onlyHistory, int max_id, boolean revoke, TLRPC.InputPeer peer, long taskId) {
-        if (DialogObject.isEncryptedDialog(did)) {
-            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
-            if (encryptedGroup != null) {
-                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
-                    if (innerChat.getDialogId().isPresent()) {
-                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
-                    }
-                }
-            }
-        }
+        deleteEncryptedGroupInnerDialogsIfNeeded(did, onlyHistory, revoke);
         if (onlyHistory == 2) {
             if (did == getUserConfig().getClientUserId()) {
                 getSavedMessagesController().deleteAllDialogs();
@@ -9190,6 +9214,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     int lastMessageId;
                     ArrayList<MessageObject> objects = dialogMessage.get(dialog.id);
                     dialogMessage.remove(dialog.id);
+                    EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
+                        EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                    });
                     if (objects != null && objects.size() > 0 && objects.get(0) != null) {
                         lastMessageId = objects.get(0).getId();
                         for (int i = 0; i < objects.size(); ++i) {
@@ -11352,6 +11379,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     dialog.pinned = true;
                     dialog.pinnedNum = pinnedNum;
                 } else {
+                    if (dialog.pinned) {
+                        PartisanLog.d("fileProtectedPinned: unpin 5");
+                    }
                     dialog.pinned = false;
                     dialog.pinnedNum = 0;
                 }
@@ -11417,6 +11447,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void loadDialogs(final int folderId, int offset, int count, boolean fromCache, Runnable onEmptyCallback) {
         if (loadingDialogs.get(folderId) || resetingDialogs) {
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " loadDialogs return folder = " + folderId + ". ");
             return;
         }
         loadingDialogs.put(folderId, true);
@@ -12420,6 +12451,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " cache dialogs were empty, encChats = " + (encChats != null ? encChats.size() : -1) + ", encGroups = " + (encGroups != null ? encGroups.size() : -1));
                 AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
@@ -12776,6 +12808,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (loadType != DIALOGS_LOAD_TYPE_CACHE) {
                             currentDialog.notify_settings = value.notify_settings;
                         }
+                        if (currentDialog.pinned && !value.pinned) {
+                            PartisanLog.d("fileProtectedPinned: unpin 4");
+                        }
                         currentDialog.pinned = value.pinned;
                         currentDialog.pinnedNum = value.pinnedNum;
                         ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
@@ -12878,7 +12913,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     allDialogs.add(dialog);
                 }
-                PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (processLoadedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                 sortDialogs(migrate ? chatsDict : null);
 
                 putAllNeededDraftDialogs();
@@ -12902,6 +12937,18 @@ public class MessagesController extends BaseController implements NotificationCe
                 long[] dialogsLoadOffset2 = getUserConfig().getDialogLoadOffsets(folderId);
                 if (!fromCache && !migrate && totalDialogsLoadCount < 400 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != -1 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != Integer.MAX_VALUE) {
                     loadDialogs(folderId, 0, 100, false);
+                }
+                if (getMessagesStorage().fileProtectionShouldBeEnabled()) {
+                    PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + ", folder = " + folderId + ", loaded count = " + dialogsRes.dialogs.size() + ". " +
+                            "From cache = " + fromCache + ", new enc chats = " + (encChats != null ? encChats.size() : -1) + ", new enc groups = " + (encGroups != null ? encGroups.size() : -1) + ". " +
+                            "Previous dialog count = " + allDialogs.size() + ", enc chats count = " + encryptedChats.size() + ", enc groups count = " + encryptedGroups.size());
+                    if (!dialogsEndReached.get(folderId)) {
+                        AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, true));
+                    } else if (fromCache) {
+                        AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, false));
+                    } else {
+                        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
+                    }
                 }
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
 
@@ -13479,7 +13526,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     allDialogs.add(dialog);
                 }
-                PartisanLog.d("fileProtectedDialogsLoaded: (processDialogsUpdate) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (processDialogsUpdate) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                 if (dialogsRes.messages.stream().noneMatch(m -> FakePasscodeUtils.isHideMessage(currentAccount, m.dialog_id, m.id))) {
                     sortDialogs(null);
                     getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -16120,6 +16167,9 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         int folderId = dialog.folder_id;
         ArrayList<TLRPC.Dialog> dialogs = getDialogs(folderId);
+        if (dialog.pinned && !pin) {
+            PartisanLog.d("fileProtectedPinned: unpin 3");
+        }
         dialog.pinned = pin;
         if (pin) {
             int maxPinnedNum = 0;
@@ -16337,6 +16387,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             continue;
                         }
                         maxPinnedNum = Math.max(dialog.pinnedNum, maxPinnedNum);
+                        if (dialog.pinned) {
+                            PartisanLog.d("fileProtectedPinned: unpin 2");
+                        }
                         dialog.pinned = false;
                         dialog.pinnedNum = 0;
                         changed = true;
@@ -16395,7 +16448,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 allDialogs.add(dialog);
                             }
                         }
-                        PartisanLog.d("fileProtectedDialogsLoaded: (loadPinnedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (loadPinnedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                         sortDialogs(null);
                         getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
                     }
@@ -17227,6 +17280,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     continue;
                 }
                 if (dialog.folder_id != folderPeer.folder_id) {
+                    if (dialog.pinned) {
+                        PartisanLog.d("fileProtectedPinned: unpin 1");
+                    }
                     dialog.pinned = false;
                     dialog.pinnedNum = 0;
                     dialog.folder_id = folderPeer.folder_id;
@@ -19925,6 +19981,12 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isDialogMuted(long dialogId, long topicId, TLRPC.Chat chat) {
+        if (getMessagesStorage().isEncryptedGroup(dialogId)) {
+            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+            if (encryptedGroup != null) {
+                return encryptedGroup.getInnerEncryptedChatIds(false).stream().anyMatch(innerId -> isDialogMuted(DialogObject.makeEncryptedDialogId(innerId), 0));
+            }
+        }
         int mute_type = notificationsPreferences.getInt("notify2_" + NotificationsController.getSharedPrefKey(dialogId, topicId), -1);
         if (mute_type == -1) {
             Boolean forceChannel;
@@ -20375,9 +20437,15 @@ public class MessagesController extends BaseController implements NotificationCe
             dialog.id = dialogId;
             int mid = dialog.top_message = lastMessage.getId();
             dialog.last_message_date = lastMessage.messageOwner.date;
+            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroupId, currentAccount);
+            });
             dialog.flags = ChatObject.isChannel(chat) ? 1 : 0;
             if (pendingUnreadCounter.get(dialogId, 0) > 0) {
                 dialog.unread_count = pendingUnreadCounter.get(dialogId);
+                EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                    EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroupId, currentAccount);
+                });
                 pendingUnreadCounter.delete(dialogId);
                 if (!isDialogMuted(dialogId, 0)) {
                     unreadUnmutedDialogs++;
@@ -20393,7 +20461,7 @@ public class MessagesController extends BaseController implements NotificationCe
             }
             dialogs_dict.put(dialogId, dialog);
             allDialogs.add(dialog);
-            PartisanLog.d("fileProtectedDialogsLoaded: (updateInterfaceWithMessages) added a dialog to allDialogs, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (updateInterfaceWithMessages) added a dialog to allDialogs, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
             ArrayList<MessageObject> arrayList = new ArrayList<MessageObject>();
             for (int i = 0; i < messages.size(); ++i) {
                 MessageObject msg = messages.get(i);

@@ -186,7 +186,6 @@ import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.messenger.WebFile;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.camera.Size;
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.video.OldVideoPlayerRewinder;
@@ -14508,7 +14507,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (chat != null) {
                     title = UserConfig.getChatTitleOverride(currentAccount, chat);
                 } else {
-                    if (UserObject.isUserSelf(user)) {
+                    if (parentChatActivity.isEncryptedGroup()) {
+                        title = parentChatActivity.getCurrentEncryptedGroup().getName();
+                    } else if (UserObject.isUserSelf(user)) {
                         title = getString(parentChatActivity.getChatMode() == ChatActivity.MODE_SAVED ? R.string.MyNotes : R.string.SavedMessages);
                     } else if (UserObject.isAnonymous(user)) {
                         title = getString(R.string.AnonymousForward);
