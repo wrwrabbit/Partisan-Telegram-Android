@@ -397,13 +397,17 @@ public class FakePasscodeUtils {
     }
 
     public static synchronized void tryActivateByTimer() {
+        tryActivateByTimer(false);
+    }
+
+    public static synchronized void tryActivateByTimer(boolean force) {
         try {
-            if (SharedConfig.lastPauseFakePasscodeTime == 0 || SharedConfig.autoLockIn == 1 && !SharedConfig.isAppLocked()) {
+            if (SharedConfig.lastPauseFakePasscodeTime == 0) {
                 return;
             }
             long uptime = SystemClock.elapsedRealtime() / 1000;
-            long duration = uptime - SharedConfig.lastPauseFakePasscodeTime;
-            if (SharedConfig.isAppLocked() && LaunchActivity.isResumed && duration < 30) {
+            long duration = Math.max(uptime - SharedConfig.lastPauseFakePasscodeTime, force ? 1 : 0);
+            if (!force && SharedConfig.isAppLocked() && LaunchActivity.isResumed && duration < 30) {
                 return; // Don't activate if PasscodeView is shown
             }
             List<FakePasscode> sortedPasscodes = SharedConfig.fakePasscodes.stream()

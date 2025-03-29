@@ -24,6 +24,7 @@ import org.telegram.ui.ActionBar.Theme;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -83,6 +84,22 @@ public class EncryptedGroupUtils {
                 action.accept(encryptedGroupId);
             }
         }
+    }
+
+    public static boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, int account, Consumer<Long> action) {
+        if (!DialogObject.isEncryptedDialog(encryptedGroupDialogId) || !SharedConfig.encryptedGroupsEnabled) {
+            return false;
+        }
+        MessagesController messagesController = MessagesController.getInstance(account);
+        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(DialogObject.getEncryptedChatId(encryptedGroupDialogId));
+        if (encryptedGroup == null) {
+            return false;
+        }
+
+        for (int innerChatId : encryptedGroup.getInnerEncryptedChatIds(false)) {
+            action.accept(DialogObject.makeEncryptedDialogId(innerChatId));
+        }
+        return true;
     }
 
     public static void updateEncryptedGroupUnreadCount(int encryptedGroupId, int account) {
@@ -275,7 +292,7 @@ public class EncryptedGroupUtils {
         return encryptedGroup == null || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED;
     }
 
-    private static EncryptedGroup getOrLoadEncryptedGroup(int encryptedGroupId, int accountNum) {
+    public static EncryptedGroup getOrLoadEncryptedGroup(int encryptedGroupId, int accountNum) {
         MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
         MessagesController messagesController = MessagesController.getInstance(accountNum);
         EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
@@ -326,5 +343,13 @@ public class EncryptedGroupUtils {
             bundle.putInt("enc_id", DialogObject.getEncryptedChatId(dialogId));
             return true;
         }
+    }
+
+    public static List<Long> getEncryptedGroupInnerDialogIds(long dialogId, int account) {
+        EncryptedGroup encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroup(DialogObject.getEncryptedChatId(dialogId), account);
+        return encryptedGroup.getInnerChats().stream()
+                .map(innerChat -> innerChat.getDialogId().orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 }

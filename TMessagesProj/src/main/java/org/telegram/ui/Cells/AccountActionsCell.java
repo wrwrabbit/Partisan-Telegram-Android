@@ -46,7 +46,6 @@ public class AccountActionsCell extends FrameLayout {
         super(context);
 
         avatarDrawable = new AvatarDrawable();
-        avatarDrawable.setTextSize(AndroidUtilities.dp(12));
 
         imageView = new BackupImageView(context);
         imageView.setRoundRadius(AndroidUtilities.dp(18));

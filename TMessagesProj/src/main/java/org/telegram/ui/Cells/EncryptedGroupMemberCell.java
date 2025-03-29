@@ -46,7 +46,6 @@ public class EncryptedGroupMemberCell extends FrameLayout {
         this.currentAccount = currentAccount;
 
         avatarDrawable = new AvatarDrawable();
-        avatarDrawable.setTextSize(AndroidUtilities.dp(18));
 
         avatarImageView = new BackupImageView(context);
         avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
