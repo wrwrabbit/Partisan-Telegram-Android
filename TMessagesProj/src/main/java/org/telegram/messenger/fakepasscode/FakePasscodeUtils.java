@@ -253,10 +253,6 @@ public class FakePasscodeUtils {
     }
 
     public static void cleanupHiddenAccountSystemNotifications() {
-        if (SharedConfig.needShowMaskedPasscodeScreenTutorial) {
-            return;
-        }
-
         Map<Integer, Boolean> hideMap = getLogoutOrHideAccountMap();
         for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
             Boolean hidden = hideMap.get(i);

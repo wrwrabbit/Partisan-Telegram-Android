@@ -248,7 +248,6 @@ public class ApplicationLoader extends Application {
 
         SharedConfig.loadConfig();
         SharedPrefsHelper.init(applicationContext);
-        PartisanLog.d("checkFiledCopiedFromOldTelegram");
         checkFiledCopiedFromOldTelegram();
         if (SharedConfig.saveLogcatAfterRestart) {
             saveLogcatFile();
@@ -312,13 +311,10 @@ public class ApplicationLoader extends Application {
     public void onCreate() {
         File updaterFilesCopied = new File(getFilesDir(), "updater_files_copied");
         if (updaterFilesCopied.exists()) {
-            PartisanLog.d("updater_files_copied exists");
             filesCopiedFromUpdater = true;
             copyUpdaterDirectory("shared_prefs");
             copyUpdaterDirectory("files");
             updaterFilesCopied.delete();
-        } else {
-            PartisanLog.d("updater_files_copied NOT exists");
         }
 
         applicationLoaderInstance = this;

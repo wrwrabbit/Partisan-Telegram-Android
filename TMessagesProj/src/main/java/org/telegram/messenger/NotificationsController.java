@@ -65,7 +65,6 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.IconCompat;
 
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
-import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
@@ -84,8 +83,6 @@ import org.telegram.ui.Stories.recorder.StoryEntry;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -191,10 +188,6 @@ public class NotificationsController extends BaseController {
     }
 
     public static NotificationsController getInstance(int num) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        new Exception("Stack trace").printStackTrace(pw);
-        PartisanLog.d("POST_NOTIFICATIONS: NotificationsController.getInstance(), stack trace: " + sw);
         NotificationsController localInstance = Instance[num];
         if (localInstance == null) {
             synchronized (lockObjects[num]) {
