@@ -28,37 +28,11 @@ public class UpdateChecker extends AbstractChannelChecker {
 
     private final long CYBER_PARTISAN_SECURITY_TG_CHANNEL_ID = BuildVars.isAlphaApp() ? -1716369838 : -1808776994;  // For checking for updates
     private final String CYBER_PARTISAN_SECURITY_TG_CHANNEL_USERNAME = BuildVars.isAlphaApp() ? "ptg_update_test" : "ptgprod";
-    private final int CURRENT_FORMAT_VERSION = 1;
+    private static final int CURRENT_FORMAT_VERSION = 1;
     private UpdateCheckedDelegate delegate;
-    public static volatile boolean isUpdateChecking = false;
 
     private UpdateChecker(int currentAccount) {
         super(currentAccount, null);
-    }
-
-    public static void startUpdateDownloading(int currentAccount) {
-        PartisanLog.d("startUpdateDownloading");
-        if (LaunchActivity.getUpdateAccountNum() != currentAccount || SharedConfig.pendingPtgAppUpdate.message == null) {
-            PartisanLog.d("The pending update is from another account or the update message is null");
-            isUpdateChecking = true;
-            checkUpdate(currentAccount, data -> {
-                PartisanLog.d("The update rechecked");
-                isUpdateChecking = false;
-                if (data != null) {
-                    PartisanLog.d("Correct update found");
-                    SharedConfig.pendingPtgAppUpdate = data;
-                    SharedConfig.saveConfig();
-                    AndroidUtilities.runOnUIThread(() -> startUpdateDownloading(currentAccount));
-                }
-            });
-            return;
-        } else {
-            PartisanLog.d("The pending update is correct");
-        }
-        MessageObject messageObject = new MessageObject(LaunchActivity.getUpdateAccountNum(), SharedConfig.pendingPtgAppUpdate.message, (LongSparseArray<TLRPC.User>) null, null, false, true);
-        PartisanLog.d("Update file loading started");
-        FileLoader.getInstance(currentAccount).loadFile(SharedConfig.pendingPtgAppUpdate.document, messageObject, FileLoader.PRIORITY_NORMAL, 1);
-        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.updateDownloadingStarted);
     }
 
     public static void checkUpdate(int currentAccount, UpdateCheckedDelegate delegate) {

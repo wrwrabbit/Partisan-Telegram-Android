@@ -19,8 +19,8 @@ import com.google.android.exoplayer2.util.Consumer;
 
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
-import org.telegram.tgnet.AbstractSerializedData;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.NativeByteBuffer;
@@ -28,6 +28,7 @@ import org.telegram.tgnet.OutputSerializedData;
 import org.telegram.tgnet.TLClassStore;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.AccountFrozenAlert;
 import org.telegram.ui.ActionBar.AlertDialog;
 
 import java.io.File;
@@ -1147,6 +1148,9 @@ public class SecretChatHelper extends BaseController {
                         if (dialog != null) {
                             dialog.unread_count = 0;
                             getMessagesController().dialogMessage.remove(dialog.id);
+                            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
+                                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                            });
                         }
                         getMessagesStorage().getStorageQueue().postRunnable(() -> AndroidUtilities.runOnUIThread(() -> {
                             getNotificationsController().processReadMessages(null, did, 0, Integer.MAX_VALUE, false);
@@ -1436,7 +1440,7 @@ public class SecretChatHelper extends BaseController {
                         TLRPC.Message message = messages.get(a);
                         MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
                         messageObject.resendAsIs = true;
-                        getSendMessagesHelper().retrySendMessage(messageObject, true);
+                        getSendMessagesHelper().retrySendMessage(messageObject, true, 0);
                     }
                 });
 
@@ -1931,6 +1935,10 @@ public class SecretChatHelper extends BaseController {
 
     public void startSecretChat(Context context, TLRPC.User user, Consumer<TLRPC.EncryptedChat> onComplete) {
         if (user == null || context == null) {
+            return;
+        }
+        if (getMessagesController().isFrozen()) {
+            AccountFrozenAlert.show(currentAccount);
             return;
         }
         startingSecretChat = true;

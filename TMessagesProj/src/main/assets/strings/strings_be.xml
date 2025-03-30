@@ -322,4 +322,9 @@
     <string name="FileProtectionDisabledTitle">Абарона файлаў адключана</string>
     <string name="FileProtectionDisabledDetails">Памер базы дадзеных стаў занадта вялікім. Абарона файлаў часова адключана. Вы можаце зноў уключыць гэтую функцыю.</string>
     <string name="FileProtectionEnableAgain">Уключыць зноў</string>
+    <string name="InnerEncryptedChatStateInvitationSent">Запрашэнне адпраўлена</string>
+    <string name="InnerEncryptedChatStateInitialization">Ініцыялізацыя</string>
+    <string name="InnerEncryptedChatStateCancelled">Адменены</string>
+    <string name="InnerEncryptedChatStateInvitationDeclined">Запрашэнне адхілена</string>
+    <string name="InnerEncryptedChatStateMemberDeleted">Удзельнік выдалены</string>
 </resources>

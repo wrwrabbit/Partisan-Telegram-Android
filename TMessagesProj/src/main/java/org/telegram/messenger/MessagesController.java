@@ -15,8 +15,6 @@ import static org.telegram.messenger.NotificationsController.TYPE_PRIVATE;
 import static org.telegram.messenger.NotificationsController.TYPE_REACTIONS_MESSAGES;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
 
-import static java.util.stream.Collectors.toCollection;
-
 import android.Manifest;
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
@@ -106,6 +104,7 @@ import org.telegram.ui.Components.TranscribeButton;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.EditWidgetActivity;
 import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.LoginActivity;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.SecretMediaViewer;
@@ -119,13 +118,13 @@ import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.WebViewRequestProps;
 
 import java.io.File;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -135,7 +134,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
@@ -273,7 +271,7 @@ public class MessagesController extends BaseController implements NotificationCe
     private long lastViewsCheckTime;
     public SparseIntArray premiumFeaturesTypesToPosition = new SparseIntArray();
     public SparseIntArray businessFeaturesTypesToPosition = new SparseIntArray();
-
+    
     public ArrayList<DialogFilter> dialogFilters = new ArrayList<>();
     public ArrayList<DialogFilter> frozenDialogFilters = null;
     public ArrayList<Long> hiddenUndoChats = new ArrayList<>();
@@ -299,10 +297,11 @@ public class MessagesController extends BaseController implements NotificationCe
     private long updatesStartWaitTimeSeq;
     private long updatesStartWaitTimePts;
     private long updatesStartWaitTimeQts;
-    private LongSparseArray<TLRPC.UserFull> fullUsers = new LongSparseArray<>();
-    private LongSparseArray<TLRPC.ChatFull> fullChats = new LongSparseArray<>();
-    private LongSparseArray<ChatObject.Call> groupCalls = new LongSparseArray<>();
-    private LongSparseArray<ChatObject.Call> groupCallsByChatId = new LongSparseArray<>();
+    private final LongSparseArray<TLRPC.UserFull> fullUsers = new LongSparseArray<>();
+    private final LongSparseArray<TLRPC.ChatFull> fullChats = new LongSparseArray<>();
+    private final LongSparseArray<ChatObject.Call> groupCalls = new LongSparseArray<>();
+    private final LongSparseArray<ChatObject.Call> groupCallsByChatId = new LongSparseArray<>();
+    private final LongSparseArray<TLRPC.PeerSettings> userPeerSettings = new LongSparseArray<>();
     private HashSet<Long> loadingFullUsers = new HashSet<>();
     private LongSparseLongArray loadedFullUsers = new LongSparseLongArray();
     private HashSet<Long> loadingFullChats = new HashSet<>();
@@ -451,6 +450,40 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public LongSparseIntArray getUnfilteredBlockedPeers() {
         return blockePeers;
+    }
+
+
+    private void loadDialogsWithFileProtection(int folderId, boolean fromCache) {
+        if (loadingDialogs.get(folderId) || resetingDialogs) {
+            AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, fromCache), 100);
+            return;
+        }
+        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + (fromCache ? " load from cache" : " load from servers"));
+        loadDialogs(folderId, fromCache ? -1 : 0, 100, fromCache);
+    }
+
+    void deleteEncryptedGroupInnerDialogsIfNeeded(long did, int onlyHistory, boolean revoke) {
+        if (DialogObject.isEncryptedDialog(did)) {
+            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
+            if (encryptedGroup != null) {
+                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
+                    if (innerChat.getDialogId().isPresent()) {
+                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
+                        dialogMessage.remove(innerChat.getDialogId().get());
+                        TLRPC.Dialog dialog = getDialog(innerChat.getDialogId().get());
+                        if (dialog != null) {
+                            dialog.unread_count = 0;
+                            TLRPC.EncryptedChat encryptedChat = getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
+                            if (encryptedChat != null) {
+                                TLRPC.User user = getUser(encryptedChat.user_id);
+                                getMessagesStorage().putEncryptedChat(encryptedChat, user, dialog);
+                            }
+                        }
+                    }
+                }
+                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), currentAccount);
+            }
+        }
     }
 
     private final CacheFetcher<Integer, TLRPC.TL_help_appConfig> appConfigFetcher = new CacheFetcher<Integer, TLRPC.TL_help_appConfig>() {
@@ -710,8 +743,8 @@ public class MessagesController extends BaseController implements NotificationCe
     public int starrefMinCommissionPermille;
     public int starrefMaxCommissionPermille;
     public int botVerificationDescriptionLengthLimit;
-    public long paidReactionsAnonymousTime;
-    public Boolean paidReactionsAnonymous;
+    public long paidReactionsPrivacyTime;
+    public Long paidReactionsPrivacy;
     public int savedDialogsPinnedLimitDefault;
     public int savedDialogsPinnedLimitPremium;
     public boolean savedViewAsChats;
@@ -746,7 +779,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     private long recentEmojiStatusUpdateRunnableTimeout, recentEmojiStatusUpdateRunnableTime;
     private Runnable recentEmojiStatusUpdateRunnable;
-    private LongSparseArray<Integer> emojiStatusUntilValues = new LongSparseArray<>();
+    private final ConcurrentHashMap<Long, Integer> emojiStatusUntilValues = new ConcurrentHashMap<Long, Integer>();
     private TopicsController topicsController;
     private CacheByChatsController cacheByChatsController;
     private TranslateController translateController;
@@ -765,6 +798,15 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean videoIgnoreAltDocuments;
     public boolean disableBotFullscreenBlur;
     public String tonBlockchainExplorerUrl;
+    public long starsPaidMessageAmountMax;
+    public int starsPaidMessageCommissionPermille;
+    public int stargiftsPinnedToTopLimit;
+    public boolean starsPaidMessagesAvailable;
+    public long freezeSinceDate;
+    public long freezeUntilDate;
+    public String freezeAppealUrl;
+
+    public boolean enableGiftsInProfile;
 
     public int checkResetLangpack;
     public boolean folderTags;
@@ -1629,6 +1671,14 @@ public class MessagesController extends BaseController implements NotificationCe
         videoIgnoreAltDocuments = mainPreferences.getBoolean("videoIgnoreAltDocuments", false);
         disableBotFullscreenBlur = mainPreferences.getBoolean("disableBotFullscreenBlur", false);
         tonBlockchainExplorerUrl = mainPreferences.getString("tonBlockchainExplorerUrl", "https://tonviewer.com/");
+        starsPaidMessageAmountMax = mainPreferences.getLong("starsPaidMessageAmountMax", 10_000L);
+        starsPaidMessageCommissionPermille = mainPreferences.getInt("starsPaidMessageCommissionPermille", 850);
+        stargiftsPinnedToTopLimit = mainPreferences.getInt("stargiftsPinnedToTopLimit", 6);
+        starsPaidMessagesAvailable = mainPreferences.getBoolean("starsPaidMessagesAvailable", true);
+        freezeSinceDate = mainPreferences.getLong("freezeSinceDate", 0L);
+        freezeUntilDate = mainPreferences.getLong("freezeUntilDate", 0L);
+        freezeAppealUrl = mainPreferences.getString("freezeAppealUrl", "t.me/spambot");
+        enableGiftsInProfile = mainPreferences.getBoolean("enableGiftsInProfile", true);
         storiesPosting = mainPreferences.getString("storiesPosting", "enabled");
         storiesEntities = mainPreferences.getString("storiesEntities", "premium");
         storiesExportNopublicLink = mainPreferences.getBoolean("storiesExportNopublicLink", false);
@@ -1686,8 +1736,16 @@ public class MessagesController extends BaseController implements NotificationCe
         starrefMinCommissionPermille = mainPreferences.getInt("starrefMinCommissionPermille", 1);
         starrefMaxCommissionPermille = mainPreferences.getInt("starrefMaxCommissionPermille", 400);
         botVerificationDescriptionLengthLimit = mainPreferences.getInt("botVerificationDescriptionLengthLimit", 70);
-        paidReactionsAnonymousTime = mainPreferences.getLong("paidReactionsAnonymousTime", 0);
-        paidReactionsAnonymous = mainPreferences.contains("paidReactionsAnonymous") && (System.currentTimeMillis() - paidReactionsAnonymousTime) < 1000 * 60 * 60 * 2 ? mainPreferences.getBoolean("paidReactionsAnonymous", false) : null;
+        paidReactionsPrivacyTime = mainPreferences.getLong("paidReactionsAnonymousTime", 0);
+        final boolean paidReactionsActual = (System.currentTimeMillis() - paidReactionsPrivacyTime) < 1000 * 60 * 60 * 2;
+        paidReactionsPrivacy = null;
+        if ((System.currentTimeMillis() - paidReactionsPrivacyTime) < 1000 * 60 * 60 * 2) {
+            if (mainPreferences.contains("paidReactionsDialogId")) {
+                paidReactionsPrivacy = mainPreferences.getLong("paidReactionsDialogId", 0);
+            } else {
+                paidReactionsPrivacy = mainPreferences.getBoolean("paidReactionsAnonymous", false) ? UserObject.ANONYMOUS : 0;
+            }
+        }
         scheduleTranscriptionUpdate();
         BuildVars.GOOGLE_AUTH_CLIENT_ID = mainPreferences.getString("googleAuthClientId", BuildVars.GOOGLE_AUTH_CLIENT_ID);
         if (mainPreferences.contains("dcDomainName2")) {
@@ -2156,6 +2214,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             }
                             getTranslateController().checkDialogMessage(key);
                         } else {
+                            if (currentDialog.pinned && !newDialog.pinned) {
+                                PartisanLog.d("fileProtectedPinned: unpin 6");
+                            }
                             currentDialog.pinned = newDialog.pinned;
                             currentDialog.pinnedNum = newDialog.pinnedNum;
                             ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
@@ -3888,6 +3949,61 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
+                case "stars_paid_message_amount_max": {
+                    if (value.value instanceof TLRPC.TL_jsonNumber) {
+                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
+                        if (starsPaidMessageAmountMax != (long) num.value) {
+                            starsPaidMessageAmountMax = (long) num.value;
+                            editor.putLong("starsPaidMessageAmountMax", starsPaidMessageAmountMax);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
+                case "stars_paid_message_commission_permille": {
+                    if (value.value instanceof TLRPC.TL_jsonNumber) {
+                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
+                        if (starsPaidMessageCommissionPermille != (int) num.value) {
+                            starsPaidMessageCommissionPermille = (int) num.value;
+                            editor.putInt("starsPaidMessageCommissionPermille", starsPaidMessageCommissionPermille);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
+                case "stargifts_pinned_to_top_limit": {
+                    if (value.value instanceof TLRPC.TL_jsonNumber) {
+                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
+                        if (stargiftsPinnedToTopLimit != (int) num.value) {
+                            stargiftsPinnedToTopLimit = (int) num.value;
+                            editor.putInt("stargiftsPinnedToTopLimit", stargiftsPinnedToTopLimit);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
+                case "stars_paid_messages_available": {
+                    if (value.value instanceof TLRPC.TL_jsonBool) {
+                        TLRPC.TL_jsonBool num = (TLRPC.TL_jsonBool) value.value;
+                        if (starsPaidMessagesAvailable != num.value) {
+                            starsPaidMessagesAvailable = num.value;
+                            editor.putBoolean("starsPaidMessagesAvailable", starsPaidMessagesAvailable);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
+                case "enable_gifts_in_profile": {
+                    if (value.value instanceof TLRPC.TL_jsonBool) {
+                        TLRPC.TL_jsonBool num = (TLRPC.TL_jsonBool) value.value;
+                        if (enableGiftsInProfile != num.value) {
+                            enableGiftsInProfile = num.value;
+                            editor.putBoolean("enableGiftsInProfile", enableGiftsInProfile);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
                 case "stories_posting": {
                     if (value.value instanceof TLRPC.TL_jsonString) {
                         TLRPC.TL_jsonString str = (TLRPC.TL_jsonString) value.value;
@@ -4618,6 +4734,39 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
+                case "freeze_since_date": {
+                    if (value.value instanceof TLRPC.TL_jsonNumber) {
+                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
+                        if (num.value != freezeSinceDate) {
+                            freezeSinceDate = (long) num.value;
+                            editor.putLong("freezeSinceDate", freezeSinceDate);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
+                case "freeze_until_date": {
+                    if (value.value instanceof TLRPC.TL_jsonNumber) {
+                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
+                        if (num.value != freezeUntilDate) {
+                            freezeUntilDate = (long) num.value;
+                            editor.putLong("freezeUntilDate", freezeUntilDate);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
+                case "freeze_appeal_url": {
+                    if (value.value instanceof TLRPC.TL_jsonString) {
+                        TLRPC.TL_jsonString num = (TLRPC.TL_jsonString) value.value;
+                        if (!TextUtils.equals(num.value, freezeAppealUrl)) {
+                            freezeAppealUrl = num.value;
+                            editor.putString("freezeAppealUrl", freezeAppealUrl);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
             }
         }
 
@@ -4642,6 +4791,9 @@ public class MessagesController extends BaseController implements NotificationCe
 
         if (changed) {
             editor.apply();
+            AndroidUtilities.runOnUIThread(() -> {
+                getNotificationCenter().postNotificationName(NotificationCenter.appConfigUpdated);
+            });
         }
         if (liteAppOptions != null) {
             LiteMode.updatePresets(liteAppOptions);
@@ -5174,7 +5326,22 @@ public class MessagesController extends BaseController implements NotificationCe
         starsLocked = true;
         factcheckLengthLimit = 1024;
         videoIgnoreAltDocuments = false;
-        mainPreferences.edit().remove("starsLocked").remove("getfileExperimentalParams").remove("smsjobsStickyNotificationEnabled").remove("channelRevenueWithdrawalEnabled").remove("showAnnualPerMonth").remove("canEditFactcheck").remove("factcheckLengthLimit").remove("videoIgnoreAltDocuments").apply();
+        freezeSinceDate = 0L;
+        freezeUntilDate = 0L;
+        freezeAppealUrl = "t.me/spambot";
+        mainPreferences.edit()
+            .remove("starsLocked")
+            .remove("getfileExperimentalParams")
+            .remove("smsjobsStickyNotificationEnabled")
+            .remove("channelRevenueWithdrawalEnabled")
+            .remove("showAnnualPerMonth")
+            .remove("canEditFactcheck")
+            .remove("factcheckLengthLimit")
+            .remove("videoIgnoreAltDocuments")
+            .remove("freezeSinceDate")
+            .remove("freezeUntilDate")
+            .remove("freezeAppealUrl")
+            .apply();
     }
 
     private boolean savePremiumFeaturesPreviewOrder(String key, SparseIntArray array, SharedPreferences.Editor editor, ArrayList<TLRPC.JSONValue> value) {
@@ -5585,13 +5752,13 @@ public class MessagesController extends BaseController implements NotificationCe
         if (dialogId >= 0) {
             TLRPC.User user = getUser(dialogId);
             if (firstName) {
-                return AndroidUtilities.removeDiacritics(UserObject.getFirstName(user, true));
+                return AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getFirstName(user, true)));
             } else {
-                return AndroidUtilities.removeDiacritics(UserObject.getUserName(user));
+                return AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(user)));
             }
         } else {
             TLRPC.Chat chat = getChat(-dialogId);
-            return AndroidUtilities.removeDiacritics(chat == null ? "" : chat.title);
+            return AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat == null ? "" : chat.title));
         }
     }
 
@@ -6724,6 +6891,32 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
+    public long getSendPaidMessagesStars(long did) {
+        if (did > 0) {
+            if (did == getUserConfig().getClientUserId()) {
+                return 0;
+            }
+            final TLRPC.UserFull userFull = getUserFull(did);
+            if (userFull != null) {
+                return userFull.send_paid_messages_stars;
+            }
+            final TLRPC.User user = getUser(did);
+            if (user != null && user.send_paid_messages_stars > 0) {
+                return DialogObject.getMessagesStarsPrice(isUserContactBlocked(user.id));
+            }
+        } else if (did < 0) {
+            final TLRPC.Chat chat = getChat(-did);
+            if (ChatObject.hasAdminRights(chat)) {
+                return 0;
+            }
+            if (chat != null) {
+                return chat.send_paid_messages_stars;
+            }
+            return 0;
+        }
+        return 0;
+    }
+
     public TLRPC.UserFull getUserFull(long uid) {
         return fullUsers.get(uid);
     }
@@ -7370,7 +7563,7 @@ public class MessagesController extends BaseController implements NotificationCe
         if (settings == null) {
             return;
         }
-        SharedPreferences.Editor editor = notificationsPreferences.edit();
+        final SharedPreferences.Editor editor = notificationsPreferences.edit();
         if (settings.business_bot_id != 0) {
             editor.putLong("dialog_botid" + dialogId, settings.business_bot_id);
             editor.putString("dialog_boturl" + dialogId, settings.business_bot_manage_url);
@@ -7378,6 +7571,7 @@ public class MessagesController extends BaseController implements NotificationCe
         } else {
             editor.remove("dialog_botid" + dialogId).remove("dialog_boturl" + dialogId).remove("dialog_botflags" + dialogId);
         }
+        editor.putLong("dialog_bar_paying_" + dialogId, settings.charge_paid_message_stars);
         if (notificationsPreferences.getInt("dialog_bar_vis3" + dialogId, 0) == 3) {
             editor.apply();
             getNotificationCenter().postNotificationName(NotificationCenter.peerSettingsDidLoad, dialogId);
@@ -7411,10 +7605,22 @@ public class MessagesController extends BaseController implements NotificationCe
             settings.business_bot_manage_url = "https://telegram.org/";
         }
         editor.apply();
+        userPeerSettings.put(dialogId, settings);
         getNotificationCenter().postNotificationName(NotificationCenter.peerSettingsDidLoad, dialogId);
     }
 
+    public TLRPC.PeerSettings getPeerSettings(long dialogId) {
+        TLRPC.UserFull userFull = getUserFull(dialogId);
+        if (userFull != null && userFull.settings != null) {
+            return userFull.settings;
+        }
+        return userPeerSettings.get(dialogId);
+    }
+
     public void loadPeerSettings(TLRPC.User currentUser, TLRPC.Chat currentChat) {
+        loadPeerSettings(currentUser, currentChat, false);
+    }
+    public void loadPeerSettings(TLRPC.User currentUser, TLRPC.Chat currentChat, boolean force) {
         if (currentUser == null && currentChat == null) {
             return;
         }
@@ -7427,17 +7633,17 @@ public class MessagesController extends BaseController implements NotificationCe
         if (loadingPeerSettings.indexOfKey(dialogId) >= 0) {
             return;
         }
-        loadingPeerSettings.put(dialogId, true);
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("request spam button for " + dialogId);
         }
         int vis = notificationsPreferences.getInt("dialog_bar_vis3" + dialogId, 0);
-        if (vis == 1 || vis == 3) {
+        if (!force && (vis == 1 || vis == 3)) {
             if (BuildVars.LOGS_ENABLED) {
                 FileLog.d("dialog bar already hidden for " + dialogId);
             }
             return;
         }
+        loadingPeerSettings.put(dialogId, true);
         TLRPC.TL_messages_getPeerSettings req = new TLRPC.TL_messages_getPeerSettings();
         if (currentUser != null) {
             req.peer = getInputPeer(currentUser.id);
@@ -7731,12 +7937,18 @@ public class MessagesController extends BaseController implements NotificationCe
 
 
         private boolean loading;
+        private int lastLoadOffset = -1, lastLoadCount = -1;
         public void load(int offset, int count) {
             if (loading || count <= 0 || offset < 0) {
                 return;
             }
+            if (count == lastLoadCount && offset == lastLoadOffset) {
+                return;
+            }
 
             loading = true;
+            lastLoadOffset = offset;
+            lastLoadCount = count;
             int reqId;
             if (dialogId >= 0) {
                 TLRPC.User user = getUser(dialogId);
@@ -7924,6 +8136,8 @@ public class MessagesController extends BaseController implements NotificationCe
                 final int finalCount = count;
                 AndroidUtilities.runOnUIThread(() -> {
                     photos.clear();
+                    lastLoadOffset = -1;
+                    lastLoadCount = -1;
                     for (int i = 0; i < finalCount; ++i) {
                         photos.add(null);
                     }
@@ -7982,6 +8196,8 @@ public class MessagesController extends BaseController implements NotificationCe
 
         public void reset() {
             photos.clear();
+            lastLoadOffset = -1;
+            lastLoadCount = -1;
             fromCache = true;
             saveCache();
         }
@@ -8909,8 +9125,8 @@ public class MessagesController extends BaseController implements NotificationCe
             return new ArrayList<>();
         }
         if (folderId == 0) {
-            PartisanLog.d("fileProtectedDialogsLoaded: getDialogs count " + dialogs.size());
-            PartisanLog.d("fileProtectedDialogsLoaded: allDialogs count " + allDialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " getDialogs count " + dialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " allDialogs count " + allDialogs.size());
         }
         return dialogs;
     }
@@ -9092,16 +9308,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     protected void deleteDialog(long did, int first, int onlyHistory, int max_id, boolean revoke, TLRPC.InputPeer peer, long taskId) {
-        if (DialogObject.isEncryptedDialog(did)) {
-            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
-            if (encryptedGroup != null) {
-                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
-                    if (innerChat.getDialogId().isPresent()) {
-                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
-                    }
-                }
-            }
-        }
+        deleteEncryptedGroupInnerDialogsIfNeeded(did, onlyHistory, revoke);
         if (onlyHistory == 2) {
             if (did == getUserConfig().getClientUserId()) {
                 getSavedMessagesController().deleteAllDialogs();
@@ -9191,6 +9398,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     int lastMessageId;
                     ArrayList<MessageObject> objects = dialogMessage.get(dialog.id);
                     dialogMessage.remove(dialog.id);
+                    EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
+                        EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                    });
                     if (objects != null && objects.size() > 0 && objects.get(0) != null) {
                         lastMessageId = objects.get(0).getId();
                         for (int i = 0; i < objects.size(); ++i) {
@@ -10694,7 +10904,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                         processLoadedMessages(res, res.messages.size(), dialogId, mergeDialogId, count, mid, offset_date, false, classGuid, fnid, last_message_id, unread_count, last_date, load_type, false, mode, threadMessageId, loadIndex, queryFromServer, mentionsCount, processMessages, isTopic, null);
                     } else {
-                        AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.loadingMessagesFailed, classGuid, req, error));
+                        AndroidUtilities.runOnUIThread(() -> {
+                            getNotificationCenter().postNotificationName(NotificationCenter.loadingMessagesFailed, classGuid, req, error);
+                        });
                     }
                 });
                 getConnectionsManager().bindRequestToGuid(reqId, classGuid);
@@ -10756,7 +10968,9 @@ public class MessagesController extends BaseController implements NotificationCe
                                 loadMessagesInternal(dialogId, mergeDialogId, loadInfo, count, max_id, offset_date, false, minDate, classGuid, load_type, dialog.top_message, 0, threadMessageId, loadIndex, first_unread, dialog.unread_count, last_date, queryFromServer, dialog.unread_mentions_count, false, processMessages, isTopic, null, 0L);
                             }
                         } else {
-                            AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.loadingMessagesFailed, classGuid, req, error));
+                            AndroidUtilities.runOnUIThread(() -> {
+                                getNotificationCenter().postNotificationName(NotificationCenter.loadingMessagesFailed, classGuid, req, error);
+                            });
                         }
                     });
                     return;
@@ -11353,6 +11567,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     dialog.pinned = true;
                     dialog.pinnedNum = pinnedNum;
                 } else {
+                    if (dialog.pinned) {
+                        PartisanLog.d("fileProtectedPinned: unpin 5");
+                    }
                     dialog.pinned = false;
                     dialog.pinnedNum = 0;
                 }
@@ -11418,6 +11635,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void loadDialogs(final int folderId, int offset, int count, boolean fromCache, Runnable onEmptyCallback) {
         if (loadingDialogs.get(folderId) || resetingDialogs) {
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " loadDialogs return folder = " + folderId + ". ");
             return;
         }
         loadingDialogs.put(folderId, true);
@@ -12421,6 +12639,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
             long[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
             if (loadType == DIALOGS_LOAD_TYPE_CACHE && dialogsRes.dialogs.size() == 0) {
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " cache dialogs were empty, encChats = " + (encChats != null ? encChats.size() : -1) + ", encGroups = " + (encGroups != null ? encGroups.size() : -1));
                 AndroidUtilities.runOnUIThread(() -> {
                     putUsers(dialogsRes.users, true);
                     if (fullUsers != null) {
@@ -12777,6 +12996,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (loadType != DIALOGS_LOAD_TYPE_CACHE) {
                             currentDialog.notify_settings = value.notify_settings;
                         }
+                        if (currentDialog.pinned && !value.pinned) {
+                            PartisanLog.d("fileProtectedPinned: unpin 4");
+                        }
                         currentDialog.pinned = value.pinned;
                         currentDialog.pinnedNum = value.pinnedNum;
                         ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
@@ -12879,7 +13101,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     allDialogs.add(dialog);
                 }
-                PartisanLog.d("fileProtectedDialogsLoaded: (processLoadedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (processLoadedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                 sortDialogs(migrate ? chatsDict : null);
 
                 putAllNeededDraftDialogs();
@@ -12903,6 +13125,18 @@ public class MessagesController extends BaseController implements NotificationCe
                 long[] dialogsLoadOffset2 = getUserConfig().getDialogLoadOffsets(folderId);
                 if (!fromCache && !migrate && totalDialogsLoadCount < 400 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != -1 && dialogsLoadOffset2[UserConfig.i_dialogsLoadOffsetId] != Integer.MAX_VALUE) {
                     loadDialogs(folderId, 0, 100, false);
+                }
+                if (getMessagesStorage().fileProtectionShouldBeEnabled()) {
+                    PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + ", folder = " + folderId + ", loaded count = " + dialogsRes.dialogs.size() + ". " +
+                            "From cache = " + fromCache + ", new enc chats = " + (encChats != null ? encChats.size() : -1) + ", new enc groups = " + (encGroups != null ? encGroups.size() : -1) + ". " +
+                            "Previous dialog count = " + allDialogs.size() + ", enc chats count = " + encryptedChats.size() + ", enc groups count = " + encryptedGroups.size());
+                    if (!dialogsEndReached.get(folderId)) {
+                        AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, true));
+                    } else if (fromCache) {
+                        AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, false));
+                    } else {
+                        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " not cache loaded count = " + dialogsRes.dialogs.size());
+                    }
                 }
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
 
@@ -13480,7 +13714,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     allDialogs.add(dialog);
                 }
-                PartisanLog.d("fileProtectedDialogsLoaded: (processDialogsUpdate) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (processDialogsUpdate) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                 if (dialogsRes.messages.stream().noneMatch(m -> FakePasscodeUtils.isHideMessage(currentAccount, m.dialog_id, m.id))) {
                     sortDialogs(null);
                     getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -14436,34 +14670,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public interface ErrorDelegate {
         // if returns true, a delegate allows to show default alert
         public boolean run(TLRPC.TL_error error);
-    }
-
-    public void loadUsersPremiumLocked(
-        final ArrayList<TLRPC.User> users,
-        Utilities.Callback<ArrayList<Long>> whenDone
-    ) {
-        if (whenDone == null) return;
-        if (getUserConfig().isPremium()) {
-            whenDone.run(null);
-            return;
-        }
-        TLRPC.TL_users_getIsPremiumRequiredToContact req = new TLRPC.TL_users_getIsPremiumRequiredToContact();
-        MessagesController mc = MessagesController.getInstance(currentAccount);
-        for (TLRPC.User user : users) {
-            req.id.add(mc.getInputUser(user));
-        }
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-            ArrayList<Long> lockedUserIds = new ArrayList<>();
-            if (res instanceof Vector) {
-                Vector vector = (Vector) res;
-                for (int i = 0; i < vector.objects.size(); ++i) {
-                    if (i < users.size() && vector.objects.get(i) instanceof TLRPC.TL_boolTrue) {
-                        lockedUserIds.add(users.get(i).id);
-                    }
-                }
-            }
-            whenDone.run(lockedUserIds);
-        }));
     }
 
     public void addUsersToChat(TLRPC.Chat currentChat, BaseFragment baseFragment, ArrayList<TLRPC.User> users, int fwdCount, Consumer<TLRPC.User> onAddUser, Consumer<TLRPC.User> onRestricted, Runnable onComplete) {
@@ -16121,6 +16327,9 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         int folderId = dialog.folder_id;
         ArrayList<TLRPC.Dialog> dialogs = getDialogs(folderId);
+        if (dialog.pinned && !pin) {
+            PartisanLog.d("fileProtectedPinned: unpin 3");
+        }
         dialog.pinned = pin;
         if (pin) {
             int maxPinnedNum = 0;
@@ -16338,6 +16547,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             continue;
                         }
                         maxPinnedNum = Math.max(dialog.pinnedNum, maxPinnedNum);
+                        if (dialog.pinned) {
+                            PartisanLog.d("fileProtectedPinned: unpin 2");
+                        }
                         dialog.pinned = false;
                         dialog.pinnedNum = 0;
                         changed = true;
@@ -16396,7 +16608,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 allDialogs.add(dialog);
                             }
                         }
-                        PartisanLog.d("fileProtectedDialogsLoaded: (loadPinnedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+                        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (loadPinnedDialogs) allDialogs updated, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
                         sortDialogs(null);
                         getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
                     }
@@ -17228,6 +17440,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     continue;
                 }
                 if (dialog.folder_id != folderPeer.folder_id) {
+                    if (dialog.pinned) {
+                        PartisanLog.d("fileProtectedPinned: unpin 1");
+                    }
                     dialog.pinned = false;
                     dialog.pinnedNum = 0;
                     dialog.folder_id = folderPeer.folder_id;
@@ -19084,7 +19299,15 @@ public class MessagesController extends BaseController implements NotificationCe
                                 FileLog.e(e);
                             }
                             FileLog.e("updatePhoneCall: svc=" + svc + " callIShouldHavePutIntoIntent=" + VoIPService.callIShouldHavePutIntoIntent + " callStateIsIdle=" + callStateIsIdle);
+//                            if (svc != null && call.conference_call != null) {
+//                                svc.answerToRequestForConference((TL_phone.phoneCallRequested) call);
+//                                continue;
+//                            }
                             if (svc != null || VoIPService.callIShouldHavePutIntoIntent != null || !callStateIsIdle) {
+                                if (svc != null && svc.getAccount() != currentAccount && svc.getUser() != null && svc.getUser().id == getUserConfig().getClientUserId()) {
+                                    // calling from the same device, don't discard
+                                    continue;
+                                }
                                 if (BuildVars.LOGS_ENABLED) {
                                     FileLog.d("Auto-declining call " + call.id + " because there's already active one");
                                 }
@@ -19196,7 +19419,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         long pendingPaid = StarsController.getInstance(currentAccount).getPendingPaidReactions(dialogId, update.msg_id);
                         if (pendingPaid != 0) {
                             final StarsController starsController = StarsController.getInstance(currentAccount);
-                            MessageObject.addPaidReactions(currentAccount, update.reactions, (int) pendingPaid, starsController.arePaidReactionsAnonymous(StarsController.MessageId.from(dialogId, update.msg_id), update.reactions), true);
+                            MessageObject.addPaidReactions(currentAccount, update.reactions, (int) pendingPaid, starsController.getPaidReactionsDialogId(StarsController.MessageId.from(dialogId, update.msg_id), update.reactions), true);
                         }
                         getNotificationCenter().postNotificationName(NotificationCenter.didUpdateReactions, dialogId, update.msg_id, update.reactions);
                     } else if (baseUpdate instanceof TLRPC.TL_updateMessageExtendedMedia) {
@@ -19333,13 +19556,23 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (QuickRepliesController.getInstance(currentAccount).processUpdate(baseUpdate, null, 0)) {
 
                     } else if (baseUpdate instanceof TLRPC.TL_updatePaidReactionPrivacy) {
-                        paidReactionsAnonymousTime = System.currentTimeMillis();
-                        paidReactionsAnonymous = ((TLRPC.TL_updatePaidReactionPrivacy) baseUpdate).isPrivate;
+                        TLRPC.TL_updatePaidReactionPrivacy upd = (TLRPC.TL_updatePaidReactionPrivacy) baseUpdate;
                         mainPreferences.edit()
-                            .putLong("paidReactionsAnonymousTime", paidReactionsAnonymousTime)
-                            .putBoolean("paidReactionsAnonymous", paidReactionsAnonymous)
+                            .putLong("paidReactionsAnonymousTime", paidReactionsPrivacyTime = System.currentTimeMillis())
+                            .putLong("paidReactionsDialogId", paidReactionsPrivacy = upd.privacy.getDialogId())
                             .apply();
                         loadingArePaidReactionsAnonymous = false;
+                    } else if (baseUpdate instanceof TLRPC.TL_updateSentPhoneCode) {
+                        final TLRPC.TL_updateSentPhoneCode upd = (TLRPC.TL_updateSentPhoneCode) baseUpdate;
+                        LoginActivity fragment = LaunchActivity.findFragment(LoginActivity.class);
+                        if (fragment == null) {
+                            fragment = new LoginActivity(currentAccount);
+                            BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
+                            if (lastFragment != null) {
+                                lastFragment.presentFragment(fragment);
+                            }
+                        }
+                        fragment.open(upd.sent_code);
                     } else if (ApplicationLoader.applicationLoaderInstance != null) {
                         ApplicationLoader.applicationLoaderInstance.processUpdate(currentAccount, baseUpdate);
                     }
@@ -19926,6 +20159,12 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isDialogMuted(long dialogId, long topicId, TLRPC.Chat chat) {
+        if (getMessagesStorage().isEncryptedGroup(dialogId)) {
+            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+            if (encryptedGroup != null) {
+                return encryptedGroup.getInnerEncryptedChatIds(false).stream().anyMatch(innerId -> isDialogMuted(DialogObject.makeEncryptedDialogId(innerId), 0));
+            }
+        }
         int mute_type = notificationsPreferences.getInt("notify2_" + NotificationsController.getSharedPrefKey(dialogId, topicId), -1);
         if (mute_type == -1) {
             Boolean forceChannel;
@@ -19974,7 +20213,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public SponsoredMessagesInfo getSponsoredMessages(long dialogId) {
         SponsoredMessagesInfo info = sponsoredMessages.get(dialogId);
-        if (info != null && (info.loading || Math.abs(SystemClock.elapsedRealtime() - info.loadTime) <= /*15 * 60*/5 * 1000)) {
+        if (info != null && (info.loading || Math.abs(SystemClock.elapsedRealtime() - info.loadTime) <= 5 * 60 * 1000)) {
             return info;
         }
         if (dialogId < 0 ? !ChatObject.isChannel(getChat(-dialogId)) : !UserObject.isBot(getUser(dialogId))) {
@@ -19989,34 +20228,6 @@ public class MessagesController extends BaseController implements NotificationCe
         getConnectionsManager().sendRequest(req, (response, error) -> {
             ArrayList<MessageObject> result;
             Integer posts_between;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             if (response instanceof TLRPC.messages_SponsoredMessages) {
                 TLRPC.messages_SponsoredMessages res = (TLRPC.messages_SponsoredMessages) response;
                 if (res.messages.isEmpty()) {
@@ -20376,9 +20587,15 @@ public class MessagesController extends BaseController implements NotificationCe
             dialog.id = dialogId;
             int mid = dialog.top_message = lastMessage.getId();
             dialog.last_message_date = lastMessage.messageOwner.date;
+            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroupId, currentAccount);
+            });
             dialog.flags = ChatObject.isChannel(chat) ? 1 : 0;
             if (pendingUnreadCounter.get(dialogId, 0) > 0) {
                 dialog.unread_count = pendingUnreadCounter.get(dialogId);
+                EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                    EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroupId, currentAccount);
+                });
                 pendingUnreadCounter.delete(dialogId);
                 if (!isDialogMuted(dialogId, 0)) {
                     unreadUnmutedDialogs++;
@@ -20394,7 +20611,7 @@ public class MessagesController extends BaseController implements NotificationCe
             }
             dialogs_dict.put(dialogId, dialog);
             allDialogs.add(dialog);
-            PartisanLog.d("fileProtectedDialogsLoaded: (updateInterfaceWithMessages) added a dialog to allDialogs, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (updateInterfaceWithMessages) added a dialog to allDialogs, dialogs_dict count = " + dialogs_dict.size() + ", allDialogs count = " + allDialogs.size());
             ArrayList<MessageObject> arrayList = new ArrayList<MessageObject>();
             for (int i = 0; i < messages.size(); ++i) {
                 MessageObject msg = messages.get(i);
@@ -21563,12 +21780,12 @@ public class MessagesController extends BaseController implements NotificationCe
     public void updateEmojiStatusUntil() {
         final int now = (int) (System.currentTimeMillis() / 1000L);
         Long timeout = null;
-        for (int i = 0; i < emojiStatusUntilValues.size(); ++i) {
-            int until = emojiStatusUntilValues.valueAt(i);
+        for (Iterator<Long> it = emojiStatusUntilValues.keySet().iterator(); it.hasNext(); ) {
+            int until = emojiStatusUntilValues.get(it.next());
             if (until > now) {
                 timeout = Math.min(timeout == null ? Long.MAX_VALUE : timeout, until - now);
             } else {
-                emojiStatusUntilValues.removeAt(i--);
+                it.remove();
             }
         }
 
@@ -22346,32 +22563,32 @@ public class MessagesController extends BaseController implements NotificationCe
         return MessagesController.getInstance(UserConfig.selectedAccount).isStoryQualityFullOnAccount();
     }
 
-    private LongSparseArray<Boolean> cachedIsUserPremiumBlocked = new LongSparseArray<>();
-    private HashSet<Long> loadingIsUserPremiumBlocked = new HashSet<>();
-    public boolean isUserPremiumBlocked(long userId) {
-        return isUserPremiumBlocked(userId, false);
+    private final LongSparseArray<TL_account.RequirementToContact> cachedIsUserContactBlocked = new LongSparseArray<>();
+    private final HashSet<Long> loadingIsUserContactBlocked = new HashSet<>();
+    public TL_account.RequirementToContact isUserContactBlocked(long userId) {
+        return isUserContactBlocked(userId, false);
     }
-    public boolean isUserPremiumBlocked(long userId, boolean cache) {
+    public TL_account.RequirementToContact isUserContactBlocked(long userId, boolean cache) {
         if (getUserConfig().isPremium() || getUserConfig().getClientUserId() == userId) {
-            return false;
+            return null;
         }
-        Boolean cached = cachedIsUserPremiumBlocked.get(userId);
+        TL_account.RequirementToContact cached = cachedIsUserContactBlocked.get(userId);
         if (cached != null)
             return cached;
         TLRPC.User user = getUser(userId);
-        if (user != null && !user.contact_require_premium)
-            return false;
+        if (user != null && !user.contact_require_premium && user.send_paid_messages_stars == 0)
+            return null;
         TLRPC.UserFull userFull = getUserFull(userId);
         if (userFull != null)
-            return userFull.contact_require_premium;
+            return UserObject.getRequirementToContact(userFull);
         if (getInputUser(userId) == null)
-            return false;
+            return null;
         if (cache)
-            return false;
-        loadingIsUserPremiumBlocked.add(userId);
-        AndroidUtilities.cancelRunOnUIThread(requestIsUserPremiumBlockedRunnable);
-        AndroidUtilities.runOnUIThread(requestIsUserPremiumBlockedRunnable, 60);
-        return false;
+            return null;
+        loadingIsUserContactBlocked.add(userId);
+        AndroidUtilities.cancelRunOnUIThread(requestIsUserContactBlockedRunnable);
+        AndroidUtilities.runOnUIThread(requestIsUserContactBlockedRunnable, 60);
+        return null;
     }
 
     public void invalidateUserPremiumBlocked(long userId, int classGuid) {
@@ -22385,19 +22602,19 @@ public class MessagesController extends BaseController implements NotificationCe
         loadFullUser(getUser(userId), classGuid, true);
     }
 
-    private Runnable requestIsUserPremiumBlockedRunnable = this::requestIsUserPremiumBlocked;
-    private void requestIsUserPremiumBlocked() {
-        if (loadingIsUserPremiumBlocked.isEmpty()) return;
-        TLRPC.TL_users_getIsPremiumRequiredToContact req = new TLRPC.TL_users_getIsPremiumRequiredToContact();
+    private final Runnable requestIsUserContactBlockedRunnable = this::requestIsUserContactBlocked;
+    private void requestIsUserContactBlocked() {
+        if (loadingIsUserContactBlocked.isEmpty()) return;
+        final TL_account.getRequirementsToContact req = new TL_account.getRequirementsToContact();
         final ArrayList<Long> ids = new ArrayList<>();
-        for (long userId : loadingIsUserPremiumBlocked) {
-            TLRPC.InputUser inputUser = getInputUser(userId);
+        for (long userId : loadingIsUserContactBlocked) {
+            final TLRPC.InputUser inputUser = getInputUser(userId);
             if (inputUser != null) {
                 req.id.add(inputUser);
                 ids.add(userId);
             }
         }
-        loadingIsUserPremiumBlocked.clear();
+        loadingIsUserContactBlocked.clear();
         if (req.id.isEmpty()) {
             return;
         }
@@ -22406,21 +22623,26 @@ public class MessagesController extends BaseController implements NotificationCe
             if (res instanceof Vector) {
                 final ArrayList<Object> objects = ((Vector) res).objects;
                 for (int i = 0; i < Math.min(ids.size(), objects.size()); ++i) {
-                    long userId = ids.get(i);
-                    boolean blocked = objects.get(i) instanceof TLRPC.TL_boolTrue;
-                    Boolean pastBlocked = cachedIsUserPremiumBlocked.get(userId);
-                    if (pastBlocked == null || pastBlocked != blocked) {
-                        cachedIsUserPremiumBlocked.put(userId, blocked);
+                    final long userId = ids.get(i);
+                    if (!(objects.get(i) instanceof TL_account.RequirementToContact)) continue;
+                    final TL_account.RequirementToContact r = (TL_account.RequirementToContact) objects.get(i);
+
+                    final TL_account.RequirementToContact cached = cachedIsUserContactBlocked.get(userId);
+                    if (!UserObject.eq(cached, r)) {
+                        if (r == null || r instanceof TL_account.requirementToContactEmpty) {
+                            cachedIsUserContactBlocked.remove(userId);
+                        } else {
+                            cachedIsUserContactBlocked.put(userId, r);
+                        }
                         changed = true;
                     }
 
-                    TLRPC.UserFull userFull = getUserFull(userId);
-                    if (userFull != null && userFull.contact_require_premium != blocked) {
-                        userFull.contact_require_premium = blocked;
+                    final TLRPC.UserFull userFull = getUserFull(userId);
+                    if (userFull != null && UserObject.applyRequirementToContact(userFull, r)) {
                         getMessagesStorage().updateUserInfo(userFull, true);
                         changed = true;
                     } else if (userFull == null) {
-                        getMessagesStorage().updateUserInfoPremiumBlocked(userId, blocked);
+                        getMessagesStorage().updateUserInfoContactBlocked(userId, r);
                         changed = true;
                     }
                 }
@@ -22651,6 +22873,11 @@ public class MessagesController extends BaseController implements NotificationCe
                 progress.end();
             }
             if (cancelled[0]) return;
+            final String restriction_reason = getRestrictionReason(bot.restriction_reason);
+            if (!TextUtils.isEmpty(restriction_reason)) {
+                showCantOpenAlert(fragment, restriction_reason);
+                return;
+            }
             if (bot.bot_has_main_app) {
                 if (fragment.getParentLayout() instanceof ActionBarLayout) {
                     fragment = ((ActionBarLayout) fragment.getParentLayout()).getSheetFragment();
@@ -22808,12 +23035,12 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     private boolean loadingArePaidReactionsAnonymous;
-    public Boolean arePaidReactionsAnonymous() {
-        if (paidReactionsAnonymous == null && !loadingArePaidReactionsAnonymous) {
+    public Long getPaidReactionsDialogId() {
+        if (paidReactionsPrivacy == null && !loadingArePaidReactionsAnonymous) {
             loadingArePaidReactionsAnonymous = true;
             getConnectionsManager().sendRequest(new TLRPC.TL_messages_getPaidReactionPrivacy(), null);
         }
-        return paidReactionsAnonymous;
+        return paidReactionsPrivacy;
     }
 
     public boolean shouldShowMoveCaptionHint() {
@@ -22861,6 +23088,99 @@ public class MessagesController extends BaseController implements NotificationCe
 
         AndroidUtilities.cancelRunOnUIThread(this.sendReportMessageDeliver);
         AndroidUtilities.runOnUIThread(this.sendReportMessageDeliver);
+    }
+
+    public final android.util.LongSparseArray<CommonChatsList> commonChats = new android.util.LongSparseArray<>();
+    public CommonChatsList getCommonChats(long dialogId) {
+        return getCommonChats(dialogId, true);
+    }
+    public CommonChatsList getCommonChats(long dialogId, boolean create) {
+        CommonChatsList list = commonChats.get(dialogId);
+        if (list == null && create) {
+            commonChats.put(dialogId, list = new CommonChatsList(currentAccount, dialogId));
+        }
+        return list;
+    }
+
+    public static class CommonChatsList {
+
+        public final int currentAccount;
+        public final long dialogId;
+
+        public CommonChatsList(int currentAccount, long dialogId) {
+            this(currentAccount, dialogId, true);
+        }
+        public CommonChatsList(int currentAccount, long dialogId, boolean load) {
+            this.currentAccount = currentAccount;
+            this.dialogId = dialogId;
+            if (load) load();
+        }
+
+        public boolean loading;
+        public boolean endReached;
+        public ArrayList<TLRPC.Chat> chats = new ArrayList<>();
+        public int currentRequestId = -1;
+        public int totalCount;
+
+        public boolean shown;
+
+        public void invalidate(boolean load) {
+            if (currentRequestId != -1) {
+                ConnectionsManager.getInstance(currentAccount).cancelRequest(currentRequestId, true);
+                currentRequestId = -1;
+            }
+            loading = false;
+            chats.clear();
+            endReached = false;
+            if (load || shown) load();
+        }
+
+        public void load() {
+            if (loading || endReached) return;
+
+            boolean first = chats.isEmpty();
+            loading = true;
+            TLRPC.TL_messages_getCommonChats req = new TLRPC.TL_messages_getCommonChats();
+            req.user_id = MessagesController.getInstance(currentAccount).getInputUser(dialogId);
+            req.max_id = chats.isEmpty() ? 0 : chats.get(chats.size() - 1).id;
+            req.limit = first ? 15 : 30;
+            final int[] reqId = new int[1];
+            reqId[0] = currentRequestId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
+                if (reqId[0] != currentRequestId) return;
+                loading = false;
+                currentRequestId = -1;
+                if (res instanceof TLRPC.messages_Chats) {
+                    final TLRPC.messages_Chats rez = (TLRPC.messages_Chats) res;
+                    MessagesController.getInstance(currentAccount).putChats(rez.chats, false);
+
+                    if (first) {
+                        chats.clear();
+                    }
+                    chats.addAll(rez.chats);
+                    totalCount = rez instanceof TLRPC.TL_messages_chatsSlice ? rez.count : rez.chats.size();
+                    endReached = chats.size() >= totalCount;
+                } else {
+                    endReached = true;
+                }
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.commonChatsLoaded, dialogId, MessagesController.CommonChatsList.this);
+            }));
+        }
+
+        public void cancel() {
+            if (currentRequestId != -1) {
+                ConnectionsManager.getInstance(currentAccount).cancelRequest(currentRequestId, true);
+                currentRequestId = -1;
+            }
+            loading = false;
+        }
+
+        public int getCount() {
+            return totalCount;
+        }
+    }
+
+    public boolean isFrozen() {
+        return freezeSinceDate != 0 && freezeUntilDate != 0;
     }
 
 }

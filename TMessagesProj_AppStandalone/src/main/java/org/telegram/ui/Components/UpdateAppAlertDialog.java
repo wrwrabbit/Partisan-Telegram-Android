@@ -31,6 +31,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.partisan.appmigration.MaskedUpdateUtils;
 import org.telegram.messenger.partisan.update.UpdateData;
+import org.telegram.messenger.partisan.update.UpdateDownloader;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
@@ -292,7 +293,7 @@ public class UpdateAppAlertDialog extends BottomSheet {
         BottomSheetCell doneButton = new BottomSheetCell(context, false);
         doneButton.setText(LocaleController.formatString("RequestUpdate", R.string.RequestUpdate), false);
         doneButton.background.setOnClickListener(v -> {
-            //FileLoader.getInstance(accountNum).loadFile(appUpdate.document, "update", FileLoader.PRIORITY_NORMAL, 1);
+            //new UpdateDownloader(currentAccount).startUpdateDownloading();
             MaskedUpdateUtils.requestMaskedUpdateBuildWithWarning(accountNum, context);
             dismiss();
         });

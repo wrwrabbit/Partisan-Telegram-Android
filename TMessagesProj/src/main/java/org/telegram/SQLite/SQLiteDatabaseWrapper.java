@@ -38,6 +38,10 @@ public class SQLiteDatabaseWrapper extends SQLiteDatabase {
         return fileDatabase;
     }
 
+    public SQLiteDatabase getMemoryDatabase() {
+        return memoryDatabase;
+    }
+
     @Override
     public long getSQLiteHandle() {
         return fileDatabase.getSQLiteHandle();
