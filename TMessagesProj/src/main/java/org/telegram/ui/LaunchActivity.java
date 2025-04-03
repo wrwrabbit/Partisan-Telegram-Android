@@ -6570,7 +6570,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     @Override
     protected void onPause() {
         super.onPause();
-        FakePasscodeUtils.updateLastPauseFakePasscodeTime();
         isResumed = false;
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.stopAllHeavyOperations, 4096);
         ApplicationLoader.mainInterfacePaused = true;
@@ -6617,6 +6616,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     @Override
     protected void onStart() {
         super.onStart();
+        if (!SharedConfig.isAppLocked()) {
+            FakePasscodeUtils.tryActivateByTimer(true);
+            SharedConfig.lastPauseFakePasscodeTime = 0;
+        }
         Browser.bindCustomTabsService(this);
         ApplicationLoader.mainInterfaceStopped = false;
         GroupCallPip.updateVisibility(this);
@@ -6628,6 +6631,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     @Override
     protected void onStop() {
         super.onStop();
+        FakePasscodeUtils.updateLastPauseFakePasscodeTime();
         Browser.unbindCustomTabsService(this);
         ApplicationLoader.mainInterfaceStopped = true;
         GroupCallPip.updateVisibility(this);
@@ -6718,10 +6722,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (onResumeStaticCallback != null) {
             onResumeStaticCallback.run();
             onResumeStaticCallback = null;
-        }
-        if (!SharedConfig.isAppLocked()) {
-            FakePasscodeUtils.tryActivateByTimer(true);
-            SharedConfig.lastPauseFakePasscodeTime = 0;
         }
         if (Theme.selectedAutoNightType == Theme.AUTO_NIGHT_TYPE_SYSTEM) {
             Theme.checkAutoNightThemeConditions();
