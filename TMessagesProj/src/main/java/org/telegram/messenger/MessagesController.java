@@ -20462,6 +20462,9 @@ public class MessagesController extends BaseController implements NotificationCe
         }
 
         if (messages.stream().anyMatch(m -> FakePasscodeUtils.isHideMessage(currentAccount, dialogId, m.getId()))) {
+            if (getMessagesStorage().fileProtectionEnabled()) {
+                loadUnknownDialog(getInputPeer(dialogId), 0);
+            }
             return false;
         }
 
