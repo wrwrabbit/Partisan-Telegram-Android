@@ -12822,6 +12822,12 @@ public class MessagesController extends BaseController implements NotificationCe
                         continue;
                     }
                 }
+                if (getMessagesStorage().fileProtectionEnabled() && fromCache) {
+                    TLRPC.Dialog oldDialog = getDialog(d.id);
+                    if (oldDialog != null && oldDialog.pinned && !d.pinned) {
+                        continue;
+                    }
+                }
                 if (promoDialogId != 0 && promoDialogId == d.id) {
                     promoDialog = d;
                 }
