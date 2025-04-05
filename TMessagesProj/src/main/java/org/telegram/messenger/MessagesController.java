@@ -9307,12 +9307,14 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     protected void deleteDialog(long did, int first, int onlyHistory, int max_id, boolean revoke, TLRPC.InputPeer peer, long taskId) {
+        PartisanLog.d("deleteDialogDebug (" + did + "): deleteDialog ");
         deleteEncryptedGroupInnerDialogsIfNeeded(did, onlyHistory, revoke);
         if (onlyHistory == 2) {
             if (did == getUserConfig().getClientUserId()) {
                 getSavedMessagesController().deleteAllDialogs();
             }
             getMessagesStorage().deleteDialog(did, onlyHistory);
+            PartisanLog.d("deleteDialogDebug (" + did + "): deleteDialog only history");
             return;
         }
         for (int i = 0; i < sendAsPeers.size(); i++) {
@@ -9342,6 +9344,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 deleteDialog(did, 2, onlyHistory, Math.max(0, param), revoke, peerFinal, taskId);
                 checkIfFolderEmpty(1);
             });
+            PartisanLog.d("deleteDialogDebug (" + did + "): deleteDialog first == 1 && max_id == 0");
             return;
         }
         if (onlyHistory == 0 || onlyHistory == 3) {
@@ -9471,6 +9474,7 @@ public class MessagesController extends BaseController implements NotificationCe
         }
 
         if (onlyHistory == 3) {
+            PartisanLog.d("deleteDialogDebug (" + did + "): deleteDialog onlyHistory == 3");
             return;
         }
 
@@ -9479,6 +9483,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 peer = getInputPeer(did);
             }
             if (peer == null) {
+                PartisanLog.d("deleteDialogDebug (" + did + "): deleteDialog peer == null");
                 return;
             }
 
@@ -9516,6 +9521,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (newTaskId != 0) {
                         getMessagesStorage().removePendingTask(newTaskId);
                     }
+                    PartisanLog.d("deleteDialogDebug (" + did + "): deleteDialog onlyHistory == 0");
                     return;
                 }
                 TLRPC.TL_channels_deleteHistory req = new TLRPC.TL_channels_deleteHistory();
@@ -14987,7 +14993,9 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void deleteParticipantFromChat(long chatId, TLRPC.User user, TLRPC.Chat chat, boolean forceDelete, boolean revoke) {
+        PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat");
         if (user == null && chat == null) {
+            PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat user == null && chat == null");
             return;
         }
         TLRPC.InputPeer inputPeer;
@@ -15000,6 +15008,7 @@ public class MessagesController extends BaseController implements NotificationCe
         TLRPC.Chat ownerChat = getChat(chatId);
         boolean isChannel = ChatObject.isChannel(ownerChat);
         if (isChannel) {
+            PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat isChannel");
             if (UserObject.isUserSelf(user)) {
                 if (ownerChat.creator && forceDelete) {
                     TLRPC.TL_channels_deleteChannel req = new TLRPC.TL_channels_deleteChannel();
@@ -15030,6 +15039,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 request = req;
             }
         } else {
+            PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat !isChannel");
             if (forceDelete) {
                 TLRPC.TL_messages_deleteChat req = new TLRPC.TL_messages_deleteChat();
                 req.chat_id = chatId;
@@ -15046,9 +15056,12 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         if (UserObject.isUserSelf(user)) {
             deleteDialog(-chatId, 0, revoke);
+        } else {
+            PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat !isUserSelf");
         }
         getConnectionsManager().sendRequest(request, (response, error) -> {
             if (error != null) {
+                PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat error");
                 return;
             }
             TLRPC.Updates updates = (TLRPC.Updates) response;
