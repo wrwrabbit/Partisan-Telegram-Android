@@ -19,6 +19,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.secretgroups.action.AllSecondaryChatsInitializedAction;
+import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmGroupInitializationAction;
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmJoinAction;
 import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
@@ -99,6 +100,23 @@ public class EncryptedGroupProtocol {
         getSecretChatHelper().performSendEncryptedRequest(reqSend, message, encryptedChat, null, null, null);
     }
 
+    public void sendActionToAllMembers(EncryptedGroup encryptedGroup, EncryptedGroupAction action) {
+        if (!SharedConfig.encryptedGroupsEnabled) {
+            return;
+        }
+        for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
+            Integer encryptedChatId = innerChat.getEncryptedChatId().orElse(null);
+            if (encryptedChatId == null) {
+                continue;
+            }
+            TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedChatId);
+            if (encryptedChat == null) {
+                continue;
+            }
+            sendAction(encryptedChat, action);
+        }
+    }
+
     private static TLRPC.TL_messageService createSecretGroupServiceMessage(TLRPC.EncryptedChat encryptedChat, TLRPC.DecryptedMessageAction decryptedMessage, int accountNum) {
         if (decryptedMessage == null) {
             throw new RuntimeException("createSecretGroupServiceMessage error: decryptedMessage was null");
@@ -156,6 +174,8 @@ public class EncryptedGroupProtocol {
             handleAllSecondaryChatsInitialized(encryptedChat, (AllSecondaryChatsInitializedAction) action);
         } else if (action instanceof GroupCreationFailedAction) {
             handleGroupCreationFailed(encryptedChat, (GroupCreationFailedAction) action);
+        } else if (action instanceof ChangeGroupInfoAction) {
+            handleChangeGroupInfoAction(encryptedChat, (ChangeGroupInfoAction) action);
         }
     }
 
@@ -357,6 +377,22 @@ public class EncryptedGroupProtocol {
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
         sendGroupCreationFailedToAllMembers(encryptedGroup);
+    }
+
+    private void handleChangeGroupInfoAction(TLRPC.EncryptedChat encryptedChat, ChangeGroupInfoAction action) {
+        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
+        if (encryptedGroup == null) {
+            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
+            return;
+        }
+        if ((action.flags & 8) != 0) {
+            encryptedGroup.setName(action.name);
+            getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+            AndroidUtilities.runOnUIThread(() -> {
+                getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_NAME);
+            });
+
+        }
     }
 
     private void handleAllSecondaryChatsInitialized(TLRPC.EncryptedChat encryptedChat, AllSecondaryChatsInitializedAction action) {

@@ -1,6 +1,5 @@
 package org.telegram.messenger.partisan.secretgroups.action;
 
-import org.telegram.tgnet.AbstractSerializedData;
 import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.TLObject;
 
@@ -26,6 +25,9 @@ public abstract class EncryptedGroupAction extends TLObject {
                 break;
             case 0xcdc18852:
                 result = new GroupCreationFailedAction();
+                break;
+            case 0x1147fcc3:
+                result = new ChangeGroupInfoAction();
                 break;
         }
         if (result == null && exception) {

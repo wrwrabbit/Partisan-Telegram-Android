@@ -1,6 +1,5 @@
 package org.telegram.messenger.partisan.secretgroups.action;
 
-import org.telegram.tgnet.AbstractSerializedData;
 import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.OutputSerializedData;
 

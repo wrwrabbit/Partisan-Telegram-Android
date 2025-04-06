@@ -9,6 +9,8 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
@@ -16,6 +18,8 @@ import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.ActionBarMenu;
+import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
@@ -35,6 +39,10 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     private ListAdapter listAdapter;
     private RecyclerListView listView;
 
+    private ActionBarMenuItem editItem;
+
+    private final static int edit_group = 1;
+
     private int rowCount;
 
     private int firstMemberRow;
@@ -51,6 +59,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
         getNotificationCenter().addObserver(this, NotificationCenter.dialogsHidingChanged);
+        getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         updateRows();
         return true;
     }
@@ -59,6 +68,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogsHidingChanged);
+        getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
     }
 
     @Override
@@ -70,9 +80,18 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
             public void onItemClick(int id) {
                 if (id == -1) {
                     finishFragment();
+                } else if (id == edit_group) {
+                    EncryptedGroupEditActivity fragment = new EncryptedGroupEditActivity(encryptedGroup);
+                    presentFragment(fragment);
                 }
             }
         });
+
+        if (encryptedGroup.getOwnerUserId() == getUserConfig().clientUserId) {
+            ActionBarMenu menu = actionBar.createMenu();
+            editItem = menu.addItem(edit_group, R.drawable.group_edit_profile);
+            editItem.setContentDescription(LocaleController.getString(R.string.Edit));
+        }
 
         fragmentView = new FrameLayout(context);
         FrameLayout frameLayout = (FrameLayout) fragmentView;
@@ -161,6 +180,12 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         if (id == NotificationCenter.dialogsHidingChanged) {
             if (!allowShowing()) {
                 finishHiddenChatFragment();
+            }
+        } else if (id == NotificationCenter.updateInterfaces) {
+            int mask = (Integer) args[0];
+            boolean infoChanged = (mask & MessagesController.UPDATE_MASK_NAME) != 0;
+            if (infoChanged) {
+                actionBar.setTitle(encryptedGroup.getName());
             }
         }
     }

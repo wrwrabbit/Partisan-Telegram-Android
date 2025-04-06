@@ -86,6 +86,10 @@ public class EncryptedGroup {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public long getOwnerUserId() {
         return ownerUserId;
     }
