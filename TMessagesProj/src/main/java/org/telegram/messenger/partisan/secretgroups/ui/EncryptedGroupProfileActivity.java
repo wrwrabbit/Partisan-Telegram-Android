@@ -1,4 +1,4 @@
-package org.telegram.ui;
+package org.telegram.messenger.partisan.secretgroups.ui;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -9,7 +9,6 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
@@ -20,6 +19,7 @@ import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.AllowShowingActivityInterface;
 import org.telegram.ui.Cells.EncryptedGroupMemberCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCheckCell;
@@ -27,9 +27,9 @@ import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.ProfileActivity;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class EncryptedGroupProfileActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, AllowShowingActivityInterface {
     private ListAdapter listAdapter;
