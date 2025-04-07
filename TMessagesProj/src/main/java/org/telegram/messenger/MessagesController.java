@@ -15041,6 +15041,7 @@ public class MessagesController extends BaseController implements NotificationCe
         } else {
             PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat !isChannel");
             if (forceDelete) {
+                PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat forceDelete");
                 TLRPC.TL_messages_deleteChat req = new TLRPC.TL_messages_deleteChat();
                 req.chat_id = chatId;
                 getConnectionsManager().sendRequest(req, (response, error) -> {
@@ -15048,11 +15049,13 @@ public class MessagesController extends BaseController implements NotificationCe
                 });
                 return;
             }
+            PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat !forceDelete");
             TLRPC.TL_messages_deleteChatUser req = new TLRPC.TL_messages_deleteChatUser();
             req.chat_id = chatId;
             req.user_id = getInputUser(user);
             req.revoke_history = true;
             request = req;
+            PartisanLog.d("deleteDialogDebug (" + chatId + "): deleteParticipantFromChat req");
         }
         if (UserObject.isUserSelf(user)) {
             deleteDialog(-chatId, 0, revoke);
