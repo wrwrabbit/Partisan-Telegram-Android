@@ -16586,6 +16586,12 @@ public class MessagesController extends BaseController implements NotificationCe
                                 if (messageObjects != null) {
                                     for (int i = 0; i < messageObjects.size(); ++i) {
                                         MessageObject messageObject = messageObjects.get(i);
+                                        if (getMessagesStorage().fileProtectionEnabled()) {
+                                            TLRPC.Message message = messageObject.messageOwner;
+                                            if (message != null && message.out) {
+                                                message.unread = dialog.read_outbox_max_id < message.id;
+                                            }
+                                        }
                                         if (messageObject != null && messageObject.messageOwner.peer_id.channel_id == 0) {
                                             dialogMessagesByIds.put(messageObject.getId(), messageObject);
                                             dialogsLoadedTillDate = Math.min(dialogsLoadedTillDate, messageObject.messageOwner.date);
