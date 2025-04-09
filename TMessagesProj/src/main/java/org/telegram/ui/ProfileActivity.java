@@ -64,7 +64,6 @@ import android.media.MediaCodecList;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Looper;
 import android.os.SystemClock;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -6077,7 +6076,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         return;
                     }
                     Bundle args = new Bundle();
-                    EncryptedGroup encryptedGroup = EncryptedGroupUtils.getEncryptedGroupByEncryptedChat(currentEncryptedChat, currentAccount);
+                    EncryptedGroup encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroupByEncryptedChat(currentEncryptedChat, currentAccount);
                     if (encryptedGroup != null && !SharedConfig.showEncryptedChatsFromEncryptedGroups) {
                         args.putInt("enc_group_id", encryptedGroup.getInternalId());
                     } else {

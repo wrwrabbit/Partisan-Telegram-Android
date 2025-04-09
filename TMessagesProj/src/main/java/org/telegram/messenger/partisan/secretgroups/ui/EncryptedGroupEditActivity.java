@@ -8,8 +8,11 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Bundle;
 import android.os.Vibrator;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -20,6 +23,10 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.TextView;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
@@ -27,10 +34,18 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.fakepasscode.AccountActions;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.fakepasscode.SelectionMode;
+import org.telegram.messenger.partisan.appmigration.MaskedMigrationIssue;
+import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
+import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -38,20 +53,44 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.AllowShowingActivityInterface;
+import org.telegram.ui.Cells.ManageChatTextCell;
+import org.telegram.ui.Cells.EncryptedGroupMemberCell;
+import org.telegram.ui.Cells.NotificationsCheckCell;
+import org.telegram.ui.Cells.ShadowSectionCell;
+import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.BulletinFactory;
+import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.EditTextEmoji;
+import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RadialProgressView;
+import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
+import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
+import org.telegram.ui.FakePasscodeAccountActionsActivity;
+import org.telegram.ui.FakePasscodeActivationMethodsActivity;
+import org.telegram.ui.FakePasscodeActivity;
+import org.telegram.ui.FakePasscodeRemovePasscodesActivity;
+import org.telegram.ui.FakePasscodeSmsActivity;
 import org.telegram.ui.PhotoViewer;
+import org.telegram.ui.ProfileActivity;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class EncryptedGroupEditActivity  extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, AllowShowingActivityInterface {
-    private View doneButton;
+    private int addMemberRow;
+    private int selfRow;
+    private int firstMemberRow;
+    private int lastMemberRow;
+    private int rowCount;
 
-    private LinearLayout linearLayout;
+    private View doneButton;
 
     private LinearLayout avatarContainer;
     private BackupImageView avatarImage;
@@ -61,7 +100,11 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
     private AvatarDrawable avatarDrawable;
     private EditTextEmoji nameTextView;
 
+    private ListAdapter listAdapter;
+    private RecyclerListView listView;
+
     private final EncryptedGroup encryptedGroup;
+    private Set<Long> membersCurrentlyRemoving = new HashSet<>();
 
     private boolean donePressed;
 
@@ -77,9 +120,11 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
 
+        updateRows();
         avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_ANONYMOUS);
 
         getNotificationCenter().addObserver(this, NotificationCenter.dialogsHidingChanged);
+        getNotificationCenter().addObserver(this, NotificationCenter.encryptedGroupMemberRemoved);
         return true;
     }
 
@@ -87,6 +132,7 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogsHidingChanged);
+        getNotificationCenter().removeObserver(this, NotificationCenter.encryptedGroupMemberRemoved);
         if (nameTextView != null) {
             nameTextView.onDestroy();
         }
@@ -236,15 +282,16 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
         scrollView.setFillViewport(true);
         sizeNotifierFrameLayout.addView(scrollView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
-        LinearLayout linearLayout1 = linearLayout = new LinearLayout(context);
-        scrollView.addView(linearLayout1, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout linearLayout = new LinearLayout(context);
+        scrollView.addView(linearLayout, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
 
         actionBar.setTitle(encryptedGroup.getName());
 
         avatarContainer = new LinearLayout(context);
         avatarContainer.setOrientation(LinearLayout.VERTICAL);
         avatarContainer.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-        linearLayout1.addView(avatarContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        linearLayout.addView(avatarContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
         FrameLayout frameLayout = new FrameLayout(context);
         avatarContainer.addView(frameLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
@@ -325,6 +372,43 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
         nameTextView.setText(Emoji.replaceEmoji(encryptedGroup.getName(), nameTextView.getEditText().getPaint().getFontMetricsInt(), true));
         nameTextView.setSelection(nameTextView.length());
 
+        linearLayout.addView(new ShadowSectionCell(context), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+        listView = new RecyclerListView(context);
+        listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false) {
+            @Override
+            public boolean supportsPredictiveItemAnimations() {
+                return false;
+            }
+        });
+        listView.setVerticalScrollBarEnabled(false);
+        listView.setItemAnimator(null);
+        listView.setLayoutAnimation(null);
+        listView.setAdapter(listAdapter = new ListAdapter(context));
+        linearLayout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+        listView.setOnItemClickListener((view, position, x, y) -> {
+            if (!view.isEnabled()) {
+                return;
+            }
+            if (position == addMemberRow) {
+                EncryptedGroupUtils.showNotImplementedDialog(this);
+            } else if (firstMemberRow <= position && position <= lastMemberRow) {
+                Bundle args = new Bundle();
+                InnerEncryptedChat innerChat = getInnerChat(position - firstMemberRow);
+                TLRPC.User user = getMessagesController().getUser(innerChat.getUserId());
+                if (user == null) {
+                    return;
+                }
+                args.putLong("user_id", user.id);
+                args.putLong("dialog_id", innerChat.getDialogId().orElse(0L));
+                args.putBoolean("reportSpam", false);
+                args.putInt("actionBarColor", getThemedColor(Theme.key_actionBarDefault));
+                ProfileActivity fragment = new ProfileActivity(args);
+                presentFragment(fragment);
+            }
+        });
+
         setAvatar();
 
         return fragmentView;
@@ -378,11 +462,50 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
         return true;
     }
 
+    private boolean createMenuForParticipant(InnerEncryptedChat innerChat, EncryptedGroupMemberCell cell) {
+        ItemOptions.makeOptions(this, cell)
+                .setScrimViewBackground(new ColorDrawable(Theme.getColor(Theme.key_windowBackgroundWhite)))
+                .add(R.drawable.msg_remove, getString(R.string.KickFromGroup), true, () ->
+                        showRemoveMemberDialog(innerChat)
+                )
+                .setMinWidth(190)
+                .show();
+
+        return true;
+    }
+
+    private void showRemoveMemberDialog(InnerEncryptedChat innerChat) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setMessage(LocaleController.getString(R.string.EncryptedGroupMemberRemovalConfirmation));
+        builder.setTitle(LocaleController.getString(R.string.KickFromGroup));
+        builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialogInterface, i) -> {
+            long userId = innerChat.getUserId();
+            new EncryptedGroupProtocol(currentAccount).kickMember(encryptedGroup, userId);
+            membersCurrentlyRemoving.add(userId);
+        });
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        showDialog(builder.create());
+    }
+
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.dialogsHidingChanged) {
             if (!allowShowing()) {
                 finishHiddenChatFragment();
+            }
+        } else if (id == NotificationCenter.encryptedGroupMemberRemoved) {
+            int encryptedGroupId = (int)args[0];
+            if (encryptedGroupId == encryptedGroup.getInternalId()) {
+                updateRows();
+                listAdapter.notifyDataSetChanged();
+                long userId = (long)args[1];
+                if (membersCurrentlyRemoving.contains(userId)) {
+                    TLRPC.User user = getMessagesController().getUser(userId);
+                    if (user != null) {
+                        BulletinFactory.createRemoveFromChatBulletin(this, user, encryptedGroup.getName()).show();
+                    }
+                    membersCurrentlyRemoving.remove(userId);
+                }
             }
         }
     }
@@ -484,6 +607,99 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
             getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_NAME);
         }
         finishFragment();
+    }
+
+    private void updateRows() {
+        rowCount = 0;
+
+        addMemberRow = rowCount++;
+        selfRow = rowCount++;
+        firstMemberRow = rowCount;
+        lastMemberRow = firstMemberRow + encryptedGroup.getInnerChats().size() - 1;
+        rowCount = lastMemberRow + 1;
+    }
+
+    private InnerEncryptedChat getInnerChat(int index) {
+        return encryptedGroup.getInnerChats().get(index);
+    }
+
+    private class ListAdapter extends RecyclerListView.SelectionAdapter {
+        private final static int VIEW_TYPE_ADD_MEMBER = 0,
+                VIEW_TYPE_MEMBER = 1;
+
+        private Context mContext;
+
+        public ListAdapter(Context context) {
+            mContext = context;
+        }
+
+        @Override
+        public boolean isEnabled(RecyclerView.ViewHolder holder) {
+            return true;
+        }
+
+        @Override
+        public int getItemCount() {
+            return rowCount;
+        }
+
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view;
+            switch (viewType) {
+                case VIEW_TYPE_ADD_MEMBER:
+                    view = new ManageChatTextCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case VIEW_TYPE_MEMBER:
+                default:
+                    EncryptedGroupMemberCell manageChatUserCell = new EncryptedGroupMemberCell(mContext, encryptedGroup, currentAccount);
+                    manageChatUserCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    view = manageChatUserCell;
+                    break;
+            }
+            return new RecyclerListView.Holder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            switch (holder.getItemViewType()) {
+                case VIEW_TYPE_ADD_MEMBER:
+                    ManageChatTextCell actionCell = (ManageChatTextCell) holder.itemView;
+                    actionCell.setColors(Theme.key_windowBackgroundWhiteGrayIcon, Theme.key_windowBackgroundWhiteBlackText);
+                    if (position == addMemberRow) {
+                        actionCell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
+                        actionCell.setText(getString(R.string.AddMember), null, R.drawable.msg_contact_add, true);
+                    }
+                    break;
+                case VIEW_TYPE_MEMBER:
+                    EncryptedGroupMemberCell cell = (EncryptedGroupMemberCell) holder.itemView;
+                    cell.setTag(position);
+
+                    if (position == selfRow) {
+                        cell.setUserAndInnerChat(getUserConfig().getCurrentUser(), null, position != lastMemberRow);
+                        cell.setNeedOptions(false, null);
+                    } else if (firstMemberRow <= position && position <= lastMemberRow) {
+                        InnerEncryptedChat innerChat = getInnerChat(position - firstMemberRow);
+                        TLRPC.User user = getMessagesController().getUser(innerChat.getUserId());
+                        if (user != null) {
+                            cell.setUserAndInnerChat(user, innerChat, position != lastMemberRow);
+                            cell.setNeedOptions(true, v -> createMenuForParticipant(innerChat, cell));
+                        }
+                    }
+                    break;
+            }
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            if (position == addMemberRow) {
+                return VIEW_TYPE_ADD_MEMBER;
+            } else if (position == selfRow || firstMemberRow <= position && position <= lastMemberRow) {
+                return VIEW_TYPE_MEMBER;
+            }
+            return VIEW_TYPE_MEMBER;
+        }
     }
 
     @Override

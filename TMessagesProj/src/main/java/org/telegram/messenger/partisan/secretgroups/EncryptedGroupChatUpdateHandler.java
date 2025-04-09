@@ -20,7 +20,7 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
         if (!SharedConfig.encryptedGroupsEnabled) {
             return;
         }
-        EncryptedGroup encryptedGroup = EncryptedGroupUtils.getEncryptedGroupByEncryptedChat(encryptedChat, accountNum);
+        EncryptedGroup encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroupByEncryptedChat(encryptedChat, accountNum);
         if (encryptedGroup == null) {
             return;
         }
@@ -90,11 +90,7 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
 
     private void onInitializedChatDiscarded(EncryptedGroup encryptedGroup, TLRPC.EncryptedChat encryptedChat) {
         if (encryptedChat.history_deleted) {
-            encryptedGroup.removeInnerChat(encryptedChat.id);
-            getMessagesStorage().deleteEncryptedGroupInnerChat(encryptedGroup.getInternalId(), encryptedChat.user_id);
-            EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), accountNum);
-            EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroup.getInternalId(), accountNum);
-            EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroup.getInternalId(), accountNum);
+            getEncryptedGroupProtocol().deleteInnerChat(encryptedGroup, encryptedChat.user_id);
         } else {
             InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByEncryptedChatId(encryptedChat.id);
             innerChat.setState(InnerEncryptedChatState.CANCELLED);

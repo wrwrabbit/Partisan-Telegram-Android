@@ -34,8 +34,8 @@ public class EncryptedGroup {
                 .orElse(null);
     }
 
-    public void removeInnerChat(int chatId) {
-        innerChats.removeIf(c -> c.getEncryptedChatId().isPresent() && c.getEncryptedChatId().get() == chatId);
+    public void removeInnerChatByUserId(long userId) {
+        innerChats.removeIf(c -> c.getUserId() == userId);
     }
 
     public InnerEncryptedChat getInnerChatByUserId(long userId) {

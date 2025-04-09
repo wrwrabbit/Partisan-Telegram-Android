@@ -305,4 +305,5 @@
     <string name="InnerEncryptedChatStateCancelled">Адменены</string>
     <string name="InnerEncryptedChatStateInvitationDeclined">Запрашэнне адхілена</string>
     <string name="InnerEncryptedChatStateMemberDeleted">Удзельнік выдалены</string>
+    <string name="EncryptedGroupMemberRemovalConfirmation">Вы ўпэўненыя, што жадаеце выдаліць гэтага ўдзельніка з сакрэтнай групы? Усе яго паведамленні будуць выдалены.</string>
 </resources>

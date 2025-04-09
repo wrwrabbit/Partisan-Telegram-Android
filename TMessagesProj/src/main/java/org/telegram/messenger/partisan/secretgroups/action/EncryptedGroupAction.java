@@ -29,6 +29,9 @@ public abstract class EncryptedGroupAction extends TLObject {
             case 0x1147fcc3:
                 result = new ChangeGroupInfoAction();
                 break;
+            case 0x3af1dd30:
+                result = new DeleteMemberAction();
+                break;
         }
         if (result == null && exception) {
             throw new RuntimeException(String.format("can't parse magic %x in EncryptedGroupAction", constructor));

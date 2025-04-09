@@ -260,21 +260,20 @@ public class EncryptedGroupUtils {
         }
     }
 
-    public static EncryptedGroup getEncryptedGroupByEncryptedChat(TLRPC.EncryptedChat encryptedChat, int accountNum) {
+    public static EncryptedGroup getOrLoadEncryptedGroupByEncryptedChat(TLRPC.EncryptedChat encryptedChat, int accountNum) {
         if (encryptedChat == null) {
             return null;
         }
-        return getEncryptedGroupByEncryptedChatId(encryptedChat.id, accountNum);
+        return getOrLoadEncryptedGroupByEncryptedChatId(encryptedChat.id, accountNum);
     }
 
-    public static EncryptedGroup getEncryptedGroupByEncryptedChatId(int encryptedChatId, int accountNum) {
+    public static EncryptedGroup getOrLoadEncryptedGroupByEncryptedChatId(int encryptedChatId, int accountNum) {
         MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
-        MessagesController messagesController = MessagesController.getInstance(accountNum);
         Integer groupId = messagesStorage.getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
         if (groupId == null) {
             return null;
         }
-        return messagesController.getEncryptedGroup(groupId);
+        return getOrLoadEncryptedGroup(groupId, accountNum);
     }
 
     public static boolean isNotInitializedEncryptedGroup(long dialogId, int accountNum) {

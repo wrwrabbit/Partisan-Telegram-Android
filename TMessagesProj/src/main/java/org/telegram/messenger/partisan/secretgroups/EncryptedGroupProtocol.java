@@ -3,14 +3,17 @@ package org.telegram.messenger.partisan.secretgroups;
 import static org.telegram.messenger.SecretChatHelper.CURRENT_SECRET_CHAT_LAYER;
 
 import org.telegram.messenger.AccountInstance;
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.messenger.partisan.secretgroups.action.AllSecondaryChatsInitializedAction;
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmGroupInitializationAction;
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmJoinAction;
 import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
+import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.GroupCreationFailedAction;
 import org.telegram.messenger.partisan.secretgroups.action.StartSecondaryInnerChatAction;
@@ -44,8 +47,11 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         sendAction(encryptedChat, new ConfirmJoinAction());
     }
 
-    public void sendGroupInitializationConfirmation(TLRPC.EncryptedChat encryptedChat) {
-        sendAction(encryptedChat, new ConfirmGroupInitializationAction());
+    public void requestMembersToCreateSecondaryChats(EncryptedGroup encryptedGroup) {
+        log(encryptedGroup, "Request members to create secondary chats.");
+        encryptedGroup.setState(EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION);
+        getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+        sendActionToAllMembers(encryptedGroup, new ConfirmGroupInitializationAction());
     }
 
     public void sendSecondaryInnerChatInvitation(TLRPC.EncryptedChat encryptedChat, long externalGroupId) {
@@ -75,6 +81,63 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
             getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
         }
         sendActionToAllMembers(encryptedGroup, new GroupCreationFailedAction());
+    }
+
+    public void kickMember(EncryptedGroup encryptedGroup, long userId) {
+        InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(userId);
+        if (innerChat == null) {
+            return;
+        }
+        DeleteMemberAction action = new DeleteMemberAction();
+        action.userId = userId;
+        sendActionToAllMembers(encryptedGroup, action);
+
+        NotificationCenter.NotificationCenterDelegate observer = new NotificationCenter.NotificationCenterDelegate() {
+            @Override
+            public void didReceivedNotification(int id, int account, Object... args) {
+                long dialogId = (long)args[3];
+                InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(userId);
+                if (dialogId == innerChat.getDialogId().orElse(0L)) {
+                    getNotificationCenter().removeObserver(this, NotificationCenter.messageReceivedByServer);
+                    removeMember(encryptedGroup, userId);
+                    if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
+                        requestMembersToCreateSecondaryChats(encryptedGroup);
+                    }
+                }
+            }
+        };
+        getNotificationCenter().addObserver(observer, NotificationCenter.messageReceivedByServer);
+    }
+
+    public void removeMember(EncryptedGroup encryptedGroup, long userId) {
+        InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(userId);
+        if (innerChat == null) {
+            return;
+        }
+        Integer encryptedChatId = innerChat.getEncryptedChatId().orElse(null);
+        if (encryptedChatId != null) {
+            TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedChatId);
+            if (encryptedChat != null) {
+                getMessagesController().deleteDialog(encryptedChatId, 0, true);
+                deleteInnerChat(encryptedGroup, userId);
+                AndroidUtilities.runOnUIThread(() ->
+                        getNotificationCenter().postNotificationName(
+                                NotificationCenter.encryptedGroupMemberRemoved,
+                                encryptedGroup.getInternalId(),
+                                userId)
+                );
+            }
+        } else {
+            deleteInnerChat(encryptedGroup, userId);
+        }
+    }
+
+    void deleteInnerChat(EncryptedGroup encryptedGroup, long userId) {
+        encryptedGroup.removeInnerChatByUserId(userId);
+        getMessagesStorage().deleteEncryptedGroupInnerChat(encryptedGroup.getInternalId(), userId);
+        EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), accountNum);
+        EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroup.getInternalId(), accountNum);
+        EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroup.getInternalId(), accountNum);
     }
 
     public void sendActionToAllMembers(EncryptedGroup encryptedGroup, EncryptedGroupAction action) {
