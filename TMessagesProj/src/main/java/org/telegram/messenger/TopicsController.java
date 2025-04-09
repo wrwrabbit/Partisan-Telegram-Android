@@ -123,6 +123,13 @@ public class TopicsController extends BaseController {
                     processTopics(chatId, topics.topics, messagesMap, false, loadType, ((TLRPC.TL_messages_forumTopics) response).count);
                     sortTopics(chatId);
                     getMessagesStorage().saveTopics(-chatId, topicsByChatId.get(chatId), true, true, getConnectionsManager().getCurrentTime());
+                    if (getMessagesStorage().fileProtectionEnabled()) {
+                        for (TLRPC.Message message : topics.messages) {
+                            for (TLRPC.TL_forumTopic topic : topics.topics) {
+                                message.unread = topic.read_outbox_max_id < message.id;
+                            }
+                        }
+                    }
                     getMessagesStorage().putMessages(topics.messages, false, true, false, 0, false, 0, 0);
 
                     if (!topics.topics.isEmpty() && loadType == LOAD_TYPE_LOAD_NEXT) {
