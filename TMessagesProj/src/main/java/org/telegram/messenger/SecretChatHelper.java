@@ -18,7 +18,7 @@ import android.util.SparseIntArray;
 import com.google.android.exoplayer2.util.Consumer;
 
 import org.telegram.SQLite.SQLiteCursor;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupChatUpdateHandler;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
@@ -250,7 +250,7 @@ public class SecretChatHelper extends BaseController {
                 getNotificationCenter().postNotificationName(NotificationCenter.encryptedChatUpdated, newChat);
             });
         }
-        AndroidUtilities.runOnUIThread(() -> new EncryptedGroupProtocol(currentAccount).processEncryptedChatUpdate(newChat));
+        AndroidUtilities.runOnUIThread(() -> new EncryptedGroupChatUpdateHandler(currentAccount).processEncryptedChatUpdate(newChat));
         if (newChat instanceof TLRPC.TL_encryptedChatDiscarded && newChat.history_deleted) {
             AndroidUtilities.runOnUIThread(() -> getMessagesController().deleteDialog(dialog_id, 0));
         }
