@@ -9,6 +9,8 @@ import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
 
+import javax.annotation.Nullable;
+
 public class EncryptedGroupChatUpdateHandler implements AccountControllersProvider {
     private final int accountNum;
 
@@ -74,6 +76,9 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
     }
 
     private void onSecondaryChatCreated(EncryptedGroup encryptedGroup, InnerEncryptedChat innerChat, TLRPC.EncryptedChat encryptedChat) {
+        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
+            log(encryptedGroup, "Invalid encrypted group state during secondary chat creation: " + encryptedGroup.getState());
+        }
         getEncryptedGroupProtocol().sendSecondaryInnerChatInvitation(encryptedChat, encryptedGroup.getExternalId());
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
@@ -121,5 +126,9 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
     @Override
     public int getAccountNum() {
         return accountNum;
+    }
+
+    private void log(@Nullable EncryptedGroup encryptedGroup, String message) {
+        EncryptedGroupUtils.log(encryptedGroup, accountNum, message);
     }
 }
