@@ -13,6 +13,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
@@ -26,6 +27,7 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.AllowShowingActivityInterface;
 import org.telegram.ui.Cells.EncryptedGroupMemberCell;
 import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -45,6 +47,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
 
     private int rowCount;
 
+    private int statusRow;
     private int firstMemberRow;
     private int lastMemberRow;
 
@@ -136,6 +139,9 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     private void updateRows() {
         rowCount = 0;
 
+        if (SharedConfig.detailedEncryptedGroupMemberStatus) {
+            statusRow = rowCount++;
+        }
         firstMemberRow = rowCount;
         lastMemberRow = firstMemberRow + encryptedGroup.getInnerChats().size();
         rowCount = lastMemberRow + 1;
@@ -210,6 +216,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
         private final static int VIEW_TYPE_GROUP_MEMBER = 0;
+        private final static int VIEW_TYPE_TEXT_CELL = 1;
 
         private Context mContext;
 
@@ -239,6 +246,9 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 }
+                case VIEW_TYPE_TEXT_CELL:
+                    view = new TextCell(mContext);
+                    break;
             }
             return new RecyclerListView.Holder(view);
         }
@@ -258,6 +268,13 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                     }
                     break;
                 }
+                case VIEW_TYPE_TEXT_CELL: {
+                    TextCell textCell = (TextCell) holder.itemView;
+                    if (position == statusRow) {
+                        textCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+                        textCell.setText("Group Status: " + encryptedGroup.getState(), true);
+                    }
+                }
             }
         }
 
@@ -265,6 +282,8 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         public int getItemViewType(int position) {
             if (firstMemberRow <= position && position <= lastMemberRow) {
                 return VIEW_TYPE_GROUP_MEMBER;
+            } else if (position == statusRow) {
+                return VIEW_TYPE_TEXT_CELL;
             }
             return VIEW_TYPE_GROUP_MEMBER;
         }
