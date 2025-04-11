@@ -3652,14 +3652,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     });
                 } else if (id == chat_enc_timer) {
-                    if (isEncryptedGroup()) {
-                        EncryptedGroupUtils.showNotImplementedDialog(ChatActivity.this);
-                        return;
-                    }
                     if (getParentActivity() == null) {
                         return;
                     }
-                    showDialog(AlertsCreator.createTTLAlert(getParentActivity(), currentEncryptedChatSingle, themeDelegate).create());
+                    forAnyEncryptedChat(false, encryptedChat ->
+                            showDialog(AlertsCreator.createTTLAlert(getParentActivity(), encryptedChat, themeDelegate).create())
+                    );
                 } else if (id == clear_history || id == delete_chat || id == auto_delete_timer) {
                     if (getParentActivity() == null) {
                         return;
@@ -18157,8 +18155,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         if (avatarContainer != null) {
             avatarContainer.setStars(currentChat != null && (currentChat.flags2 & 2048) != 0, animated);
-            if (currentEncryptedChatSingle != null) {
-                avatarContainer.setTime(currentEncryptedChatSingle.ttl, animated);
+
+            if (currentEncryptedChatSingle != null || isEncryptedGroup()) {
+                forAnyEncryptedChat(false, encryptedChat ->
+                        avatarContainer.setTime(encryptedChat.ttl, animated)
+                );
             } else if (userInfo != null) {
                 avatarContainer.setTime(userInfo.ttl_period, animated);
             } else if (chatInfo != null) {
@@ -42287,6 +42288,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             action.accept(currentEncryptedChatSingle);
         } else if (currentEncryptedGroup != null) {
             getCurrentEncryptedChatList(onlyInitialized).stream().forEach(action);
+        }
+    }
+
+    private void forAnyEncryptedChat(boolean onlyInitialized, Consumer<TLRPC.EncryptedChat> action) {
+        if (currentEncryptedChatSingle != null) {
+            action.accept(currentEncryptedChatSingle);
+        } else if (currentEncryptedGroup != null) {
+            getCurrentEncryptedChatList(onlyInitialized).stream().findAny().ifPresent(action);
         }
     }
 

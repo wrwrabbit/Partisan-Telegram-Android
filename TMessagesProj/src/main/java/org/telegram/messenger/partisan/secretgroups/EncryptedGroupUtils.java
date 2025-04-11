@@ -16,6 +16,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -403,5 +404,24 @@ public class EncryptedGroupUtils {
         } catch (Exception ignore) {
             return null;
         }
+    }
+
+    public static void syncTtlIfNeeded(TLRPC.EncryptedChat encryptedChat, int account) {
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroupByEncryptedChat(encryptedChat, account);
+        if (encryptedGroup == null) {
+            return;
+        }
+        MessagesController messagesController = MessagesController.getInstance(account);
+        encryptedGroup.getInnerEncryptedChatIds(false).stream()
+                .map(messagesController::getEncryptedChat)
+                .filter(Objects::nonNull)
+                .filter(otherEncryptedChat -> otherEncryptedChat.ttl != encryptedChat.ttl)
+                .forEach(otherEncryptedChat ->
+                    AndroidUtilities.runOnUIThread(() -> {
+                        otherEncryptedChat.ttl = encryptedChat.ttl;
+                        SecretChatHelper.getInstance(account).sendTTLMessage(otherEncryptedChat, null);
+                        MessagesStorage.getInstance(account).updateEncryptedChatTTL(otherEncryptedChat);
+                    })
+                );
     }
 }

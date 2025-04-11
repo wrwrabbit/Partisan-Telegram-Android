@@ -6407,24 +6407,46 @@ public class AlertsCreator {
         });
         builder.setView(numberPicker);
         builder.setNegativeButton(LocaleController.getString(R.string.Done), (dialog, which) -> {
-            int oldValue = encryptedChat.ttl;
-            which = numberPicker.getValue();
-            if (which >= 0 && which < 16) {
-                encryptedChat.ttl = which;
-            } else if (which == 16) {
-                encryptedChat.ttl = 30;
-            } else if (which == 17) {
-                encryptedChat.ttl = 60;
-            } else if (which == 18) {
-                encryptedChat.ttl = 60 * 60;
-            } else if (which == 19) {
-                encryptedChat.ttl = 60 * 60 * 24;
-            } else if (which == 20) {
-                encryptedChat.ttl = 60 * 60 * 24 * 7;
-            }
-            if (oldValue != encryptedChat.ttl) {
-                SecretChatHelper.getInstance(UserConfig.selectedAccount).sendTTLMessage(encryptedChat, null);
-                MessagesStorage.getInstance(UserConfig.selectedAccount).updateEncryptedChatTTL(encryptedChat);
+            // keep the original code almost intact
+            java.util.function.Consumer<TLRPC.EncryptedChat> consumer = new java.util.function.Consumer<TLRPC.EncryptedChat>() {
+                @Override
+                public void accept(TLRPC.EncryptedChat encryptedChat) {
+                    int oldValue = encryptedChat.ttl;
+                    int which = numberPicker.getValue();
+                    if (which >= 0 && which < 16) {
+                        encryptedChat.ttl = which;
+                    } else if (which == 16) {
+                        encryptedChat.ttl = 30;
+                    } else if (which == 17) {
+                        encryptedChat.ttl = 60;
+                    } else if (which == 18) {
+                        encryptedChat.ttl = 60 * 60;
+                    } else if (which == 19) {
+                        encryptedChat.ttl = 60 * 60 * 24;
+                    } else if (which == 20) {
+                        encryptedChat.ttl = 60 * 60 * 24 * 7;
+                    }
+                    if (oldValue != encryptedChat.ttl) {
+                        SecretChatHelper.getInstance(UserConfig.selectedAccount).sendTTLMessage(encryptedChat, null);
+                        MessagesStorage.getInstance(UserConfig.selectedAccount).updateEncryptedChatTTL(encryptedChat);
+                    }
+                }
+            };
+
+            Integer encryptedGroupId = MessagesStorage.getInstance(UserConfig.selectedAccount)
+                    .getEncryptedGroupIdByInnerEncryptedChatId(encryptedChat.id);
+            if (encryptedGroupId != null) {
+                // apply ttl for every inner chat in the encrypted group
+                MessagesController messagesController = MessagesController.getInstance(UserConfig.selectedAccount);
+                EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+                if (encryptedGroup != null) {
+                    encryptedGroup.getInnerEncryptedChatIds(false).stream()
+                            .map(messagesController::getEncryptedChat)
+                            .filter(Objects::nonNull)
+                            .forEach(consumer);
+                }
+            } else {
+                consumer.accept(encryptedChat);
             }
         });
         return builder;
