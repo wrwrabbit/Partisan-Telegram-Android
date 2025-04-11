@@ -349,6 +349,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     private static final int PLAY_SERVICES_REQUEST_CHECK_SETTINGS = 140;
     public static final int SCREEN_CAPTURE_REQUEST_CODE = 520;
     public static final int INSTALL_MASKED_PTG_REQUEST_CODE = 500500;
+    public static final int SELECT_ENCRYPTED_GROUP_AVATAR = 500501;
     public static final int WEBVIEW_SHARE_API_REQUEST_CODE = 521;
 
     public static final int BLUETOOTH_CONNECT_TYPE = 0;

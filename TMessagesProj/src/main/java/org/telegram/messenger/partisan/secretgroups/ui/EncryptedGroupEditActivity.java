@@ -7,11 +7,15 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.text.Editable;
@@ -23,25 +27,22 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.TextView;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
+import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.fakepasscode.AccountActions;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
-import org.telegram.messenger.fakepasscode.SelectionMode;
-import org.telegram.messenger.partisan.appmigration.MaskedMigrationIssue;
-import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
@@ -55,35 +56,30 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.AllowShowingActivityInterface;
 import org.telegram.ui.Cells.ManageChatTextCell;
 import org.telegram.ui.Cells.EncryptedGroupMemberCell;
-import org.telegram.ui.Cells.NotificationsCheckCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
-import org.telegram.ui.Cells.TextCheckCell;
+import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BulletinFactory;
-import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.EditTextEmoji;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
-import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
-import org.telegram.ui.FakePasscodeAccountActionsActivity;
-import org.telegram.ui.FakePasscodeActivationMethodsActivity;
-import org.telegram.ui.FakePasscodeActivity;
-import org.telegram.ui.FakePasscodeRemovePasscodesActivity;
-import org.telegram.ui.FakePasscodeSmsActivity;
+import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.PhotoCropActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.ProfileActivity;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public class EncryptedGroupEditActivity  extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, AllowShowingActivityInterface {
+public class EncryptedGroupEditActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate,
+        AllowShowingActivityInterface,
+        PhotoCropActivity.PhotoEditActivityDelegate {
     private int addMemberRow;
     private int selfRow;
     private int firstMemberRow;
@@ -99,6 +95,8 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
     private RadialProgressView avatarProgressView;
     private AvatarDrawable avatarDrawable;
     private EditTextEmoji nameTextView;
+    private LinearLayout settingsContainer;
+    private TextCell setAvatarCell;
 
     private ListAdapter listAdapter;
     private RecyclerListView listView;
@@ -121,10 +119,10 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
         super.onFragmentCreate();
 
         updateRows();
-        avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_ANONYMOUS);
 
         getNotificationCenter().addObserver(this, NotificationCenter.dialogsHidingChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.encryptedGroupMemberRemoved);
+        getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         return true;
     }
 
@@ -133,6 +131,7 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
         super.onFragmentDestroy();
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogsHidingChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.encryptedGroupMemberRemoved);
+        getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         if (nameTextView != null) {
             nameTextView.onDestroy();
         }
@@ -372,6 +371,40 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
         nameTextView.setText(Emoji.replaceEmoji(encryptedGroup.getName(), nameTextView.getEditText().getPaint().getFontMetricsInt(), true));
         nameTextView.setSelection(nameTextView.length());
 
+        settingsContainer = new LinearLayout(context);
+        settingsContainer.setOrientation(LinearLayout.VERTICAL);
+        settingsContainer.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        linearLayout.addView(settingsContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+        setAvatarCell = new TextCell(context) {
+            @Override
+            protected void onDraw(Canvas canvas) {
+                canvas.drawLine(LocaleController.isRTL ? 0 : dp(20), getMeasuredHeight() - 1, getMeasuredWidth() - (LocaleController.isRTL ? dp(20) : 0), getMeasuredHeight() - 1, Theme.dividerPaint);
+            }
+        };
+        setAvatarCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+        setAvatarCell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
+        setAvatarCell.setOnClickListener(v -> {
+            if (encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                builder.setMessage(getString(R.string.EncryptedGroupAvatarChangeForbidden));
+                builder.setTitle(getString(R.string.ChatSetNewPhoto));
+                builder.setNeutralButton(getString(R.string.OK), null);
+                showDialog(builder.create());
+                return;
+            }
+            Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+            photoPickerIntent.setType("image/*");
+            Intent chooserIntent = Intent.createChooser(photoPickerIntent, null);
+            startActivityForResult(chooserIntent, LaunchActivity.SELECT_ENCRYPTED_GROUP_AVATAR);
+
+            showAvatarProgress(false, true);
+            cameraDrawable.setCurrentFrame(0);
+            cameraDrawable.setCustomEndFrame(43);
+            setAvatarCell.imageView.playAnimation();
+        });
+        settingsContainer.addView(setAvatarCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
         linearLayout.addView(new ShadowSectionCell(context), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
         listView = new RecyclerListView(context);
@@ -476,14 +509,14 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
 
     private void showRemoveMemberDialog(InnerEncryptedChat innerChat) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-        builder.setMessage(LocaleController.getString(R.string.EncryptedGroupMemberRemovalConfirmation));
-        builder.setTitle(LocaleController.getString(R.string.KickFromGroup));
-        builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialogInterface, i) -> {
+        builder.setMessage(getString(R.string.EncryptedGroupMemberRemovalConfirmation));
+        builder.setTitle(getString(R.string.KickFromGroup));
+        builder.setPositiveButton(getString(R.string.Delete), (dialogInterface, i) -> {
             long userId = innerChat.getUserId();
             new EncryptedGroupProtocol(currentAccount).kickMember(encryptedGroup, userId);
             membersCurrentlyRemoving.add(userId);
         });
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setNegativeButton(getString(R.string.Cancel), null);
         showDialog(builder.create());
     }
 
@@ -507,7 +540,45 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
                     membersCurrentlyRemoving.remove(userId);
                 }
             }
+        } else if (id == NotificationCenter.updateInterfaces) {
+            int mask = (Integer) args[0];
+            boolean infoChanged = (mask & MessagesController.UPDATE_MASK_NAME) != 0;
+            boolean avatarChanged = (mask & MessagesController.UPDATE_MASK_AVATAR) != 0;
+            if (infoChanged) {
+                actionBar.setTitle(encryptedGroup.getName());
+            }
+            if (avatarChanged) {
+                EncryptedGroupUtils.applyAvatar(avatarImage, avatarDrawable, encryptedGroup);
+            }
         }
+    }
+
+    @Override
+    public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
+        if (resultCode != Activity.RESULT_OK || requestCode != LaunchActivity.SELECT_ENCRYPTED_GROUP_AVATAR || data == null || data.getData() == null) {
+            return;
+        }
+        startCrop(data.getData());
+    }
+
+    private void startCrop(Uri uri) {
+        AndroidUtilities.runOnUIThread(() -> {
+            try {
+                LaunchActivity activity = (LaunchActivity) getParentActivity();
+                if (activity == null) {
+                    return;
+                }
+                Bundle args = new Bundle();
+                args.putParcelable("photoUri", uri);
+                PhotoCropActivity photoCropActivity = new PhotoCropActivity(args);
+                photoCropActivity.setDelegate(this);
+                activity.presentFragment(photoCropActivity);
+            } catch (Exception e) {
+                PartisanLog.e(e);
+                Bitmap bitmap = ImageLoader.loadBitmap(null, uri, 150, 150, true);
+                processBitmap(bitmap);
+            }
+        });
     }
 
     private void finishHiddenChatFragment() {
@@ -570,13 +641,27 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
         }
     }
 
+    RLottieDrawable cameraDrawable;
+
     private void setAvatar() {
         if (avatarImage == null) {
             return;
         }
-        avatarImage.setImageDrawable(avatarDrawable);
+        EncryptedGroupUtils.applyAvatar(avatarImage, avatarDrawable, encryptedGroup);
         if (PhotoViewer.hasInstance() && PhotoViewer.getInstance().isVisible()) {
             PhotoViewer.getInstance().checkCurrentImageVisibility();
+        }
+        if (setAvatarCell != null) {
+            if (encryptedGroup.hasAvatar()) {
+                setAvatarCell.setTextAndIcon(getString(R.string.ChatSetNewPhoto), R.drawable.msg_addphoto, true);
+            } else {
+                setAvatarCell.setTextAndIcon(getString(R.string.ChatSetPhotoOrVideo), R.drawable.msg_addphoto, true);
+            }
+            if (cameraDrawable == null) {
+                cameraDrawable = new RLottieDrawable(R.raw.camera_outline, "" + R.raw.camera_outline, dp(50), dp(50), false, null);
+            }
+            setAvatarCell.imageView.setTranslationX(-dp(8));
+            setAvatarCell.imageView.setAnimation(cameraDrawable);
         }
     }
 
@@ -621,6 +706,26 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
 
     private InnerEncryptedChat getInnerChat(int index) {
         return encryptedGroup.getInnerChats().get(index);
+    }
+
+    @Override
+    public void didFinishEdit(Bitmap bitmap) {
+        processBitmap(bitmap);
+    }
+
+    private void processBitmap(Bitmap bitmap) {
+        if (bitmap == null) {
+            return;
+        }
+        TLRPC.PhotoSize smallPhoto = ImageLoader.scaleAndSaveImage(bitmap, 150, 150, 80, true, 150, 150);
+        Bitmap resizedBitmap = BitmapFactory.decodeByteArray(smallPhoto.bytes, 0, smallPhoto.size);
+        encryptedGroup.setAvatar(resizedBitmap);
+        getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+        new EncryptedGroupProtocol(currentAccount).sendNewAvatar(encryptedGroup);
+
+        AndroidUtilities.runOnUIThread(() ->
+                getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_AVATAR)
+        );
     }
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
@@ -716,6 +821,11 @@ public class EncryptedGroupEditActivity  extends BaseFragment implements Notific
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_SUBMENUBACKGROUND, null, null, null, null, Theme.key_actionBarDefaultSubmenuBackground));
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_SUBMENUITEM, null, null, null, null, Theme.key_actionBarDefaultSubmenuItem));
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_SUBMENUITEM | ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_actionBarDefaultSubmenuItemIcon));
+
+        themeDescriptions.add(new ThemeDescription(settingsContainer, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundWhite));
+        themeDescriptions.add(new ThemeDescription(setAvatarCell, ThemeDescription.FLAG_SELECTOR, null, null, null, null, Theme.key_listSelector));
+        themeDescriptions.add(new ThemeDescription(setAvatarCell, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{TextCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueButton));
+        themeDescriptions.add(new ThemeDescription(setAvatarCell, 0, new Class[]{TextCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueIcon));
 
         return themeDescriptions;
     }

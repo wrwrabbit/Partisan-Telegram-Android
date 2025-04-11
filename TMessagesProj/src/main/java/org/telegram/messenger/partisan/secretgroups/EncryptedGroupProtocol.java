@@ -16,6 +16,7 @@ import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.GroupCreationFailedAction;
+import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.StartSecondaryInnerChatAction;
 import org.telegram.tgnet.TLRPC;
 
@@ -138,6 +139,15 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), accountNum);
         EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroup.getInternalId(), accountNum);
         EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroup.getInternalId(), accountNum);
+    }
+
+    public void sendNewAvatar(EncryptedGroup encryptedGroup) {
+        if (encryptedGroup.getOwnerUserId() != getUserConfig().getClientUserId() || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+            return;
+        }
+        NewAvatarAction action = new NewAvatarAction();
+        action.avatarBytes = EncryptedGroupUtils.serializeAvatar(encryptedGroup);
+        sendActionToAllMembers(encryptedGroup, action);
     }
 
     public void sendActionToAllMembers(EncryptedGroup encryptedGroup, EncryptedGroupAction action) {

@@ -9337,4 +9337,5 @@
     <string name="InnerEncryptedChatStateInvitationDeclined">Invitation declined</string>
     <string name="InnerEncryptedChatStateMemberDeleted">Member deleted</string>
     <string name="EncryptedGroupMemberRemovalConfirmation">Are you sure you want to remove this member from the secret group. All his messages will be deleted.</string>
+    <string name="EncryptedGroupAvatarChangeForbidden">You can\'t change avatar until the group is initialized.</string>
 </resources>

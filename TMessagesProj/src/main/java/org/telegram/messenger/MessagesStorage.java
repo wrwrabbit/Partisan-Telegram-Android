@@ -10090,13 +10090,22 @@ public class MessagesStorage extends BaseController {
         storageQueue.postRunnable(() -> {
             SQLitePreparedStatement state = null;
             try {
-                state = database.executeFast("INSERT INTO enc_groups (encrypted_group_id, name, owner_user_id, state, external_group_id) VALUES (?, ?, ?, ?, ?)");
+                state = database.executeFast("INSERT INTO enc_groups (encrypted_group_id, name, owner_user_id, state, external_group_id, avatar) VALUES (?, ?, ?, ?, ?, ?)");
 
                 state.bindInteger(1, encryptedGroup.getInternalId());
                 state.bindString(2, encryptedGroup.getName());
                 state.bindLong(3, encryptedGroup.getOwnerUserId());
                 state.bindString(4, encryptedGroup.getState().toString());
                 state.bindLong(5, encryptedGroup.getExternalId());
+
+                if (encryptedGroup.hasAvatar()) {
+                    NativeByteBuffer buffer = EncryptedGroupUtils.serializeAvatarToByteBuffer(encryptedGroup);
+                    state.bindByteBuffer(6, buffer);
+                    buffer.reuse();
+                } else {
+                    state.bindNull(6);
+                }
+
                 state.step();
                 state.dispose();
 
@@ -10564,7 +10573,7 @@ public class MessagesStorage extends BaseController {
         if (chatsToLoad == null || chatsToLoad.isEmpty() || result == null) {
             return;
         }
-        SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT encrypted_group_id, name, owner_user_id, state, external_group_id FROM enc_groups " +
+        SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT encrypted_group_id, name, owner_user_id, state, external_group_id, avatar FROM enc_groups " +
                 "WHERE encrypted_group_id IN(%s)", chatsToLoad));
         while (cursor.next()) {
             try {
@@ -10576,6 +10585,11 @@ public class MessagesStorage extends BaseController {
                 EncryptedGroupState state = EncryptedGroupState.valueOf(cursor.stringValue(3));
                 builder.setState(state);
                 builder.setExternalId(cursor.longValue(4));
+                if (!cursor.isNull(5)) {
+                    NativeByteBuffer buffer = cursor.byteBufferValue(5);
+                    builder.setAvatar(EncryptedGroupUtils.deserializeAvatarFromByteBuffer(buffer));
+                    buffer.reuse();
+                }
                 builder.setInnerChats(getEncryptedGroupInnerChats(id));
                 result.add(builder.create());
             } catch (Exception e) {
@@ -10609,7 +10623,7 @@ public class MessagesStorage extends BaseController {
     }
 
     public EncryptedGroup loadEncryptedGroup(int encryptedGroupId) throws Exception {
-        SQLiteCursor cursor = database.queryFinalized("SELECT encrypted_group_id, name, owner_user_id, state, external_group_id FROM enc_groups " +
+        SQLiteCursor cursor = database.queryFinalized("SELECT encrypted_group_id, name, owner_user_id, state, external_group_id, avatar FROM enc_groups " +
                 "WHERE encrypted_group_id = ?", encryptedGroupId);
         EncryptedGroup result = null;
         if (cursor.next()) {
@@ -10622,6 +10636,11 @@ public class MessagesStorage extends BaseController {
                 EncryptedGroupState state = EncryptedGroupState.valueOf(cursor.stringValue(3));
                 builder.setState(state);
                 builder.setExternalId(cursor.longValue(4));
+                if (!cursor.isNull(5)) {
+                    NativeByteBuffer buffer = cursor.byteBufferValue(5);
+                    builder.setAvatar(EncryptedGroupUtils.deserializeAvatarFromByteBuffer(buffer));
+                    buffer.reuse();
+                }
                 builder.setInnerChats(getEncryptedGroupInnerChats(id));
                 result = builder.create();
             } catch (Exception e) {
@@ -10634,10 +10653,21 @@ public class MessagesStorage extends BaseController {
     }
 
     public void updateEncryptedGroup(EncryptedGroup encryptedGroup) {
-        partisanExecute("UPDATE enc_groups SET name = ?, state = ? WHERE encrypted_group_id = ?", state -> {
+        partisanExecute("UPDATE enc_groups SET name = ?, state = ?, avatar = ? WHERE encrypted_group_id = ?", state -> {
             state.bindString(1, encryptedGroup.getName());
             state.bindString(2, encryptedGroup.getState().toString());
-            state.bindInteger(3, encryptedGroup.getInternalId());
+            if (encryptedGroup.hasAvatar()) {
+                try {
+                    NativeByteBuffer buffer = EncryptedGroupUtils.serializeAvatarToByteBuffer(encryptedGroup);
+                    state.bindByteBuffer(3, buffer);
+                    buffer.reuse();
+                } catch (Exception ignore) {
+                    state.bindNull(3);
+                }
+            } else {
+                state.bindNull(3);
+            }
+            state.bindInteger(4, encryptedGroup.getInternalId());
             state.step();
         });
     }

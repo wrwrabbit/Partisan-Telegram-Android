@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.secretgroups;
 
+import android.graphics.Bitmap;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +16,7 @@ public class EncryptedGroup {
     private String name;
     private long ownerUserId;
     private EncryptedGroupState state;
+    private Bitmap avatar;
 
     public int getInternalId() {
         return internalId;
@@ -102,6 +105,18 @@ public class EncryptedGroup {
         this.state = state;
     }
 
+    public void setAvatar(Bitmap avatar) {
+        this.avatar = avatar;
+    }
+
+    public Bitmap getAvatar() {
+        return avatar;
+    }
+
+    public boolean hasAvatar() {
+        return avatar != null;
+    }
+
     public static class EncryptedGroupBuilder {
         private final EncryptedGroup encryptedGroup;
 
@@ -131,6 +146,10 @@ public class EncryptedGroup {
 
         public void setState(EncryptedGroupState state) {
             encryptedGroup.state = state;
+        }
+
+        public void setAvatar(Bitmap avatar) {
+            encryptedGroup.avatar = avatar;
         }
 
         public EncryptedGroup create() {

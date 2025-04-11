@@ -1,5 +1,8 @@
 package org.telegram.messenger.partisan.secretgroups;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MessagesController;
@@ -16,6 +19,7 @@ import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.GroupCreationFailedAction;
+import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.StartSecondaryInnerChatAction;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.LaunchActivity;
@@ -56,6 +60,8 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             handleChangeGroupInfoAction(encryptedChat, (ChangeGroupInfoAction) action);
         } else if (action instanceof DeleteMemberAction) {
             handleDeleteMemberAction(encryptedChat, (DeleteMemberAction) action);
+        } else if (action instanceof NewAvatarAction) {
+            handleNewAvatar(encryptedChat, (NewAvatarAction)action);
         }
     }
 
@@ -306,6 +312,37 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
                 EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
             }
         }
+    }
+
+    private void handleNewAvatar(TLRPC.EncryptedChat encryptedChat, NewAvatarAction action) {
+        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
+        if (encryptedGroup == null) {
+            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
+            return;
+        }
+        if (encryptedGroup.getOwnerUserId() != encryptedChat.user_id) {
+            log("Changing avatar by non-owner " + encryptedChat.id);
+            return;
+        }
+        final int maxWidth = 150;
+        final int maxHeight = 150;
+        final int colorDepth = 3;
+        final int maxSize = maxWidth * maxHeight * colorDepth;
+        if (action.avatarBytes.length > maxSize) {
+            log("The avatar is too big: " + action.avatarBytes.length);
+            return;
+        }
+
+        Bitmap bitmap = BitmapFactory.decodeByteArray(action.avatarBytes, 0, action.avatarBytes.length);
+        if (bitmap == null) {
+            log("The avatar is invalid");
+            return;
+        }
+        encryptedGroup.setAvatar(bitmap);
+        getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+        AndroidUtilities.runOnUIThread(() ->
+                getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_AVATAR)
+        );
     }
 
     private void log(String message) {

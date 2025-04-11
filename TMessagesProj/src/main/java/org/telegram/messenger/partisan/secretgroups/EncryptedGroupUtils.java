@@ -1,11 +1,16 @@
 package org.telegram.messenger.partisan.secretgroups;
 
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
@@ -17,11 +22,15 @@ import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -350,5 +359,49 @@ public class EncryptedGroupUtils {
                 .map(innerChat -> innerChat.getDialogId().orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    public static void applyAvatar(Object avatarImageView, AvatarDrawable avatarDrawable, EncryptedGroup encryptedGroup) {
+        applyAvatar(avatarImageView, avatarDrawable, encryptedGroup, null);
+    }
+
+    public static void applyAvatar(Object avatarImageView, AvatarDrawable avatarDrawable, EncryptedGroup encryptedGroup, Object parentObject) {
+        Drawable drawable;
+        if (encryptedGroup != null && encryptedGroup.hasAvatar()) {
+            drawable = new BitmapDrawable(encryptedGroup.getAvatar());
+        } else {
+            avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_ANONYMOUS);
+            drawable = avatarDrawable;
+        }
+
+        if (avatarImageView instanceof BackupImageView) {
+            ((BackupImageView)avatarImageView).setImage(null, null, drawable);
+        } else if (avatarImageView instanceof ImageReceiver) {
+            ((ImageReceiver)avatarImageView).setImage(null, null, drawable, null, parentObject, 0);
+        }
+    }
+
+    public static NativeByteBuffer serializeAvatarToByteBuffer(EncryptedGroup encryptedGroup) throws Exception {
+        byte[] avatarBytes = serializeAvatar(encryptedGroup);
+        NativeByteBuffer calculateBuffer = new NativeByteBuffer(true);
+        calculateBuffer.writeByteArray(avatarBytes);
+        NativeByteBuffer avatarBuffer = new NativeByteBuffer(calculateBuffer.length());
+        avatarBuffer.writeByteArray(avatarBytes);
+        return avatarBuffer;
+    }
+
+    public static byte[] serializeAvatar(EncryptedGroup encryptedGroup) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        encryptedGroup.getAvatar().compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, stream);
+        return stream.toByteArray();
+    }
+
+    public static Bitmap deserializeAvatarFromByteBuffer(NativeByteBuffer buffer) {
+        byte[] bytes = buffer.readByteArray(false);
+        try {
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Exception ignore) {
+            return null;
+        }
     }
 }

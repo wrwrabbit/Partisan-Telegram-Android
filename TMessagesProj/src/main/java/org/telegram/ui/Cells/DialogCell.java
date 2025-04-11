@@ -3240,8 +3240,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     avatarDrawable.setInfo(currentAccount, chat);
                     avatarImage.setForUserOrChat(chat, avatarDrawable);
                 } else if (encryptedGroup != null) {
-                    avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_ANONYMOUS);
-                    avatarImage.setImage(null, null, avatarDrawable, null, user, 0);
+                    EncryptedGroupUtils.applyAvatar(avatarImage, avatarDrawable, encryptedGroup);
                 }
             }
 

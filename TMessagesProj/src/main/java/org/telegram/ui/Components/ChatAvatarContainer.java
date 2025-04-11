@@ -48,6 +48,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -1292,10 +1293,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
             }
         } else if (parentFragment != null && parentFragment.isEncryptedGroup()) {
             avatarDrawable.setScaleSize(.8f);
-            avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_ANONYMOUS);
-            if (avatarImageView != null) {
-                avatarImageView.setImage(null, null, avatarDrawable, null);
-            }
+            EncryptedGroupUtils.applyAvatar(avatarImageView, avatarDrawable, parentFragment.getEncryptedGroup());
         } else if (chat != null) {
             avatarDrawable.setInfo(currentAccount, chat);
             if (avatarImageView != null) {

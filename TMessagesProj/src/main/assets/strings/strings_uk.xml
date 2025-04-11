@@ -306,4 +306,5 @@
     <string name="InnerEncryptedChatStateInvitationDeclined">Запрошення відхилено</string>
     <string name="InnerEncryptedChatStateMemberDeleted">Учасник видалено</string>
     <string name="EncryptedGroupMemberRemovalConfirmation">Ви впевнені, що хочете видалити цього учасника із секретної групи? Усі його повідомлення будуть видалені.</string>
+    <string name="EncryptedGroupAvatarChangeForbidden">Не можна змінити аватар до ініціалізації групи.</string>
 </resources>

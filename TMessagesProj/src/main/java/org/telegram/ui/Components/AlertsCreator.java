@@ -100,6 +100,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SpoofedLinkChecker;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
@@ -2199,8 +2200,9 @@ public class AlertsCreator {
         if (user != null) {
             if (encryptedGroupId != null) {
                 avatarDrawable.setScaleSize(.8f);
-                avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_ANONYMOUS);
-                imageView.setImage(null, null, avatarDrawable, user);
+                MessagesController messagesController = MessagesController.getInstance(account);
+                EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+                EncryptedGroupUtils.applyAvatar(imageView, avatarDrawable, encryptedGroup, user);
             } else if (UserObject.isReplyUser(user)) {
                 avatarDrawable.setScaleSize(.8f);
                 avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_REPLIES);
