@@ -305,7 +305,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             return;
         }
         if (action.userId == getUserConfig().clientUserId) {
-            getMessagesController().deleteDialog(DialogObject.makeEncryptedDialogId(encryptedChat.id), 0, true);
+            getMessagesController().deleteDialog(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), 0, true);
         } else {
             getEncryptedGroupProtocol().removeMember(encryptedGroup, action.userId);
             if (encryptedGroup.getState() == EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
