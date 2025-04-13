@@ -1,5 +1,11 @@
 package org.telegram.messenger.partisan.secretgroups;
 
+import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.CREATING_ENCRYPTED_CHATS;
+import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.INITIALIZED;
+import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.WAITING_CONFIRMATION_FROM_MEMBERS;
+import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.WAITING_CONFIRMATION_FROM_OWNER;
+import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -17,13 +23,19 @@ import org.telegram.messenger.partisan.secretgroups.action.ConfirmGroupInitializ
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmJoinAction;
 import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
-import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.GroupCreationFailedAction;
 import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.StartSecondaryInnerChatAction;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.LaunchActivity;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,46 +44,134 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 public class EncryptedGroupServiceMessagesHandler implements AccountControllersProvider {
-    private final int accountNum;
+    private enum HandlerCondition {
+        GROUP_EXISTS,
+        ACTION_FROM_OWNER
+    }
 
-    public EncryptedGroupServiceMessagesHandler(int accountNum) {
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    private @interface Handler {
+        HandlerCondition[] conditions() default {};
+        EncryptedGroupState[] groupStates() default {};
+        InnerEncryptedChatState[] innerChatStates() default{};
+    }
+
+    private final TLRPC.EncryptedChat encryptedChat;
+    private final int accountNum;
+    private final EncryptedGroupsServiceMessage serviceMessage;
+    private EncryptedGroup encryptedGroup;
+
+    public EncryptedGroupServiceMessagesHandler(TLRPC.EncryptedChat encryptedChat,
+                                                EncryptedGroupsServiceMessage serviceMessage,
+                                                int accountNum) {
+        this.encryptedChat = encryptedChat;
+        this.serviceMessage = serviceMessage;
         this.accountNum = accountNum;
     }
 
-    public void handleServiceMessage(TLRPC.EncryptedChat encryptedChat, EncryptedGroupsServiceMessage serviceMessage) {
+    public TLRPC.Message handleServiceMessage() {
         if (!SharedConfig.encryptedGroupsEnabled) {
-            return;
+            return null;
         }
-        EncryptedGroupAction action = serviceMessage.encryptedGroupAction;
-        log("Handle service message " + action.getClass());
-        if (action instanceof CreateGroupAction) {
-            handleGroupCreation(encryptedChat, (CreateGroupAction) action);
-        } else if (action instanceof ConfirmJoinAction) {
-            handleConfirmJoinAction(encryptedChat, (ConfirmJoinAction) action);
-        } else if (action instanceof ConfirmGroupInitializationAction) {
-            handleConfirmGroupInitialization(encryptedChat, (ConfirmGroupInitializationAction) action);
-        } else if (action instanceof StartSecondaryInnerChatAction) {
-            handleStartSecondaryChat(encryptedChat, (StartSecondaryInnerChatAction) action);
-        } else if (action instanceof AllSecondaryChatsInitializedAction) {
-            handleAllSecondaryChatsInitialized(encryptedChat, (AllSecondaryChatsInitializedAction) action);
-        } else if (action instanceof GroupCreationFailedAction) {
-            handleGroupCreationFailed(encryptedChat, (GroupCreationFailedAction) action);
-        } else if (action instanceof ChangeGroupInfoAction) {
-            handleChangeGroupInfoAction(encryptedChat, (ChangeGroupInfoAction) action);
-        } else if (action instanceof DeleteMemberAction) {
-            handleDeleteMemberAction(encryptedChat, (DeleteMemberAction) action);
-        } else if (action instanceof NewAvatarAction) {
-            handleNewAvatar(encryptedChat, (NewAvatarAction)action);
+        log("Handle service message " + serviceMessage.encryptedGroupAction.getClass());
+
+        Method[] methods = EncryptedGroupServiceMessagesHandler.class.getDeclaredMethods();
+        for (Method method : methods) {
+            if (validateMethod(method)) {
+                return invokeMethod(method);
+            }
+        }
+        return null;
+    }
+
+    private boolean validateMethod(Method method) {
+        Handler annotation = method.getAnnotation(Handler.class);
+        if (annotation == null) {
+            return false;
+        }
+        Class<?>[] parameters = method.getParameterTypes();
+        if (parameters.length != 1 || !parameters[0].isInstance(serviceMessage.encryptedGroupAction)) {
+            return false;
+        }
+
+        encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
+        if (!validateHandlerConditions(annotation.conditions())
+                || !validateGroupState(annotation.groupStates())
+                || !validateInnerChatState(annotation.innerChatStates())) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validateHandlerConditions(HandlerCondition[] conditions) {
+        for (HandlerCondition condition : conditions) {
+            switch (condition) {
+                case GROUP_EXISTS:
+                    if (encryptedGroup == null) {
+                        log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
+                        return false;
+                    }
+                    break;
+                case ACTION_FROM_OWNER:
+                    if (encryptedGroup == null) {
+                        throw new RuntimeException("Wrong annotation usage");
+                    }
+                    if (encryptedGroup.getOwnerUserId() != encryptedChat.user_id) {
+                        log("Action sent by non-owner " + encryptedChat.id);
+                        return false;
+                    }
+                    break;
+            }
+        }
+        return true;
+    }
+
+    private boolean validateGroupState(EncryptedGroupState[] states) {
+        if (states.length > 0) {
+            if (encryptedGroup == null) {
+                throw new RuntimeException("Wrong annotation usage");
+            }
+            List<EncryptedGroupState> stateList = Arrays.asList(states);
+            if (stateList.stream().noneMatch(state -> state == encryptedGroup.getState())) {
+                log("Invalid encrypted group state.");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean validateInnerChatState(InnerEncryptedChatState[] states) {
+        if (states.length > 0) {
+            if (encryptedGroup == null) {
+                throw new RuntimeException("Wrong annotation usage");
+            }
+            List<InnerEncryptedChatState> stateList = Arrays.asList(states);
+            InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByEncryptedChatId(encryptedChat.id);
+            if (stateList.stream().noneMatch(state -> state == innerChat.getState())) {
+                log("Invalid inner chat state.");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private TLRPC.Message invokeMethod(Method method) {
+        try {
+            return (TLRPC.Message)method.invoke(this, serviceMessage.encryptedGroupAction);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void handleGroupCreation(TLRPC.EncryptedChat encryptedChat, CreateGroupAction action) {
+    @Handler()
+    private TLRPC.Message handleGroupCreation(TLRPC.EncryptedChat encryptedChat, CreateGroupAction action) {
         if (FakePasscodeUtils.isFakePasscodeActivated()) {
-            return;
+            return null;
         }
         EncryptedGroup encryptedGroup = createEncryptedGroup(encryptedChat, action);
         if (encryptedGroup == null) {
-            return;
+            return null;
         }
         log(encryptedGroup, "Created.");
 
@@ -92,10 +192,11 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
             getMessagesController().putEncryptedGroup(encryptedGroup, false);
         });
+        return null;
     }
 
     private void forceHidePreview(TLRPC.EncryptedChat encryptedChat, EncryptedGroup encryptedGroup) {
-        if (encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+        if (encryptedGroup.getState() != INITIALIZED) {
             long chatDialogId = DialogObject.makeEncryptedDialogId(encryptedChat.id);
             long groupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
 
@@ -155,22 +256,11 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         return dialog;
     }
 
-    private void handleConfirmJoinAction(TLRPC.EncryptedChat encryptedChat, ConfirmJoinAction action) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
-        if (encryptedGroup == null) {
-            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
-            return;
-        }
-        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_CONFIRMATION_FROM_MEMBERS
-                && encryptedGroup.getState() != EncryptedGroupState.CREATING_ENCRYPTED_CHATS) {
-            log("Invalid encrypted group state.");
-            return;
-        }
+    @Handler(conditions = HandlerCondition.GROUP_EXISTS,
+            groupStates = {WAITING_CONFIRMATION_FROM_MEMBERS, CREATING_ENCRYPTED_CHATS},
+            innerChatStates = InnerEncryptedChatState.INVITATION_SENT)
+    private TLRPC.Message handleConfirmJoinAction(TLRPC.EncryptedChat encryptedChat, EncryptedGroup encryptedGroup, ConfirmJoinAction action) {
         InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByEncryptedChatId(encryptedChat.id);
-        if (innerChat.getState() != InnerEncryptedChatState.INVITATION_SENT) {
-            log(encryptedGroup, "The encrypted group doesn't wait for an answer to the request.");
-            return;
-        }
         log(encryptedGroup, "Handle confirm join.");
         innerChat.setState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
@@ -181,46 +271,32 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
+        return null;
     }
 
-    private void handleConfirmGroupInitialization(TLRPC.EncryptedChat encryptedChat, ConfirmGroupInitializationAction action) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
-        if (encryptedGroup == null) {
-            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
-            return;
-        }
-        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_CONFIRMATION_FROM_OWNER) {
-            log(encryptedGroup, "Doesn't wait for owner confirmation.");
-            return;
-        }
+    @Handler(conditions = HandlerCondition.GROUP_EXISTS, groupStates = WAITING_CONFIRMATION_FROM_OWNER)
+    private TLRPC.Message handleConfirmGroupInitialization(ConfirmGroupInitializationAction action) {
         log(encryptedGroup, "Owner confirmed initialization.");
-        encryptedGroup.setState(EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION);
+        encryptedGroup.setState(WAITING_SECONDARY_CHAT_CREATION);
         getMessagesStorage().updateEncryptedGroup(encryptedGroup);
         SecondaryInnerChatStarter.startSecondaryChats(accountNum, LaunchActivity.instance, encryptedGroup);
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
+        return null;
     }
 
-    private void handleStartSecondaryChat(TLRPC.EncryptedChat encryptedChat, StartSecondaryInnerChatAction action) {
-        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroupByExternalId(action.externalGroupId);
-        if (encryptedGroup == null) {
-            log("There is no encrypted group with id " + action.externalGroupId);
-            return;
-        }
-        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
-            log("Invalid encrypted group state.");
-            return;
-        }
+    @Handler(conditions = HandlerCondition.GROUP_EXISTS, groupStates = WAITING_SECONDARY_CHAT_CREATION)
+    private TLRPC.Message handleStartSecondaryChat(StartSecondaryInnerChatAction action) {
         InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
         if (innerChat == null) {
             log(encryptedGroup, "There is no inner chat for user id.");
-            return;
+            return null;
         }
         if (innerChat.getEncryptedChatId().isPresent()) {
             log(encryptedGroup, "Inner encrypted chat is already initialized for user id.");
-            return;
+            return null;
         }
         log(encryptedGroup, "Secondary chat creation handled.");
         innerChat.setEncryptedChatId(encryptedChat.id);
@@ -232,23 +308,14 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
+        return null;
     }
 
-    private void handleAllSecondaryChatsInitialized(TLRPC.EncryptedChat encryptedChat, AllSecondaryChatsInitializedAction action) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
-        if (encryptedGroup == null) {
-            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
-            return;
-        }
-        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
-            log("Invalid encrypted group state.");
-            return;
-        }
+    @Handler(conditions = HandlerCondition.GROUP_EXISTS,
+            groupStates = WAITING_SECONDARY_CHAT_CREATION,
+            innerChatStates = InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)
+    private TLRPC.Message handleAllSecondaryChatsInitialized(AllSecondaryChatsInitializedAction action) {
         InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByEncryptedChatId(encryptedChat.id);
-        if (innerChat.getState() != InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION) {
-            log("Inner encrypted chat " + encryptedChat.id + " doesn't wait for secondary chats creation");
-            return;
-        }
         log(encryptedGroup, "User created all secondary chats.");
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
@@ -257,18 +324,11 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
+        return null;
     }
 
-    private void handleGroupCreationFailed(TLRPC.EncryptedChat encryptedChat, GroupCreationFailedAction action) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
-        if (encryptedGroup == null) {
-            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
-            return;
-        }
-        if (encryptedGroup.getState() == EncryptedGroupState.INITIALIZED && encryptedGroup.getOwnerUserId() != encryptedChat.user_id) {
-            log("Invalid encrypted group state.");
-            return;
-        }
+    @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER}, groupStates = INITIALIZED)
+    private TLRPC.Message handleGroupCreationFailed(GroupCreationFailedAction action) {
         encryptedGroup.setState(EncryptedGroupState.INITIALIZATION_FAILED);
         getMessagesStorage().updateEncryptedGroup(encryptedGroup);
         AndroidUtilities.runOnUIThread(() -> {
@@ -276,73 +336,56 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
         getEncryptedGroupProtocol().sendGroupCreationFailedToAllMembers(encryptedGroup);
+        return null;
     }
 
-    private void handleChangeGroupInfoAction(TLRPC.EncryptedChat encryptedChat, ChangeGroupInfoAction action) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
-        if (encryptedGroup == null) {
-            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
-            return;
-        }
+    @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER})
+    private TLRPC.Message handleChangeGroupInfoAction(ChangeGroupInfoAction action) {
         if ((action.flags & 8) != 0) {
             encryptedGroup.setName(action.name);
             getMessagesStorage().updateEncryptedGroup(encryptedGroup);
             AndroidUtilities.runOnUIThread(() -> {
                 getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_NAME);
             });
-
         }
+        return null;
     }
 
-    private void handleDeleteMemberAction(TLRPC.EncryptedChat encryptedChat, DeleteMemberAction action) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
-        if (encryptedGroup == null) {
-            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
-            return;
-        }
-        if (encryptedGroup.getOwnerUserId() != encryptedChat.user_id) {
-            log("Deleting members by non-owner " + encryptedChat.id);
-            return;
-        }
+    @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER})
+    private TLRPC.Message handleDeleteMemberAction(DeleteMemberAction action) {
         if (action.userId == getUserConfig().clientUserId) {
             getMessagesController().deleteDialog(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), 0, true);
         } else {
             getEncryptedGroupProtocol().removeMember(encryptedGroup, action.userId);
-            if (encryptedGroup.getState() == EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
+            if (encryptedGroup.getState() == WAITING_SECONDARY_CHAT_CREATION) {
                 EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
             }
         }
+        return null;
     }
 
-    private void handleNewAvatar(TLRPC.EncryptedChat encryptedChat, NewAvatarAction action) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupByEncryptedChat(encryptedChat);
-        if (encryptedGroup == null) {
-            log("There is no encrypted group contained encrypted chat with id " + encryptedChat.id);
-            return;
-        }
-        if (encryptedGroup.getOwnerUserId() != encryptedChat.user_id) {
-            log("Changing avatar by non-owner " + encryptedChat.id);
-            return;
-        }
+    @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER})
+    private TLRPC.Message handleNewAvatar(NewAvatarAction action) {
         final int maxWidth = 150;
         final int maxHeight = 150;
         final int colorDepth = 3;
         final int maxSize = maxWidth * maxHeight * colorDepth;
         if (action.avatarBytes.length > maxSize) {
             log("The avatar is too big: " + action.avatarBytes.length);
-            return;
+            return null;
         }
 
         Bitmap bitmap = BitmapFactory.decodeByteArray(action.avatarBytes, 0, action.avatarBytes.length);
         if (bitmap == null) {
             log("The avatar is invalid");
-            return;
+            return null;
         }
         encryptedGroup.setAvatar(bitmap);
         getMessagesStorage().updateEncryptedGroup(encryptedGroup);
         AndroidUtilities.runOnUIThread(() ->
                 getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_AVATAR)
         );
+        return null;
     }
 
     private void log(String message) {

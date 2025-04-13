@@ -1332,8 +1332,11 @@ public class SecretChatHelper extends BaseController {
                     return null;
                 }
             } else if (object instanceof org.telegram.messenger.partisan.secretgroups.EncryptedGroupsServiceMessage) {
-                new org.telegram.messenger.partisan.secretgroups.EncryptedGroupServiceMessagesHandler(currentAccount)
-                        .handleServiceMessage(chat, (org.telegram.messenger.partisan.secretgroups.EncryptedGroupsServiceMessage)object);
+                new org.telegram.messenger.partisan.secretgroups.EncryptedGroupServiceMessagesHandler(
+                            chat,
+                            (org.telegram.messenger.partisan.secretgroups.EncryptedGroupsServiceMessage)object,
+                            currentAccount
+                        ).handleServiceMessage();
             } else {
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.e("unknown message " + object);
