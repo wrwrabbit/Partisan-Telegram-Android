@@ -23423,6 +23423,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (needAddMessage) {
             messages.add(pos, obj);
             messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
+            removeTtlDuplications();
             if (obj.isOut()) {
                 hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
             }
@@ -23431,6 +23432,31 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
             massageCopies.add(obj);
             return false;
+        }
+    }
+
+    private void removeTtlDuplications() {
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            if (i > 0) {
+                Integer currentTtl = getTtlFromMessage(messages.get(i));
+                if (currentTtl == null) {
+                    continue;
+                }
+                Integer previousTtl = getTtlFromMessage(messages.get(i - 1));
+                if (currentTtl.equals(previousTtl)) {
+                    messages.remove(i);
+                }
+            }
+        }
+    }
+
+    private Integer getTtlFromMessage(MessageObject obj) {
+        if (obj.messageOwner == null
+                || obj.messageOwner.action == null
+                || !(obj.messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL)) {
+            return null;
+        } else {
+            return ((TLRPC.TL_decryptedMessageActionSetMessageTTL)obj.messageOwner.action.encryptedAction).ttl_seconds;
         }
     }
 
