@@ -23415,23 +23415,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     private boolean addMessage(int pos, MessageObject obj) {
-        if (isEncryptedGroup()) {
-            boolean needAddMessage = !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id);
-            if (needAddMessage) {
-                messages.add(pos, obj);
-                messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
-                if (obj.isOut()) {
-                    hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
-                }
-                return true;
-            } else {
-                List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
-                massageCopies.add(obj);
-                return false;
-            }
-        } else {
+        if (!isEncryptedGroup()) {
             messages.add(pos, obj);
             return true;
+        }
+        boolean needAddMessage = !obj.isOut() || !hiddenEncryptedGroupOutMessages.containsKey(obj.messageOwner.random_id);
+        if (needAddMessage) {
+            messages.add(pos, obj);
+            messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
+            if (obj.isOut()) {
+                hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
+            }
+            return true;
+        } else {
+            List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
+            massageCopies.add(obj);
+            return false;
         }
     }
 
