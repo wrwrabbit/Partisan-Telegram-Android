@@ -23423,11 +23423,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (needAddMessage) {
             messages.add(pos, obj);
             messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
-            removeTtlDuplications();
+            boolean added = !removeTtlDuplications();
             if (obj.isOut()) {
                 hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
             }
-            return true;
+            return added;
         } else {
             List<MessageObject> massageCopies = hiddenEncryptedGroupOutMessages.get(obj.messageOwner.random_id);
             massageCopies.add(obj);
@@ -23435,7 +23435,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
     }
 
-    private void removeTtlDuplications() {
+    private boolean removeTtlDuplications() {
+        boolean modified = false;
         for (int i = messages.size() - 1; i >= 0; i--) {
             if (i > 0) {
                 Integer currentTtl = getTtlFromMessage(messages.get(i));
@@ -23445,9 +23446,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 Integer previousTtl = getTtlFromMessage(messages.get(i - 1));
                 if (currentTtl.equals(previousTtl)) {
                     messages.remove(i);
+                    modified = true;
                 }
             }
         }
+        return modified;
     }
 
     private Integer getTtlFromMessage(MessageObject obj) {
