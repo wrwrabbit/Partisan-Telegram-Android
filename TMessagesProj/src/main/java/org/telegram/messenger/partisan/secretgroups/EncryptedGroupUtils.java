@@ -371,7 +371,14 @@ public class EncryptedGroupUtils {
         if (encryptedGroup != null && encryptedGroup.hasAvatar()) {
             drawable = new BitmapDrawable(encryptedGroup.getAvatar());
         } else {
-            avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_ANONYMOUS);
+            MessagesController.PeerColor peerColor = MessagesController.PeerColor.fromString("#{13770548}");
+            avatarDrawable.setInfo(
+                    encryptedGroup != null ? encryptedGroup.getExternalId() : 0,
+                    encryptedGroup != null ? encryptedGroup.getName() : "",
+                    null,
+                    null,
+                    null,
+                    peerColor);
             drawable = avatarDrawable;
         }
 
