@@ -345,7 +345,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
 
     @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER})
     private TLRPC.Message handleChangeGroupInfoAction(ChangeGroupInfoAction action) {
-        if ((action.flags & 8) != 0) {
+        if ((action.flags & ChangeGroupInfoAction.FLAG_NAME) != 0) {
             encryptedGroup.setName(action.name);
             getMessagesStorage().updateEncryptedGroup(encryptedGroup);
             AndroidUtilities.runOnUIThread(() -> {

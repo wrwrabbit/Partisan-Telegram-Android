@@ -712,7 +712,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
         if (!encryptedGroup.getName().equals(nameTextView.getText().toString())) {
             encryptedGroup.setName(nameTextView.getText().toString());
             action.name = encryptedGroup.getName();
-            action.flags |= 8;
+            action.flags |= ChangeGroupInfoAction.FLAG_NAME;
         }
 
         if (action.flags != 0) {

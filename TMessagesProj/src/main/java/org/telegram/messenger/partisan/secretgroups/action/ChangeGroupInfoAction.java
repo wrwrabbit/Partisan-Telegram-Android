@@ -8,6 +8,8 @@ import java.util.Objects;
 public class ChangeGroupInfoAction extends EncryptedGroupAction {
     public static final int constructor = 0x1147fcc3;
 
+    public static final int FLAG_NAME = 0x01;
+
     public int flags;
     public String name;
 
