@@ -291,8 +291,17 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         return null;
     }
 
-    @Handler(conditions = HandlerCondition.GROUP_EXISTS, groupStates = WAITING_SECONDARY_CHAT_CREATION)
+    @Handler()
     private TLRPC.Message handleStartSecondaryChat(StartSecondaryInnerChatAction action) {
+        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroupByExternalId(action.externalGroupId);
+        if (encryptedGroup == null) {
+            log("There is no encrypted group with id " + action.externalGroupId);
+            return null;
+        }
+        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
+            log("Invalid encrypted group state.");
+            return null;
+        }
         InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
         if (innerChat == null) {
             log(encryptedGroup, "There is no inner chat for user id.");
