@@ -688,7 +688,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
 
         if (action.flags != 0) {
             getMessagesStorage().updateEncryptedGroup(encryptedGroup);
-            new EncryptedGroupProtocol(currentAccount).sendActionToAllMembers(encryptedGroup, action);
+            new EncryptedGroupProtocol(currentAccount).sendActionToAllMembers(encryptedGroup, action, true);
             getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_NAME);
         }
         finishFragment();

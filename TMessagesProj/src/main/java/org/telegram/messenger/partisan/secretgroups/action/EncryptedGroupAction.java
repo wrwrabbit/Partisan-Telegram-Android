@@ -1,9 +1,9 @@
 package org.telegram.messenger.partisan.secretgroups.action;
 
 import org.telegram.tgnet.InputSerializedData;
-import org.telegram.tgnet.TLObject;
+import org.telegram.tgnet.TLRPC;
 
-public abstract class EncryptedGroupAction extends TLObject {
+public abstract class EncryptedGroupAction extends TLRPC.DecryptedMessageAction {
 
     public static EncryptedGroupAction TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
         EncryptedGroupAction result = null;
@@ -43,5 +43,10 @@ public abstract class EncryptedGroupAction extends TLObject {
             result.readParams(stream, exception);
         }
         return result;
+    }
+
+    public static boolean isVisibleAction(TLRPC.DecryptedMessageAction action) {
+        return action instanceof ChangeGroupInfoAction
+                || action instanceof NewAvatarAction;
     }
 }

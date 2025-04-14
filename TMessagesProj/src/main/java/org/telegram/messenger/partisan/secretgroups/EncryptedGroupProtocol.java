@@ -147,10 +147,14 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         }
         NewAvatarAction action = new NewAvatarAction();
         action.avatarBytes = EncryptedGroupUtils.serializeAvatar(encryptedGroup);
-        sendActionToAllMembers(encryptedGroup, action);
+        sendActionToAllMembers(encryptedGroup, action, true);
     }
 
     public void sendActionToAllMembers(EncryptedGroup encryptedGroup, EncryptedGroupAction action) {
+        sendActionToAllMembers(encryptedGroup, action, false);
+    }
+
+    public void sendActionToAllMembers(EncryptedGroup encryptedGroup, EncryptedGroupAction action, boolean updateInterface) {
         if (!SharedConfig.encryptedGroupsEnabled) {
             return;
         }
@@ -163,11 +167,15 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
             if (encryptedChat == null) {
                 continue;
             }
-            sendAction(encryptedChat, action);
+            sendAction(encryptedChat, action, updateInterface);
         }
     }
 
     private void sendAction(TLRPC.EncryptedChat encryptedChat, EncryptedGroupAction action) {
+        sendAction(encryptedChat, action, false);
+    }
+
+    private void sendAction(TLRPC.EncryptedChat encryptedChat, EncryptedGroupAction action, boolean updateInterface) {
         if (!SharedConfig.encryptedGroupsEnabled) {
             return;
         }
@@ -177,22 +185,32 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         reqSend.encryptedGroupAction = action;
         reqSend.action = new TLRPC.TL_decryptedMessageActionNotifyLayer(); // action shouldn't be null, so we put a meaningless action there
         reqSend.action.layer = CURRENT_SECRET_CHAT_LAYER;
-        message = createSecretGroupServiceMessage(encryptedChat, reqSend.action, accountNum);
+        message = createSecretGroupServiceMessage(encryptedChat, action, accountNum);
         reqSend.random_id = message.random_id;
+
+        if (updateInterface) {
+            MessageObject newMsgObj = new MessageObject(accountNum, message, false, false);
+            newMsgObj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SENDING;
+            newMsgObj.wasJustSent = true;
+            ArrayList<MessageObject> objArr = new ArrayList<>();
+            objArr.add(newMsgObj);
+            getMessagesController().updateInterfaceWithMessages(message.dialog_id, objArr, 0);
+            getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
+        }
 
         getSecretChatHelper().performSendEncryptedRequest(reqSend, message, encryptedChat, null, null, null);
     }
 
-    private static TLRPC.TL_messageService createSecretGroupServiceMessage(TLRPC.EncryptedChat encryptedChat, TLRPC.DecryptedMessageAction decryptedMessage, int accountNum) {
-        if (decryptedMessage == null) {
-            throw new RuntimeException("createSecretGroupServiceMessage error: decryptedMessage was null");
+    private static TLRPC.TL_messageService createSecretGroupServiceMessage(TLRPC.EncryptedChat encryptedChat, EncryptedGroupAction action, int accountNum) {
+        if (action == null) {
+            throw new RuntimeException("createSecretGroupServiceMessage error: action was null");
         }
         AccountInstance accountInstance = AccountInstance.getInstance(accountNum);
 
         TLRPC.TL_messageService newMsg = new TLRPC.TL_messageService();
 
         newMsg.action = new TLRPC.TL_messageEncryptedAction();
-        newMsg.action.encryptedAction = decryptedMessage;
+        newMsg.action.encryptedAction = action;
         newMsg.local_id = newMsg.id = accountInstance.getUserConfig().getNewMessageId();
         newMsg.from_id = new TLRPC.TL_peerUser();
         newMsg.from_id.user_id = accountInstance.getUserConfig().getClientUserId();
@@ -207,7 +225,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         } else {
             newMsg.peer_id.user_id = encryptedChat.participant_id;
         }
-        if (decryptedMessage instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || decryptedMessage instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL) {
+        if (EncryptedGroupAction.isVisibleAction(action)) {
             newMsg.date = accountInstance.getConnectionsManager().getCurrentTime();
         } else {
             newMsg.date = 0;

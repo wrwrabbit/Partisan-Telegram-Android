@@ -20,6 +20,9 @@ import com.google.android.exoplayer2.util.Consumer;
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupChatUpdateHandler;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
+import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
+import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.InputSerializedData;
@@ -581,11 +584,11 @@ public class SecretChatHelper extends BaseController {
     }
 
     public static boolean isSecretVisibleMessage(TLRPC.Message message) {
-        return message.action instanceof TLRPC.TL_messageEncryptedAction && (message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL);
+        return message.action instanceof TLRPC.TL_messageEncryptedAction && (message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL || EncryptedGroupAction.isVisibleAction(message.action.encryptedAction));
     }
 
     public static boolean isSecretInvisibleMessage(TLRPC.Message message) {
-        return message.action instanceof TLRPC.TL_messageEncryptedAction && !(message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL);
+        return message.action instanceof TLRPC.TL_messageEncryptedAction && !(message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL || EncryptedGroupAction.isVisibleAction(message.action.encryptedAction));
     }
 
     protected void performSendEncryptedRequest(TLRPC.TL_messages_sendEncryptedMultiMedia req, SendMessagesHelper.DelayedMessage message) {
@@ -1332,9 +1335,10 @@ public class SecretChatHelper extends BaseController {
                     return null;
                 }
             } else if (object instanceof org.telegram.messenger.partisan.secretgroups.EncryptedGroupsServiceMessage) {
-                new org.telegram.messenger.partisan.secretgroups.EncryptedGroupServiceMessagesHandler(
+                return new org.telegram.messenger.partisan.secretgroups.EncryptedGroupServiceMessagesHandler(
                             chat,
                             (org.telegram.messenger.partisan.secretgroups.EncryptedGroupsServiceMessage)object,
+                            date,
                             currentAccount
                         ).handleServiceMessage();
             } else {

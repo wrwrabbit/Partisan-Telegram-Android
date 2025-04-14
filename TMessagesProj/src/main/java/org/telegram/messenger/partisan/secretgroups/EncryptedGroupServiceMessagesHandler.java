@@ -58,15 +58,18 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     }
 
     private final TLRPC.EncryptedChat encryptedChat;
-    private final int accountNum;
     private final EncryptedGroupsServiceMessage serviceMessage;
+    private final int date;
+    private final int accountNum;
     private EncryptedGroup encryptedGroup;
 
     public EncryptedGroupServiceMessagesHandler(TLRPC.EncryptedChat encryptedChat,
                                                 EncryptedGroupsServiceMessage serviceMessage,
+                                                int date,
                                                 int accountNum) {
         this.encryptedChat = encryptedChat;
         this.serviceMessage = serviceMessage;
+        this.date = date;
         this.accountNum = accountNum;
     }
 
@@ -347,6 +350,10 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             AndroidUtilities.runOnUIThread(() -> {
                 getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_NAME);
             });
+
+            TLRPC.TL_messageService newMessage = createMessageForStoring();
+            newMessage.action.title = action.name;
+            return newMessage;
         }
         return null;
     }
@@ -385,7 +392,31 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         AndroidUtilities.runOnUIThread(() ->
                 getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_AVATAR)
         );
-        return null;
+        return createMessageForStoring();
+    }
+
+    private TLRPC.TL_messageService createMessageForStoring() {
+        TLRPC.TL_messageService newMessage = new TLRPC.TL_messageService();
+        newMessage.action = new TLRPC.TL_messageEncryptedAction();
+        newMessage.action.encryptedAction = serviceMessage.encryptedGroupAction;
+
+        newMessage.local_id = newMessage.id = getUserConfig().getNewMessageId();
+        getUserConfig().saveConfig(false);
+        newMessage.unread = true;
+        newMessage.flags = TLRPC.MESSAGE_FLAG_HAS_FROM_ID;
+        newMessage.date = date;
+        newMessage.from_id = new TLRPC.TL_peerUser();
+
+        long from_id = encryptedChat.admin_id;
+        if (from_id == getUserConfig().getClientUserId()) {
+            from_id = encryptedChat.participant_id;
+        }
+
+        newMessage.from_id.user_id = from_id;
+        newMessage.peer_id = new TLRPC.TL_peerUser();
+        newMessage.peer_id.user_id = getUserConfig().getClientUserId();
+        newMessage.dialog_id = DialogObject.makeEncryptedDialogId(encryptedChat.id);
+        return newMessage;
     }
 
     private void log(String message) {

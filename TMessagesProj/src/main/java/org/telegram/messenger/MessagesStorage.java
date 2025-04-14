@@ -48,6 +48,9 @@ import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChatState;
+import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
+import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
+import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.RequestDelegate;
@@ -12229,7 +12232,7 @@ public class MessagesStorage extends BaseController {
                     message.serializeToStream(data);
 
                     boolean updateDialog = true;
-                    if (message.action instanceof TLRPC.TL_messageEncryptedAction && !(message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages)) {
+                    if (message.action instanceof TLRPC.TL_messageEncryptedAction && !(message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || EncryptedGroupAction.isVisibleAction(message.action.encryptedAction))) {
                         updateDialog = false;
                     } else if (message.out) {
 //                        cursor = database.queryFinalized(String.format(Locale.US, "SELECT mid, group_id FROM messages_v2 WHERE mid = %d AND uid = %d", messageId, message.dialog_id));

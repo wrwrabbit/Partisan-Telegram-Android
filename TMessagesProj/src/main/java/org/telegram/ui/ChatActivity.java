@@ -16,7 +16,6 @@ import static org.telegram.messenger.LocaleController.getString;
 import static java.util.stream.Collectors.toCollection;
 
 import android.Manifest;
-import android.accounts.Account;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -133,7 +132,6 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.zxing.common.detector.MathUtils;
 
-import org.checkerframework.checker.units.qual.A;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -192,6 +190,7 @@ import org.telegram.messenger.partisan.findmessages.FindMessagesController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.utils.PhotoUtilities;
 import org.telegram.messenger.voip.VoIPService;
@@ -311,7 +310,6 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @SuppressWarnings("unchecked")
 public class ChatActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate, LocationActivity.LocationActivityDelegate, ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate, ChatActivityInterface, FloatingDebugProvider, AllowShowingActivityInterface, InstantCameraView.Delegate {
@@ -23423,7 +23421,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (needAddMessage) {
             messages.add(pos, obj);
             messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
-            boolean added = !removeTtlDuplications();
+            boolean added = !removeServiceMessagesDuplications();
             if (obj.isOut()) {
                 hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
             }
@@ -23435,16 +23433,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
     }
 
-    private boolean removeTtlDuplications() {
+    private boolean removeServiceMessagesDuplications() {
         boolean modified = false;
         for (int i = messages.size() - 1; i >= 0; i--) {
             if (i > 0) {
-                Integer currentTtl = getTtlFromMessage(messages.get(i));
-                if (currentTtl == null) {
-                    continue;
-                }
-                Integer previousTtl = getTtlFromMessage(messages.get(i - 1));
-                if (currentTtl.equals(previousTtl)) {
+                TLRPC.DecryptedMessageAction currentAction = getMessageAction(messages.get(i));
+                TLRPC.DecryptedMessageAction previousAction = getMessageAction(messages.get(i - 1));
+
+                if (actionsEquals(currentAction, previousAction)) {
                     messages.remove(i);
                     modified = true;
                 }
@@ -23453,14 +23449,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         return modified;
     }
 
-    private Integer getTtlFromMessage(MessageObject obj) {
-        if (obj.messageOwner == null
-                || obj.messageOwner.action == null
-                || !(obj.messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL)) {
+    private static TLRPC.DecryptedMessageAction getMessageAction(MessageObject message) {
+        if (message == null || message.messageOwner == null || message.messageOwner.action == null || message.messageOwner.action.encryptedAction == null) {
             return null;
-        } else {
-            return ((TLRPC.TL_decryptedMessageActionSetMessageTTL)obj.messageOwner.action.encryptedAction).ttl_seconds;
         }
+        return message.messageOwner.action.encryptedAction;
+    }
+
+    private static boolean actionsEquals(TLRPC.DecryptedMessageAction currentAction, TLRPC.DecryptedMessageAction previousAction) {
+        if (currentAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL) {
+            if (previousAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL) {
+                return currentAction.ttl_seconds == previousAction.ttl_seconds;
+            }
+        } else if (currentAction instanceof EncryptedGroupAction) {
+            return currentAction.equals(previousAction);
+        }
+        return false;
     }
 
     private AlertDialog quoteMessageUpdateAlert;

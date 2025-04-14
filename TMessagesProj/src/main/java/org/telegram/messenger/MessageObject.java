@@ -46,6 +46,9 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
+import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
+import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.ConnectionsManager;
@@ -4787,6 +4790,19 @@ public class MessageObject {
                         } else {
                             messageText = replaceWithLink(getString(R.string.ActionTakeScreenshoot), "un1", fromObject);
                         }
+                    } else if (messageOwner.action.encryptedAction instanceof ChangeGroupInfoAction) {
+                        String name = ((ChangeGroupInfoAction) messageOwner.action.encryptedAction).name;
+                        if (isOut()) {
+                            messageText = getString(R.string.ActionYouChangedTitle).replace("un2", name);
+                        } else {
+                            messageText = replaceWithLink(getString(R.string.ActionChangedTitle).replace("un2", name), "un1", fromObject);
+                        }
+                    } else if (messageOwner.action.encryptedAction instanceof NewAvatarAction) {
+                        if (isOut()) {
+                            messageText = getString(R.string.ActionYouChangedPhoto);
+                        } else {
+                            messageText = replaceWithLink(getString(R.string.ActionChangedPhoto), "un1", fromObject);
+                        }
                     } else if (messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL) {
                         TLRPC.TL_decryptedMessageActionSetMessageTTL action = (TLRPC.TL_decryptedMessageActionSetMessageTTL) messageOwner.action.encryptedAction;
                         if (action.ttl_seconds != 0) {
@@ -5566,7 +5582,7 @@ public class MessageObject {
                 contentType = 1;
                 type = TYPE_ACTION_PHOTO;
             } else if (messageOwner.action instanceof TLRPC.TL_messageEncryptedAction) {
-                if (messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL) {
+                if (messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL || EncryptedGroupAction.isVisibleAction(messageOwner.action.encryptedAction)) {
                     contentType = 1;
                     type = TYPE_DATE;
                 } else {

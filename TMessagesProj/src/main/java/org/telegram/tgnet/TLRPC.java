@@ -28,6 +28,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.TranslateController;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
@@ -33890,6 +33891,9 @@ public class TLRPC {
                 case 0xa82fdd63:
                     result = new TL_decryptedMessageActionNoop();
                     break;
+            }
+            if (result == null) {
+                return EncryptedGroupAction.TLdeserialize(stream, constructor, exception);
             }
             if (result == null && exception) {
                 throw new RuntimeException(String.format("can't parse magic %x in DecryptedMessageAction", constructor));
