@@ -169,7 +169,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     }
 
     @Handler()
-    private TLRPC.Message handleGroupCreation(TLRPC.EncryptedChat encryptedChat, CreateGroupAction action) {
+    private TLRPC.Message handleGroupCreation(CreateGroupAction action) {
         if (FakePasscodeUtils.isFakePasscodeActivated()) {
             return null;
         }
@@ -263,7 +263,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     @Handler(conditions = HandlerCondition.GROUP_EXISTS,
             groupStates = {WAITING_CONFIRMATION_FROM_MEMBERS, CREATING_ENCRYPTED_CHATS},
             innerChatStates = InnerEncryptedChatState.INVITATION_SENT)
-    private TLRPC.Message handleConfirmJoinAction(TLRPC.EncryptedChat encryptedChat, EncryptedGroup encryptedGroup, ConfirmJoinAction action) {
+    private TLRPC.Message handleConfirmJoinAction(ConfirmJoinAction action) {
         InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByEncryptedChatId(encryptedChat.id);
         log(encryptedGroup, "Handle confirm join.");
         innerChat.setState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION);
