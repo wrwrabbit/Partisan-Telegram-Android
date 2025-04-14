@@ -87,6 +87,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
     private int rowCount;
 
     private View doneButton;
+    private AlertDialog progressDialog;
 
     private LinearLayout avatarContainer;
     private BackupImageView avatarImage;
@@ -540,6 +541,8 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
             long userId = innerChat.getUserId();
             new EncryptedGroupProtocol(currentAccount).kickMember(encryptedGroup, userId);
             membersCurrentlyRemoving.add(userId);
+            progressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
+            showDialog(progressDialog);
         });
         builder.setNegativeButton(getString(R.string.Cancel), null);
         showDialog(builder.create());
@@ -563,6 +566,9 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
                         BulletinFactory.createRemoveFromChatBulletin(this, user, encryptedGroup.getName()).show();
                     }
                     membersCurrentlyRemoving.remove(userId);
+                    if (progressDialog != null) {
+                        progressDialog.dismiss();
+                    }
                 }
             }
         } else if (id == NotificationCenter.updateInterfaces) {
