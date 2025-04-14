@@ -286,7 +286,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
         scrollView.addView(linearLayout, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         linearLayout.setOrientation(LinearLayout.VERTICAL);
 
-        actionBar.setTitle(encryptedGroup.getName());
+        actionBar.setTitle(getString("ChannelEdit", R.string.ChannelEdit));
 
         avatarContainer = new LinearLayout(context);
         avatarContainer.setOrientation(LinearLayout.VERTICAL);
@@ -567,11 +567,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
             }
         } else if (id == NotificationCenter.updateInterfaces) {
             int mask = (Integer) args[0];
-            boolean infoChanged = (mask & MessagesController.UPDATE_MASK_NAME) != 0;
             boolean avatarChanged = (mask & MessagesController.UPDATE_MASK_AVATAR) != 0;
-            if (infoChanged) {
-                actionBar.setTitle(encryptedGroup.getName());
-            }
             if (avatarChanged) {
                 EncryptedGroupUtils.applyAvatar(avatarImage, avatarDrawable, encryptedGroup);
             }
