@@ -97,6 +97,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
     private EditTextEmoji nameTextView;
     private LinearLayout settingsContainer;
     private TextCell setAvatarCell;
+    private TextCell deleteAvatarCell;
 
     private ListAdapter listAdapter;
     private RecyclerListView listView;
@@ -405,6 +406,30 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
         });
         settingsContainer.addView(setAvatarCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
+        deleteAvatarCell = new TextCell(context) {
+            @Override
+            protected void onDraw(Canvas canvas) {
+                canvas.drawLine(LocaleController.isRTL ? 0 : dp(20), getMeasuredHeight() - 1, getMeasuredWidth() - (LocaleController.isRTL ? dp(20) : 0), getMeasuredHeight() - 1, Theme.dividerPaint);
+            }
+        };
+        deleteAvatarCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+        deleteAvatarCell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
+        deleteAvatarCell.setOnClickListener(v -> {
+            if (encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                builder.setMessage(getString(R.string.EncryptedGroupAvatarChangeForbidden));
+                builder.setTitle(getString(R.string.DeletePhoto));
+                builder.setNeutralButton(getString(R.string.OK), null);
+                showDialog(builder.create());
+                return;
+            }
+            encryptedGroup.setAvatar(null);
+            getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+            new EncryptedGroupProtocol(currentAccount).deleteAvatar(encryptedGroup);
+            setAvatar();
+        });
+        settingsContainer.addView(deleteAvatarCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
         linearLayout.addView(new ShadowSectionCell(context), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
         listView = new RecyclerListView(context);
@@ -663,6 +688,14 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
             setAvatarCell.imageView.setTranslationX(-dp(8));
             setAvatarCell.imageView.setAnimation(cameraDrawable);
         }
+        if (deleteAvatarCell != null) {
+            if (encryptedGroup.hasAvatar()) {
+                deleteAvatarCell.setVisibility(View.VISIBLE);
+                deleteAvatarCell.setTextAndIcon(getString(R.string.DeletePhoto), R.drawable.msg_delete, true);
+            } else {
+                deleteAvatarCell.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void processDone() {
@@ -722,7 +755,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
         encryptedGroup.setAvatar(resizedBitmap);
         getMessagesStorage().updateEncryptedGroup(encryptedGroup);
         new EncryptedGroupProtocol(currentAccount).sendNewAvatar(encryptedGroup);
-
+        setAvatar();
         AndroidUtilities.runOnUIThread(() ->
                 getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_AVATAR)
         );

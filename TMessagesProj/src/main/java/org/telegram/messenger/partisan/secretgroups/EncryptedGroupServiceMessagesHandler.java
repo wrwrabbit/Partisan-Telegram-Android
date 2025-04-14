@@ -22,6 +22,7 @@ import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmGroupInitializationAction;
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmJoinAction;
 import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
+import org.telegram.messenger.partisan.secretgroups.action.DeleteAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.GroupCreationFailedAction;
 import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
@@ -388,6 +389,20 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             return null;
         }
         encryptedGroup.setAvatar(bitmap);
+        getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+        AndroidUtilities.runOnUIThread(() ->
+                getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_AVATAR)
+        );
+        return createMessageForStoring();
+    }
+
+    @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER})
+    private TLRPC.Message handleDeleteAvatar(DeleteAvatarAction action) {
+        if (!encryptedGroup.hasAvatar()) {
+            log("The group doesn't have avatar");
+            return null;
+        }
+        encryptedGroup.setAvatar(null);
         getMessagesStorage().updateEncryptedGroup(encryptedGroup);
         AndroidUtilities.runOnUIThread(() ->
                 getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_AVATAR)

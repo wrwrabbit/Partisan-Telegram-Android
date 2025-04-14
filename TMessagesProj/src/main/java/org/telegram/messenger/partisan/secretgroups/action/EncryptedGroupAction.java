@@ -35,6 +35,9 @@ public abstract class EncryptedGroupAction extends TLRPC.DecryptedMessageAction 
             case 0x37572575:
                 result = new NewAvatarAction();
                 break;
+            case 0x85100ce8:
+                result = new DeleteAvatarAction();
+                break;
         }
         if (result == null && exception) {
             throw new RuntimeException(String.format("can't parse magic %x in EncryptedGroupAction", constructor));
@@ -47,6 +50,7 @@ public abstract class EncryptedGroupAction extends TLRPC.DecryptedMessageAction 
 
     public static boolean isVisibleAction(TLRPC.DecryptedMessageAction action) {
         return action instanceof ChangeGroupInfoAction
-                || action instanceof NewAvatarAction;
+                || action instanceof NewAvatarAction
+                || action instanceof DeleteAvatarAction;
     }
 }

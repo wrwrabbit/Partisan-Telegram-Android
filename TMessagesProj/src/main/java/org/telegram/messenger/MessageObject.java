@@ -47,6 +47,7 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
+import org.telegram.messenger.partisan.secretgroups.action.DeleteAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
@@ -4802,6 +4803,12 @@ public class MessageObject {
                             messageText = getString(R.string.ActionYouChangedPhoto);
                         } else {
                             messageText = replaceWithLink(getString(R.string.ActionChangedPhoto), "un1", fromObject);
+                        }
+                    } else if (messageOwner.action.encryptedAction instanceof DeleteAvatarAction) {
+                        if (isOut()) {
+                            messageText = getString(R.string.ActionYouRemovedPhoto);
+                        } else {
+                            messageText = replaceWithLink(getString(R.string.ActionRemovedPhoto), "un1", fromObject);
                         }
                     } else if (messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL) {
                         TLRPC.TL_decryptedMessageActionSetMessageTTL action = (TLRPC.TL_decryptedMessageActionSetMessageTTL) messageOwner.action.encryptedAction;

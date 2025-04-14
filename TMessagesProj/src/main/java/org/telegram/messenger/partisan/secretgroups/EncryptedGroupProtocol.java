@@ -13,6 +13,7 @@ import org.telegram.messenger.partisan.secretgroups.action.AllSecondaryChatsInit
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmGroupInitializationAction;
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmJoinAction;
 import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
+import org.telegram.messenger.partisan.secretgroups.action.DeleteAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.GroupCreationFailedAction;
@@ -148,6 +149,13 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         NewAvatarAction action = new NewAvatarAction();
         action.avatarBytes = EncryptedGroupUtils.serializeAvatar(encryptedGroup);
         sendActionToAllMembers(encryptedGroup, action, true);
+    }
+
+    public void deleteAvatar(EncryptedGroup encryptedGroup) {
+        if (encryptedGroup.getOwnerUserId() != getUserConfig().getClientUserId() || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+            return;
+        }
+        sendActionToAllMembers(encryptedGroup, new DeleteAvatarAction(), true);
     }
 
     public void sendActionToAllMembers(EncryptedGroup encryptedGroup, EncryptedGroupAction action) {
