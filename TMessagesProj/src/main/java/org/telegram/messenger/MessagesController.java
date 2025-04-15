@@ -16406,10 +16406,12 @@ public class MessagesController extends BaseController implements NotificationCe
         if (loadingPinnedDialogs.indexOfKey(folderId) >= 0 || getUserConfig().isPinnedDialogsLoaded(folderId)) {
             return;
         }
+        PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (loadPinnedDialogs) folderId = " + folderId);
         loadingPinnedDialogs.put(folderId, 1);
         TLRPC.TL_messages_getPinnedDialogs req = new TLRPC.TL_messages_getPinnedDialogs();
         req.folder_id = folderId;
         getConnectionsManager().sendRequest(req, (response, error) -> {
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (loadPinnedDialogs) response = " + (response != null) + ", error = " + (error != null));
             if (response != null) {
                 TLRPC.TL_messages_peerDialogs res = (TLRPC.TL_messages_peerDialogs) response;
                 ArrayList<TLRPC.Dialog> newPinnedDialogs = new ArrayList<>(res.dialogs);
