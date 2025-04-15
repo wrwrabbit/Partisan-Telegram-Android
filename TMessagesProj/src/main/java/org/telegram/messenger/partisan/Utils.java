@@ -168,10 +168,12 @@ public class Utils {
                     }
                 }
 
-                logs = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "logs");
-                if (logs.exists()) {
-                    CacheControlActivity.cleanDirJava(logs.getAbsolutePath(), 0, null, x -> {});
-                    logs.delete();
+                if (SharedConfig.clearLogsWithCache) {
+                    logs = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "logs");
+                    if (logs.exists()) {
+                        CacheControlActivity.cleanDirJava(logs.getAbsolutePath(), 0, null, x -> {});
+                        logs.delete();
+                    }
                 }
             }
 

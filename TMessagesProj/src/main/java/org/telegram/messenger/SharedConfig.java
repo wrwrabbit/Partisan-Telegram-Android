@@ -447,6 +447,7 @@ public class SharedConfig {
     public static boolean disableFileProtectionAfterRestart = false;
     public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
     public static boolean detailedEncryptedGroupMemberStatus = false;
+    public static boolean clearLogsWithCache = true;
 
     private static final int[] LOW_SOC = {
             -1775228513, // EXYNOS 850
@@ -971,6 +972,7 @@ public class SharedConfig {
             confirmDangerousActions = preferences.getBoolean("confirmDangerousActions", false);
             showEncryptedChatsFromEncryptedGroups = preferences.getBoolean("showEncryptedChatsFromEncryptedGroups", false);
             detailedEncryptedGroupMemberStatus = preferences.getBoolean("detailedEncryptedGroupMemberStatus", false);
+            clearLogsWithCache = preferences.getBoolean("clearLogsWithCache", true);
             encryptedGroupsEnabled = preferences.getBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
             fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
@@ -1084,6 +1086,14 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
+        editor.commit();
+    }
+
+    public static void toggleClearLogsWithCache() {
+        clearLogsWithCache = !clearLogsWithCache;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("clearLogsWithCache", clearLogsWithCache);
         editor.commit();
     }
 

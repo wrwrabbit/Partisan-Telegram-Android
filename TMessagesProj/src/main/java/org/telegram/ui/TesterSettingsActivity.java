@@ -107,6 +107,7 @@ public class TesterSettingsActivity extends BaseFragment {
     private int enableSecretGroupsRow;
     private int dbSizeRow;
     private int accountNumRow;
+    private int clearLogsWithCacheRow;
 
     public static boolean showPlainBackup;
 
@@ -327,6 +328,9 @@ public class TesterSettingsActivity extends BaseFragment {
                 builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
                 AlertDialog alertDialog = builder.create();
                 showDialog(alertDialog);
+            } else if (position == clearLogsWithCacheRow) {
+                SharedConfig.toggleClearLogsWithCache();
+                ((TextCheckCell) view).setChecked(SharedConfig.clearLogsWithCache);
             }
         });
 
@@ -377,6 +381,7 @@ public class TesterSettingsActivity extends BaseFragment {
             dbSizeRow = rowCount++;
         }
         accountNumRow = rowCount++;
+        clearLogsWithCacheRow = rowCount++;
     }
 
     @Override
@@ -547,6 +552,9 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == enableSecretGroupsRow) {
                         textCell.setTextAndCheck("Secret groups enabled",
                                 SharedConfig.encryptedGroupsEnabled, true);
+                    } else if (position == clearLogsWithCacheRow) {
+                        textCell.setTextAndCheck("Clear logs with cache",
+                                SharedConfig.clearLogsWithCache, true);
                     }
                     break;
                 } case 1: {
@@ -588,7 +596,9 @@ public class TesterSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == sessionTerminateActionWarningRow || position == showPlainBackupRow
                     || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow
-                    || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow) {
+                    || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow
+                    || position == showEncryptedChatsFromEncryptedGroupsRow || position == detailedEncryptedGroupMemberStatusRow
+                    || position == enableSecretGroupsRow || position == clearLogsWithCacheRow) {
                 return 0;
             } else if (position == updateChannelIdRow || position == updateChannelUsernameRow
                     || (simpleDataStartRow <= position && position < simpleDataEndRow)
