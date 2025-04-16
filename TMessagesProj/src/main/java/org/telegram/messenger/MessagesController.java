@@ -13948,6 +13948,9 @@ public class MessagesController extends BaseController implements NotificationCe
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             return;
         }
+        if (EncryptedGroupUtils.doForEachInnerDialogIdIfNeeded(dialogId, currentAccount, innerDialogId -> markMessageAsRead(innerDialogId, randomId, ttl))) {
+            return;
+        }
         TLRPC.EncryptedChat chat = getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
         if (chat == null) {
             return;
