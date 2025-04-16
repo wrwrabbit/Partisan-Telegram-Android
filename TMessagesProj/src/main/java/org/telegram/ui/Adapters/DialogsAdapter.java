@@ -35,6 +35,7 @@ import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
@@ -1428,6 +1429,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
 
     private void updateItemList() {
+        boolean containedEmptyViewBefore = itemInternals.stream().anyMatch(item -> item.viewType == VIEW_TYPE_EMPTY);
         itemInternals.clear();
         updateHasHints();
 
@@ -1599,6 +1601,10 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     i--;
                 }
             }
+        }
+        boolean containsEmptyViewNow = itemInternals.stream().anyMatch(item -> item.viewType == VIEW_TYPE_EMPTY);
+        if (MessagesStorage.getInstance(currentAccount).fileProtectionEnabled() && containedEmptyViewBefore && !containsEmptyViewNow) {
+            AndroidUtilities.runOnUIThread(() -> parentFragment.setScrollDisabled(false));
         }
     }
 

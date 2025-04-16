@@ -7163,6 +7163,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             showPtgDialog(FileProtectionNewFeatureDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionTemporaryDisabledDialog.createDialogIfNeeded(this), true);
         }
+        if (getMessagesStorage().fileProtectionEnabled()) {
+            getMessagesController().sortDialogs(null);
+        }
     }
 
     private void checkOtherPtg() {
