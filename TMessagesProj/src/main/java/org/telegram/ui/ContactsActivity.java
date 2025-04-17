@@ -614,7 +614,7 @@ public class ContactsActivity extends BaseFragment implements NotificationCenter
                                 preferences.edit().putBoolean("channel_intro", true).commit();
                             }
                         } else if (row == 4) {
-                            presentFragment(new SecretGroupCreateActivity(), false);
+                            presentFragment(new org.telegram.messenger.partisan.secretgroups.ui.EncryptedGroupCreateActivity(), false);
                         }
                     }
                 } else {

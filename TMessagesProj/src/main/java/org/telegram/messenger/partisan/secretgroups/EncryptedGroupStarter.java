@@ -14,7 +14,6 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
-import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 
@@ -25,7 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class SecretGroupStarter {
+public class EncryptedGroupStarter {
     private final int accountNum;
     private final Context context;
     private final List<TLRPC.User> users = new LinkedList<>();
@@ -35,7 +34,7 @@ public class SecretGroupStarter {
 
     private EncryptedGroup encryptedGroup;
 
-    public SecretGroupStarter(int accountNum, Context context, List<TLRPC.User> users, String name, Consumer<Optional<EncryptedGroup>> callback) {
+    public EncryptedGroupStarter(int accountNum, Context context, List<TLRPC.User> users, String name, Consumer<Optional<EncryptedGroup>> callback) {
         this.accountNum = accountNum;
         this.context = context;
         this.users.addAll(users);
@@ -43,11 +42,11 @@ public class SecretGroupStarter {
         this.callback = callback;
     }
 
-    public static void startSecretGroup(int accountNum, Context context, List<TLRPC.User> users, String name, Consumer<Optional<EncryptedGroup>> callback) {
+    public static void startEncryptedGroup(int accountNum, Context context, List<TLRPC.User> users, String name, Consumer<Optional<EncryptedGroup>> callback) {
         if (users == null || users.isEmpty() || context == null) {
             return;
         }
-        new SecretGroupStarter(accountNum, context, users, name, callback).start();
+        new EncryptedGroupStarter(accountNum, context, users, name, callback).start();
     }
 
     public void start() {

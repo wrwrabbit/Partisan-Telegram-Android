@@ -1,4 +1,4 @@
-package org.telegram.ui;
+package org.telegram.messenger.partisan.secretgroups.ui;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -53,7 +53,7 @@ import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupConstants;
-import org.telegram.messenger.partisan.secretgroups.SecretGroupStarter;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupStarter;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -66,6 +66,7 @@ import org.telegram.ui.Adapters.SearchAdapterHelper;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.GroupCreateSectionCell;
 import org.telegram.ui.Cells.GroupCreateUserCell;
+import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.EditTextCaption;
@@ -84,7 +85,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SecretGroupCreateActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, View.OnClickListener {
+public class EncryptedGroupCreateActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, View.OnClickListener {
 
     private ScrollView scrollView;
     private SpansContainer spansContainer;
@@ -219,7 +220,7 @@ public class SecretGroupCreateActivity extends BaseFragment implements Notificat
                 if (currentAnimation != null) {
                     int resultHeight = y + AndroidUtilities.dp(32 + 10);
                     if (containerHeight != resultHeight) {
-                        animators.add(ObjectAnimator.ofInt(SecretGroupCreateActivity.this, "containerHeight", resultHeight));
+                        animators.add(ObjectAnimator.ofInt(EncryptedGroupCreateActivity.this, "containerHeight", resultHeight));
                     }
                     measuredContainerHeight = Math.max(containerHeight, resultHeight);
                     if (editText.getTranslationX() != fieldX) {
@@ -721,7 +722,7 @@ public class SecretGroupCreateActivity extends BaseFragment implements Notificat
                     }
                     GroupCreateSpan span = new GroupCreateSpan(editText.getContext(), object, currentAccount);
                     spansContainer.addSpan(span);
-                    span.setOnClickListener(SecretGroupCreateActivity.this);
+                    span.setOnClickListener(EncryptedGroupCreateActivity.this);
                 }
                 selectedCountUpdated();
                 if (searching || searchWas) {
@@ -929,7 +930,7 @@ public class SecretGroupCreateActivity extends BaseFragment implements Notificat
                     .map(id -> getMessagesController().getUser(id))
                     .collect(Collectors.toList());
 
-            SecretGroupStarter.startSecretGroup(currentAccount, getContext(), users, chatName, group -> {
+            EncryptedGroupStarter.startEncryptedGroup(currentAccount, getContext(), users, chatName, group -> {
                 if (!group.isPresent()) {
                     return;
                 }
