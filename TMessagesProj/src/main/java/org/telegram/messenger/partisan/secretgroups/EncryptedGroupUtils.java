@@ -205,7 +205,6 @@ public class EncryptedGroupUtils {
 
     public static void showSecretGroupJoinDialog(EncryptedGroup encryptedGroup, BaseFragment fragment, int accountNum, Runnable onJoined) {
         MessagesController messagesController = MessagesController.getInstance(accountNum);
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
         builder.setTitle(LocaleController.getString(R.string.AppName));
@@ -215,32 +214,7 @@ public class EncryptedGroupUtils {
                 LocaleController.getString(R.string.DeclineJoiningToSecretGroup));
         builder.setMessage(AndroidUtilities.replaceTags(message));
         builder.setPositiveButton(LocaleController.getString(R.string.JoinSecretGroup), (dialog, which) -> {
-            if (encryptedGroup.getState() != EncryptedGroupState.JOINING_NOT_CONFIRMED && encryptedGroup.getState() != EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
-                throw new RuntimeException("Invalid encrypted group state");
-            }
-            boolean allMembersAreKnown = encryptedGroup.getInnerUserIds()
-                    .stream()
-                    .allMatch(user_id -> messagesController.getUser(user_id) != null);
-            if (allMembersAreKnown) {
-                if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
-                    encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_OWNER);
-                } else if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
-                    encryptedGroup.setState(EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION);
-                }
-                messagesStorage.updateEncryptedGroup(encryptedGroup);
-                TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
-                log(encryptedGroup, accountNum, "Send join confirmation.");
-                new EncryptedGroupProtocol(accountNum).sendJoinConfirmation(encryptedChat);
-                if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
-                    SecondaryInnerChatStarter.startSecondaryChats(accountNum, LaunchActivity.instance, encryptedGroup);
-                }
-            } else {
-                encryptedGroup.setState(EncryptedGroupState.INITIALIZATION_FAILED);
-                messagesStorage.updateEncryptedGroup(encryptedGroup);
-                TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
-                log(encryptedGroup, accountNum, "Not all users are known.");
-                new EncryptedGroupProtocol(accountNum).sendGroupInitializationFailed(encryptedChat);
-            }
+            tryConfirmJoining(encryptedGroup, accountNum);
             if (onJoined != null) {
                 onJoined.run();
             }
@@ -255,6 +229,54 @@ public class EncryptedGroupUtils {
         if (button != null) {
             button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
         }
+    }
+
+    private static void tryConfirmJoining(EncryptedGroup encryptedGroup, int accountNum) {
+        MessagesController messagesController = MessagesController.getInstance(accountNum);
+        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
+
+        if (encryptedGroup.getState() != EncryptedGroupState.JOINING_NOT_CONFIRMED && encryptedGroup.getState() != EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
+            throw new RuntimeException("Invalid encrypted group state");
+        }
+        if (canJoinToGroup(encryptedGroup, messagesController)) {
+            confirmJoining(encryptedGroup, accountNum);
+        } else {
+            joiningFailed(encryptedGroup, accountNum, messagesStorage, messagesController);
+        }
+    }
+
+    private static boolean canJoinToGroup(EncryptedGroup encryptedGroup, MessagesController messagesController) {
+        return encryptedGroup.getInnerUserIds()
+                .stream()
+                .allMatch(user_id -> messagesController.getUser(user_id) != null);
+    }
+
+    private static void confirmJoining(EncryptedGroup encryptedGroup, int accountNum) {
+        MessagesController messagesController = MessagesController.getInstance(accountNum);
+        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
+
+        if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
+            encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_OWNER);
+        } else if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
+            encryptedGroup.setState(EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION);
+        }
+        messagesStorage.updateEncryptedGroup(encryptedGroup);
+
+        log(encryptedGroup, accountNum, "Send join confirmation.");
+        TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
+        new EncryptedGroupProtocol(accountNum).sendJoinConfirmation(encryptedChat);
+
+        if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
+            SecondaryInnerChatStarter.startSecondaryChats(accountNum, LaunchActivity.instance, encryptedGroup);
+        }
+    }
+
+    private static void joiningFailed(EncryptedGroup encryptedGroup, int accountNum, MessagesStorage messagesStorage, MessagesController messagesController) {
+        encryptedGroup.setState(EncryptedGroupState.INITIALIZATION_FAILED);
+        messagesStorage.updateEncryptedGroup(encryptedGroup);
+        TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
+        log(encryptedGroup, accountNum, "Not all users are known.");
+        new EncryptedGroupProtocol(accountNum).sendGroupInitializationFailed(encryptedChat);
     }
 
     public static void showNotImplementedDialog(BaseFragment fragment) {
