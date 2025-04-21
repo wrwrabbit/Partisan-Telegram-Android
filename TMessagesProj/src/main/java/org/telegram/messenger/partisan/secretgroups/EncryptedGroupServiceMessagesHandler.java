@@ -275,10 +275,12 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
                         || groupState != INITIALIZED && innerChatState != InnerEncryptedChatState.NEW_MEMBER_INVITATION_SENT,
                 "Invalid encrypted group state or inner chat state.");
         log("Handle confirm join.");
-        if (groupState != INITIALIZED && encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
+        if (groupState != INITIALIZED) {
             innerChat.setState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION);
             getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
-            getEncryptedGroupProtocol().requestMembersToCreateSecondaryChats(encryptedGroup);
+            if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
+                getEncryptedGroupProtocol().requestMembersToCreateSecondaryChats(encryptedGroup);
+            }
         } else {
             innerChat.setState(InnerEncryptedChatState.INITIALIZED);
             getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
