@@ -96,21 +96,28 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         action.userId = userId;
         sendActionToAllMembers(encryptedGroup, action);
 
-        NotificationCenter.NotificationCenterDelegate observer = new NotificationCenter.NotificationCenterDelegate() {
-            @Override
-            public void didReceivedNotification(int id, int account, Object... args) {
-                long dialogId = (long)args[3];
-                InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(userId);
-                if (dialogId == innerChat.getDialogId().orElse(0L)) {
-                    getNotificationCenter().removeObserver(this, NotificationCenter.messageReceivedByServer);
-                    removeMember(encryptedGroup, userId);
-                    if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
-                        requestMembersToCreateSecondaryChats(encryptedGroup);
+        if (innerChat.getState() != InnerEncryptedChatState.CANCELLED) {
+            NotificationCenter.NotificationCenterDelegate observer = new NotificationCenter.NotificationCenterDelegate() {
+                @Override
+                public void didReceivedNotification(int id, int account, Object... args) {
+                    long dialogId = (long)args[3];
+                    InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(userId);
+                    if (dialogId == innerChat.getDialogId().orElse(0L)) {
+                        getNotificationCenter().removeObserver(this, NotificationCenter.messageReceivedByServer);
+                        removeMember(encryptedGroup, userId);
+                        if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
+                            requestMembersToCreateSecondaryChats(encryptedGroup);
+                        }
                     }
                 }
+            };
+            getNotificationCenter().addObserver(observer, NotificationCenter.messageReceivedByServer);
+        } else {
+            removeMember(encryptedGroup, userId);
+            if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
+                requestMembersToCreateSecondaryChats(encryptedGroup);
             }
-        };
-        getNotificationCenter().addObserver(observer, NotificationCenter.messageReceivedByServer);
+        }
     }
 
     public void removeMember(EncryptedGroup encryptedGroup, long userId) {
@@ -202,7 +209,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
                 continue;
             }
             TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedChatId);
-            if (encryptedChat == null) {
+            if (!(encryptedChat instanceof TLRPC.TL_encryptedChat)) {
                 continue;
             }
             sendAction(encryptedChat, action, updateInterface);
