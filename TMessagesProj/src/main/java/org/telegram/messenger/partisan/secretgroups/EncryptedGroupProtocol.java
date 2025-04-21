@@ -9,10 +9,12 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.AccountControllersProvider;
+import org.telegram.messenger.partisan.secretgroups.action.AddMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.AllSecondaryChatsInitializedAction;
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmGroupInitializationAction;
 import org.telegram.messenger.partisan.secretgroups.action.ConfirmJoinAction;
 import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
+import org.telegram.messenger.partisan.secretgroups.action.CreateGroupForNewMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
@@ -120,7 +122,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         if (encryptedChatId != null) {
             TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedChatId);
             if (encryptedChat != null) {
-                getMessagesController().deleteDialog(encryptedChatId, 0, true);
+                getMessagesController().deleteDialog(DialogObject.makeEncryptedDialogId(encryptedChatId), 0, true);
                 deleteInnerChat(encryptedGroup, userId);
                 AndroidUtilities.runOnUIThread(() ->
                         getNotificationCenter().postNotificationName(
@@ -143,12 +145,20 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
     }
 
     public void sendNewAvatar(EncryptedGroup encryptedGroup) {
+        sendNewAvatar(encryptedGroup, null);
+    }
+
+    public void sendNewAvatar(EncryptedGroup encryptedGroup, TLRPC.EncryptedChat encryptedChat) {
         if (encryptedGroup.getOwnerUserId() != getUserConfig().getClientUserId() || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
             return;
         }
         NewAvatarAction action = new NewAvatarAction();
         action.avatarBytes = EncryptedGroupUtils.serializeAvatar(encryptedGroup);
-        sendActionToAllMembers(encryptedGroup, action, true);
+        if (encryptedChat != null) {
+            sendAction(encryptedChat, action);
+        } else {
+            sendActionToAllMembers(encryptedGroup, action, true);
+        }
     }
 
     public void deleteAvatar(EncryptedGroup encryptedGroup) {
@@ -156,6 +166,26 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
             return;
         }
         sendActionToAllMembers(encryptedGroup, new DeleteAvatarAction(), true);
+    }
+
+    public void sendAddMember(EncryptedGroup encryptedGroup, long userId) {
+        log(encryptedGroup, "Send add member");
+        AddMemberAction action = new AddMemberAction();
+        action.userId = userId;
+        sendActionToAllMembers(encryptedGroup, action);
+    }
+
+    public void sendNewMemberInvitation(TLRPC.EncryptedChat encryptedChat, EncryptedGroup encryptedGroup) {
+        if (!(encryptedChat instanceof TLRPC.TL_encryptedChat)) {
+            throw new RuntimeException("The secret chat isn't initialized");
+        }
+        log(encryptedGroup, "Send new member invitation");
+        CreateGroupForNewMemberAction action = new CreateGroupForNewMemberAction();
+        action.externalGroupId = encryptedGroup.getExternalId();
+        action.name = encryptedGroup.getName();
+        action.ownerUserId = getUserConfig().getClientUserId();
+        action.memberIds = encryptedGroup.getInnerUserIds();
+        sendAction(encryptedChat, action);
     }
 
     public void sendActionToAllMembers(EncryptedGroup encryptedGroup, EncryptedGroupAction action) {

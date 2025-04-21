@@ -45,6 +45,7 @@ import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChatState;
 import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -58,6 +59,7 @@ import org.telegram.ui.Cells.ManageChatTextCell;
 import org.telegram.ui.Cells.EncryptedGroupMemberCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BulletinFactory;
@@ -124,6 +126,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
 
         getNotificationCenter().addObserver(this, NotificationCenter.dialogsHidingChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.encryptedGroupMemberRemoved);
+        getNotificationCenter().addObserver(this, NotificationCenter.encryptedGroupMembersAdded);
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         return true;
     }
@@ -133,6 +136,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
         super.onFragmentDestroy();
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogsHidingChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.encryptedGroupMemberRemoved);
+        getNotificationCenter().addObserver(this, NotificationCenter.encryptedGroupMembersAdded);
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         if (nameTextView != null) {
             nameTextView.onDestroy();
@@ -451,7 +455,14 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
                 return;
             }
             if (position == addMemberRow) {
-                EncryptedGroupUtils.showNotImplementedDialog(this);
+                if (encryptedGroup.getState() != EncryptedGroupState.INITIALIZED
+                        || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_CREATING_ENCRYPTED_CHAT)
+                        || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION)
+                        || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_INVITATION_SENT)) {
+                    showDialog(AlertsCreator.createSimpleAlert(context, getString(R.string.AppName), getString(R.string.CantAddNewMemberToEncryptedGroupMessage)).create());
+                } else {
+                    presentFragment(new EncryptedGroupCreateActivity(encryptedGroup), false);
+                }
             } else if (firstMemberRow <= position && position <= lastMemberRow) {
                 Bundle args = new Bundle();
                 InnerEncryptedChat innerChat = getInnerChat(position - firstMemberRow);
@@ -570,6 +581,12 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
                         progressDialog.dismiss();
                     }
                 }
+            }
+        } else if (id == NotificationCenter.encryptedGroupMembersAdded) {
+            int encryptedGroupId = (int)args[0];
+            if (encryptedGroupId == encryptedGroup.getInternalId()) {
+                updateRows();
+                listAdapter.notifyDataSetChanged();
             }
         } else if (id == NotificationCenter.updateInterfaces) {
             int mask = (Integer) args[0];

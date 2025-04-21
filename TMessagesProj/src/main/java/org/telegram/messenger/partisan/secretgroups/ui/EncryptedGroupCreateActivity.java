@@ -52,8 +52,10 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupConstants;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupStarter;
+import org.telegram.messenger.partisan.secretgroups.MembersAdder;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -86,7 +88,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class EncryptedGroupCreateActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, View.OnClickListener {
-
     private ScrollView scrollView;
     private SpansContainer spansContainer;
     private EditTextBoldCursor editText;
@@ -115,6 +116,8 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
 
     private AnimatorSet currentAnimation;
     int maxSize;
+
+    private final EncryptedGroup encryptedGroup;
 
     private final static int done_button = 1;
 
@@ -394,6 +397,10 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         }
     }
 
+    public EncryptedGroupCreateActivity(EncryptedGroup encryptedGroup) {
+        this.encryptedGroup = encryptedGroup;
+    }
+
     @Override
     public boolean onFragmentCreate() {
         getNotificationCenter().addObserver(this, NotificationCenter.contactsDidLoad);
@@ -440,7 +447,11 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
 
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
-        actionBar.setTitle(LocaleController.getString(R.string.NewEncryptedGroup));
+        if (isAddToGroup()) {
+            actionBar.setTitle(LocaleController.getString(R.string.GroupAddMembers));
+        } else {
+            actionBar.setTitle(LocaleController.getString(R.string.NewEncryptedGroup));
+        }
 
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
@@ -698,11 +709,14 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                 } else {
                     return;
                 }
+                if (encryptedGroup != null && encryptedGroup.getInnerChatByUserId(id) != null) {
+                    return;
+                }
                 if (selectedContacts.indexOfKey(id) >= 0) {
                     GroupCreateSpan span = selectedContacts.get(id);
                     spansContainer.removeSpan(span);
                 } else {
-                    if (maxCount != 0 && selectedContacts.size() == maxCount) {
+                    if (maxCount != 0 && getFullMembersCount() == maxCount || isAddToGroup() && !selectedContacts.isEmpty()) { // allow adding only 1 new member
                         return;
                     }
                     if (selectedContacts.size() == getMessagesController().maxGroupCount) {
@@ -759,9 +773,13 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         }
         floatingButton.setBackgroundDrawable(drawable);
         floatingButton.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chats_actionIcon), PorterDuff.Mode.MULTIPLY));
-        BackDrawable backDrawable = new BackDrawable(false);
-        backDrawable.setArrowRotation(180);
-        floatingButton.setImageDrawable(backDrawable);
+        if (isAddToGroup()) {
+            floatingButton.setImageResource(R.drawable.floating_check);
+        } else {
+            BackDrawable backDrawable = new BackDrawable(false);
+            backDrawable.setArrowRotation(180);
+            floatingButton.setImageDrawable(backDrawable);
+        }
         if (Build.VERSION.SDK_INT >= 21) {
             StateListAnimator animator = new StateListAnimator();
             animator.addState(new int[]{android.R.attr.state_pressed}, ObjectAnimator.ofFloat(floatingButton, "translationZ", AndroidUtilities.dp(2), AndroidUtilities.dp(4)).setDuration(200));
@@ -793,7 +811,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         if (editText == null) {
             return;
         }
-        if (adapter != null && adapter.noContactsStubRow == 0) {
+        if (isAddToGroup() || (adapter != null && adapter.noContactsStubRow == 0)) {
             editText.setHintText(LocaleController.getString(R.string.SearchForPeople));
         } else {
             editText.setHintText(LocaleController.getString(R.string.SendMessageTo));
@@ -891,8 +909,13 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     id = 0;
                 }
                 if (id != 0) {
-                    cell.setChecked(selectedContacts.indexOfKey(id) >= 0, true);
-                    cell.setCheckBoxEnabled(true);
+                    if (encryptedGroup != null && encryptedGroup.getInnerChatByUserId(id) != null) {
+                        cell.setChecked(true, false);
+                        cell.setCheckBoxEnabled(false);
+                    } else {
+                        cell.setChecked(selectedContacts.indexOfKey(id) >= 0, true);
+                        cell.setCheckBoxEnabled(true);
+                    }
                 }
             } else if (child instanceof GraySectionCell) {
                 int position = listView.getChildAdapterPosition(child);
@@ -913,16 +936,46 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         if (!doneButtonVisible) {
             return false;
         }
+        if (selectedContacts.isEmpty() && isAddToGroup()) {
+            return false;
+        }
         ArrayList<Long> result = new ArrayList<>();
         for (int a = 0; a < selectedContacts.size(); a++) {
             result.add(selectedContacts.keyAt(a));
         }
-        DialogTemplate template = new DialogTemplate();
-        template.type = DialogType.CREATE;
-        template.title = LocaleController.getString(R.string.GroupName);
-        template.addEditTemplate("", LocaleController.getString(R.string.EnterGroupNamePlaceholder), true);
-        template.positiveListener = views -> {
-            String chatName = ((EditTextCaption)views.get(0)).getText().toString();
+        if (encryptedGroup == null) {
+            DialogTemplate template = new DialogTemplate();
+            template.type = DialogType.CREATE;
+            template.title = LocaleController.getString(R.string.GroupName);
+            template.addEditTemplate("", LocaleController.getString(R.string.EnterGroupNamePlaceholder), true);
+            template.positiveListener = views -> {
+                String chatName = ((EditTextCaption)views.get(0)).getText().toString();
+                creationProgressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
+                showDialog(creationProgressDialog);
+
+                List<TLRPC.User> users = result.stream()
+                        .map(id -> getMessagesController().getUser(id))
+                        .collect(Collectors.toList());
+
+                EncryptedGroupStarter.startEncryptedGroup(currentAccount, getContext(), users, chatName, group -> {
+                    if (!group.isPresent()) {
+                        return;
+                    }
+                    AndroidUtilities.runOnUIThread(() -> {
+                        if (creationProgressDialog != null) {
+                            creationProgressDialog.dismiss();
+                        }
+                        getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
+
+                        Bundle args = new Bundle();
+                        args.putInt("enc_group_id", group.get().getInternalId());
+                        args.putBoolean("just_created_chat", true);
+                        presentFragment(new ChatActivity(args), true);
+                    });
+                });
+            };
+            showDialog(FakePasscodeDialogBuilder.build(getContext(), template));
+        } else {
             creationProgressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
             showDialog(creationProgressDialog);
 
@@ -930,24 +983,16 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     .map(id -> getMessagesController().getUser(id))
                     .collect(Collectors.toList());
 
-            EncryptedGroupStarter.startEncryptedGroup(currentAccount, getContext(), users, chatName, group -> {
-                if (!group.isPresent()) {
-                    return;
-                }
+            MembersAdder.addNewMembers(currentAccount, getContext(), users, encryptedGroup, () -> {
                 AndroidUtilities.runOnUIThread(() -> {
                     if (creationProgressDialog != null) {
                         creationProgressDialog.dismiss();
                     }
-                    getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
-
-                    Bundle args = new Bundle();
-                    args.putInt("enc_group_id", group.get().getInternalId());
-                    args.putBoolean("just_created_chat", true);
-                    presentFragment(new ChatActivity(args), true);
+                    getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
+                    finishFragment();
                 });
             });
-        };
-        showDialog(FakePasscodeDialogBuilder.build(getContext(), template));
+        }
         return true;
     }
 
@@ -968,11 +1013,11 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
     }
 
     private void updateHint() {
-        if (selectedContacts.size() == 0) {
-            actionBar.setSubtitle(LocaleController.formatString("MembersCountZero", R.string.MembersCountZero, LocaleController.formatPluralString("Members", maxCount)));
+        if (getFullMembersCount() == 0) {
+            actionBar.setSubtitle(LocaleController.formatString(R.string.MembersCountZero, LocaleController.formatPluralString("Members", maxCount)));
         } else {
-            String str = LocaleController.getPluralString("MembersCountSelected", selectedContacts.size());
-            actionBar.setSubtitle(String.format(str, selectedContacts.size(), maxCount));
+            String str = LocaleController.getPluralString("MembersCountSelected", getFullMembersCount());
+            actionBar.setSubtitle(String.format(str, getFullMembersCount(), maxCount));
         }
     }
 
@@ -1007,6 +1052,18 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
             currentDoneButtonAnimation.start();
             doneButtonVisible = true;
         }
+    }
+
+    private boolean isAddToGroup() {
+        return encryptedGroup != null;
+    }
+
+    private int getFullMembersCount() {
+        int count = selectedContacts.size();
+        if (encryptedGroup != null) {
+            count += encryptedGroup.getInnerChats().size();
+        }
+        return count;
     }
 
     public class GroupCreateAdapter extends RecyclerListView.FastScrollAdapter {
@@ -1246,8 +1303,13 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                         id = 0;
                     }
                     if (id != 0) {
-                        cell.setChecked(selectedContacts.indexOfKey(id) >= 0, false);
-                        cell.setCheckBoxEnabled(true);
+                        if (encryptedGroup != null && encryptedGroup.getInnerChatByUserId(id) != null) {
+                            cell.setChecked(true, false);
+                            cell.setCheckBoxEnabled(false);
+                        } else {
+                            cell.setChecked(selectedContacts.indexOfKey(id) >= 0, true);
+                            cell.setCheckBoxEnabled(true);
+                        }
                     }
                     break;
                 }

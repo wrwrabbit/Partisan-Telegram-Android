@@ -10697,6 +10697,16 @@ public class MessagesStorage extends BaseController {
         });
     }
 
+    public void addEncryptedGroupInnerChat(int encryptedGroupId, long userId, InnerEncryptedChatState chatState) {
+        partisanExecute("INSERT INTO enc_group_inner_chats (encrypted_group_id, user_id, encrypted_chat_id, state) VALUES (?, ?, ?, ?)", state -> {
+            state.bindInteger(1, encryptedGroupId);
+            state.bindLong(2, userId);
+            state.bindNull(3);
+            state.bindString(4, chatState.toString());
+            state.step();
+        });
+    }
+
     public boolean isEncryptedGroup(long dialogId) {
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             return false;

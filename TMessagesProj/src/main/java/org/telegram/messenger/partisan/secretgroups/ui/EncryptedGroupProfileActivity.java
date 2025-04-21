@@ -64,6 +64,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         getNotificationCenter().addObserver(this, NotificationCenter.dialogsHidingChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().addObserver(this, NotificationCenter.encryptedGroupMemberRemoved);
+        getNotificationCenter().addObserver(this, NotificationCenter.encryptedGroupMembersAdded);
         updateRows();
         return true;
     }
@@ -74,6 +75,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogsHidingChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().removeObserver(this, NotificationCenter.encryptedGroupMemberRemoved);
+        getNotificationCenter().removeObserver(this, NotificationCenter.encryptedGroupMembersAdded);
     }
 
     @Override
@@ -196,6 +198,12 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                 actionBar.setTitle(encryptedGroup.getName());
             }
         } else if (id == NotificationCenter.encryptedGroupMemberRemoved) {
+            int encryptedGroupId = (int)args[0];
+            if (encryptedGroupId == encryptedGroup.getInternalId()) {
+                updateRows();
+                listAdapter.notifyDataSetChanged();
+            }
+        } else if (id == NotificationCenter.encryptedGroupMembersAdded) {
             int encryptedGroupId = (int)args[0];
             if (encryptedGroupId == encryptedGroup.getInternalId()) {
                 updateRows();

@@ -480,7 +480,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                     }
                 }
-                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), currentAccount);
+                encryptedGroups.remove(encryptedGroup.getInternalId());
             }
         }
     }

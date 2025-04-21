@@ -38,6 +38,12 @@ public abstract class EncryptedGroupAction extends TLRPC.DecryptedMessageAction 
             case 0x85100ce8:
                 result = new DeleteAvatarAction();
                 break;
+            case 0x84176b82:
+                result = new AddMemberAction();
+                break;
+            case 0x97939032:
+                result = new CreateGroupForNewMemberAction();
+                break;
         }
         if (result == null && exception) {
             throw new RuntimeException(String.format("can't parse magic %x in EncryptedGroupAction", constructor));

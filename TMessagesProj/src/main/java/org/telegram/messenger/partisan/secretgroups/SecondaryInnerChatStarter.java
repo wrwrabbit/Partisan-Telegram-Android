@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.secretgroups;
 
+import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.INITIALIZED;
+import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION;
 import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils.log;
 
 import android.content.Context;
@@ -35,12 +37,13 @@ public class SecondaryInnerChatStarter {
 
     private void checkInnerEncryptedChats() {
         InnerEncryptedChat uninitializedInnerChat = encryptedGroup.getInnerChats().stream()
-                .filter(c -> !c.getEncryptedChatId().isPresent() && c.getUserId() > getUserConfig().clientUserId) // Users with smaller ids will initialize chats with users with bigger ids.
+                // Users with smaller ids will initialize chats with users with bigger ids. New members will initialize chats with all other users.
+                .filter(c -> !c.getEncryptedChatId().isPresent() && (c.getUserId() > getUserConfig().clientUserId || encryptedGroup.getState() == NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION))
                 .findAny()
                 .orElse(null);
         if (uninitializedInnerChat != null) {
             initializeNextEncryptedChat(uninitializedInnerChat);
-        } else {
+        } else if (encryptedGroup.getState() != INITIALIZED) {
             EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
         }
     }

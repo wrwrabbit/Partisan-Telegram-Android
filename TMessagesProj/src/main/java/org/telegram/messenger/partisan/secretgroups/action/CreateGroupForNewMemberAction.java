@@ -4,8 +4,8 @@ import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.OutputSerializedData;
 
-public class CreateGroupAction extends AbstractCreateGroupAction {
-    public static final int constructor = 0x44498b93;
+public class CreateGroupForNewMemberAction extends AbstractCreateGroupAction {
+    public static final int constructor = 0x97939032;
 
     @Override
     public void readParams(InputSerializedData stream, boolean exception) {
@@ -34,6 +34,6 @@ public class CreateGroupAction extends AbstractCreateGroupAction {
 
     @Override
     public EncryptedGroupState getInitialEncryptedGroupState() {
-        return EncryptedGroupState.JOINING_NOT_CONFIRMED;
+        return EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED;
     }
 }

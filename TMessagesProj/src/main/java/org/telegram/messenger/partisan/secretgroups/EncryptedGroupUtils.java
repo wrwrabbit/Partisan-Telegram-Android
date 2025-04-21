@@ -30,6 +30,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.LaunchActivity;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -44,7 +45,8 @@ import javax.annotation.Nullable;
 
 public class EncryptedGroupUtils {
     public static void checkAllEncryptedChatsCreated(EncryptedGroup encryptedGroup, int accountNum) {
-        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
+        EncryptedGroupState groupState = encryptedGroup.getState();
+        if (groupState != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION && groupState != EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
             throw new RuntimeException("Invalid encrypted group state");
         }
         if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.INITIALIZED)) {
@@ -55,7 +57,9 @@ public class EncryptedGroupUtils {
                 MessagesController messagesController = MessagesController.getInstance(accountNum);
                 int ownerEncryptedChatId = encryptedGroup.getOwnerEncryptedChatId();
                 TLRPC.EncryptedChat ownerEncryptedChat = messagesController.getEncryptedChat(ownerEncryptedChatId);
-                new EncryptedGroupProtocol(accountNum).sendAllSecondaryChatsInitialized(ownerEncryptedChat);
+                if (groupState == EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
+                    new EncryptedGroupProtocol(accountNum).sendAllSecondaryChatsInitialized(ownerEncryptedChat);
+                }
             }
         } else if (PartisanLog.logsAllowed()) {
             String notInitializedInnerChats = encryptedGroup.getInnerChats().stream()
@@ -71,11 +75,13 @@ public class EncryptedGroupUtils {
             case CREATING_ENCRYPTED_CHATS:
                 return LocaleController.getString(R.string.CreatingSecretChats);
             case JOINING_NOT_CONFIRMED:
+            case NEW_MEMBER_JOINING_NOT_CONFIRMED:
                 return LocaleController.getString(R.string.JoiningNotConfirmed);
             case WAITING_CONFIRMATION_FROM_MEMBERS:
             case WAITING_CONFIRMATION_FROM_OWNER:
                 return LocaleController.getString(R.string.WaitingForSecretGroupInitializationConfirmation);
             case WAITING_SECONDARY_CHAT_CREATION:
+            case NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION:
                 return LocaleController.getString(R.string.WaitingForSecondaryChatsCreation);
             case INITIALIZATION_FAILED:
                 return LocaleController.getString(R.string.SecretGroupInitializationFailed);
@@ -209,18 +215,25 @@ public class EncryptedGroupUtils {
                 LocaleController.getString(R.string.DeclineJoiningToSecretGroup));
         builder.setMessage(AndroidUtilities.replaceTags(message));
         builder.setPositiveButton(LocaleController.getString(R.string.JoinSecretGroup), (dialog, which) -> {
-            if (encryptedGroup.getState() != EncryptedGroupState.JOINING_NOT_CONFIRMED) {
+            if (encryptedGroup.getState() != EncryptedGroupState.JOINING_NOT_CONFIRMED && encryptedGroup.getState() != EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
                 throw new RuntimeException("Invalid encrypted group state");
             }
             boolean allMembersAreKnown = encryptedGroup.getInnerUserIds()
                     .stream()
                     .allMatch(user_id -> messagesController.getUser(user_id) != null);
             if (allMembersAreKnown) {
-                encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_OWNER);
+                if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
+                    encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_OWNER);
+                } else if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
+                    encryptedGroup.setState(EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION);
+                }
                 messagesStorage.updateEncryptedGroup(encryptedGroup);
                 TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
                 log(encryptedGroup, accountNum, "Send join confirmation.");
                 new EncryptedGroupProtocol(accountNum).sendJoinConfirmation(encryptedChat);
+                if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
+                    SecondaryInnerChatStarter.startSecondaryChats(accountNum, LaunchActivity.instance, encryptedGroup);
+                }
             } else {
                 encryptedGroup.setState(EncryptedGroupState.INITIALIZATION_FAILED);
                 messagesStorage.updateEncryptedGroup(encryptedGroup);
@@ -342,7 +355,7 @@ public class EncryptedGroupUtils {
         EncryptedGroup encryptedGroup = MessagesController.getInstance(account)
                 .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
         if (encryptedGroup != null) {
-            if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
+            if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED || encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
                 return false;
             } else {
                 bundle.putInt("enc_group_id", encryptedGroup.getInternalId());

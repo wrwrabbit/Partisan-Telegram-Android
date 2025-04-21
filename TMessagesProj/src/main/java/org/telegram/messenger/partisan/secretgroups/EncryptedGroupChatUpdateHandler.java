@@ -35,7 +35,7 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
 
     private void handleEncryptedChatCreated(EncryptedGroup encryptedGroup, TLRPC.EncryptedChat encryptedChat) {
         InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByEncryptedChatId(encryptedChat.id);
-        if (innerChat.getState() == InnerEncryptedChatState.NEED_SEND_INVITATION) {
+        if (innerChat.getState() == InnerEncryptedChatState.NEED_SEND_INVITATION || innerChat.getState() == InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION) {
             onPrimaryChatCreated(encryptedGroup, innerChat, encryptedChat);
         } else if (innerChat.getState() == InnerEncryptedChatState.NEED_SEND_SECONDARY_INVITATION) {
             onSecondaryChatCreated(encryptedGroup, innerChat, encryptedChat);
@@ -43,8 +43,13 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
     }
 
     private void onPrimaryChatCreated(EncryptedGroup encryptedGroup, InnerEncryptedChat innerChat, TLRPC.EncryptedChat encryptedChat) {
-        getEncryptedGroupProtocol().sendInvitation(encryptedChat, encryptedGroup);
-        innerChat.setState(InnerEncryptedChatState.INVITATION_SENT);
+        if (innerChat.getState() == InnerEncryptedChatState.NEED_SEND_INVITATION) {
+            getEncryptedGroupProtocol().sendInvitation(encryptedChat, encryptedGroup);
+            innerChat.setState(InnerEncryptedChatState.INVITATION_SENT);
+        } else if (innerChat.getState() == InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION) {
+            getEncryptedGroupProtocol().sendNewMemberInvitation(encryptedChat, encryptedGroup);
+            innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_INVITATION_SENT);
+        }
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
         SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(
@@ -76,8 +81,9 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
     }
 
     private void onSecondaryChatCreated(EncryptedGroup encryptedGroup, InnerEncryptedChat innerChat, TLRPC.EncryptedChat encryptedChat) {
-        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
+        if (encryptedGroup.getState() != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION && encryptedGroup.getState() != EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
             log(encryptedGroup, "Invalid encrypted group state during secondary chat creation: " + encryptedGroup.getState());
+            return;
         }
         getEncryptedGroupProtocol().sendSecondaryInnerChatInvitation(encryptedChat, encryptedGroup.getExternalId());
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);

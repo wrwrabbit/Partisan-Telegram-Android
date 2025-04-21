@@ -9338,4 +9338,5 @@
     <string name="InnerEncryptedChatStateMemberDeleted">Member deleted</string>
     <string name="EncryptedGroupMemberRemovalConfirmation">Are you sure you want to remove this member from the secret group. All his messages will be deleted.</string>
     <string name="EncryptedGroupAvatarChangeForbidden">You can\'t change avatar until the group is initialized.</string>
+    <string name="CantAddNewMemberToEncryptedGroupMessage">You must wait for confirmation from previous members before adding a new one.</string>
 </resources>

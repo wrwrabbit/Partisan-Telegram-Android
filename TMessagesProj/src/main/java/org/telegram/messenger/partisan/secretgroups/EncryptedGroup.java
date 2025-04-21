@@ -30,6 +30,10 @@ public class EncryptedGroup {
         return Collections.unmodifiableList(innerChats);
     }
 
+    public void addInnerChat(InnerEncryptedChat innerChat) {
+        innerChats.add(innerChat);
+    }
+
     public InnerEncryptedChat getInnerChatByEncryptedChatId(int chatId) {
         return innerChats.stream()
                 .filter(c -> c.getEncryptedChatId().isPresent() && c.getEncryptedChatId().get() == chatId)
@@ -58,6 +62,10 @@ public class EncryptedGroup {
 
     public boolean allInnerChatsMatchState(InnerEncryptedChatState state) {
         return innerChats.stream().allMatch(c -> c.getState() == state);
+    }
+
+    public boolean anyInnerChatsMatchState(InnerEncryptedChatState state) {
+        return innerChats.stream().anyMatch(c -> c.getState() == state);
     }
 
     public List<Integer> getInitializedInnerEncryptedChatIds() {
