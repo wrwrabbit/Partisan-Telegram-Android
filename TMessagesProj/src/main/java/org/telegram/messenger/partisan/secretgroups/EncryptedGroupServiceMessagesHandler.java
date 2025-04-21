@@ -183,9 +183,9 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         encryptedGroup = createEncryptedGroup(encryptedChat, action);
         log("Created.");
 
-        forceHidePreview(encryptedChat, encryptedGroup);
+        EncryptedGroupUtils.forceHidePreview(encryptedGroup, accountNum);
         for (int i = 1; i <= 20; i++) {
-            AndroidUtilities.runOnUIThread(() -> forceHidePreview(encryptedChat, encryptedGroup));
+            AndroidUtilities.runOnUIThread(() -> EncryptedGroupUtils.forceHidePreview(encryptedGroup, accountNum));
         }
 
         TLRPC.Dialog dialog = createTlrpcDialog(encryptedGroup);
@@ -201,19 +201,6 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getMessagesController().putEncryptedGroup(encryptedGroup, false);
         });
         return null;
-    }
-
-    private void forceHidePreview(TLRPC.EncryptedChat encryptedChat, EncryptedGroup encryptedGroup) {
-        if (encryptedGroup.getState() != INITIALIZED) {
-            long chatDialogId = DialogObject.makeEncryptedDialogId(encryptedChat.id);
-            long groupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
-
-            getMessagesController().deleteDialog(chatDialogId, 1);
-            if (getMessagesController().dialogMessage.get(groupDialogId) != null) {
-                getMessagesController().dialogMessage.put(groupDialogId, null);
-                getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
-            }
-        }
     }
 
     private EncryptedGroup createEncryptedGroup(TLRPC.EncryptedChat encryptedChat, AbstractCreateGroupAction action) {

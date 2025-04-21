@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.secretgroups;
 
+import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.INITIALIZED;
+
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -15,6 +17,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SharedConfig;
@@ -255,6 +258,11 @@ public class EncryptedGroupUtils {
         MessagesController messagesController = MessagesController.getInstance(accountNum);
         MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
 
+        forceHidePreview(encryptedGroup, accountNum);
+        for (int i = 1; i <= 20; i++) {
+            AndroidUtilities.runOnUIThread(() -> EncryptedGroupUtils.forceHidePreview(encryptedGroup, accountNum), 100 * i);
+        }
+
         if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
             encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_OWNER);
         } else if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
@@ -268,6 +276,21 @@ public class EncryptedGroupUtils {
 
         if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
             SecondaryInnerChatStarter.startSecondaryChats(accountNum, LaunchActivity.instance, encryptedGroup);
+        }
+    }
+
+    public static void forceHidePreview(EncryptedGroup encryptedGroup, int accountNum) {
+        if (encryptedGroup.getState() != INITIALIZED) {
+            Integer ownerEncryptedChatId = encryptedGroup.getInnerChatByUserId(encryptedGroup.getOwnerUserId()).getEncryptedChatId().orElse(null);
+            long chatDialogId = DialogObject.makeEncryptedDialogId(ownerEncryptedChatId);
+            long groupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
+
+            MessagesController messagesController = MessagesController.getInstance(accountNum);
+            messagesController.deleteDialog(chatDialogId, 1);
+            if (messagesController.dialogMessage.get(groupDialogId) != null) {
+                messagesController.dialogMessage.put(groupDialogId, null);
+                NotificationCenter.getInstance(accountNum).postNotificationName(NotificationCenter.dialogsNeedReload);
+            }
         }
     }
 
