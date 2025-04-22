@@ -10572,12 +10572,12 @@ public class MessagesStorage extends BaseController {
         cursor.dispose();
     }
 
-    private void getEncryptedGroupsInternal(String chatsToLoad, ArrayList<EncryptedGroup> result) throws Exception {
-        if (chatsToLoad == null || chatsToLoad.isEmpty() || result == null) {
-            return;
-        }
-        SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT encrypted_group_id, name, owner_user_id, state, external_group_id, avatar FROM enc_groups " +
-                "WHERE encrypted_group_id IN(%s)", chatsToLoad));
+    private List<EncryptedGroup> getEncryptedGroupsInternal(String condition, Object param) throws Exception {
+        String query = "SELECT encrypted_group_id, name, owner_user_id, state, external_group_id, avatar FROM enc_groups " + condition;
+        SQLiteCursor cursor = param != null
+                ? database.queryFinalized(query, param)
+                : database.queryFinalized(query);
+        List<EncryptedGroup> result = new ArrayList<>();
         while (cursor.next()) {
             try {
                 EncryptedGroup.EncryptedGroupBuilder builder = new EncryptedGroup.EncryptedGroupBuilder();
@@ -10601,6 +10601,7 @@ public class MessagesStorage extends BaseController {
             }
         }
         cursor.dispose();
+        return result;
     }
 
     private List<InnerEncryptedChat> getEncryptedGroupInnerChats(int encryptedGroupId) {
@@ -10626,33 +10627,13 @@ public class MessagesStorage extends BaseController {
     }
 
     public EncryptedGroup loadEncryptedGroup(int encryptedGroupId) throws Exception {
-        SQLiteCursor cursor = database.queryFinalized("SELECT encrypted_group_id, name, owner_user_id, state, external_group_id, avatar FROM enc_groups " +
-                "WHERE encrypted_group_id = ?", encryptedGroupId);
-        EncryptedGroup result = null;
-        if (cursor.next()) {
-            try {
-                EncryptedGroup.EncryptedGroupBuilder builder = new EncryptedGroup.EncryptedGroupBuilder();
-                int id = cursor.intValue(0);
-                builder.setInternalId(id);
-                builder.setName(cursor.stringValue(1));
-                builder.setOwnerUserId(cursor.longValue(2));
-                EncryptedGroupState state = EncryptedGroupState.valueOf(cursor.stringValue(3));
-                builder.setState(state);
-                builder.setExternalId(cursor.longValue(4));
-                if (!cursor.isNull(5)) {
-                    NativeByteBuffer buffer = cursor.byteBufferValue(5);
-                    builder.setAvatar(EncryptedGroupUtils.deserializeAvatarFromByteBuffer(buffer));
-                    buffer.reuse();
-                }
-                builder.setInnerChats(getEncryptedGroupInnerChats(id));
-                result = builder.create();
-            } catch (Exception e) {
-                checkSQLException(e);
-                PartisanLog.handleException(e);
-            }
-        }
-        cursor.dispose();
-        return result;
+        List<EncryptedGroup> groups = getEncryptedGroupsInternal("WHERE encrypted_group_id = ?", encryptedGroupId);
+        return !groups.isEmpty() ? groups.get(0) : null;
+    }
+
+    public EncryptedGroup loadEncryptedGroupByExternalId(long externalId) throws Exception {
+        List<EncryptedGroup> groups = getEncryptedGroupsInternal("WHERE external_group_id = ?", externalId);
+        return !groups.isEmpty() ? groups.get(0) : null;
     }
 
     public void updateEncryptedGroup(EncryptedGroup encryptedGroup) {
@@ -16340,7 +16321,9 @@ public class MessagesStorage extends BaseController {
                 PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " encryptedToLoad size = " + encryptedToLoad.size());
                 if (!encryptedToLoad.isEmpty()) {
                     getEncryptedChatsInternal(TextUtils.join(",", encryptedToLoad), encryptedChats, usersToLoad);
-                    getEncryptedGroupsInternal(TextUtils.join(",", encryptedToLoad), encryptedGroups);
+
+                    String encryptedGroupsCondition = String.format(Locale.US, "WHERE encrypted_group_id IN(%s)", TextUtils.join(",", encryptedToLoad));
+                    encryptedGroups.addAll(getEncryptedGroupsInternal(encryptedGroupsCondition, null));
                 }
                 if (!chatsToLoad.isEmpty()) {
                     getChatsInternal(TextUtils.join(",", chatsToLoad), dialogs.chats);

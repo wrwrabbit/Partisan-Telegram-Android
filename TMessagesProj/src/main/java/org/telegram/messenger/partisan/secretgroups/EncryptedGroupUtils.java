@@ -372,6 +372,19 @@ public class EncryptedGroupUtils {
         return encryptedGroup;
     }
 
+    public static EncryptedGroup getOrLoadEncryptedGroupByExternalId(long externalId, int accountNum) {
+        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
+        MessagesController messagesController = MessagesController.getInstance(accountNum);
+        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroupByExternalId(externalId);
+        if (encryptedGroup == null) {
+            try {
+                encryptedGroup = messagesStorage.loadEncryptedGroupByExternalId(externalId);
+            } catch (Exception ignore) {
+            }
+        }
+        return encryptedGroup;
+    }
+
     public static boolean isInnerEncryptedGroupChat(long dialogId, int account) {
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             return false;

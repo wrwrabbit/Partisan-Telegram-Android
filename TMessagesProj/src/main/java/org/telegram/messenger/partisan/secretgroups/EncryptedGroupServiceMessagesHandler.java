@@ -309,7 +309,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
 
     @Handler()
     private TLRPC.Message handleStartSecondaryChat(StartSecondaryInnerChatAction action) {
-        encryptedGroup = getMessagesController().getEncryptedGroupByExternalId(action.externalGroupId);
+        encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroupByExternalId(action.externalGroupId, accountNum);
 
         innerAssert(encryptedGroup != null, "There is no encrypted group with id " + action.externalGroupId);
         innerAssert(encryptedGroup.getOwnerUserId() != getUserConfig().clientUserId, "Cannot start a secondary chat with the owner.");
