@@ -50,7 +50,7 @@ public class EncryptedGroupUtils {
     public static void checkAllEncryptedChatsCreated(EncryptedGroup encryptedGroup, int accountNum) {
         EncryptedGroupState groupState = encryptedGroup.getState();
         if (groupState != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION && groupState != EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
-            throw new RuntimeException("Invalid encrypted group state");
+            throw new RuntimeException("Invalid encrypted group state: " + groupState);
         }
         if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.INITIALIZED)) {
             log(encryptedGroup, accountNum, "All encrypted chats initialized.");
