@@ -274,24 +274,28 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             if (encryptedGroup.hasAvatar()) {
                 getEncryptedGroupProtocol().sendNewAvatar(encryptedGroup, encryptedChat);
             }
-            encryptedGroup.getInnerEncryptedChatIds(false).stream()
-                    .map(id -> getMessagesController().getEncryptedChat(id))
-                    .filter(Objects::nonNull)
-                    .filter(otherEncryptedChat -> otherEncryptedChat.ttl != encryptedChat.ttl)
-                    .findFirst()
-                    .ifPresent(otherEncryptedChat ->
-                            AndroidUtilities.runOnUIThread(() -> {
-                                encryptedChat.ttl = otherEncryptedChat.ttl;
-                                getSecretChatHelper().sendTTLMessage(encryptedChat, null);
-                                getMessagesStorage().updateEncryptedChatTTL(encryptedChat);
-                            })
-                    );
+            syncNewInnerChatTtl();
         }
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
         return null;
+    }
+
+    private void syncNewInnerChatTtl() {
+        encryptedGroup.getInnerEncryptedChatIds(false).stream()
+                .map(id -> getMessagesController().getEncryptedChat(id))
+                .filter(Objects::nonNull)
+                .filter(otherEncryptedChat -> otherEncryptedChat.ttl != encryptedChat.ttl)
+                .findFirst()
+                .ifPresent(otherEncryptedChat ->
+                        AndroidUtilities.runOnUIThread(() -> {
+                            encryptedChat.ttl = otherEncryptedChat.ttl;
+                            getSecretChatHelper().sendTTLMessage(encryptedChat, null);
+                            getMessagesStorage().updateEncryptedChatTTL(encryptedChat);
+                        })
+                );
     }
 
     @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER}, groupStates = WAITING_CONFIRMATION_FROM_OWNER)
@@ -332,6 +336,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
+        syncNewInnerChatTtl();
         return null;
     }
 
