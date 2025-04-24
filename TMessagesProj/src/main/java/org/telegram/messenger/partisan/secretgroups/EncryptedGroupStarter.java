@@ -14,6 +14,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 
@@ -24,7 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class EncryptedGroupStarter {
+public class EncryptedGroupStarter implements AccountControllersProvider {
     private final int accountNum;
     private final Context context;
     private final List<TLRPC.User> users = new LinkedList<>();
@@ -148,27 +149,8 @@ public class EncryptedGroupStarter {
         return dialog;
     }
 
-    private UserConfig getUserConfig() {
-        return UserConfig.getInstance(accountNum);
-    }
-
-    private ConnectionsManager getConnectionsManager() {
-        return ConnectionsManager.getInstance(accountNum);
-    }
-
-    private MessagesStorage getMessagesStorage() {
-        return MessagesStorage.getInstance(accountNum);
-    }
-
-    private MessagesController getMessagesController() {
-        return MessagesController.getInstance(accountNum);
-    }
-
-    private NotificationCenter getNotificationCenter() {
-        return NotificationCenter.getInstance(accountNum);
-    }
-
-    private SecretChatHelper getSecretChatHelper() {
-        return SecretChatHelper.getInstance(accountNum);
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 }

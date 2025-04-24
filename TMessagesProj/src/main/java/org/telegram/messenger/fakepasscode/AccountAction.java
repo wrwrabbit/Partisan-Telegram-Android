@@ -4,8 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.AccountControllersProvider;
 
-public abstract class AccountAction implements Action {
+public abstract class AccountAction implements Action, AccountControllersProvider {
     @JsonIgnore
     protected int accountNum = 0;
 
@@ -14,7 +15,8 @@ public abstract class AccountAction implements Action {
         this.accountNum = accountNum;
     }
 
-    protected UserConfig getUserConfig() {
-        return UserConfig.getInstance(accountNum);
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 }

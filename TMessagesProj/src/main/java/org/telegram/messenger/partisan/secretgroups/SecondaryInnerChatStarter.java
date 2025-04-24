@@ -11,9 +11,10 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.tgnet.TLRPC;
 
-public class SecondaryInnerChatStarter {
+public class SecondaryInnerChatStarter implements AccountControllersProvider {
     private final int accountNum;
     private final Context context;
     private final EncryptedGroup encryptedGroup;
@@ -72,19 +73,8 @@ public class SecondaryInnerChatStarter {
         }
     }
 
-    private UserConfig getUserConfig() {
-        return UserConfig.getInstance(accountNum);
-    }
-
-    private MessagesStorage getMessagesStorage() {
-        return MessagesStorage.getInstance(accountNum);
-    }
-
-    private MessagesController getMessagesController() {
-        return MessagesController.getInstance(accountNum);
-    }
-
-    private SecretChatHelper getSecretChatHelper() {
-        return SecretChatHelper.getInstance(accountNum);
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 }
