@@ -46,8 +46,10 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.secretgroups.action.AddMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteAvatarAction;
+import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
@@ -4809,6 +4811,28 @@ public class MessageObject {
                             messageText = getString(R.string.ActionYouRemovedPhoto);
                         } else {
                             messageText = replaceWithLink(getString(R.string.ActionRemovedPhoto), "un1", fromObject);
+                        }
+                    } else if (messageOwner.action.encryptedAction instanceof AddMemberAction) {
+                        long userId = ((AddMemberAction)messageOwner.action.encryptedAction).userId;
+                        TLRPC.User whoUser = getUser(users, sUsers, userId);
+                        if (isOut()) {
+                            messageText = replaceWithLink(getString(R.string.ActionYouAddUser), "un2", whoUser);
+                        } else if (userId == UserConfig.getInstance(currentAccount).getClientUserId()) {
+                            messageText = replaceWithLink(getString(R.string.ActionAddUserYou), "un1", fromObject);
+                        } else {
+                            messageText = replaceWithLink(getString(R.string.ActionAddUser), "un2", whoUser);
+                            messageText = replaceWithLink(messageText, "un1", fromObject);
+                        }
+                    } else if (messageOwner.action.encryptedAction instanceof DeleteMemberAction) {
+                        long userId = ((DeleteMemberAction)messageOwner.action.encryptedAction).userId;
+                        TLRPC.User whoUser = getUser(users, sUsers, userId);
+                        if (isOut()) {
+                            messageText = replaceWithLink(getString(R.string.ActionYouKickUser), "un2", whoUser);
+                        } else if (userId == UserConfig.getInstance(currentAccount).getClientUserId()) {
+                            messageText = replaceWithLink(getString(R.string.ActionKickUserYou), "un1", fromObject);
+                        } else {
+                            messageText = replaceWithLink(getString(R.string.ActionKickUser), "un2", whoUser);
+                            messageText = replaceWithLink(messageText, "un1", fromObject);
                         }
                     } else if (messageOwner.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL) {
                         TLRPC.TL_decryptedMessageActionSetMessageTTL action = (TLRPC.TL_decryptedMessageActionSetMessageTTL) messageOwner.action.encryptedAction;

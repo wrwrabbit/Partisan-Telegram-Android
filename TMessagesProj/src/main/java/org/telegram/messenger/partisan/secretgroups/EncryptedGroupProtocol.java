@@ -94,7 +94,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         }
         DeleteMemberAction action = new DeleteMemberAction();
         action.userId = userId;
-        sendActionToAllMembers(encryptedGroup, action);
+        sendActionToAllMembers(encryptedGroup, action, true);
 
         if (innerChat.getState() != InnerEncryptedChatState.CANCELLED) {
             NotificationCenter.NotificationCenterDelegate observer = new NotificationCenter.NotificationCenterDelegate() {
@@ -179,7 +179,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         log(encryptedGroup, "Send add member");
         AddMemberAction action = new AddMemberAction();
         action.userId = userId;
-        sendActionToAllMembers(encryptedGroup, action);
+        sendActionToAllMembers(encryptedGroup, action, true);
     }
 
     public void sendNewMemberInvitation(TLRPC.EncryptedChat encryptedChat, EncryptedGroup encryptedGroup) {

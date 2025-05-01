@@ -57,6 +57,8 @@ public abstract class EncryptedGroupAction extends TLRPC.DecryptedMessageAction 
     public static boolean isVisibleAction(TLRPC.DecryptedMessageAction action) {
         return action instanceof ChangeGroupInfoAction
                 || action instanceof NewAvatarAction
-                || action instanceof DeleteAvatarAction;
+                || action instanceof DeleteAvatarAction
+                || action instanceof AddMemberAction
+                || action instanceof DeleteMemberAction;
     }
 }

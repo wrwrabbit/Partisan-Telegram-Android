@@ -404,7 +404,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
                 EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
             }
         }
-        return null;
+        return createMessageForStoring();
     }
 
     @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER}, groupStates = INITIALIZED)
@@ -418,7 +418,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         AndroidUtilities.runOnUIThread(() ->
                 getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId())
         );
-        return null;
+        return createMessageForStoring();
     }
 
     @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER})
