@@ -266,26 +266,27 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 							callType = TYPE_MISSED;
 						}
 						if (calls.size() > 0) {
-							finalCallLogRow topRow = calls.get(0);
+							final CallLogRow topRow = calls.get(0);
 							if (eq(userID, topRow.users) && topRow.type == callType) {
 								topRow.calls.add(0, msg.messageOwner);
 								listViewAdapter.notifyItemChanged(listViewAdapter.callsStartRow);
 								continue;
 							}
 						}
-						finalCallLogRow row = new CallLogRow();
-						row.calls .clear();
+						final CallLogRow row = new CallLogRow();
+						row.calls.clear();
 						row.calls.add(msg.messageOwner);
 						row.users.clear();
-					final TLRPC.User user = getMessagesController().getUser(userID);
-					if (user != null) {
-						row.users.add(user);
-					}
+						final TLRPC.User user = getMessagesController().getUser(userID);
+						if (user != null) {
+							row.users.add(user);
+						}
 						row.type = callType;
 						row.video = msg.isVideoCall();
 						calls.add(0, row);
 						listViewAdapter.updateRows();
-					listViewAdapter.notifyItemInserted(listViewAdapter.callsStartRow);
+						listViewAdapter.notifyItemInserted(listViewAdapter.callsStartRow);
+					}
 				} else if (msg.messageOwner.action instanceof TLRPC.TL_messageActionConferenceCall) {
 					final TLRPC.TL_messageActionConferenceCall action = (TLRPC.TL_messageActionConferenceCall) msg.messageOwner.action;
 					long fromId = msg.getFromChatId();
@@ -342,7 +343,6 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 					row.video = msg.isVideoCall();
 					calls.add(0, row);
 					listViewAdapter.notifyItemInserted(listViewAdapter.callsStartRow);
-					}
 				}
 			}
 			if (otherItem != null) {
@@ -1052,7 +1052,7 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 						}
 
 						if (currentRow == null || !eq(userIds, currentRow.users) || currentRow.type != callType) {
-							if (currentRow != null && !calls.contains(currentRow) && !FakePasscodeUtils.isHideChat(currentRow.user.id, currentAccount)) {
+							if (currentRow != null && !calls.contains(currentRow) && currentRow.users.stream().noneMatch(user -> FakePasscodeUtils.isHideChat(user.id, currentAccount))) {
 								calls.add(currentRow);
 							}
 							final CallLogRow row = new CallLogRow();
@@ -1073,7 +1073,7 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
                         max_id_without_filters = msg.id;
 					}
 				}
-				if (currentRow != null && currentRow.calls.size() > 0 && !calls.contains(currentRow) && !FakePasscodeUtils.isHideChat(currentRow.user.id, currentAccount)) {
+				if (currentRow != null && currentRow.calls.size() > 0 && !calls.contains(currentRow) && currentRow.users.stream().noneMatch(user -> FakePasscodeUtils.isHideChat(user.id, currentAccount))) {
 					calls.add(currentRow);
 				}
 			} else {
