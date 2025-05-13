@@ -463,6 +463,9 @@ public class FakePasscodeActivity extends BaseFragment {
                             TextCheckCell cell = (TextCheckCell) view;
                             fakePasscode.replaceOriginalPasscode = !fakePasscode.replaceOriginalPasscode;
                             SharedConfig.saveConfig();
+                            if (!fakePasscode.replaceOriginalPasscode) {
+                                fakePasscode.autoAddAccountHidings();
+                            }
                             cell.setChecked(fakePasscode.replaceOriginalPasscode);
                             updateRows();
                             if (listAdapter != null) {
