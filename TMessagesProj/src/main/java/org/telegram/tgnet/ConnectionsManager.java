@@ -347,8 +347,9 @@ public class ConnectionsManager extends BaseController {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("send request " + object + " with token = " + requestToken);
         }
+        NativeByteBuffer buffer;
         try {
-            NativeByteBuffer buffer = new NativeByteBuffer(object.getObjectSize());
+            buffer = new NativeByteBuffer(object.getObjectSize());
             object.serializeToStream(buffer);
             object.freeResources();
 
