@@ -2043,7 +2043,11 @@ public class SecretChatHelper extends BaseController {
                                 }
                                 AlertDialog.Builder builder = new AlertDialog.Builder(context);
                                 builder.setTitle(LocaleController.getString(R.string.AppName));
-                                builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError));
+                                if (SharedConfig.isTesterSettingsActivated()) {
+                                    builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError) + "\n" + error1.text);
+                                } else {
+                                    builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError));
+                                }
                                 builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
                                 builder.show().setCanceledOnTouchOutside(true);
                             }
