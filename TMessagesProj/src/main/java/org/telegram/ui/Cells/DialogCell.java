@@ -1869,6 +1869,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 drawMention = false;
                 drawReactionMention = false;
                 drawError = false;
+                if (encryptedGroup != null && encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
+                    drawCount = true;
+                    drawMention = false;
+                    countString = String.format("%d", 1);
+                }
             } else {
                 if (currentDialogFolderId != 0) {
                     if (unreadCount + mentionCount > 0) {
