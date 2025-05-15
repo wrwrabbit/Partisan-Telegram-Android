@@ -134,6 +134,7 @@ import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionPostRestartCleaner;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.update.UpdateChecker;
 import org.telegram.messenger.partisan.update.UpdateData;
@@ -3209,6 +3210,16 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             } else if (push_enc_id != 0) {
                 Bundle args = new Bundle();
                 if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, DialogObject.makeEncryptedDialogId(push_enc_id), currentAccount)) {
+                    return true;
+                }
+                if (EncryptedGroupUtils.isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(push_enc_id), currentAccount)) {
+                    EncryptedGroup encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroupByEncryptedChatId(push_enc_id, currentAccount);
+                    EncryptedGroupUtils.showSecretGroupJoinDialog(encryptedGroup, getLastFragment(), currentAccount, () -> {
+                        Bundle args2 = new Bundle();
+                        args2.putInt("enc_group_id", encryptedGroup.getInternalId());
+                        args2.putBoolean("just_created_chat", true);
+                        getActionBarLayout().presentFragment(new ChatActivity(args2), false);
+                    });
                     return true;
                 }
                 ChatActivity fragment = new ChatActivity(args);

@@ -59,6 +59,7 @@ public abstract class EncryptedGroupAction extends TLRPC.DecryptedMessageAction 
                 || action instanceof NewAvatarAction
                 || action instanceof DeleteAvatarAction
                 || action instanceof AddMemberAction
-                || action instanceof DeleteMemberAction;
+                || action instanceof DeleteMemberAction
+                || action instanceof AbstractCreateGroupAction;
     }
 }

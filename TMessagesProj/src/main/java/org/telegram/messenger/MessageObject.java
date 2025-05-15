@@ -46,6 +46,7 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.secretgroups.action.AbstractCreateGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.AddMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteAvatarAction;
@@ -4796,6 +4797,12 @@ public class MessageObject {
                             messageText = getString(R.string.ActionTakeScreenshootYou);
                         } else {
                             messageText = replaceWithLink(getString(R.string.ActionTakeScreenshoot), "un1", fromObject);
+                        }
+                    } else if (messageOwner.action.encryptedAction instanceof AbstractCreateGroupAction) {
+                        if (isOut()) {
+                            messageText = getString(R.string.ActionYouCreateGroup);
+                        } else {
+                            messageText = replaceWithLink(getString(R.string.ActionCreateGroup), "un1", fromObject);
                         }
                     } else if (messageOwner.action.encryptedAction instanceof ChangeGroupInfoAction) {
                         String name = ((ChangeGroupInfoAction) messageOwner.action.encryptedAction).name;

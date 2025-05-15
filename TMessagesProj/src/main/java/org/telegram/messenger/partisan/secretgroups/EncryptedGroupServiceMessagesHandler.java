@@ -183,11 +183,6 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         encryptedGroup = createEncryptedGroup(encryptedChat, action);
         log("Created.");
 
-        EncryptedGroupUtils.forceHidePreview(encryptedGroup, accountNum);
-        for (int i = 1; i <= 20; i++) {
-            AndroidUtilities.runOnUIThread(() -> EncryptedGroupUtils.forceHidePreview(encryptedGroup, accountNum));
-        }
-
         TLRPC.Dialog dialog = createTlrpcDialog(encryptedGroup);
         getMessagesController().dialogs_dict.put(dialog.id, dialog);
         getMessagesController().addDialog(dialog);
@@ -200,7 +195,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
             getMessagesController().putEncryptedGroup(encryptedGroup, false);
         });
-        return null;
+        return createMessageForStoring();
     }
 
     private EncryptedGroup createEncryptedGroup(TLRPC.EncryptedChat encryptedChat, AbstractCreateGroupAction action) {
