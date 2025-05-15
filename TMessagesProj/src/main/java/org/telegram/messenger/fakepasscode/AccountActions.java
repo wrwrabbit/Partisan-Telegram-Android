@@ -136,6 +136,25 @@ public class AccountActions implements Action {
         }
     }
 
+    public boolean allowChangingAccountHiding(FakePasscode fakePasscode) {
+        int hiddenAccountCount = fakePasscode.getHideOrLogOutCount();
+        int accountCount = UserConfig.getActivatedAccountsCount();
+        if (fakePasscode.replaceOriginalPasscode) {
+            return false;
+        } else if (isHideAccount()) {
+            int visibleAccountCount = accountCount - hiddenAccountCount;
+            if (visibleAccountCount < UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT) {
+                return true;
+            } else if (visibleAccountCount == UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT) {
+                return UserConfig.getInstance(accountNum).isPremium() || fakePasscode.anyPremiumAccountNotHidden();
+            } else {
+                return false;
+            }
+        } else {
+            return hiddenAccountCount < accountCount - 1;
+        }
+    }
+
     public TelegramMessageAction getTelegramMessageAction() {
         return telegramMessageAction;
     }

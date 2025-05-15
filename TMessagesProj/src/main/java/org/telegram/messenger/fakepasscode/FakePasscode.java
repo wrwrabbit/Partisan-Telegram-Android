@@ -450,4 +450,17 @@ public class FakePasscode {
             });
         }
     }
+
+    public boolean anyPremiumAccountNotHidden() {
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            UserConfig config = UserConfig.getInstance(a);
+            if (config.isClientActivated() && config.isPremium()) {
+                AccountActions accountActions = getAccountActions(a);
+                if (accountActions == null || !accountActions.isLogOutOrHideAccount()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
