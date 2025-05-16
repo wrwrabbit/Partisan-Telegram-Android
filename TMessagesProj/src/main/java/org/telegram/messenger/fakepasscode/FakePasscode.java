@@ -285,13 +285,19 @@ public class FakePasscode {
     }
 
     private int getMaxAccountCount() {
-        boolean hasPremium = getFilteredAccountActions()
-                .stream()
-                .filter(a -> !a.isLogOutOrHideAccount())
-                .anyMatch(a -> UserConfig.getInstance(a.accountNum).isPremium());
-        return hasPremium
+        return hasNotHiddenPremium()
                 ? UserConfig.FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT
                 : UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
+    }
+
+    private boolean hasNotHiddenPremium() {
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            UserConfig userConfig = UserConfig.getInstance(a);
+            if (userConfig.isPremium() && (getAccountActions(a) == null || !getAccountActions(a).isLogOutOrHideAccount())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isHidingCountCorrect() {
