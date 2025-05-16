@@ -220,7 +220,7 @@ public class AccountHidingSettingsActivity extends BaseFragment {
                     } else if (position == strictHidingRow) {
                         boolean checked = actions.getHideAccountAction() != null && actions.getHideAccountAction().strictHiding;
                         textCell.setTextAndCheck(LocaleController.getString(R.string.StrictHiding), checked, false);
-                        textCell.setEnabled(isEnabled(holder));
+                        textCell.setEnabled(isEnabled(holder), null);
                     }
                     break;
                 }
