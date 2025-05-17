@@ -27,7 +27,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.tgnet.TLRPC;
@@ -104,7 +103,6 @@ public class BotCommandsMenuView extends View {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         webViewAnimation.setMasterParent(this);
-        webViewAnimation.setCurrentParentView(this);
     }
 
     @Override
@@ -336,7 +334,7 @@ public class BotCommandsMenuView extends View {
             description = new TextView(context) {
                 @Override
                 public void setText(CharSequence text, BufferType type) {
-                    text = Emoji.replaceEmoji(text, getPaint().getFontMetricsInt(), AndroidUtilities.dp(14), false);
+                    text = Emoji.replaceEmoji(text, getPaint().getFontMetricsInt(), false);
                     super.setText(text, type);
                 }
             };

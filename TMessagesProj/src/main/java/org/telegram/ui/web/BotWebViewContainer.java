@@ -132,6 +132,7 @@ import org.telegram.ui.bots.BotDownloads;
 import org.telegram.ui.bots.BotLocation;
 import org.telegram.ui.bots.BotSensors;
 import org.telegram.ui.bots.BotShareSheet;
+import org.telegram.ui.bots.BotStorage;
 import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.ChatAttachAlertBotWebViewLayout;
 import org.telegram.ui.bots.SetupEmojiStatusSheet;
@@ -219,6 +220,8 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
     private BotBiometry biometry;
     private BotLocation location;
     private BotDownloads downloads;
+    private BotStorage storage;
+    private BotStorage secureStorage;
     public final boolean bot;
 
     private BotSensors sensors;
@@ -378,6 +381,13 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
         }
         if (replaceWith != null) {
             AndroidUtilities.removeFromParent(replaceWith);
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && SharedConfig.debugWebView) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
         }
         webView = replaceWith == null ? new MyWebView(getContext(), bot) : replaceWith;
         if (!bot) {
@@ -1056,6 +1066,12 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
             if (biometry != null) {
                 biometry = null;
+            }
+            if (storage != null) {
+                storage = null;
+            }
+            if (secureStorage != null) {
+                secureStorage = null;
             }
             if (location != null) {
                 location.unlisten(this.notifyLocationChecked);
@@ -2260,7 +2276,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                             AndroidUtilities.runOnUIThread(open);
                         });
                     });
-                }).execute(media_url);
+                }, null).execute(media_url);
                 progressDialog.showDelayed(250);
 
                 break;
@@ -2576,11 +2592,208 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                 }
                 break;
             }
+            case "web_app_device_storage_save_key": {
+                if (botUser == null) return;
+                if (storage == null) storage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, false);
+                setStorageKey(storage, eventData, "device_storage_key_saved", "device_storage_failed");
+                break;
+            }
+            case "web_app_device_storage_get_key": {
+                if (botUser == null) return;
+                if (storage == null) storage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, false);
+                getStorageKey(storage, eventData, "device_storage_key_received", "device_storage_failed");
+                break;
+            }
+            case "web_app_device_storage_clear": {
+                if (botUser == null) return;
+                if (storage == null) storage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, false);
+                clearStorageKey(storage, eventData, "device_storage_cleared", "device_storage_failed");
+                break;
+            }
+            case "web_app_secure_storage_save_key": {
+                if (botUser == null) return;
+                if (secureStorage == null) secureStorage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, true);
+                setStorageKey(secureStorage, eventData, "secure_storage_key_saved", "secure_storage_failed");
+                break;
+            }
+            case "web_app_secure_storage_get_key": {
+                if (botUser == null) return;
+                if (secureStorage == null) secureStorage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, true);
+                getStorageKey(secureStorage, eventData, "secure_storage_key_received", "secure_storage_failed");
+                break;
+            }
+            case "web_app_secure_storage_clear": {
+                if (botUser == null) return;
+                if (secureStorage == null) secureStorage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, true);
+                clearStorageKey(secureStorage, eventData, "secure_storage_cleared", "secure_storage_cleared");
+                break;
+            }
+            case "web_app_secure_storage_restore_key": {
+                if (botUser == null) return;
+                if (secureStorage == null) secureStorage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, true);
+                restoreStorageKey(secureStorage, eventData, "secure_storage_key_restored", "secure_storage_cleared");
+                break;
+            }
             default: {
                 FileLog.d("unknown webapp event " + eventType);
                 break;
             }
         }
+    }
+
+    private void setStorageKey(BotStorage storage, String eventData, String eventSuccess, String eventFail) {
+        if (storage == null || botUser == null) return;
+        String req_id = "";
+        JSONObject o;
+        try {
+            o = new JSONObject(eventData);
+            req_id = o.getString("req_id");
+        } catch (Exception e) {
+            FileLog.e(e);
+            if (!TextUtils.isEmpty(req_id)) {
+                notifyEvent(eventFail, obj("req_id", req_id, "error", "UNKNOWN_ERROR"));
+            }
+            return;
+        }
+        String key;
+        try {
+            key = o.optString("key");
+        } catch (Exception e) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", "KEY_INVALID"));
+            return;
+        }
+        if (key == null) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", "KEY_INVALID"));
+            return;
+        }
+        String value;
+        try {
+            value = o.optString("value");
+        } catch (Exception e) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", "VALUE_INVALID"));
+            return;
+        }
+        try {
+            storage.setKey(key, value);
+        } catch (RuntimeException e) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", e.getMessage()));
+            return;
+        }
+        notifyEvent(eventSuccess, obj("req_id", req_id));
+    }
+
+    private void getStorageKey(BotStorage storage, String eventData, String eventSuccess, String eventFail) {
+        if (storage == null || botUser == null) return;
+        String req_id = "";
+        JSONObject o;
+        try {
+            o = new JSONObject(eventData);
+            req_id = o.getString("req_id");
+        } catch (Exception e) {
+            FileLog.e(e);
+            if (!TextUtils.isEmpty(req_id)) {
+                notifyEvent(eventFail, obj("req_id", req_id, "error", "UNKNOWN_ERROR"));
+            }
+            return;
+        }
+        String key;
+        try {
+            key = o.optString("key");
+        } catch (Exception e) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", "KEY_INVALID"));
+            return;
+        }
+        if (key == null) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", "KEY_INVALID"));
+            return;
+        }
+        try {
+            Pair<String, Boolean> pair = storage.getKey(key);
+            if (storage.secured && pair.first == null) {
+                notifyEvent(eventSuccess, obj("req_id", req_id, "value", pair.first, "can_restore", pair.second));
+            } else {
+                notifyEvent(eventSuccess, obj("req_id", req_id, "value", pair.first));
+            }
+        } catch (RuntimeException e) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", e.getMessage()));
+        }
+    }
+
+    private void restoreStorageKey(BotStorage storage, String eventData, String eventSuccess, String eventFail) {
+        if (storage == null || botUser == null) return;
+        String req_id = "";
+        JSONObject o;
+        try {
+            o = new JSONObject(eventData);
+            req_id = o.getString("req_id");
+        } catch (Exception e) {
+            FileLog.e(e);
+            if (!TextUtils.isEmpty(req_id)) {
+                notifyEvent(eventFail, obj("req_id", req_id, "error", "UNKNOWN_ERROR"));
+            }
+            return;
+        }
+        String key;
+        try {
+            key = o.optString("key");
+        } catch (Exception e) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", "KEY_INVALID"));
+            return;
+        }
+        if (key == null) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", "KEY_INVALID"));
+            return;
+        }
+        final List<BotStorage.StorageConfig> storages;
+        try {
+            storages = storage.getStoragesWithKey(key);
+        } catch (Exception e) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", e.getMessage()));
+            return;
+        }
+        if (storages.isEmpty()) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", "RESTORE_UNAVAILABLE"));
+            return;
+        }
+        final String f_req_id = req_id;
+        storage.showChooseStorage(getContext(), storages, selected -> {
+            if (selected == null) {
+                notifyEvent(eventFail, obj("req_id", f_req_id, "error", "RESTORE_CANCELLED"));
+                return;
+            }
+            final String restoredValue;
+            try {
+                storage.restoreFrom(selected);
+                restoredValue = storage.getKey(key).first;
+            } catch (Exception e) {
+                notifyEvent(eventFail, obj("req_id", f_req_id, "error", e.getMessage()));
+                return;
+            }
+            notifyEvent(eventSuccess, obj("req_id", f_req_id, "value", restoredValue));
+        });
+    }
+
+    private void clearStorageKey(BotStorage storage, String eventData, String eventSuccess, String eventFail) {
+        if (storage == null || botUser == null) return;
+        String req_id = "";
+        JSONObject o;
+        try {
+            o = new JSONObject(eventData);
+            req_id = o.getString("req_id");
+        } catch (Exception e) {
+            FileLog.e(e);
+            if (!TextUtils.isEmpty(req_id)) {
+                notifyEvent(eventFail, obj("req_id", req_id, "error", "UNKNOWN_ERROR"));
+            }
+            return;
+        }
+        try {
+            storage.clear();
+        } catch (RuntimeException e) {
+            notifyEvent(eventFail, obj("req_id", req_id, "error", e.getMessage()));
+            return;
+        }
+        notifyEvent(eventSuccess, obj("req_id", req_id));
     }
 
     private final Rect lastInsets = new Rect(0, 0, 0, 0);
@@ -2732,7 +2945,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
     private JSONObject buildThemeParams() {
         try {
-            JSONObject object = BotWebViewSheet.makeThemeParams(resourcesProvider);
+            JSONObject object = BotWebViewSheet.makeThemeParams(resourcesProvider, true);
             if (object != null) {
                 return new JSONObject().put("theme_params", object);
             }
@@ -3476,20 +3689,25 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                     } else {
                         d("onRenderProcessGone");
                     }
-                    if (!AndroidUtilities.isSafeToShow(getContext())) {
+                    try {
+                        if (!AndroidUtilities.isSafeToShow(getContext())) {
+                            return true;
+                        }
+                        new AlertDialog.Builder(getContext(), botWebViewContainer == null ? null : botWebViewContainer.resourcesProvider)
+                                .setTitle(getString(R.string.ChromeCrashTitle))
+                                .setMessage(AndroidUtilities.replaceSingleTag(getString(R.string.ChromeCrashMessage), () -> Browser.openUrl(getContext(), "https://play.google.com/store/apps/details?id=com.google.android.webview")))
+                                .setPositiveButton(getString(R.string.OK), null)
+                                .setOnDismissListener(d -> {
+                                    if (botWebViewContainer != null && botWebViewContainer.delegate != null) {
+                                        botWebViewContainer.delegate.onCloseRequested(null);
+                                    }
+                                })
+                                .show();
                         return true;
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                        return false;
                     }
-                    new AlertDialog.Builder(getContext(), botWebViewContainer == null ? null : botWebViewContainer.resourcesProvider)
-                            .setTitle(getString(R.string.ChromeCrashTitle))
-                            .setMessage(AndroidUtilities.replaceSingleTag(getString(R.string.ChromeCrashMessage), () -> Browser.openUrl(getContext(), "https://play.google.com/store/apps/details?id=com.google.android.webview")))
-                            .setPositiveButton(getString(R.string.OK), null)
-                            .setOnDismissListener(d -> {
-                                if (botWebViewContainer != null && botWebViewContainer.delegate != null) {
-                                    botWebViewContainer.delegate.onCloseRequested(null);
-                                }
-                            })
-                            .show();
-                    return true;
                 }
 
                 @Override
@@ -3782,20 +4000,25 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                                 } else {
                                     d("newWebView.onRenderProcessGone");
                                 }
-                                if (!AndroidUtilities.isSafeToShow(getContext())) {
+                                try {
+                                    if (!AndroidUtilities.isSafeToShow(getContext())) {
+                                        return true;
+                                    }
+                                    new AlertDialog.Builder(getContext(), botWebViewContainer == null ? null : botWebViewContainer.resourcesProvider)
+                                            .setTitle(getString(R.string.ChromeCrashTitle))
+                                            .setMessage(AndroidUtilities.replaceSingleTag(getString(R.string.ChromeCrashMessage), () -> Browser.openUrl(getContext(), "https://play.google.com/store/apps/details?id=com.google.android.webview")))
+                                            .setPositiveButton(getString(R.string.OK), null)
+                                            .setOnDismissListener(d -> {
+                                                if (botWebViewContainer.delegate != null) {
+                                                    botWebViewContainer.delegate.onCloseRequested(null);
+                                                }
+                                            })
+                                            .show();
                                     return true;
+                                } catch (Exception e) {
+                                    FileLog.e(e);
+                                    return false;
                                 }
-                                new AlertDialog.Builder(getContext(), botWebViewContainer == null ? null : botWebViewContainer.resourcesProvider)
-                                        .setTitle(getString(R.string.ChromeCrashTitle))
-                                        .setMessage(AndroidUtilities.replaceSingleTag(getString(R.string.ChromeCrashMessage), () -> Browser.openUrl(getContext(), "https://play.google.com/store/apps/details?id=com.google.android.webview")))
-                                        .setPositiveButton(getString(R.string.OK), null)
-                                        .setOnDismissListener(d -> {
-                                            if (botWebViewContainer.delegate != null) {
-                                                botWebViewContainer.delegate.onCloseRequested(null);
-                                            }
-                                        })
-                                        .show();
-                                return true;
                             }
 
                             @Override
@@ -4087,7 +4310,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                                 // we can't get blob binary from webview :(
                                 return;
                             } else {
-                                final String filename = getFilename(url, contentDisposition, mimeType);
+                                final String filename = AndroidUtilities.escape(getFilename(url, contentDisposition, mimeType));
 
                                 final Runnable download = () -> {
                                     try {

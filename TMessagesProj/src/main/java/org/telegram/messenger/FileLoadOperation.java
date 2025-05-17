@@ -13,6 +13,7 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.Vector;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Storage.CacheModel;
@@ -238,6 +239,7 @@ public class FileLoadOperation {
     private int cdnDatacenterId;
     private boolean reuploadingCdn;
     protected boolean requestingReference;
+    private boolean requestedReference;
     private RandomAccessFile fileReadStream;
     private byte[] cdnCheckBytes;
     private boolean requestingCdnOffsets;
@@ -778,12 +780,12 @@ public class FileLoadOperation {
             }
             FileLog.e("FileLoadOperation " + getFileName() + " removing stream listener " + operation);
             streamListeners.remove(operation);
-            if (!isStory && streamListeners.isEmpty()) {
-                Utilities.stageQueue.cancelRunnable(cancelAfterNoStreamListeners);
-                Utilities.stageQueue.postRunnable(cancelAfterNoStreamListeners, 1200);
-            } else if (!streamListeners.isEmpty()) {
-                Utilities.stageQueue.cancelRunnable(cancelAfterNoStreamListeners);
-            }
+//            if (!isStory && streamListeners.isEmpty()) {
+//                Utilities.stageQueue.cancelRunnable(cancelAfterNoStreamListeners);
+//                Utilities.stageQueue.postRunnable(cancelAfterNoStreamListeners, 1200);
+//            } else if (!streamListeners.isEmpty()) {
+//                Utilities.stageQueue.cancelRunnable(cancelAfterNoStreamListeners);
+//            }
         });
     }
 
@@ -1767,15 +1769,15 @@ public class FileLoadOperation {
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
             if (error != null) {
                 onFail(false, 0);
-            } else {
+            } else if (response instanceof Vector) {
                 requestingCdnOffsets = false;
-                TLRPC.Vector vector = (TLRPC.Vector) response;
+                final Vector<TLRPC.TL_fileHash> vector = (Vector) response;
                 if (!vector.objects.isEmpty()) {
                     if (cdnHashes == null) {
                         cdnHashes = new HashMap<>();
                     }
                     for (int a = 0; a < vector.objects.size(); a++) {
-                        TLRPC.TL_fileHash hash = (TLRPC.TL_fileHash) vector.objects.get(a);
+                        final TLRPC.TL_fileHash hash = vector.objects.get(a);
                         cdnHashes.put(hash.offset, hash);
                     }
                 }
@@ -2216,6 +2218,7 @@ public class FileLoadOperation {
         }
         clearOperation(null, false, false);
         requestingReference = true;
+        requestedReference = true;
         if (parentObject instanceof MessageObject) {
             MessageObject messageObject = (MessageObject) parentObject;
             if (messageObject.getId() < 0 && messageObject.messageOwner != null && messageObject.messageOwner.media != null && messageObject.messageOwner.media.webpage != null) {
@@ -2245,7 +2248,7 @@ public class FileLoadOperation {
                 (!isStory && streamPriorityStartOffset == 0 && (!nextPartWasPreloaded && (requestInfos.size() + delayedRequestInfos.size() >= currentMaxDownloadRequests))) ||
                 (isPreloadVideoOperation && (requestedBytesCount > preloadMaxBytes || moovFound != 0 && requestInfos.size() > 0))) {
             if (BuildVars.LOGS_ENABLED && FULL_LOGS) {
-                FileLog.d(fileName + "can't start request wrong state: paused=" + paused + " reuploadingCdn=" + reuploadingCdn + " state=" + state + " requestingReference=" + requestingReference);
+                FileLog.d(fileName + " can't start request wrong state: paused=" + paused + " reuploadingCdn=" + reuploadingCdn + " state=" + state + " requestingReference=" + requestingReference);
             }
             return;
         }
@@ -2255,6 +2258,12 @@ public class FileLoadOperation {
         } else {
             if (streamPriorityStartOffset == 0 && !nextPartWasPreloaded && (!isPreloadVideoOperation || moovFound != 0) && totalBytesCount > 0) {
                 count = Math.max(0, currentMaxDownloadRequests - requestInfos.size());
+            }
+        }
+
+        if (!requestedReference) {
+            if (FileRefController.getInstance(currentAccount).applyCachedFileReference(parentObject, location, this)) {
+                FileLog.d(fileName + " before download updated file ref from file ref cache!");
             }
         }
 
@@ -2548,19 +2557,19 @@ public class FileLoadOperation {
                         req.request_token = res.request_token;
                         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response1, error1) -> {
                             reuploadingCdn = false;
-                            if (error1 == null) {
-                                TLRPC.Vector vector = (TLRPC.Vector) response1;
+                            if (response1 instanceof Vector) {
+                                final Vector<TLRPC.TL_fileHash> vector = (Vector) response1;
                                 if (!vector.objects.isEmpty()) {
                                     if (cdnHashes == null) {
                                         cdnHashes = new HashMap<>();
                                     }
                                     for (int a1 = 0; a1 < vector.objects.size(); a1++) {
-                                        TLRPC.TL_fileHash hash = (TLRPC.TL_fileHash) vector.objects.get(a1);
+                                        final TLRPC.TL_fileHash hash = vector.objects.get(a1);
                                         cdnHashes.put(hash.offset, hash);
                                     }
                                 }
                                 startDownloadRequest(connectionType);
-                            } else {
+                            } else if (error1 != null) {
                                 if (error1.text.equals("FILE_TOKEN_INVALID") || error1.text.equals("REQUEST_TOKEN_INVALID")) {
                                     isCdn = false;
                                     clearOperation(requestInfo, false, false);

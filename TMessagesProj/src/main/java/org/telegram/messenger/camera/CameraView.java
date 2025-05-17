@@ -476,6 +476,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
     }
 
     private int lastWidth = -1, lastHeight = -1;
+    public boolean fit;
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec),
@@ -493,7 +494,12 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                 frameWidth = previewSize[0].getHeight();
                 frameHeight = previewSize[0].getWidth();
             }
-            float s = Math.max(MeasureSpec.getSize(widthMeasureSpec) / (float) frameWidth , MeasureSpec.getSize(heightMeasureSpec) / (float) frameHeight);
+            float s;
+            if (fit) {
+                s = Math.min(width / (float) frameWidth, height / (float) frameHeight);
+            } else {
+                s = Math.max(width / (float) frameWidth, height / (float) frameHeight);
+            }
             blurredStubView.getLayoutParams().width = textureView.getLayoutParams().width = (int) (s * frameWidth);
             blurredStubView.getLayoutParams().height = textureView.getLayoutParams().height = (int) (s * frameHeight);
         }
@@ -504,10 +510,14 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
 
         pixelW = getMeasuredWidth();
         pixelH = getMeasuredHeight();
-        if (pixelDualW <= 0) {
-            pixelDualW = getMeasuredWidth();
-            pixelDualH = getMeasuredHeight();
-        }
+//        if (previewSize[1] != null) {
+//            pixelDualW = previewSize[1].getWidth();
+//            pixelDualH = previewSize[1].getHeight();
+//        }
+//        if (pixelDualW <= 0) {
+        pixelDualW = getMeasuredWidth();
+        pixelDualH = getMeasuredHeight();
+//        }
     }
 
     public float getTextureHeight(float width, float height) {
@@ -720,6 +730,10 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             aspectRatio = new Size(1, 1);
             photoMaxWidth = wantedWidth = 720;
             photoMaxHeight = wantedHeight = 720;
+//        } else if (!isStory) {
+//            photoMaxWidth = wantedWidth = AndroidUtilities.displaySize.x;
+//            photoMaxHeight = wantedHeight = AndroidUtilities.displaySize.y;
+//            aspectRatio = new Size(wantedWidth, wantedHeight);
         } else if (initialFrontface) {
             aspectRatio = new Size(16, 9);
             photoMaxWidth = wantedWidth = 1280;
@@ -785,6 +799,17 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        if (!(!inited && cameraSession[0] != null && cameraSession[0].isInitiated()) && !(renderNode != null && !((RenderNode) renderNode).hasDisplayList())) {
+            return;
+        }
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            AndroidUtilities.runOnUIThread(this::onSurfaceTextureUpdatedInternal);
+        } else {
+            onSurfaceTextureUpdatedInternal();
+        }
+    }
+
+    private void onSurfaceTextureUpdatedInternal() {
         if (!inited && cameraSession[0] != null && cameraSession[0].isInitiated()) {
             if (delegate != null) {
                 delegate.onCameraInit();
@@ -794,6 +819,10 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                 textureView.setAlpha(0);
                 showTexture(true, true);
             }
+        }
+
+        if (renderNode != null && !((RenderNode) renderNode).hasDisplayList()) {
+            invalidate();
         }
     }
 
@@ -1045,7 +1074,9 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             vibrator.cancel();
             vibrator.vibrate(vibrationEffect);
         } else {
-            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            try {
+                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            } catch (Exception ignored) {}
         }
     }
 
@@ -1275,14 +1306,14 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             int[] configsCount = new int[1];
             EGLConfig[] configs = new EGLConfig[1];
             int[] configSpec = new int[]{
-                    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-                    EGL10.EGL_RED_SIZE, 8,
-                    EGL10.EGL_GREEN_SIZE, 8,
-                    EGL10.EGL_BLUE_SIZE, 8,
-                    EGL10.EGL_ALPHA_SIZE, 0,
-                    EGL10.EGL_DEPTH_SIZE, 0,
-                    EGL10.EGL_STENCIL_SIZE, 0,
-                    EGL10.EGL_NONE
+                EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+                EGL10.EGL_RED_SIZE, 8,
+                EGL10.EGL_GREEN_SIZE, 8,
+                EGL10.EGL_BLUE_SIZE, 8,
+                EGL10.EGL_ALPHA_SIZE, 0,
+                EGL10.EGL_DEPTH_SIZE, 0,
+                EGL10.EGL_STENCIL_SIZE, 0,
+                EGL10.EGL_NONE
             };
             if (!egl10.eglChooseConfig(eglDisplay, configSpec, configs, 1, configsCount)) {
                 if (BuildVars.LOGS_ENABLED) {
@@ -1397,10 +1428,10 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             float tX = 1.0f / scaleX / 2.0f;
             float tY = 1.0f / scaleY / 2.0f;
             float[] texData = {
-                    0.5f - tX, 0.5f - tY,
-                    0.5f + tX, 0.5f - tY,
-                    0.5f - tX, 0.5f + tY,
-                    0.5f + tX, 0.5f + tY
+                0.5f - tX, 0.5f - tY,
+                0.5f + tX, 0.5f - tY,
+                0.5f - tX, 0.5f + tY,
+                0.5f + tX, 0.5f + tY
             };
 
             vertexBuffer = ByteBuffer.allocateDirect(verticesData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -1716,11 +1747,28 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
 
                 GLES20.glUniformMatrix4fv(textureMatrixHandle, 1, false, mSTMatrix[i], 0);
                 GLES20.glUniformMatrix4fv(vertexMatrixHandle, 1, false, mMVPMatrix[i], 0);
+                Size size = previewSize[i];
+                if (size != null && currentSession[i] != null) {
+                    int angle = currentSession[i].getWorldAngle();
+                    int w, h;
+                    if (angle == 90 || angle == 270) {
+                        w = size.getWidth();
+                        h = size.getHeight();
+                    } else {
+                        w = size.getHeight();
+                        h = size.getWidth();
+                    }
+                    GLES20.glUniform2f(pixelHandle, w, h);
+                } else {
+                    if (i == 0) {
+                        GLES20.glUniform2f(pixelHandle, pixelW, pixelH);
+                    } else {
+                        GLES20.glUniform2f(pixelHandle, pixelDualW, pixelDualH);
+                    }
+                }
                 if (i == 0) {
-                    GLES20.glUniform2f(pixelHandle, pixelW, pixelH);
                     GLES20.glUniform1f(dualHandle, dual ? 1 : 0);
                 } else {
-                    GLES20.glUniform2f(pixelHandle, pixelDualW, pixelDualH);
                     GLES20.glUniform1f(dualHandle, 1f);
                 }
                 GLES20.glUniform1f(blurHandle, i == 0 ? camera1Blur : 0f);
@@ -1907,10 +1955,10 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                     float tY = 1.0f / scaleY / 2.0f;
 
                     float[] texData = {
-                            0.5f - tX, 0.5f - tY,
-                            0.5f + tX, 0.5f - tY,
-                            0.5f - tX, 0.5f + tY,
-                            0.5f + tX, 0.5f + tY
+                        0.5f - tX, 0.5f - tY,
+                        0.5f + tX, 0.5f - tY,
+                        0.5f - tX, 0.5f + tY,
+                        0.5f + tX, 0.5f + tY
                     };
 
                     textureBuffer = ByteBuffer.allocateDirect(texData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -2738,11 +2786,28 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                 GLES20.glUniformMatrix4fv(textureMatrixHandle, 1, false, mSTMatrix[i], 0);
 
                 GLES20.glUniform1f(blurHandle, 0);
+                Size size = previewSize[i];
+                if (size != null && cameraSession[i] != null) {
+                    int angle = cameraSession[i].getWorldAngle();
+                    int w, h;
+                    if (angle == 90 || angle == 270) {
+                        w = size.getWidth();
+                        h = size.getHeight();
+                    } else {
+                        w = size.getHeight();
+                        h = size.getWidth();
+                    }
+                    GLES20.glUniform2f(pixelHandle, w, h);
+                } else {
+                    if (i == 0) {
+                        GLES20.glUniform2f(pixelHandle, pixelW, pixelH);
+                    } else {
+                        GLES20.glUniform2f(pixelHandle, pixelDualW, pixelDualH);
+                    }
+                }
                 if (i == 0) {
-                    GLES20.glUniform2f(pixelHandle, pixelW, pixelH);
                     GLES20.glUniform1f(dualHandle, isDual ? 1f : 0f);
                 } else {
-                    GLES20.glUniform2f(pixelHandle, pixelDualW, pixelDualH);
                     GLES20.glUniform1f(dualHandle, 1f);
                 }
                 if (i == 1) {
@@ -3005,13 +3070,13 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                 int renderableType = EGL14.EGL_OPENGL_ES2_BIT;
 
                 int[] attribList = {
-                        EGL14.EGL_RED_SIZE, 8,
-                        EGL14.EGL_GREEN_SIZE, 8,
-                        EGL14.EGL_BLUE_SIZE, 8,
-                        EGL14.EGL_ALPHA_SIZE, 8,
-                        EGL14.EGL_RENDERABLE_TYPE, renderableType,
-                        0x3142, 1,
-                        EGL14.EGL_NONE
+                    EGL14.EGL_RED_SIZE, 8,
+                    EGL14.EGL_GREEN_SIZE, 8,
+                    EGL14.EGL_BLUE_SIZE, 8,
+                    EGL14.EGL_ALPHA_SIZE, 8,
+                    EGL14.EGL_RENDERABLE_TYPE, renderableType,
+                    0x3142, 1,
+                    EGL14.EGL_NONE
                 };
                 android.opengl.EGLConfig[] configs = new android.opengl.EGLConfig[1];
                 int[] numConfigs = new int[1];
@@ -3020,8 +3085,8 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                 }
 
                 int[] attrib2_list = {
-                        EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
-                        EGL14.EGL_NONE
+                    EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
+                    EGL14.EGL_NONE
                 };
                 eglContext = EGL14.eglCreateContext(eglDisplay, configs[0], sharedEglContext, attrib2_list, 0);
                 eglConfig = configs[0];
@@ -3035,7 +3100,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             }
 
             int[] surfaceAttribs = {
-                    EGL14.EGL_NONE
+                EGL14.EGL_NONE
             };
             eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, surface, surfaceAttribs, 0);
             if (eglSurface == null) {
@@ -3053,10 +3118,10 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             float tX = 1.0f / scaleX / 2.0f;
             float tY = 1.0f / scaleY / 2.0f;
             float[] texData = {
-                    0.5f - tX, 0.5f - tY,
-                    0.5f + tX, 0.5f - tY,
-                    0.5f - tX, 0.5f + tY,
-                    0.5f + tX, 0.5f + tY
+                0.5f - tX, 0.5f - tY,
+                0.5f + tX, 0.5f - tY,
+                0.5f - tX, 0.5f + tY,
+                0.5f + tX, 0.5f + tY
             };
             textureBuffer = ByteBuffer.allocateDirect(texData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
             textureBuffer.put(texData).position(0);

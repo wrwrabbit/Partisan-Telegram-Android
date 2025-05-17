@@ -16,7 +16,9 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AppOpsManager;
 import android.app.KeyguardManager;
+import android.app.PictureInPictureParams;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
@@ -112,6 +114,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -307,6 +311,7 @@ public class AndroidUtilities {
     public static Pattern BAD_CHARS_MESSAGE_PATTERN = null;
     public static Pattern BAD_CHARS_MESSAGE_LONG_PATTERN = null;
     public static Pattern REMOVE_MULTIPLE_DIACRITICS = null;
+    public static Pattern REMOVE_RTL = null;
     private static Pattern singleTagPatter = null;
 
     public static String removeDiacritics(String str) {
@@ -315,6 +320,20 @@ public class AndroidUtilities {
         Matcher matcher = REMOVE_MULTIPLE_DIACRITICS.matcher(str);
         if (matcher == null) return str;
         return matcher.replaceAll("$1");
+    }
+
+    public static String removeRTL(String str) {
+        if (str == null) return null;
+        if (REMOVE_RTL == null) {
+            REMOVE_RTL = Pattern.compile("[\\u200E\\u200F\\u202A-\\u202E]");
+        }
+        Matcher matcher = REMOVE_RTL.matcher(str);
+        if (matcher == null) return str;
+        return matcher.replaceAll("");
+    }
+
+    public static String escape(String str) {
+        return removeRTL(removeDiacritics(str));
     }
 
     static {
@@ -587,7 +606,7 @@ public class AndroidUtilities {
         return spannableStringBuilder;
     }
 
-    public static SpannableStringBuilder makeClickable(String str, int type, Runnable runnable, Theme.ResourcesProvider resourcesProvider) {
+    public static SpannableStringBuilder makeClickable(CharSequence str, int type, Runnable runnable, Theme.ResourcesProvider resourcesProvider) {
         SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(str);
         if (type == REPLACING_TAG_TYPE_LINK || type == REPLACING_TAG_TYPE_LINK_NBSP || type == REPLACING_TAG_TYPE_LINKBOLD || type == REPLACING_TAG_TYPE_UNDERLINE) {
             spannableStringBuilder.setSpan(new ClickableSpan() {
@@ -620,7 +639,7 @@ public class AndroidUtilities {
         return spannableStringBuilder;
     }
 
-    public static SpannableStringBuilder makeClickable(String str, Runnable runnable) {
+    public static SpannableStringBuilder makeClickable(CharSequence str, Runnable runnable) {
         return makeClickable(str, 0, runnable, null);
     }
 
@@ -698,12 +717,14 @@ public class AndroidUtilities {
     }
 
     public static CharSequence replaceArrows(CharSequence text, boolean link) {
-        return replaceArrows(text, link, dp(8f / 3f), 0);
+        return replaceArrows(text, link, dp(8f / 3f), 0, 1.0f);
     }
-
     public static CharSequence replaceArrows(CharSequence text, boolean link, float translateX, float translateY) {
+        return replaceArrows(text, link, translateX, translateY, 1.0f);
+    }
+    public static CharSequence replaceArrows(CharSequence text, boolean link, float translateX, float translateY, float scale) {
         ColoredImageSpan span = new ColoredImageSpan(R.drawable.msg_mini_forumarrow, DynamicDrawableSpan.ALIGN_BOTTOM);
-        span.setScale(.88f, .88f);
+        span.setScale(scale * .88f, scale * .88f);
         span.translate(-translateX, translateY);
         span.spaceScaleX = .8f;
         if (link) {
@@ -719,7 +740,7 @@ public class AndroidUtilities {
         text = AndroidUtilities.replaceMultipleCharSequence(">", text, rightArrow);
 
         span = new ColoredImageSpan(R.drawable.msg_mini_forumarrow, DynamicDrawableSpan.ALIGN_BOTTOM);
-        span.setScale(.88f, .88f);
+        span.setScale(scale * .88f, scale * .88f);
         span.translate(translateX, translateY);
         span.rotate(180f);
         span.spaceScaleX = .8f;
@@ -974,6 +995,16 @@ public class AndroidUtilities {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
+    public static void getBitmapFromSurface(SurfaceView surfaceView, Bitmap surfaceBitmap, Runnable done) {
+        if (surfaceView == null || ApplicationLoader.applicationHandler == null || !surfaceView.getHolder().getSurface().isValid()) {
+            return;
+        }
+        PixelCopy.request(surfaceView, surfaceBitmap, copyResult -> {
+            done.run();
+        }, ApplicationLoader.applicationHandler);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public static void getBitmapFromSurface(Surface surface, Bitmap surfaceBitmap) {
         if (surface == null || !surface.isValid()) {
             return;
@@ -1020,6 +1051,13 @@ public class AndroidUtilities {
     }
 
     public static void doOnLayout(View view, Runnable runnable) {
+        if (runnable == null) {
+            return;
+        }
+        if (view == null) {
+            runnable.run();
+            return;
+        }
         view.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
@@ -1082,6 +1120,25 @@ public class AndroidUtilities {
         }
 
         return new String(readBuffer, 0, totalRead);
+    }
+
+    @Nullable
+    public static Bitmap getBitmapFromRaw(@RawRes int rawRes) {
+        InputStream is = null;
+        Bitmap bitmap = null;
+        try {
+            is = ApplicationLoader.applicationContext.getResources().openRawResource(rawRes);
+            bitmap = BitmapFactory.decodeStream(is);
+        } catch (Throwable e) {
+            FileLog.e(e);
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+
+            }
+        }
+        return bitmap;
     }
 
     private static class LinkSpec {
@@ -2668,6 +2725,7 @@ public class AndroidUtilities {
             }
             ViewConfiguration vc = ViewConfiguration.get(context);
             touchSlop = vc.getScaledTouchSlop();
+            isSmallScreen = null;
         } catch (Exception e) {
             FileLog.e(e);
         }
@@ -3214,6 +3272,14 @@ public class AndroidUtilities {
         return new SpannableStringBuilder(str);
     }
 
+    public static CharSequence replaceTags(CharSequence cs) {
+        if (cs instanceof SpannableStringBuilder) {
+            return replaceTags((SpannableStringBuilder) cs);
+        } else {
+            return replaceTags(new SpannableStringBuilder(cs));
+        }
+    }
+
     public static SpannableStringBuilder replaceTags(SpannableStringBuilder stringBuilder) {
         try {
             int start;
@@ -3756,11 +3822,29 @@ public class AndroidUtilities {
         return formatDuration(duration, false);
     }
 
+    public static String formatTimestamp(int duration) {
+        int h = duration / 3600;
+        int m = duration / 60 % 60;
+        int s = duration % 60;
+        String str = "";
+        if (h > 0) {
+            str += String.format(Locale.US, "%dh", h);
+        }
+        if (m > 0) {
+            str += String.format(Locale.US, h > 0 ? "%02dm" : "%dm", m);
+        }
+        str += String.format(Locale.US, h > 0 || m > 0 ? "%02ds" : "%ds", s);
+        return str;
+    }
+
     public static String formatLongDuration(int duration) {
         return formatDuration(duration, true);
     }
 
     public static String formatDuration(int duration, boolean isLong) {
+        return formatDuration(duration, isLong, false);
+    }
+    public static String formatDuration(int duration, boolean isLong, boolean noSecondsIfHours) {
         int h = duration / 3600;
         int m = duration / 60 % 60;
         int s = duration % 60;
@@ -3771,7 +3855,11 @@ public class AndroidUtilities {
                 return String.format(Locale.US, "%d:%02d", m, s);
             }
         } else {
-            return String.format(Locale.US, "%d:%02d:%02d", h, m, s);
+            if (noSecondsIfHours) {
+                return String.format(Locale.US, "%d:%02d", h, m);
+            } else {
+                return String.format(Locale.US, "%d:%02d:%02d", h, m, s);
+            }
         }
     }
 
@@ -4076,8 +4164,7 @@ public class AndroidUtilities {
             int idx = fileName.lastIndexOf('.');
             if (idx != -1) {
                 String ext = fileName.substring(idx + 1);
-                int h = ext.toLowerCase().hashCode();
-                if (restrict && (h == 0x17a1c || h == 0x3107ab || h == 0x19a1b || h == 0xe55 || h == 0x18417)) {
+                if (restrict && MessageObject.isV(ext)) {
                     return true;
                 }
                 realMimeType = myMime.getMimeTypeFromExtension(ext.toLowerCase());
@@ -4185,6 +4272,18 @@ public class AndroidUtilities {
                 }
             }
             return original;
+        } else if (original instanceof SpannableString) {
+            if (TextUtils.indexOf(original, "\n\n") < 0) return original;
+            SpannableStringBuilder stringBuilder = new SpannableStringBuilder(original);
+            for (int a = 0, N = original.length(); a < N - 2; a++) {
+                stringBuilder.getChars(a, a + 2, buf, 0);
+                if (buf[0] == '\n' && buf[1] == '\n') {
+                    stringBuilder = stringBuilder.replace(a, a + 2, "\n");
+                    a--;
+                    N--;
+                }
+            }
+            return stringBuilder;
         }
         return original.toString().replace("\n\n", "\n");
     }
@@ -4901,6 +5000,10 @@ public class AndroidUtilities {
         return a + f * (b - a);
     }
 
+    public static float lerp(boolean a, boolean b, float f) {
+        return (a ? 1.0f : 0.0f) + f * ((b ? 1.0f : 0.0f) - (a ? 1.0f : 0.0f));
+    }
+
     public static double lerp(double a, double b, float f) {
         return a + f * (b - a);
     }
@@ -4940,6 +5043,15 @@ public class AndroidUtilities {
         to.set(cx - hw, cy - hh, cx + hw, cy + hh);
     }
 
+    public static void lerpCentered(Rect a, Rect b, float f, Rect to) {
+        if (to == null) return;
+        final float cx = lerp(a.centerX(), b.centerX(), f);
+        final float cy = lerp(a.centerY(), b.centerY(), f);
+        final float hw = lerp(a.width(), b.width(), Math.min(1, f)) / 2f;
+        final float hh = lerp(a.height(), b.height(), Math.min(1, f)) / 2f;
+        to.set((int) (cx - hw), (int) (cy - hh), (int) (cx + hw), (int) (cy + hh));
+    }
+
     public static void lerp(int[] a, int[] b, float f, int[] to) {
         if (to == null) return;
         for (int i = 0; i < to.length; ++i) {
@@ -4947,6 +5059,24 @@ public class AndroidUtilities {
             int bv = b == null || i >= b.length ? 0 : b[i];
             to[i] = lerp(av, bv, f);
         }
+    }
+
+    public static void lerp(float[] a, float[] b, float f, float[] to) {
+        if (to == null) return;
+        for (int i = 0; i < to.length; ++i) {
+            float av = a == null || i >= a.length ? 0 : a[i];
+            float bv = b == null || i >= b.length ? 0 : b[i];
+            to[i] = lerp(av, bv, f);
+        }
+    }
+
+    private static final float[] tempFloats = new float[9], tempFloats2 = new float[9];
+    public static void lerp(Matrix a, Matrix b, float t, Matrix to) {
+        if (a == null || b == null) return;
+        a.getValues(tempFloats);
+        b.getValues(tempFloats2);
+        lerp(tempFloats, tempFloats2, t, tempFloats2);
+        to.setValues(tempFloats2);
     }
 
     public static void scaleRect(RectF rect, float scale) {
@@ -5296,6 +5426,38 @@ public class AndroidUtilities {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static boolean checkPipPermissions(Context context) {
+        if (!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+            return false;
+        }
+        AppOpsManager appOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
+        int mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), context.getPackageName());
+
+        return mode == AppOpsManager.MODE_ALLOWED;
+    }
+
+    public static boolean isInPictureInPictureMode(Activity activity) {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity.isInPictureInPictureMode();
+    }
+
+    public static void resetPictureInPictureParams(Activity activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity != null && !activity.isDestroyed()) {
+            final PictureInPictureParams.Builder builder = new PictureInPictureParams.Builder();
+            builder.setSourceRectHint(null);
+            builder.setAspectRatio(null);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                builder.setSeamlessResizeEnabled(false);
+                builder.setAutoEnterEnabled(false);
+            }
+            try {
+                activity.setPictureInPictureParams(builder.build());
+            } catch (Throwable e) {
+                FileLog.e(e);
+            }
+        }
+    }
+
     public static void updateVisibleRows(RecyclerListView listView) {
         if (listView == null) {
             return;
@@ -5310,6 +5472,27 @@ public class AndroidUtilities {
             if (p >= 0) {
                 RecyclerView.ViewHolder holder = listView.getChildViewHolder(child);
                 if (holder == null || holder.shouldIgnore()) {
+                    continue;
+                }
+                adapter.onBindViewHolder(holder, p);
+            }
+        }
+    }
+
+    public static void updateVisibleRow(RecyclerListView listView, int position) {
+        if (listView == null) {
+            return;
+        }
+        RecyclerView.Adapter adapter = listView.getAdapter();
+        if (adapter == null) {
+            return;
+        }
+        for (int i = 0; i < listView.getChildCount(); i++) {
+            View child = listView.getChildAt(i);
+            int p = listView.getChildAdapterPosition(child);
+            if (p >= 0) {
+                RecyclerView.ViewHolder holder = listView.getChildViewHolder(child);
+                if (holder == null || holder.shouldIgnore() || holder.getAdapterPosition() != position) {
                     continue;
                 }
                 adapter.onBindViewHolder(holder, p);
@@ -5409,8 +5592,8 @@ public class AndroidUtilities {
             view.setVisibility(show ? View.VISIBLE : View.GONE);
             view.setTag(show ? 1 : null);
             view.setAlpha(1f);
-            view.setScaleX(scale && !show ? 0f : 1f);
-            view.setScaleY(scale && !show ? 0f : 1f);
+            view.setScaleX(scale && !show ? 0.5f : 1f);
+            view.setScaleY(scale && !show ? 0.5f : 1f);
             if (translate != 0) {
                 view.setTranslationY(show ? 0 : AndroidUtilities.dp(-16) * translate);
             }
@@ -5421,8 +5604,8 @@ public class AndroidUtilities {
             if (view.getVisibility() != View.VISIBLE) {
                 view.setVisibility(View.VISIBLE);
                 view.setAlpha(0f);
-                view.setScaleX(scale ? 0 : 1);
-                view.setScaleY(scale ? 0 : 1);
+                view.setScaleX(scale ? 0.5f : 1);
+                view.setScaleY(scale ? 0.5f : 1);
                 if (translate != 0) {
                     view.setTranslationY(AndroidUtilities.dp(-16) * translate);
                 }
@@ -5435,7 +5618,7 @@ public class AndroidUtilities {
             animate.start();
         } else {
             ViewPropertyAnimator animate = view.animate();
-            animate = animate.alpha(0).scaleY(scale ? 0 : 1).scaleX(scale ? 0 : 1).setListener(new HideViewAfterAnimation(view)).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).setDuration(340).withEndAction(onDone);
+            animate = animate.alpha(0).scaleY(scale ? 0.5f : 1).scaleX(scale ? 0.5f : 1).setListener(new HideViewAfterAnimation(view)).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).setDuration(340).withEndAction(onDone);
             if (translate != 0) {
                 animate.translationY(AndroidUtilities.dp(-16) * translate);
             }
@@ -5637,7 +5820,7 @@ public class AndroidUtilities {
                     views.add((View) getRootView.invoke(wmgInstance, viewName));
                 }
                 return views;
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
                 Class wmiClass = Class.forName("android.view.WindowManagerImpl");
                 Object wmiInstance = wmiClass.getMethod("getDefault").invoke(null);
 

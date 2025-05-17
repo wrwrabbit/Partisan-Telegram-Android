@@ -42,6 +42,8 @@ import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.RequestDelegate;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.Vector;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
@@ -76,8 +78,8 @@ public class MessagesStorage extends BaseController {
     private File cacheFile;
     private File walCacheFile;
     private File shmCacheFile;
-    private AtomicLong lastTaskId = new AtomicLong(System.currentTimeMillis());
-    private SparseArray<ArrayList<Runnable>> tasks = new SparseArray<>();
+    private final AtomicLong lastTaskId = new AtomicLong(System.currentTimeMillis());
+    private final SparseArray<ArrayList<Runnable>> tasks = new SparseArray<>();
 
     private int lastDateValue = 0;
     private int lastPtsValue = 0;
@@ -92,16 +94,16 @@ public class MessagesStorage extends BaseController {
     private int lastSavedDate = 0;
     private int lastSavedQts = 0;
 
-    private ArrayList<MessagesController.DialogFilter> dialogFilters = new ArrayList<>();
-    private SparseArray<MessagesController.DialogFilter> dialogFiltersMap = new SparseArray<>();
-    private LongSparseArray<Boolean> unknownDialogsIds = new LongSparseArray<>();
+    private final ArrayList<MessagesController.DialogFilter> dialogFilters = new ArrayList<>();
+    private final SparseArray<MessagesController.DialogFilter> dialogFiltersMap = new SparseArray<>();
+    private final LongSparseArray<Boolean> unknownDialogsIds = new LongSparseArray<>();
     private int mainUnreadCount;
     private int archiveUnreadCount;
     private volatile int pendingMainUnreadCount;
     private volatile int pendingArchiveUnreadCount;
     private boolean databaseCreated;
 
-    private CountDownLatch openSync = new CountDownLatch(1);
+    private final CountDownLatch openSync = new CountDownLatch(1);
 
     private static volatile MessagesStorage[] Instance = new MessagesStorage[UserConfig.MAX_ACCOUNT_COUNT];
     private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
@@ -111,10 +113,10 @@ public class MessagesStorage extends BaseController {
         }
     }
 
-    public final static int LAST_DB_VERSION = 159;
+    public final static int LAST_DB_VERSION = 162;
     private boolean databaseMigrationInProgress;
     public boolean showClearDatabaseAlert;
-    private LongSparseIntArray dialogIsForum = new LongSparseIntArray();
+    private final LongSparseIntArray dialogIsForum = new LongSparseIntArray();
 
     public static MessagesStorage getInstance(int num) {
         MessagesStorage localInstance = Instance[num];
@@ -565,7 +567,7 @@ public class MessagesStorage extends BaseController {
         database.executeFast("CREATE INDEX IF NOT EXISTS folder_id_idx_dialogs ON dialogs(folder_id);").stepThis().dispose();
         database.executeFast("CREATE INDEX IF NOT EXISTS flags_idx_dialogs ON dialogs(flags);").stepThis().dispose();
 
-        database.executeFast("CREATE TABLE dialog_filter(id INTEGER PRIMARY KEY, ord INTEGER, unread_count INTEGER, flags INTEGER, title TEXT, color INTEGER DEFAULT -1)").stepThis().dispose();
+        database.executeFast("CREATE TABLE dialog_filter(id INTEGER PRIMARY KEY, ord INTEGER, unread_count INTEGER, flags INTEGER, title TEXT, color INTEGER DEFAULT -1, entities BLOB, noanimate INTEGER)").stepThis().dispose();
         database.executeFast("CREATE TABLE dialog_filter_ep(id INTEGER, peer INTEGER, PRIMARY KEY (id, peer))").stepThis().dispose();
         database.executeFast("CREATE TABLE dialog_filter_pin_v2(id INTEGER, peer INTEGER, pin INTEGER, PRIMARY KEY (id, peer))").stepThis().dispose();
 
@@ -730,7 +732,7 @@ public class MessagesStorage extends BaseController {
 
         database.executeFast("CREATE TABLE business_links(data BLOB, order_value INTEGER);").stepThis().dispose();
         database.executeFast("CREATE TABLE fact_checks(hash INTEGER PRIMARY KEY, data BLOB, expires INTEGER);").stepThis().dispose();
-        database.executeFast("CREATE TABLE popular_bots(uid INTEGER PRIMARY KEY, time INTEGER, offset TEXT);").stepThis().dispose();
+        database.executeFast("CREATE TABLE popular_bots(uid INTEGER PRIMARY KEY, time INTEGER, offset TEXT, pos INTEGER);").stepThis().dispose();
 
         database.executeFast("CREATE TABLE star_gifts2(id INTEGER PRIMARY KEY, data BLOB, hash INTEGER, time INTEGER, pos INTEGER);").stepThis().dispose();
 
@@ -2456,7 +2458,7 @@ public class MessagesStorage extends BaseController {
 
                 usersToLoad.add(getUserConfig().getClientUserId());
 
-                filtersCursor = database.queryFinalized("SELECT id, ord, unread_count, flags, title, color FROM dialog_filter WHERE 1");
+                filtersCursor = database.queryFinalized("SELECT id, ord, unread_count, flags, title, color, entities, noanimate FROM dialog_filter WHERE 1");
 
                 boolean updateCounters = false;
                 boolean hasDefaultFilter = false;
@@ -2468,6 +2470,13 @@ public class MessagesStorage extends BaseController {
                     filter.flags = filtersCursor.intValue(3);
                     filter.name = filtersCursor.stringValue(4);
                     filter.color = filtersCursor.intValue(5);
+                    filter.entities = new ArrayList<>();
+                    NativeByteBuffer buff = filtersCursor.byteBufferValue(6);
+                    if (buff != null) {
+                        filter.entities = Vector.deserialize(buff, TLRPC.MessageEntity::TLdeserialize, false);
+                        buff.reuse();
+                    }
+                    filter.title_noanimate = filtersCursor.intValue(7) == 1;
                     dialogFilters.add(filter);
                     dialogFiltersMap.put(filter.id, filter);
                     filtersById.put(filter.id, filter);
@@ -2537,15 +2546,21 @@ public class MessagesStorage extends BaseController {
                     dialogFiltersMap.put(filter.id, filter);
                     filtersById.put(filter.id, filter);
 
-                    state = database.executeFast("REPLACE INTO dialog_filter VALUES(?, ?, ?, ?, ?, ?)");
+                    state = database.executeFast("REPLACE INTO dialog_filter VALUES(?, ?, ?, ?, ?, ?, ?, ?)");
                     state.bindInteger(1, filter.id);
                     state.bindInteger(2, filter.order);
                     state.bindInteger(3, filter.unreadCount);
                     state.bindInteger(4, filter.flags);
                     state.bindString(5, filter.name);
                     state.bindInteger(6, filter.color);
+                    final Vector<TLRPC.MessageEntity> entitiesVector = new Vector<>(TLRPC.MessageEntity::TLdeserialize);
+                    final NativeByteBuffer entitiesBuffer = new NativeByteBuffer(entitiesVector.getObjectSize());
+                    entitiesVector.serializeToStream(entitiesBuffer);
+                    state.bindByteBuffer(7, entitiesBuffer);
+                    state.bindInteger(8, filter.title_noanimate ? 1 : 0);
                     state.stepThis().dispose();
                     state = null;
+                    entitiesBuffer.reuse();
                 }
 
                 Collections.sort(dialogFilters, (o1, o2) -> {
@@ -3022,15 +3037,22 @@ public class MessagesStorage extends BaseController {
                 dialogFiltersMap.put(filter.id, filter);
             }
 
-            state = database.executeFast("REPLACE INTO dialog_filter VALUES(?, ?, ?, ?, ?, ?)");
+            state = database.executeFast("REPLACE INTO dialog_filter VALUES(?, ?, ?, ?, ?, ?, ?, ?)");
             state.bindInteger(1, filter.id);
             state.bindInteger(2, filter.order);
             state.bindInteger(3, filter.unreadCount);
             state.bindInteger(4, filter.flags);
             state.bindString(5, filter.id == 0 ? "ALL_CHATS" : filter.name);
             state.bindInteger(6, filter.color);
+            final Vector<TLRPC.MessageEntity> entitiesVector = new Vector<>(TLRPC.MessageEntity::TLdeserialize);
+            entitiesVector.objects.addAll(filter.entities);
+            final NativeByteBuffer entitiesBuffer = new NativeByteBuffer(entitiesVector.getObjectSize());
+            entitiesVector.serializeToStream(entitiesBuffer);
+            state.bindByteBuffer(7, entitiesBuffer);
+            state.bindInteger(8, filter.title_noanimate ? 1 : 0);
             state.step();
             state.dispose();
+            entitiesBuffer.reuse();
             state = null;
             if (peers) {
                 database.executeFast("DELETE FROM dialog_filter_ep WHERE id = " + filter.id).stepThis().dispose();
@@ -3164,9 +3186,14 @@ public class MessagesStorage extends BaseController {
                         filtersToDelete.remove(newFilter.id);
                         boolean changed = false;
                         boolean unreadChanged = false;
-                        if (!TextUtils.equals(filter.name, newFilter.title)) {
+                        if (!TextUtils.equals(filter.name, newFilter.title.text) || !MediaDataController.entitiesEqual(filter.entities, newFilter.title.entities)) {
                             changed = true;
-                            filter.name = newFilter.title;
+                            filter.name = newFilter.title.text;
+                            filter.entities = newFilter.title.entities;
+                        }
+                        if (filter.title_noanimate != newFilter.title_noanimate) {
+                            changed = true;
+                            filter.title_noanimate= newFilter.title_noanimate;
                         }
                         final int color = (newFilter.flags & 134217728) != 0 ? newFilter.color : -1;
                         if (filter.color != color) {
@@ -3306,7 +3333,9 @@ public class MessagesStorage extends BaseController {
                         filter = new MessagesController.DialogFilter();
                         filter.id = newFilter.id;
                         filter.flags = newFlags;
-                        filter.name = newFilter.title;
+                        filter.name = newFilter.title.text;
+                        filter.entities = newFilter.title.entities;
+                        filter.title_noanimate = newFilter.title_noanimate;
                         filter.color = (newFilter.flags & 134217728) != 0 ? newFilter.color : -1;
                         filter.pendingUnreadCount = -1;
                         for (int c = 0; c < 2; c++) {
@@ -6841,7 +6870,7 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void updateUserInfoPremiumBlocked(long userId, boolean contact_require_premium) {
+    public void updateUserInfoContactBlocked(long userId, TL_account.RequirementToContact value) {
         storageQueue.postRunnable(() -> {
             SQLiteCursor cursor = null;
             SQLitePreparedStatement state = null;
@@ -6859,10 +6888,12 @@ public class MessagesStorage extends BaseController {
                 }
                 cursor.dispose();
                 cursor = null;
-                if (!exist || userFull == null || userFull.contact_require_premium == contact_require_premium) {
+                if (!exist || userFull == null) {
                     return;
                 }
-                userFull.contact_require_premium = contact_require_premium;
+                if (!UserObject.applyRequirementToContact(userFull, value)) {
+                    return;
+                }
                 state = database.executeFast("REPLACE INTO user_settings VALUES(?, ?, ?)");
                 NativeByteBuffer data = new NativeByteBuffer(userFull.getObjectSize());
                 userFull.serializeToStream(data);
@@ -11154,11 +11185,33 @@ public class MessagesStorage extends BaseController {
         SQLitePreparedStatement state_topics_update = null;
         SQLitePreparedStatement state_media_topics = null;
         SQLiteCursor cursor = null;
+        ArrayList<Pair<Long, Integer>> reportMessagesDelivery = null;
         try {
             if (messages != null && !messages.isEmpty() && MessageObject.isQuickReply(messages.get(0))) {
                 mode = ChatActivity.MODE_QUICK_REPLIES;
                 if (threadMessageId == 0) {
                     threadMessageId = MessageObject.getQuickReplyId(currentAccount, messages.get(0));
+                }
+            }
+            if (messages != null && mode == ChatActivity.MODE_DEFAULT) {
+                int currentTime = -1;
+                for (int i = 0; i < messages.size(); ++i) {
+                    TLRPC.Message msg = messages.get(i);
+                    if (msg != null && msg.report_delivery_until_date != 0) {
+                        if (currentTime < 0) {
+                            currentTime = getConnectionsManager().getCurrentTime();
+                        }
+                        if (currentTime <= msg.report_delivery_until_date) {
+                            final long did = MessageObject.getDialogId(msg);
+                            final int mid = msg.id;
+                            if (reportMessagesDelivery == null) {
+                                reportMessagesDelivery = new ArrayList<>();
+                            }
+                            reportMessagesDelivery.add(new Pair<>(did, mid));
+                        }
+                        msg.flags2 &=~ 32;
+                        msg.report_delivery_until_date = 0;
+                    }
                 }
             }
             final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
@@ -11992,7 +12045,7 @@ public class MessagesStorage extends BaseController {
                             long id = 0;
                             TLRPC.MessageMedia object = null;
                             TLRPC.Document document = MessageObject.getDocument(message);
-                            ArrayList<VideoPlayer.Quality> qualities = VideoPlayer.getQualities(currentAccount, message.media);
+                            ArrayList<VideoPlayer.Quality> qualities = VideoPlayer.getQualities(currentAccount, message.media, true);
                             if (qualities != null) {
                                 VideoPlayer.VideoUri v = VideoPlayer.getQualityForThumb(qualities);
                                 if (v != null) {
@@ -12461,6 +12514,14 @@ public class MessagesStorage extends BaseController {
             if (cursor != null) {
                 cursor = null;
             }
+            if (reportMessagesDelivery != null) {
+                final ArrayList<Pair<Long, Integer>> finalReportMessagesDelivery = reportMessagesDelivery;
+                AndroidUtilities.runOnUIThread(() -> {
+                    for (Pair<Long, Integer> p : finalReportMessagesDelivery) {
+                        getMessagesController().reportMessageDelivery(p.first, p.second, false);
+                    }
+                });
+            }
         }
     }
 
@@ -12551,6 +12612,41 @@ public class MessagesStorage extends BaseController {
                 }
             } catch (Exception e) {
                 checkSQLException(e);
+            }
+        });
+    }
+
+    public void markMessageAsSendErrorWithParams(TLRPC.Message msg, long errorAllowedPriceStars, long errorNewPriceStars) {
+        final long selfId = getUserConfig().getClientUserId();
+        storageQueue.postRunnable(() -> {
+            SQLiteCursor cursor = null;
+            try {
+                final long messageId = msg.id;
+                final long dialogId = MessageObject.getDialogId(msg);
+                for (int i = 0; i < 2; ++i) {
+                    final String table = i == 0 ? "messages_v2" : "messages_topics";
+
+                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT data FROM messages_v2 WHERE mid = %d AND uid = %d LIMIT 1", messageId, dialogId));
+                    if (cursor.next()) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                            message.readAttachPath(data, selfId);
+                            data.reuse();
+
+
+                        }
+                    }
+
+                    database.executeFast(String.format(Locale.US, "UPDATE "+table+" SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, dialogId)).stepThis().dispose();
+                    database.executeFast(String.format(Locale.US, "UPDATE "+table+" SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, dialogId)).stepThis().dispose();
+                }
+            } catch (Exception e) {
+                checkSQLException(e);
+            } finally {
+                if (cursor != null) {
+                    cursor.dispose();
+                }
             }
         });
     }
@@ -16546,6 +16642,37 @@ public class MessagesStorage extends BaseController {
             }
             AndroidUtilities.runOnUIThread(() -> callback.run(max[0]));
         });
+    }
+
+    public int getDialogReadMaxSync(boolean outbox, long dialog_id) {
+        int max = 0;
+        SQLiteCursor cursor = null;
+        try {
+            if (outbox) {
+                cursor = database.queryFinalized("SELECT outbox_max FROM dialogs WHERE did = " + dialog_id);
+                if (cursor.next()) {
+                    max = cursor.intValue(0);
+                }
+            } else {
+                cursor = database.queryFinalized("SELECT last_mid, inbox_max FROM dialogs WHERE did = " + dialog_id);
+                if (cursor.next()) {
+                    int lastMid = cursor.intValue(0);
+                    int inboxMax = cursor.intValue(1);
+                    if (inboxMax > lastMid) {
+                        max = 0;
+                    } else {
+                        max = inboxMax;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            checkSQLException(e);
+        } finally {
+            if (cursor != null) {
+                cursor.dispose();
+            }
+        }
+        return max;
     }
 
     public int getDialogReadMax(boolean outbox, long dialog_id) {

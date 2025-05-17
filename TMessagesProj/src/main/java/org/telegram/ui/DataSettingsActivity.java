@@ -502,12 +502,12 @@ public class DataSettingsActivity extends BaseFragment {
                     String description;
                     boolean isInternal = storageDir.contains("/storage/emulated/");
                     if (fullString && !isInternal) {
-                        description = LocaleController.formatString("StoragePathFreeValueExternal", R.string.StoragePathFreeValueExternal, AndroidUtilities.formatFileSize(file.getFreeSpace()), storageDir);
+                        description = LocaleController.formatString(R.string.StoragePathFreeValueExternal, AndroidUtilities.formatFileSize(file.getFreeSpace()), storageDir);
                     } else {
                         if (isInternal) {
-                            description = LocaleController.formatString("StoragePathFreeInternal", R.string.StoragePathFreeInternal, AndroidUtilities.formatFileSize(file.getFreeSpace()));
+                            description = LocaleController.formatString(R.string.StoragePathFreeInternal, AndroidUtilities.formatFileSize(file.getFreeSpace()));
                         } else {
-                            description = LocaleController.formatString("StoragePathFreeExternal", R.string.StoragePathFreeExternal, AndroidUtilities.formatFileSize(file.getFreeSpace()));
+                            description = LocaleController.formatString(R.string.StoragePathFreeExternal, AndroidUtilities.formatFileSize(file.getFreeSpace()));
                         }
                     }
 
@@ -524,12 +524,9 @@ public class DataSettingsActivity extends BaseFragment {
                                 AlertDialog.Builder confirAlert = new AlertDialog.Builder(getContext());
                                 confirAlert.setTitle(LocaleController.getString(R.string.DecreaseSpeed));
                                 confirAlert.setMessage(LocaleController.getString(R.string.SdCardAlert));
-                                confirAlert.setPositiveButton(LocaleController.getString(R.string.Proceed), new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                       setStorageDirectory(storageDir);
-                                       builder.getDismissRunnable().run();
-                                    }
+                                confirAlert.setPositiveButton(LocaleController.getString(R.string.Proceed), (dialog, which) -> {
+                                   setStorageDirectory(storageDir);
+                                   builder.getDismissRunnable().run();
                                 });
                                 confirAlert.setNegativeButton(LocaleController.getString(R.string.Back), null);
                                 confirAlert.show();

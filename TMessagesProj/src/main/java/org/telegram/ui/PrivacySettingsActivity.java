@@ -17,7 +17,6 @@ import android.content.DialogInterface;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
-import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -49,6 +48,7 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -84,7 +84,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     @SuppressWarnings("FieldCanBeLocal")
     private LinearLayoutManager layoutManager;
 
-    private TLRPC.account_Password currentPassword;
+    private TL_account.Password currentPassword;
 
     private int privacySectionRow;
     private int blockedRow;
@@ -143,6 +143,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     private boolean newSuggest;
     private boolean archiveChats;
     private boolean noncontactsValue;
+    private boolean feeValue;
 
     private boolean[] clear = new boolean[2];
     private SessionsActivity devicesActivityPreload;
@@ -156,10 +157,11 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         getMessagesController().getBlockedPeers(true);
         currentSync = newSync = getUserConfig().syncContacts;
         currentSuggest = newSuggest = getUserConfig().suggestContacts;
-        TLRPC.TL_globalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
+        TLRPC.GlobalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
         if (privacySettings != null) {
             archiveChats = privacySettings.archive_and_mute_new_noncontact_peers;
             noncontactsValue = privacySettings.new_noncontact_peers_require_premium;
+            feeValue = (privacySettings.flags & 32) != 0;
         }
 
         updateRows();
@@ -224,11 +226,11 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
 
             });
         }
-        TLRPC.TL_globalPrivacySettings globalPrivacySettings = getContactsController().getGlobalPrivacySettings();
+        TLRPC.GlobalPrivacySettings globalPrivacySettings = getContactsController().getGlobalPrivacySettings();
         if (globalPrivacySettings != null && globalPrivacySettings.archive_and_mute_new_noncontact_peers != archiveChats) {
             globalPrivacySettings.archive_and_mute_new_noncontact_peers = archiveChats;
             save = true;
-            TLRPC.TL_account_setGlobalPrivacySettings req = new TLRPC.TL_account_setGlobalPrivacySettings();
+            TL_account.setGlobalPrivacySettings req = new TL_account.setGlobalPrivacySettings();
             req.settings = getContactsController().getGlobalPrivacySettings();
             if (req.settings == null) {
                 req.settings = new TLRPC.TL_globalPrivacySettings();
@@ -355,7 +357,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                         progressDialog.setCanCancel(false);
                         progressDialog.show();
 
-                        final TLRPC.TL_account_setAccountTTL req = new TLRPC.TL_account_setAccountTTL();
+                        final TL_account.setAccountTTL req = new TL_account.setAccountTTL();
                         req.ttl = new TLRPC.TL_accountDaysTTL();
                         req.ttl.days = value;
                         getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
@@ -628,10 +630,11 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.privacyRulesUpdated) {
-            TLRPC.TL_globalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
+            TLRPC.GlobalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
             if (privacySettings != null) {
                 archiveChats = privacySettings.archive_and_mute_new_noncontact_peers;
                 noncontactsValue = privacySettings.new_noncontact_peers_require_premium;
+                feeValue = (privacySettings.flags & 32) != 0;
             }
             if (listAdapter != null) {
                 listAdapter.notifyDataSetChanged();
@@ -640,7 +643,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             listAdapter.notifyItemChanged(blockedRow);
         } else if (id == NotificationCenter.didSetOrRemoveTwoStepPassword) {
             if (args.length > 0) {
-                currentPassword = (TLRPC.account_Password) args[0];
+                currentPassword = (TL_account.Password) args[0];
                 if (listAdapter != null) {
                     listAdapter.notifyItemChanged(passwordRow);
                 }
@@ -755,7 +758,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         }
     }
 
-    public PrivacySettingsActivity setCurrentPassword(TLRPC.account_Password currentPassword) {
+    public PrivacySettingsActivity setCurrentPassword(TL_account.Password currentPassword) {
         this.currentPassword = currentPassword;
         if (currentPassword != null) {
             initPassword();
@@ -795,10 +798,10 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     }
 
     private void loadPasswordSettings() {
-        TLRPC.TL_account_getPassword req = new TLRPC.TL_account_getPassword();
+        TL_account.getPassword req = new TL_account.getPassword();
         getConnectionsManager().sendRequest(req, (response, error) -> {
             if (response != null) {
-                TLRPC.account_Password password = (TLRPC.account_Password) response;
+                TL_account.Password password = (TL_account.Password) response;
                 AndroidUtilities.runOnUIThread(() -> {
                     currentPassword = password;
                     initPassword();
@@ -809,6 +812,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
 
     public static String formatRulesString(AccountInstance accountInstance, int rulesType) {
         final ArrayList<TLRPC.PrivacyRule> privacyRules = accountInstance.getContactsController().getPrivacyRules(rulesType);
+        final TLRPC.GlobalPrivacySettings global = accountInstance.getContactsController().getGlobalPrivacySettings();
         if (privacyRules == null || privacyRules.size() == 0) {
             if (rulesType == ContactsController.PRIVACY_RULES_TYPE_P2P) {
                 return getString(R.string.P2PNobody);
@@ -865,18 +869,28 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 }
             }
         }
-        if (type == 0 || type == -1 && minus > 0) {
+        if (rulesType == ContactsController.PRIVACY_RULES_TYPE_GIFTS && global != null && global.disallowed_stargifts != null && (global.disallowed_stargifts.disallow_unique_stargifts && global.disallowed_stargifts.disallow_unlimited_stargifts && global.disallowed_stargifts.disallow_limited_stargifts && !global.disallowed_stargifts.disallow_premium_gifts)) {
+            return getString(R.string.PrivacyValueGiftsOnlyPremium);
+        } else if (rulesType == ContactsController.PRIVACY_RULES_TYPE_GIFTS && global != null && global.disallowed_stargifts != null && (global.disallowed_stargifts.disallow_unique_stargifts && global.disallowed_stargifts.disallow_unlimited_stargifts && global.disallowed_stargifts.disallow_limited_stargifts && global.disallowed_stargifts.disallow_premium_gifts)) {
+            return getString(R.string.PrivacyValueGiftsNone);
+        } else if (type == 0 || type == -1 && minus > 0) {
             if (rulesType == ContactsController.PRIVACY_RULES_TYPE_P2P) {
                 if (minus == 0) {
                     return getString(R.string.P2PEverybody);
                 } else {
                     return LocaleController.formatString(R.string.P2PEverybodyMinus, minus);
                 }
-            } else {
+            } else if (rulesType == ContactsController.PRIVACY_RULES_TYPE_GIFTS) {
                 if (minus == 0) {
                     return getString(miniapps != null && !miniapps ? R.string.PrivacyValueEveryoneExceptBots : R.string.LastSeenEverybody);
                 } else {
                     return LocaleController.formatString(miniapps != null && !miniapps ? R.string.PrivacyValueEveryoneExceptBotsMinus : R.string.LastSeenEverybodyMinus, minus);
+                }
+            } else {
+                if (minus == 0) {
+                    return getString(R.string.LastSeenEverybody);
+                } else {
+                    return LocaleController.formatString(R.string.LastSeenEverybodyMinus, minus);
                 }
             }
         } else if (type == 2 || type == -1 && minus > 0 && plus > 0) {
@@ -1110,8 +1124,8 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                         ImageView imageView = textCell.getValueImageView();
                         imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteGrayIcon), PorterDuff.Mode.MULTIPLY));
                     } else if (position == noncontactsRow) {
-                        value = getString(noncontactsValue ? R.string.ContactsAndPremium : R.string.P2PEverybody);
-                        textCell.setTextAndValue(getMessagesController().newNoncontactPeersRequirePremiumWithoutOwnpremium ? getString(R.string.PrivacyMessages) : addPremiumStar(getString(R.string.PrivacyMessages)), value, bioRow != -1);
+                        value = getString(feeValue ? R.string.ContactsAndFee : noncontactsValue ? R.string.ContactsAndPremium : R.string.P2PEverybody);
+                        textCell.setTextAndValue(getMessagesController().newNoncontactPeersRequirePremiumWithoutOwnpremium && !getMessagesController().starsPaidMessagesAvailable ? getString(R.string.PrivacyMessages) : addPremiumStar(getString(R.string.PrivacyMessages)), value, bioRow != -1);
                     } else if (position == passportRow) {
                         textCell.setText(getString("TelegramPassport", R.string.TelegramPassport), true);
                     } else if (position == deleteAccountRow) {

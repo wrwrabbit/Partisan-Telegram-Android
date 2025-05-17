@@ -68,15 +68,16 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.support.LongSparseIntArray;
+import org.telegram.messenger.voip.VoIPGroupNotification;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BubbleActivity;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PopupNotificationActivity;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 
 import java.io.File;
@@ -982,9 +983,25 @@ public class NotificationsController extends BaseController {
     }
 
     public void processEditedMessages(LongSparseArray<ArrayList<MessageObject>> editedMessages) {
-        if (editedMessages.size() == 0) {
+        if (editedMessages == null || editedMessages.size() == 0) {
             return;
         }
+
+        for (int i = 0; i < editedMessages.size(); ++i) {
+            final ArrayList<MessageObject> messageObjects = editedMessages.valueAt(i);
+            if (messageObjects != null) {
+                for (int j = 0; j < messageObjects.size(); ++j) {
+                    final MessageObject messageObject = messageObjects.get(j);
+                    if (messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionConferenceCall) {
+                        final TLRPC.TL_messageActionConferenceCall action = (TLRPC.TL_messageActionConferenceCall) messageObject.messageOwner.action;
+                        if (action.active || action.missed) {
+                            VoIPGroupNotification.hide(ApplicationLoader.applicationContext, currentAccount, messageObject.getId());
+                        }
+                    }
+                }
+            }
+        }
+
         ArrayList<MessageObject> popupArrayAdd = new ArrayList<>(0);
         notificationsQueue.postRunnable(() -> {
             boolean updated = false;
@@ -1031,6 +1048,33 @@ public class NotificationsController extends BaseController {
 
     public void processNewMessages(ArrayList<MessageObject> messageObjects, boolean isLast, boolean isFcm, CountDownLatch countDownLatch) {
         FileLog.d("NotificationsController: processNewMessages msgs.size()=" + (messageObjects == null ? "null" : messageObjects.size()) + " isLast=" + isLast + " isFcm=" + isFcm + ")");
+
+        if (messageObjects != null) {
+            for (int i = 0; i < messageObjects.size(); ++i) {
+                final MessageObject messageObject = messageObjects.get(i);
+                if (messageObject != null && messageObject.messageOwner != null&& !messageObject.isOutOwner() && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionConferenceCall) {
+                    final TLRPC.TL_messageActionConferenceCall action = (TLRPC.TL_messageActionConferenceCall) messageObject.messageOwner.action;
+                    if (!action.active && !action.missed && (getConnectionsManager().getCurrentTime() - messageObject.messageOwner.date) < getMessagesController().callRingTimeout / 1000L) {
+                        final HashSet<Long> ids = new HashSet<>();
+                        ids.add(messageObject.getDialogId());
+                        for (final TLRPC.Peer peer : action.other_participants) {
+                            ids.add(DialogObject.getPeerDialogId(peer));
+                        }
+                        final StringBuilder names = new StringBuilder();
+                        for (final long id : ids) {
+                            if (names.length() > 0) names.append(", ");
+                            names.append(DialogObject.getShortName(currentAccount, id));
+                        }
+                        VoIPGroupNotification.request(ApplicationLoader.applicationContext, currentAccount, messageObject.getDialogId(), names.toString(), action.call_id, messageObject.getId(), action.video);
+                        messageObjects.remove(i);
+                        i--;
+                    } else {
+                        VoIPGroupNotification.hide(ApplicationLoader.applicationContext, currentAccount, messageObject.getId());
+                    }
+                }
+            }
+        }
+
         if (messageObjects.isEmpty()) {
             if (countDownLatch != null) {
                 countDownLatch.countDown();
@@ -1876,11 +1920,19 @@ public class NotificationsController extends BaseController {
                         return messageObject.messageText.toString();
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGiftPremium) {
                         return messageObject.messageText.toString();
+                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesPrice || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesRefunded) {
+                        return messageObject.messageText.toString();
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) {
                         if (messageObject.messageOwner.action.video) {
                             return LocaleController.getString(R.string.CallMessageVideoIncomingMissed);
                         } else {
                             return LocaleController.getString(R.string.CallMessageIncomingMissed);
+                        }
+                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionConferenceCall) {
+                        if (messageObject.messageOwner.action.video) {
+                            return LocaleController.getString(R.string.CallMessageVideoIncomingConferenceMissed);
+                        } else {
+                            return LocaleController.getString(R.string.CallMessageIncomingConferenceMissed);
                         }
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionChatAddUser) {
                         long singleUserId = messageObject.messageOwner.action.user_id;
@@ -2505,11 +2557,21 @@ public class NotificationsController extends BaseController {
                             msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGiftPremium) {
                             msg = messageObject.messageText.toString();
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
+                            msg = messageObject.messageText.toString();
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesRefunded || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesPrice) {
+                            msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) {
                             if (messageObject.messageOwner.action.video) {
                                 msg = LocaleController.getString(R.string.CallMessageVideoIncomingMissed);
                             } else {
                                 msg = LocaleController.getString(R.string.CallMessageIncomingMissed);
+                            }
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionConferenceCall) {
+                            if (messageObject.messageOwner.action.video) {
+                                msg = LocaleController.getString(R.string.CallMessageVideoIncomingConferenceMissed);
+                            } else {
+                                msg = LocaleController.getString(R.string.CallMessageIncomingConferenceMissed);
                             }
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetChatTheme) {
                             String emoticon = ((TLRPC.TL_messageActionSetChatTheme) messageObject.messageOwner.action).emoticon;
@@ -4969,7 +5031,7 @@ public class NotificationsController extends BaseController {
 
             NotificationCompat.Action wearReplyAction = null;
 
-            if ((!isChannel || isSupergroup) && canReply && !SharedConfig.isWaitingForPasscodeEnter && selfUserId != dialogId && !UserObject.isReplyUser(dialogId)) {
+            if ((!isChannel || isSupergroup) && canReply && !SharedConfig.isWaitingForPasscodeEnter && selfUserId != dialogId && !UserObject.isReplyUser(dialogId) && MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(dialogId) <= 0) {
                 Intent replyIntent = new Intent(ApplicationLoader.applicationContext, WearReplyReceiver.class);
                 replyIntent.putExtra("dialog_id", dialogId);
                 replyIntent.putExtra("max_id", maxId);
@@ -5838,7 +5900,7 @@ public class NotificationsController extends BaseController {
             return;
         }
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
-        TLRPC.TL_account_updateNotifySettings req = new TLRPC.TL_account_updateNotifySettings();
+        TL_account.updateNotifySettings req = new TL_account.updateNotifySettings();
         req.settings = new TLRPC.TL_inputPeerNotifySettings();
 
         final String key = NotificationsController.getSharedPrefKey(dialogId, topicId);
@@ -5908,22 +5970,22 @@ public class NotificationsController extends BaseController {
     public void updateServerNotificationsSettings(int type) {
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
         if (type == TYPE_REACTIONS_MESSAGES || type == TYPE_REACTIONS_STORIES) {
-            TLRPC.TL_account_setReactionsNotifySettings req = new TLRPC.TL_account_setReactionsNotifySettings();
-            req.settings = new TLRPC.TL_reactionsNotifySettings();
+            TL_account.setReactionsNotifySettings req = new TL_account.setReactionsNotifySettings();
+            req.settings = new TL_account.TL_reactionsNotifySettings();
             if (preferences.getBoolean("EnableReactionsMessages", true)) {
                 req.settings.flags |= 1;
                 if (preferences.getBoolean("EnableReactionsMessagesContacts", false)) {
-                    req.settings.messages_notify_from = new TLRPC.TL_reactionNotificationsFromContacts();
+                    req.settings.messages_notify_from = new TL_account.TL_reactionNotificationsFromContacts();
                 } else {
-                    req.settings.messages_notify_from = new TLRPC.TL_reactionNotificationsFromAll();
+                    req.settings.messages_notify_from = new TL_account.TL_reactionNotificationsFromAll();
                 }
             }
             if (preferences.getBoolean("EnableReactionsStories", true)) {
                 req.settings.flags |= 2;
                 if (preferences.getBoolean("EnableReactionsStoriesContacts", false)) {
-                    req.settings.stories_notify_from = new TLRPC.TL_reactionNotificationsFromContacts();
+                    req.settings.stories_notify_from = new TL_account.TL_reactionNotificationsFromContacts();
                 } else {
-                    req.settings.stories_notify_from = new TLRPC.TL_reactionNotificationsFromAll();
+                    req.settings.stories_notify_from = new TL_account.TL_reactionNotificationsFromAll();
                 }
             }
             req.settings.show_previews = preferences.getBoolean("EnableReactionsPreview", true);
@@ -5932,7 +5994,7 @@ public class NotificationsController extends BaseController {
             return;
         }
 
-        TLRPC.TL_account_updateNotifySettings req = new TLRPC.TL_account_updateNotifySettings();
+        TL_account.updateNotifySettings req = new TL_account.updateNotifySettings();
         req.settings = new TLRPC.TL_inputPeerNotifySettings();
         req.settings.flags = 5;
         if (type == TYPE_GROUP) {

@@ -39,6 +39,7 @@ public class UItem extends AdapterWithDiffUtils.Item {
     public boolean checked;
     public boolean collapsed;
     public boolean enabled = true;
+    public boolean reordering;
     public int pad;
     public boolean hideDivider;
     public int iconResId;
@@ -205,6 +206,12 @@ public class UItem extends AdapterWithDiffUtils.Item {
         return i;
     }
 
+    public static UItem asCheck(CharSequence text) {
+        UItem i = new UItem(UniversalAdapter.VIEW_TYPE_CHECK, false);
+        i.text = text;
+        return i;
+    }
+
     public static UItem asCheck(int id, CharSequence text) {
         UItem i = new UItem(UniversalAdapter.VIEW_TYPE_CHECK, false);
         i.id = id;
@@ -301,7 +308,7 @@ public class UItem extends AdapterWithDiffUtils.Item {
     public static UItem asIntSlideView(
         int style,
         int min, int value, int max,
-        Utilities.CallbackReturn<Integer, String> toString,
+        Utilities.CallbackReturn<Integer, CharSequence> toString,
         Utilities.Callback<Integer> whenChose
     ) {
         UItem item = new UItem(UniversalAdapter.VIEW_TYPE_INTSLIDE, false);
@@ -357,6 +364,12 @@ public class UItem extends AdapterWithDiffUtils.Item {
     public static UItem asSpace(int height) {
         UItem item = new UItem(UniversalAdapter.VIEW_TYPE_SPACE, false);
         item.intValue = height;
+        return item;
+    }
+
+    public static UItem asRoundCheckbox(CharSequence text) {
+        UItem item = new UItem(UniversalAdapter.VIEW_TYPE_ROUND_CHECKBOX, false);
+        item.text = text;
         return item;
     }
 
@@ -430,6 +443,12 @@ public class UItem extends AdapterWithDiffUtils.Item {
         UItem item = new UItem(UniversalAdapter.VIEW_TYPE_PROFILE_CELL, false);
         item.object = obj;
         return item;
+    }
+
+    public UItem withOpenButton(Utilities.Callback<TLRPC.User> onOpenButton) {
+        this.checked = true;
+        this.object2 = onOpenButton;
+        return this;
     }
 
     public static UItem asSearchMessage(MessageObject messageObject) {
@@ -524,6 +543,11 @@ public class UItem extends AdapterWithDiffUtils.Item {
 
     public UItem setSpanCount(int spanCount) {
         this.spanCount = spanCount;
+        return this;
+    }
+
+    public UItem setReordering(boolean reordering) {
+        this.reordering = reordering;
         return this;
     }
 
@@ -653,6 +677,10 @@ public class UItem extends AdapterWithDiffUtils.Item {
         }
 
         public void bindView(View view, UItem item, boolean divider) {
+
+        }
+
+        public void attachedView(View view, UItem item) {
 
         }
 

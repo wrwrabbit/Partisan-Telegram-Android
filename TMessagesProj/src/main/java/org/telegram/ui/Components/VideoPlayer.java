@@ -89,6 +89,8 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.chromecast.ChromecastMedia;
+import org.telegram.messenger.chromecast.ChromecastMediaVariations;
 import org.telegram.messenger.secretmedia.ExtendedDefaultDataSourceFactory;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Stories.recorder.StoryEntry;
@@ -107,7 +109,7 @@ import java.util.HashSet;
 public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsListener, NotificationCenter.NotificationCenterDelegate {
 
     private static int lastPlayerId = 0;
-    private int playerId = lastPlayerId++;
+    public final int playerId = lastPlayerId++;
     public static final HashSet<Integer> activePlayers = new HashSet<>();
 
     private DispatchQueue workerQueue;
@@ -799,6 +801,9 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
     }
 
     public static ArrayList<Quality> getQualities(int currentAccount, TLRPC.Document original, ArrayList<TLRPC.Document> alt_documents, int reference, boolean forThumb) {
+        return getQualities(currentAccount, original, alt_documents, reference, forThumb, true);
+    }
+    public static ArrayList<Quality> getQualities(int currentAccount, TLRPC.Document original, ArrayList<TLRPC.Document> alt_documents, int reference, boolean forThumb, boolean useFileDatabaseQueue) {
         ArrayList<TLRPC.Document> documents = new ArrayList<>();
         if (original != null) {
             documents.add(original);
@@ -830,7 +835,7 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
                 if ("application/x-mpegurl".equalsIgnoreCase(document.mime_type)) {
                     continue;
                 }
-                VideoUri q = VideoUri.of(currentAccount, document, manifests.get(document.id), reference);
+                VideoUri q = VideoUri.of(currentAccount, document, manifests.get(document.id), reference, useFileDatabaseQueue);
                 if (q.width <= 0 || q.height <= 0) {
                     continue;
                 }
@@ -869,10 +874,10 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
         return Quality.group(qualities);
     }
 
-    public static ArrayList<Quality> getQualities(int currentAccount, TLRPC.MessageMedia media) {
+    public static ArrayList<Quality> getQualities(int currentAccount, TLRPC.MessageMedia media, boolean useFileDatabaseQueue) {
         if (!(media instanceof TLRPC.TL_messageMediaDocument))
             return new ArrayList<>();
-        return getQualities(currentAccount, media.document, media.alt_documents, 0, false);
+        return getQualities(currentAccount, media.document, media.alt_documents, 0, false, useFileDatabaseQueue);
     }
 
     public static boolean hasQualities(int currentAccount, TLRPC.MessageMedia media) {
@@ -916,6 +921,15 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
             }
         }
         return uri;
+    }
+
+    public static VideoUri getCachedQuality(ArrayList<Quality> qualities) {
+        if (qualities == null) return null;
+        for (final Quality q : qualities)
+        for (final VideoUri v : q.uris)
+            if (v.isCached())
+                return v;
+        return null;
     }
 
     public static VideoUri getQualityForPlayer(ArrayList<Quality> qualities) {
@@ -1242,7 +1256,7 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
             return Uri.parse("tg://" + MessageObject.getFileName(document) + params);
         }
 
-        public static VideoUri of(int currentAccount, TLRPC.Document document, TLRPC.Document manifest, int reference) throws UnsupportedEncodingException {
+        public static VideoUri of(int currentAccount, TLRPC.Document document, TLRPC.Document manifest, int reference, boolean useFileDatabaseQueue) throws UnsupportedEncodingException {
             final VideoUri videoUri = new VideoUri();
             TLRPC.TL_documentAttributeVideo attributeVideo = null;
             for (int i = 0; i < document.attributes.size(); ++i) {
@@ -1262,11 +1276,11 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
                 videoUri.manifestDocument = manifest;
                 videoUri.manifestDocId = manifest.id;
                 videoUri.m3u8uri = getUri(currentAccount, manifest, reference);
-                File file = FileLoader.getInstance(currentAccount).getPathToAttach(manifest, null, false, true);
+                File file = FileLoader.getInstance(currentAccount).getPathToAttach(manifest, null, false, useFileDatabaseQueue);
                 if (file != null && file.exists()) {
                     videoUri.m3u8uri = Uri.fromFile(file);
                 } else {
-                    file = FileLoader.getInstance(currentAccount).getPathToAttach(manifest, null, true, true);
+                    file = FileLoader.getInstance(currentAccount).getPathToAttach(manifest, null, true, useFileDatabaseQueue);
                     if (file != null && file.exists()) {
                         videoUri.m3u8uri = Uri.fromFile(file);
                     }
@@ -1283,11 +1297,11 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
                 videoUri.bitrate = videoUri.size / videoUri.duration;
             }
 
-            File file = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, false, true);
+            File file = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, false, useFileDatabaseQueue);
             if (file != null && file.exists()) {
                 videoUri.uri = Uri.fromFile(file);
             } else {
-                file = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, true, true);
+                file = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, true, useFileDatabaseQueue);
                 if (file != null && file.exists()) {
                     videoUri.uri = Uri.fromFile(file);
                 }
@@ -1441,6 +1455,13 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
         }
     }
 
+    public float getPlaybackSpeed() {
+        if (player == null) return 1.0f;
+        final PlaybackParameters params = player.getPlaybackParameters();
+        if (params == null) return 1.0f;
+        return params.speed;
+    }
+
     public void setPlayWhenReady(boolean playWhenReady) {
         mixedPlayWhenReady = playWhenReady;
         if (playWhenReady && mixedAudio) {
@@ -1507,6 +1528,13 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
         if (audioPlayer != null) {
             audioPlayer.setVolume(volume);
         }
+    }
+
+    public float getVolume() {
+        if (player != null) {
+            return player.getVolume();
+        }
+        return 1.0f;
     }
 
     public void seekTo(long positionMs) {
@@ -1950,6 +1978,49 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
         if (onQualityChangeListener != null) {
             AndroidUtilities.runOnUIThread(onQualityChangeListener);
         }
+    }
+
+    public ChromecastMediaVariations getCurrentChromecastMedia(String defaultId, String title, String subtitle) {
+        if (videoQualities == null) {
+            if (videoUri == null) {
+                return null;
+            }
+
+            final String path = "/mtproto_" + defaultId;
+            String mime = videoUri.getQueryParameter("mime");
+            if (TextUtils.isEmpty(mime)) {
+                mime = ChromecastMedia.VIDEO_MP4;
+            }
+            final ChromecastMedia media = ChromecastMedia.Builder.fromUri(videoUri, path, mime)
+                    .setTitle(title)
+                    .setSubtitle(subtitle)
+                    .build();
+
+            return ChromecastMediaVariations.of(media);
+        }
+
+        final ChromecastMediaVariations.Builder builder = new ChromecastMediaVariations.Builder();
+        for (Quality quality : videoQualities) {
+            for (VideoUri vUri : quality.uris) {
+                final String path = "/mtproto_" + vUri.docId;
+                String mime = null;
+                if (vUri.document != null) {
+                    mime = vUri.document.mime_type;
+                }
+                if (TextUtils.isEmpty(mime)) {
+                    mime = ChromecastMedia.VIDEO_MP4;
+                }
+                final ChromecastMedia media = ChromecastMedia.Builder.fromUri(vUri.uri, path, mime)
+                        .setTitle(title)
+                        .setSubtitle(subtitle)
+                        .setSize(vUri.width, vUri.height)
+                        .build();
+
+                builder.add(media);
+            }
+        }
+
+        return builder.build();
     }
 
 }
