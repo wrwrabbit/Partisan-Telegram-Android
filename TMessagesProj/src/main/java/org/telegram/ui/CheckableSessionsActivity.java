@@ -230,35 +230,6 @@ public abstract class CheckableSessionsActivity extends BaseFragment implements 
         if (!silent) {
             loading = true;
         }
-        TLRPC.TL_account_getAuthorizations req = new TLRPC.TL_account_getAuthorizations();
-        int reqId = ConnectionsManager.getInstance(selectedAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            loading = false;
-            int oldItemsCount = listAdapter.getItemCount();
-            if (error == null) {
-                sessions.clear();
-                passwordSessions.clear();
-                TLRPC.TL_account_authorizations res = (TLRPC.TL_account_authorizations) response;
-                for (int a = 0, N = res.authorizations.size(); a < N; a++) {
-                    TLRPC.TL_authorization authorization = res.authorizations.get(a);
-                    if ((authorization.flags & 1) != 0) {
-                        currentSession = authorization;
-                    } else if (authorization.password_pending) {
-                        passwordSessions.add(authorization);
-                    } else {
-                        sessions.add(authorization);
-                    }
-                }
-                List<Long> terminatedSessions = selectedSessions.stream().filter(selected -> sessions.stream().noneMatch(s -> getSessionHash(s).equals(selected))
-                        && passwordSessions.stream().noneMatch(s -> s.hash == selected)).collect(Collectors.toList());
-                sessions.addAll(0, terminatedSessions);
-                updateRows();
-            }
-            itemsEnterAnimator.showItemsAnimated(oldItemsCount + 1);
-            if (listAdapter != null) {
-                listAdapter.notifyDataSetChanged();
-            }
-        }));
-        ConnectionsManager.getInstance(selectedAccount).bindRequestToGuid(reqId, classGuid);
     }
 
     private void updateRows() {

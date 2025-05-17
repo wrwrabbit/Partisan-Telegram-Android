@@ -100,14 +100,5 @@ public class SecurityChecker {
     }
 
     public static void checkTwoStepVerificationEnabled(int account, TwoStepVerificationHandler handler) {
-        TLRPC.TL_account_getPassword req = new TLRPC.TL_account_getPassword();
-        ConnectionsManager.getInstance(account).sendRequest(req, (response, error) -> {
-            if (response != null) {
-                TLRPC.TL_account_password password = (TLRPC.TL_account_password) response;
-                handler.handle(false, password.has_password);
-            } else {
-                handler.handle(true, false);
-            }
-        }, ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
     }
 }

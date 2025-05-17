@@ -1948,10 +1948,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public int sendMessage(ArrayList<MessageObject> messages, final long peer, boolean forwardFromMyName, boolean hideCaption, boolean notify, int scheduleDate, MessageObject replyToTopMsg, int video_timestamp, long payStars) {
-        return sendMessage(messages, peer, forwardFromMyName, hideCaption, notify, scheduleDate, replyToTopMsg, null);
-    }
-
-    public int sendMessage(ArrayList<MessageObject> messages, final long peer, boolean forwardFromMyName, boolean hideCaption, boolean notify, int scheduleDate, MessageObject replyToTopMsg, Integer autoDeleteDelay) {
         if (messages == null || messages.isEmpty()) {
             return 0;
         }
@@ -2036,7 +2032,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 if (msgObj.getId() <= 0 || msgObj.needDrawBluredPreview()) {
                     if (msgObj.type == MessageObject.TYPE_TEXT && !TextUtils.isEmpty(msgObj.messageText)) {
                         TLRPC.WebPage webPage = msgObj.messageOwner.media != null ? msgObj.messageOwner.media.webpage : null;
-                        SendMessageParams params = SendMessageParams.of(msgObj.messageText.toString(), peer, null, replyToTopMsg, webPage, webPage != null, msgObj.messageOwner.entities, null, null, notify, scheduleDate, null, false).addAutoDeleteDelay(autoDeleteDelay);
+                        SendMessageParams params = SendMessageParams.of(msgObj.messageText.toString(), peer, null, replyToTopMsg, webPage, webPage != null, msgObj.messageOwner.entities, null, null, notify, scheduleDate, null, false);
                         params.quick_reply_shortcut = msgObj.getQuickReplyName();
                         params.quick_reply_shortcut_id = msgObj.getQuickReplyId();
                         sendMessage(params);
@@ -2493,16 +2489,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                             int existFlags = msgObj1.getMediaExistanceFlags();
                                             newMsgObj1.id = message.id;
                                             sentCount++;
-                                        if (autoDeleteDelay != null) {
-                                            RemoveAsReadMessage messageToRemove = new RemoveAsReadMessage(
-                                                    newMsgObj1.id,
-                                                    MessageObject.getTopicId(currentAccount, newMsgObj1, false),
-                                                    -1,
-                                                    newMsgObj1.date,
-                                                    autoDeleteDelay
-                                            );
-                                            RemoveAfterReadingMessages.addMessageToRemove(currentAccount, peer, messageToRemove);
-                                        }
 
                                             if (scheduled != currentSchedule) {
                                                 final int fromMode = scheduled ? ChatActivity.MODE_SCHEDULED : 0;
@@ -8126,7 +8112,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 SendMessageParams sendMessageParams = SendMessagesHelper.SendMessageParams.of(documentFinal, null, pathFinal, dialogId, replyToMsg, replyToTopMsg, captionFinal, entities, null, params, notify, scheduleDate, 0, parentFinal, null, false);
                 sendMessageParams.replyToStoryItem = storyItem;
                 sendMessageParams.replyQuote = quote;
-                sendMessageParams.autoDeleteDelay = autoDeleteDelay;
                 sendMessageParams.quick_reply_shortcut = quickReplyShortcut;
                 sendMessageParams.quick_reply_shortcut_id = quickReplyShortcutId;
                 sendMessageParams.effect_id = effectId;
@@ -8247,7 +8232,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     } else {
                         SendMessageParams sendMessageParams = SendMessageParams.of(documentFinal, null, messageObject.messageOwner.attachPath, dialogId, replyToMsg, replyToTopMsg, captionFinal, entities, null, params, notify, scheduleDate, 0, parentFinal, null, false, false);
                         sendMessageParams.replyToStoryItem = storyItem;
-                        sendMessageParams.autoDeleteDelay = autoDeleteDelay;
                         sendMessageParams.quick_reply_shortcut = quickReplyShortcut;
                         sendMessageParams.quick_reply_shortcut_id = quickReplyShortcutId;
                         sendMessageParams.effect_id = effectId;
@@ -8284,11 +8268,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
     @UiThread
     public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, String caption, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, String quickReplyShortcut, int quickReplyShortcutId, long effectId, boolean invertMedia, long payStars) {
-        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption, mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, editingMessageObject, notify, scheduleDate, inputContent, quickReplyShortcut, quickReplyShortcutId, effectId, invertMedia, null);
-    }
-
-    @UiThread
-    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, String caption, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, String quickReplyShortcut, int quickReplyShortcutId, long effectId, boolean invertMedia, Integer autoDeleteDelay) {
         if (paths == null && originalPaths == null && uris == null || paths != null && originalPaths != null && paths.size() != originalPaths.size()) {
             return;
         }
@@ -8976,10 +8955,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         return bmOptions.outWidth < 800 && bmOptions.outHeight < 800;
     }
 
-    public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, boolean notify, int scheduleDate, int mode, boolean updateStikcersOrder, InputContentInfoCompat inputContent, String quickReplyShortcut, int quickReplyShortcutId, long effectId, boolean invertMedia) {
-        prepareSendingMedia(accountInstance, media, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, forceDocument, groupMedia, editingMessageObject, notify, scheduleDate, mode, updateStikcersOrder, inputContent, quickReplyShortcut, quickReplyShortcutId, effectId, invertMedia, null);
-    }
-
     @UiThread
     public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, boolean notify, int scheduleDate, int mode, boolean updateStikcersOrder, InputContentInfoCompat inputContent, String quickReplyShortcut, int quickReplyShortcutId, long effectId, boolean invertMedia, long payStars) {
         if (media.isEmpty()) {
@@ -9189,7 +9164,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 SendMessageParams sendMessageParams = SendMessageParams.of(documentFinal, null, pathFinal, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, 0, parentFinal, null, false, info.hasMediaSpoilers);
                                 sendMessageParams.replyToStoryItem = storyItem;
                                 sendMessageParams.replyQuote = quote;
-                                sendMessageParams.autoDeleteDelay = autoDeleteDelay;
                                 sendMessageParams.quick_reply_shortcut = quickReplyShortcut;
                                 sendMessageParams.quick_reply_shortcut_id = quickReplyShortcutId;
                                 if (last) {
@@ -9271,7 +9245,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                     SendMessageParams sendMessageParams = SendMessageParams.of(photoFinal, needDownloadHttpFinal ? info.searchImage.imageUrl : null, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, info.ttl, parentFinal, false, info.hasMediaSpoilers);
                                     sendMessageParams.replyToStoryItem = storyItem;
                                     sendMessageParams.replyQuote = quote;
-                                    sendMessageParams.autoDeleteDelay = autoDeleteDelay;
                                     sendMessageParams.quick_reply_shortcut_id = quickReplyShortcutId;
                                     sendMessageParams.quick_reply_shortcut = quickReplyShortcut;
                                     sendMessageParams.effect_id = effectId;
@@ -9501,7 +9474,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                     SendMessageParams sendMessageParams = SendMessageParams.of(videoFinal, videoEditedInfo, finalPath, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, info.ttl, parentFinal, null, false, info.hasMediaSpoilers);
                                     sendMessageParams.replyToStoryItem = storyItem;
                                     sendMessageParams.replyQuote = quote;
-                                    sendMessageParams.autoDeleteDelay = autoDeleteDelay;
                                     sendMessageParams.quick_reply_shortcut = quickReplyShortcut;
                                     sendMessageParams.quick_reply_shortcut_id = quickReplyShortcutId;
                                     sendMessageParams.effect_id = effectId;
@@ -9709,7 +9681,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                         SendMessageParams sendMessageParams = SendMessageParams.of(photoFinal, null, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, info.ttl, parentFinal, updateStikcersOrder, info.hasMediaSpoilers);
                                         sendMessageParams.replyToStoryItem = storyItem;
                                         sendMessageParams.replyQuote = quote;
-                                        sendMessageParams.autoDeleteDelay = autoDeleteDelay;
                                         sendMessageParams.quick_reply_shortcut = quickReplyShortcut;
                                         sendMessageParams.quick_reply_shortcut_id = quickReplyShortcutId;
                                         sendMessageParams.effect_id = effectId;

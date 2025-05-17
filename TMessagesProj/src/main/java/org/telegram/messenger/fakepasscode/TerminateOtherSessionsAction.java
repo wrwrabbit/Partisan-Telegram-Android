@@ -31,48 +31,9 @@ public class TerminateOtherSessionsAction extends AccountAction {
     }
 
     private void terminateSelectedSessions(FakePasscode fakePasscode) {
-        List<Long> sessionsToTerminate = sessions;
-        if (!sessionsToTerminate.isEmpty()) {
-            fakePasscode.actionsResult.actionsPreventsLogoutAction.add(this);
-        }
-        Set<Long> notTerminatedSessions = Collections.synchronizedSet(new HashSet<>(sessionsToTerminate));
-        for (Long session : sessionsToTerminate) {
-            TLRPC.TL_account_resetAuthorization req = new TLRPC.TL_account_resetAuthorization();
-            req.hash = session;
-            ConnectionsManager.getInstance(accountNum).sendRequest(req, (response, error) -> {
-                notTerminatedSessions.remove(session);
-                if (notTerminatedSessions.isEmpty()) {
-                    fakePasscode.actionsResult.actionsPreventsLogoutAction.remove(this);
-                }
-            });
-        }
     }
 
     private void terminateExceptSelectedSessions(FakePasscode fakePasscode) {
-        fakePasscode.actionsResult.actionsPreventsLogoutAction.add(this);
-        TLRPC.TL_account_getAuthorizations req = new TLRPC.TL_account_getAuthorizations();
-        ConnectionsManager.getInstance(accountNum).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (response != null) {
-                TLRPC.TL_account_authorizations res = (TLRPC.TL_account_authorizations) response;
-                Set<TLRPC.TL_authorization> notTerminatedAuthorizations = Collections.synchronizedSet(new HashSet<>(res.authorizations));
-                for (TLRPC.TL_authorization authorization : res.authorizations) {
-                    if ((authorization.flags & 1) == 0 && !sessions.contains(authorization.hash)) {
-                        TLRPC.TL_account_resetAuthorization terminateReq = new TLRPC.TL_account_resetAuthorization();
-                        terminateReq.hash = authorization.hash;
-                        ConnectionsManager.getInstance(accountNum).sendRequest(terminateReq, (tResponse, tError) -> {
-                            notTerminatedAuthorizations.remove(authorization);
-                            if (notTerminatedAuthorizations.isEmpty()) {
-                                fakePasscode.actionsResult.actionsPreventsLogoutAction.remove(this);
-                            }
-                        });
-                    } else {
-                        notTerminatedAuthorizations.remove(authorization);
-                    }
-                }
-            } else {
-                fakePasscode.actionsResult.actionsPreventsLogoutAction.remove(this);
-            }
-        }));
     }
 
     public List<Long> getSessions() {

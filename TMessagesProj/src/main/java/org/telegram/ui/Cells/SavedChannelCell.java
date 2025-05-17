@@ -789,7 +789,7 @@ public class SavedChannelCell extends BaseCell {
                             stringBuilder = SpannableStringBuilder.valueOf("");
                         }
                         int thumbInsertIndex = 0;
-                        messageString = Emoji.replaceEmoji(stringBuilder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), AndroidUtilities.dp(20), false);
+                        messageString = Emoji.replaceEmoji(stringBuilder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
                         if (adapter.getMessage(currentDialogId).hasHighlightedWords()) {
                             CharSequence messageH = AndroidUtilities.highlightText(messageString, adapter.getMessage(currentDialogId).highlightedWords, resourcesProvider);
                             if (messageH != null) {
@@ -890,7 +890,7 @@ public class SavedChannelCell extends BaseCell {
                             SpannableStringBuilder builder = (SpannableStringBuilder) messageString;
                             builder.insert(0, " ");
                             builder.setSpan(new FixedWidthSpan(AndroidUtilities.dp(thumbSize + 6)), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), AndroidUtilities.dp(17), false);
+                            Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
                             if (adapter.getMessage(currentDialogId).hasHighlightedWords()) {
                                 CharSequence s = AndroidUtilities.highlightText(builder, adapter.getMessage(currentDialogId).highlightedWords, resourcesProvider);
                                 if (s != null) {
@@ -1173,7 +1173,7 @@ public class SavedChannelCell extends BaseCell {
             } else {
                 mess = AndroidUtilities.replaceTwoNewLinesToOne(mess);
             }
-            messageString = Emoji.replaceEmoji(mess, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), AndroidUtilities.dp(17), false);
+            messageString = Emoji.replaceEmoji(mess, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
             if (adapter.getMessage(currentDialogId) != null) {
                 CharSequence s = AndroidUtilities.highlightText(messageString, adapter.getMessage(currentDialogId).highlightedWords, resourcesProvider);
                 if (s != null) {

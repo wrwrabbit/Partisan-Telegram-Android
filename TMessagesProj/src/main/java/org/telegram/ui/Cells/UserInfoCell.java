@@ -199,7 +199,7 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
         }
 
         rowsWidth = rowsKeysWidth + dp(7.66f) + rowsValuesWidth;
-        if (user != null && !user.verified && !UserObject.isService(user.id)) {
+        if (user != null && !user.isVerified() && !UserObject.isService(user.id)) {
             if (user.bot_verification_icon != 0) {
                 if (userFull != null && userFull.bot_verification != null) {
                     final TL_bots.botVerification verification = userFull.bot_verification;

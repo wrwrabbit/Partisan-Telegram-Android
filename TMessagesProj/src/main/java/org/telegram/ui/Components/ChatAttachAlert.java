@@ -546,9 +546,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
         // If scheduleDate < 0 then it is autoDeleteDelay
         void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, long effectId, boolean invertMedia, boolean forceDocument, long payStars);
-        default void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, long effectId, boolean invertMedia, boolean forceDocument, Integer autoDeleteDelay) {
-            didPressedButton(button, arg, notify, scheduleDate, effectId, invertMedia, forceDocument);
-        }
+
         default void onCameraOpened() {
         }
 
@@ -3493,29 +3491,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 }
                 messageSendPreview.setStars(amount);
             }
-            if (RemoveAfterReadingMessages.isShowDeleteAfterReadButton(user, chat)) {
-                options.add(R.drawable.msg_delete_auto, getString(R.string.DeleteAsRead), () -> {
-                    RemoveAfterReadingMessages.load();
-                    RemoveAfterReadingMessages.delays.putIfAbsent("" + currentAccount, 5 * 1000);
-                    AlertsCreator.createScheduleDeleteTimePickerDialog(getContext(), RemoveAfterReadingMessages.delays.get("" + currentAccount),
-                            (notify, delay) -> {
-                                final long effectId = messageSendPreview != null ? messageSendPreview.getSelectedEffect() : 0;
-                                if (messageSendPreview != null) {
-                                    messageSendPreview.dismiss(true);
-                                    messageSendPreview = null;
-                                }
-                                if (currentAttachLayout == null || currentAttachLayout == photoLayout || currentAttachLayout == photoPreviewLayout) {
-                                    sendPressed(true, 0, effectId, isCaptionAbove(), delay);
-                                } else {
-                                    currentAttachLayout.sendSelectedItems(true, 0, effectId, isCaptionAbove(), delay);
-                                    allowPassConfirmationAlert = true;
-                                    dismiss();
-                                }
-                                RemoveAfterReadingMessages.delays.put("" + currentAccount, delay);
-                                RemoveAfterReadingMessages.save();
-                            });
-                });
-            }
             options.setupSelectors();
             messageSendPreview.setItemOptions(options);
 
@@ -3786,12 +3761,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         currentAttachLayout.applyCaption(getCommentView().getText());
     }
 
-
-    private void sendPressed(boolean notify, int scheduleDate, long effectId, boolean invertMedia) {
-        sendPressed(notify, scheduleDate, effectId, invertMedia, null);
-    }
-
-    private boolean sendPressed(boolean notify, int scheduleDate, long effectId, boolean invertMedia, Integer autoDeleteDelay) {
+    private boolean sendPressed(boolean notify, int scheduleDate, long effectId, boolean invertMedia) {
         if (buttonPressed) {
             return false;
         }

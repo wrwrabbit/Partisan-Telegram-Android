@@ -50,51 +50,6 @@ public class PrivacyChecker implements NotificationCenter.NotificationCenterDele
     }
 
     private static void setupPrivacySettings(int account, int rulesType, Runnable onError, Runnable onSuccess) {
-        TLRPC.TL_account_setPrivacy req = new TLRPC.TL_account_setPrivacy();
-        if (rulesType == PRIVACY_RULES_TYPE_PHONE) {
-            req.key = new TLRPC.TL_inputPrivacyKeyPhoneNumber();
-            TLRPC.TL_account_setPrivacy req2 = new TLRPC.TL_account_setPrivacy();
-            req2.key = new TLRPC.TL_inputPrivacyKeyAddedByPhone();
-            req2.rules.add(new TLRPC.TL_inputPrivacyValueAllowContacts());
-            ConnectionsManager.getInstance(account).sendRequest(req2, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (error == null) {
-                    TLRPC.TL_account_privacyRules privacyRules = (TLRPC.TL_account_privacyRules) response;
-                    ContactsController.getInstance(account).setPrivacyRules(privacyRules.rules, PRIVACY_RULES_TYPE_ADDED_BY_PHONE);
-                }
-            }), ConnectionsManager.RequestFlagFailOnServerErrors);
-        } else if (rulesType == PRIVACY_RULES_TYPE_FORWARDS) {
-            req.key = new TLRPC.TL_inputPrivacyKeyForwards();
-        } else if (rulesType == PRIVACY_RULES_TYPE_PHOTO) {
-            req.key = new TLRPC.TL_inputPrivacyKeyProfilePhoto();
-        } else if (rulesType == PRIVACY_RULES_TYPE_BIO) {
-            req.key = new TLRPC.TL_inputPrivacyKeyAbout();
-        } else if (rulesType == PRIVACY_RULES_TYPE_P2P) {
-            req.key = new TLRPC.TL_inputPrivacyKeyPhoneP2P();
-        } else if (rulesType == PRIVACY_RULES_TYPE_CALLS) {
-            req.key = new TLRPC.TL_inputPrivacyKeyPhoneCall();
-        } else if (rulesType == PRIVACY_RULES_TYPE_INVITE) {
-            req.key = new TLRPC.TL_inputPrivacyKeyChatInvite();
-        } else {
-            req.key = new TLRPC.TL_inputPrivacyKeyStatusTimestamp();
-        }
-
-        req.rules.add(new TLRPC.TL_inputPrivacyValueDisallowAll());
-
-        ConnectionsManager.getInstance(account).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (error == null) {
-                TLRPC.TL_account_privacyRules privacyRules = (TLRPC.TL_account_privacyRules) response;
-                MessagesController.getInstance(account).putUsers(privacyRules.users, false);
-                MessagesController.getInstance(account).putChats(privacyRules.chats, false);
-                ContactsController.getInstance(account).setPrivacyRules(privacyRules.rules, rulesType);
-                if (onSuccess != null) {
-                    onSuccess.run();
-                }
-            } else {
-                if (onError != null) {
-                    onError.run();
-                }
-            }
-        }), ConnectionsManager.RequestFlagFailOnServerErrors);
     }
 
     public static void check(int accountNum, Consumer<Boolean> handler) {

@@ -249,9 +249,6 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
         default void onContextMenuClose() {};
 
         void onMessageSend(CharSequence message, boolean notify, int scheduleDate, long payStars);
-        default void onMessageSend(CharSequence message, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
-            onMessageSend(message, notify, scheduleDate);
-        }
 
         void needSendTyping();
 
@@ -4385,25 +4382,6 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                     });
                     sendPopupLayout.addView(sendWithoutSoundButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
                 }
-                if (isShowDeleteAfterReadButton()) {
-                    ActionBarMenuSubItem scheduleDeleteButton = new ActionBarMenuSubItem(getContext(), !scheduleButtonValue && !sendWithoutSoundButtonValue, true, resourcesProvider);
-                    scheduleDeleteButton.setTextAndIcon(LocaleController.getString("DeleteAsRead", R.string.DeleteAsRead), R.drawable.msg_delete_auto);
-                    scheduleDeleteButton.setMinimumWidth(AndroidUtilities.dp(196));
-                    scheduleDeleteButton.setOnClickListener(v -> {
-                        if (sendPopupWindow != null && sendPopupWindow.isShowing()) {
-                            sendPopupWindow.dismiss();
-                        }
-                        RemoveAfterReadingMessages.load();
-                        RemoveAfterReadingMessages.delays.putIfAbsent("" + currentAccount, 5 * 1000);
-                        AlertsCreator.createScheduleDeleteTimePickerDialog(parentActivity, RemoveAfterReadingMessages.delays.get("" + currentAccount),
-                                (notify, delay) -> {
-                                    sendMessageInternal(notify, 0, false, delay);
-                                    RemoveAfterReadingMessages.delays.put("" + currentAccount, delay);
-                                    RemoveAfterReadingMessages.save();
-                                });
-                    });
-                    sendPopupLayout.addView(scheduleDeleteButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
-                }
                 sendPopupLayout.setupRadialSelectors(getThemedColor(Theme.key_dialogButtonSelector));
 
                 sendPopupWindow = new ActionBarPopupWindow(sendPopupLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {
@@ -4631,22 +4609,6 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                     AndroidUtilities.cancelRunOnUIThread(dismissSendPreview);
                     AndroidUtilities.runOnUIThread(dismissSendPreview, 500);
                 }
-            });
-        }
-        if (isShowDeleteAfterReadButton()) {
-            options.add(R.drawable.msg_delete_auto, getString(R.string.DeleteAsRead), () -> {
-                RemoveAfterReadingMessages.load();
-                RemoveAfterReadingMessages.delays.putIfAbsent("" + currentAccount, 5 * 1000);
-                AlertsCreator.createScheduleDeleteTimePickerDialog(parentActivity, RemoveAfterReadingMessages.delays.get("" + currentAccount),
-                        (notify, delay) -> {
-                            sendMessageInternal(notify, 0, false, delay);
-                            RemoveAfterReadingMessages.delays.put("" + currentAccount, delay);
-                            RemoveAfterReadingMessages.save();
-                            if (messageSendPreview != null) {
-                                messageSendPreview.dismiss(true);
-                                messageSendPreview = null;
-                            }
-                        });
             });
         }
         options.setupSelectors();
@@ -6770,10 +6732,6 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
         }
     }
 
-    private void sendMessageInternal(boolean notify, int scheduleDate, boolean allowConfirm) {
-        sendMessageInternal(notify, scheduleDate, allowConfirm, null);
-    }
-
     protected boolean showConfirmAlert(Runnable onConfirmed) {
         return false;
     }
@@ -7129,7 +7087,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 if (replyToTopMsg == null && replyingTopMessage != null) {
                     replyToTopMsg = replyingTopMessage;
                 }
-                SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(message[0].toString(), dialog_id, replyingMessageObject, replyToTopMsg, messageWebPage, messageWebPageSearch, entities, null, null, notify, scheduleDate, sendAnimationData, updateStickersOrder).addAutoDeleteDelay(autoDeleteDelay);
+                SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(message[0].toString(), dialog_id, replyingMessageObject, replyToTopMsg, messageWebPage, messageWebPageSearch, entities, null, null, notify, scheduleDate, sendAnimationData, updateStickersOrder);
                 params.quick_reply_shortcut = parentFragment != null ? parentFragment.quickReplyShortcut : null;
                 params.quick_reply_shortcut_id = parentFragment != null ? parentFragment.getQuickReplyId() : 0;
                 params.effect_id = effectId;
@@ -7164,10 +7122,6 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             return true;
         }
         return false;
-    }
-
-    public boolean processSendingText(CharSequence text, boolean notify, int scheduleDate) {
-        return processSendingText(text, notify, scheduleDate, null);
     }
 
     private void applyStoryToSendMessageParams(SendMessagesHelper.SendMessageParams params) {

@@ -95,9 +95,6 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
     public interface DocumentSelectActivityDelegate {
         void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars);
 
-        default void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, Integer autoDeleteDelay) {
-            didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia);
-        }
         default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars) {
 
         }
@@ -756,7 +753,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
-    public boolean sendSelectedItems(boolean notify, int scheduleDate, long effectId, boolean invertMedia, Integer autoDeleteDelay) {
+    public boolean sendSelectedItems(boolean notify, int scheduleDate, long effectId, boolean invertMedia) {
         if (selectedFiles.size() == 0 && selectedMessages.size() == 0 || delegate == null || sendPressed) {
             return false;
         }

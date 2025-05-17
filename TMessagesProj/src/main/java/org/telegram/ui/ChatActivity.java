@@ -1810,11 +1810,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         @Override
         public void onMessageSend(CharSequence message, boolean notify, int scheduleDate, long payStars) {
-            onMessageSend(message, notify, scheduleDate, null);
-        }
-
-        @Override
-        public void onMessageSend(CharSequence message, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
             if (chatListItemAnimator != null) {
                 chatActivityEnterViewAnimateFromTop = chatActivityEnterView.getBackgroundTop();
                 if (chatActivityEnterViewAnimateFromTop != 0) {
@@ -1869,7 +1864,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             }
 
-            hideFieldPanel(notify, scheduleDate, payStars, true, autoDeleteDelay);
+            hideFieldPanel(notify, scheduleDate, payStars, true);
             if (chatActivityEnterView != null && chatActivityEnterView.getEmojiView() != null) {
                 chatActivityEnterView.getEmojiView().onMessageSend();
             }
@@ -12211,11 +12206,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             chatAttachAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
                 @Override
                 public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, long effectId, boolean invertMedia, boolean forceDocument, long payStars) {
-                    didPressedButton(button, arg, notify, scheduleDate, effectId, invertMedia, forceDocument, null);
-                }
-
-                @Override
-                public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, long effectId, boolean invertMedia, boolean forceDocument, Integer autoDeleteDelay) {
                     if (getParentActivity() == null || chatAttachAlert == null) {
                         return;
                     }
@@ -12267,11 +12257,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     fillEditingMediaWithCaption(photos.get(0).caption, photos.get(0).entities);
                                     updateStickersOrder = photos.get(0).updateStickersOrder;
                                 }
-                                if (autoDeleteDelay != null) {
-                                    SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, chatMode, updateStickersOrder, null, quickReplyShortcut, getQuickReplyId(), effectId, invertMedia, autoDeleteDelay);
-                                } else {
-                                    SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, chatMode, updateStickersOrder, null, quickReplyShortcut, getQuickReplyId(), effectId, invertMedia, payStars);
-                                }
+                                SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, chatMode, updateStickersOrder, null, quickReplyShortcut, getQuickReplyId(), effectId, invertMedia, payStars);
                             }
                             afterMessageSend();
                             chatActivityEnterView.setFieldText("");
@@ -13487,11 +13473,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars) {
-        didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia, null);
-    }
-
-    @Override
-    public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, Integer autoDeleteDelay) {
         fillEditingMediaWithCaption(caption, null);
         if (checkSlowModeAlert()) {
             if (!fmessages.isEmpty() && !TextUtils.isEmpty(caption)) {
@@ -14116,8 +14097,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         showFieldPanel(false, null, null, null, null, true, 0, null, false, 0, animated);
     }
 
-    public void hideFieldPanel(boolean notify, int scheduleDate, long payStars, boolean animated, Integer autoDeleteDelay) {
-        showFieldPanel(false, null, null, null, null, notify, scheduleDate, null, false, payStars, animated, autoDeleteDelay);
+    public void hideFieldPanel(boolean notify, int scheduleDate, long payStars, boolean animated) {
+        showFieldPanel(false, null, null, null, null, notify, scheduleDate, null, false, payStars, animated);
     }
 
     public void showFieldPanelForWebPage(boolean show, TLRPC.WebPage webPage, boolean cancel) {
@@ -14143,10 +14124,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private int fieldPanelShown;
 
     public void showFieldPanel(boolean show, MessageObject messageObjectToReply, MessageObject messageObjectToEdit, ArrayList<MessageObject> messageObjectsToForward, TLRPC.WebPage webPage, boolean notify, int scheduleDate, ReplyQuote quote, boolean cancel, long payStars, boolean animated) {
-        showFieldPanel(show, messageObjectToReply, messageObjectToEdit, messageObjectsToForward, webPage, notify, scheduleDate, quote, cancel, animated, null);
-    }
-
-    public void showFieldPanel(boolean show, MessageObject messageObjectToReply, MessageObject messageObjectToEdit, ArrayList<MessageObject> messageObjectsToForward, TLRPC.WebPage webPage, boolean notify, int scheduleDate, ReplyQuote quote, boolean cancel, boolean animated, Integer autoDeleteDelay) {
         if (chatActivityEnterView == null) {
             return;
         }
@@ -31739,11 +31716,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return;
         }
 
-
-            if (getDialogId() == getUserConfig().getClientUserId() && !getUserConfig().isPremium() && primaryMessage.messageOwner != null && (primaryMessage.messageOwner.reactions == null || (primaryMessage.messageOwner.reactions.reactions_as_tags || primaryMessage.messageOwner.reactions.results.isEmpty()))) {
-                new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_SAVED_TAGS, true).show();
-                return;
-            }
+        if (getDialogId() == getUserConfig().getClientUserId() && !getUserConfig().isPremium() && primaryMessage.messageOwner != null && (primaryMessage.messageOwner.reactions == null || (primaryMessage.messageOwner.reactions.reactions_as_tags || primaryMessage.messageOwner.reactions.results.isEmpty()))) {
+            new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_SAVED_TAGS, true).show();
+            return;
+        }
 
         ReactionsEffectOverlay.removeCurrent(false);
         final int currentChosenReactions = primaryMessage.getChoosenReactions().size();
@@ -31757,7 +31733,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         }
 
-            int finalMessageIdForCell = messageIdForCell;
+        int finalMessageIdForCell = messageIdForCell;
 
         if (added) {
             cell = findMessageCell(finalMessageIdForCell, true);
@@ -31798,23 +31774,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 messageToUpdate.messageOwner.reactions = primaryMessage.messageOwner.reactions;
                             }
 
-                                updateMessageAnimated(messageToUpdate, true);
-                                ReactionsEffectOverlay.startAnimation();
-                            });
-                        }
-                        closeMenu();
+                            updateMessageAnimated(messageToUpdate, true);
+                            ReactionsEffectOverlay.startAnimation();
+                        });
                     }
+                    closeMenu();
                 }
-            });
-
-            if (fromDoubleTap || withoutAnimation) {
-                updateMessageAnimated(primaryMessage, true);
-                updateReactionRunnable.run();
-            }
-            if (!withoutAnimation) {
-                AndroidUtilities.runOnUIThread(updateReactionRunnable, 50);
             }
         });
+
+        if (fromDoubleTap || withoutAnimation) {
+            updateMessageAnimated(primaryMessage, true);
+            updateReactionRunnable.run();
+        }
+        if (!withoutAnimation) {
+            AndroidUtilities.runOnUIThread(updateReactionRunnable, 50);
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -38795,7 +38770,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             }
                             ApplicationLoader.applicationLoaderInstance.showUpdateAppPopup(getContext(), SharedConfig.pendingPtgAppUpdate, currentAccount);
                         };
-                        LaunchActivity.instance.checkAppUpdate(true, progressDialogCurrent, !FakePasscodeUtils.isFakePasscodeActivated() ? onUpdateAlreadyShown : null);
+                        LaunchActivity.instance.checkAppUpdate(true, progressDialogCurrent);
                     }
                 } else if (BuildVars.isHuaweiStoreApp()) {
                     Browser.openUrl(getContext(), BuildVars.HUAWEI_STORE_URL);

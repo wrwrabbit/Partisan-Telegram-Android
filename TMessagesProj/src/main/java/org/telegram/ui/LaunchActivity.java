@@ -5959,9 +5959,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     if (SharedConfig.pendingPtgAppUpdate != null &&
                             (FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.pendingPtgAppUpdate.originalVersion.equals(data.originalVersion)
                                     || SharedConfig.pendingPtgAppUpdate.version.equals(data.version))) {
-                        if (updateAlreadyShown != null) {
-                            updateAlreadyShown.run();
-                        }
                         return;
                     }
                     final boolean newVersionAvailable = SharedConfig.setNewAppVersionAvailable(data);

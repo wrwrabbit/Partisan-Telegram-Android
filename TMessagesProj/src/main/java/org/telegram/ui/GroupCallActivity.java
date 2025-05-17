@@ -6398,22 +6398,24 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         } else {
             if (currentChat != null && !currentChat.title.equals(actionBar.getTitle())) {
                 if (animated) {
-                    actionBar.setTitleAnimated(title, true, 180);
+                    actionBar.setTitleAnimated(currentChat.title, true, 180);
                     actionBar.getTitleTextView().setOnClickListener(v -> {
                         if (call != null && call.recording) {
                             showRecordHint(actionBar.getTitleTextView());
                         }
                     });
                 } else {
-                    actionBar.setTitle(title);
+                    actionBar.setTitle(currentChat.title);
                 }
                 if (ChatObject.isChannelOrGiga(currentChat)) {
                     if (isRtmpStream()) {
                         titleTextView.setText(currentChat.title, animated);
                     } else {
+                        titleTextView.setText(LocaleController.getString(R.string.VoipChannelVoiceChat), animated);
                         titleTextView.setText(getString(R.string.VoipChannelVoiceChat), animated);
                     }
                 } else {
+                    titleTextView.setText(LocaleController.getString(R.string.VoipGroupVoiceChat), animated);
                     titleTextView.setText(getString(R.string.VoipGroupVoiceChat), animated);
                 }
             } else if (currentChat == null) {

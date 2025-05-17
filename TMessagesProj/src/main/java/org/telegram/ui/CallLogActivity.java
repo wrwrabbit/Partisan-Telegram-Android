@@ -261,32 +261,31 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 				if (msg.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) {
 					long fromId = msg.getFromChatId();
 					long userID = fromId == getUserConfig().getClientUserId() ? msg.messageOwner.peer_id.user_id : fromId;
-					if (!FakePasscodeUtils.isHideChat(userID, currentAccount)) {
-						int callType = fromId == getUserConfig().getClientUserId() ? TYPE_OUT : TYPE_IN;
-						TLRPC.PhoneCallDiscardReason reason = msg.messageOwner.action.reason;
-						if (callType == TYPE_IN && (reason instanceof TLRPC.TL_phoneCallDiscardReasonMissed || reason instanceof TLRPC.TL_phoneCallDiscardReasonBusy)) {
-							callType = TYPE_MISSED;
+					int callType = fromId == getUserConfig().getClientUserId() ? TYPE_OUT : TYPE_IN;
+					TLRPC.PhoneCallDiscardReason reason = msg.messageOwner.action.reason;
+					if (callType == TYPE_IN && (reason instanceof TLRPC.TL_phoneCallDiscardReasonMissed || reason instanceof TLRPC.TL_phoneCallDiscardReasonBusy)) {
+						callType = TYPE_MISSED;
+					}
+					if (calls.size() > 0) {
+						final CallLogRow topRow = calls.get(0);
+						if (eq(userID, topRow.users) && topRow.type == callType) {
+							topRow.calls.add(0, msg.messageOwner);
+							listViewAdapter.notifyItemChanged(listViewAdapter.callsStartRow);
+							continue;
 						}
-						if (calls.size() > 0) {
-							finalCallLogRow topRow = calls.get(0);
-							if (eq(userID, topRow.users) && topRow.type == callType) {
-								topRow.calls.add(0, msg.messageOwner);
-								listViewAdapter.notifyItemChanged(listViewAdapter.callsStartRow);
-								continue;
-							}
-						}
-						finalCallLogRow row = new CallLogRow();
-						row.calls .clear();
-						row.calls.add(msg.messageOwner);
-						row.users.clear();
+					}
+					final CallLogRow row = new CallLogRow();
+					row.calls.clear();
+					row.calls.add(msg.messageOwner);
+					row.users.clear();
 					final TLRPC.User user = getMessagesController().getUser(userID);
 					if (user != null) {
 						row.users.add(user);
 					}
-						row.type = callType;
-						row.video = msg.isVideoCall();
-						calls.add(0, row);
-						listViewAdapter.updateRows();
+					row.type = callType;
+					row.video = msg.isVideoCall();
+					calls.add(0, row);
+					listViewAdapter.updateRows();
 					listViewAdapter.notifyItemInserted(listViewAdapter.callsStartRow);
 				} else if (msg.messageOwner.action instanceof TLRPC.TL_messageActionConferenceCall) {
 					final TLRPC.TL_messageActionConferenceCall action = (TLRPC.TL_messageActionConferenceCall) msg.messageOwner.action;
@@ -344,7 +343,6 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 					row.video = msg.isVideoCall();
 					calls.add(0, row);
 					listViewAdapter.notifyItemInserted(listViewAdapter.callsStartRow);
-					}
 				}
 			}
 			if (otherItem != null) {
@@ -1074,7 +1072,7 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 						currentRow.calls.add(msg);
 					}
 				}
-				if (currentRow != null && currentRow.calls.size() > 0 && !calls.contains(currentRow) && !FakePasscodeUtils.isHideChat(currentRow.user.id, currentAccount)) {
+				if (currentRow != null && currentRow.calls.size() > 0 && !calls.contains(currentRow)) {
 					calls.add(currentRow);
 				}
 			} else {
