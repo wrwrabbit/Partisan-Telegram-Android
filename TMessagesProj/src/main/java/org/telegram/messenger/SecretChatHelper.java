@@ -15,14 +15,10 @@ import android.text.TextUtils;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 
-import com.google.android.exoplayer2.util.Consumer;
-
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupChatUpdateHandler;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
-import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
-import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.InputSerializedData;
@@ -1941,7 +1937,13 @@ public class SecretChatHelper extends BaseController {
         startSecretChat(context, user, null);
     }
 
-    public void startSecretChat(Context context, TLRPC.User user, Consumer<TLRPC.EncryptedChat> onComplete) {
+    public interface SecretChatStartStrategy {
+        void onComplete(TLRPC.EncryptedChat encryptedChat);
+        void onError(TLRPC.TL_error error);
+        boolean allowShowingErrorDialog();
+    }
+
+    public void startSecretChat(Context context, TLRPC.User user, SecretChatStartStrategy strategy) {
         if (user == null || context == null) {
             return;
         }
@@ -2027,33 +2029,35 @@ public class SecretChatHelper extends BaseController {
                                     delayedEncryptedChatUpdates.clear();
                                 }
                             });
-                            if (onComplete != null) {
-                                onComplete.accept(chat);
+                            if (strategy != null) {
+                                strategy.onComplete(chat);
                             }
                         });
                     } else {
                         delayedEncryptedChatUpdates.clear();
-                        AndroidUtilities.runOnUIThread(() -> {
-                            if (!((Activity) context).isFinishing()) {
-                                startingSecretChat = false;
-                                try {
-                                    progressDialog.dismiss();
-                                } catch (Exception e) {
-                                    FileLog.e(e);
+                        if (strategy == null || strategy.allowShowingErrorDialog()) {
+                            AndroidUtilities.runOnUIThread(() -> {
+                                if (!((Activity) context).isFinishing()) {
+                                    startingSecretChat = false;
+                                    try {
+                                        progressDialog.dismiss();
+                                    } catch (Exception e) {
+                                        FileLog.e(e);
+                                    }
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                                    builder.setTitle(LocaleController.getString(R.string.AppName));
+                                    if (SharedConfig.isTesterSettingsActivated()) {
+                                        builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError) + "\n" + error1.text);
+                                    } else {
+                                        builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError));
+                                    }
+                                    builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+                                    builder.show().setCanceledOnTouchOutside(true);
                                 }
-                                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                                builder.setTitle(LocaleController.getString(R.string.AppName));
-                                if (SharedConfig.isTesterSettingsActivated()) {
-                                    builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError) + "\n" + error1.text);
-                                } else {
-                                    builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError));
-                                }
-                                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
-                                builder.show().setCanceledOnTouchOutside(true);
-                            }
-                        });
-                        if (onComplete != null) {
-                            onComplete.accept(null);
+                            });
+                        }
+                        if (strategy != null) {
+                            strategy.onError(error1);
                         }
                     }
                 }, ConnectionsManager.RequestFlagFailOnServerErrors);

@@ -6,10 +6,6 @@ import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils.l
 
 import android.content.Context;
 
-import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
-import org.telegram.messenger.SecretChatHelper;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.tgnet.TLRPC;
@@ -56,19 +52,27 @@ public class SecondaryInnerChatStarter implements AccountControllersProvider {
         TLRPC.User user = getMessagesController().getUser(uninitializedInnerChat.getUserId());
         log(encryptedGroup, accountNum, "Start secondary inner chat with a user.");
         Utilities.globalQueue.postRunnable(
-                () -> getSecretChatHelper().startSecretChat(context, user, this::onInternalEncryptedChatStarted),
+                () -> getSecretChatHelper().startSecretChat(context, user, new SecretChatStartStrategy()),
                 delay
         );
     }
 
-    private void onInternalEncryptedChatStarted(TLRPC.EncryptedChat encryptedChat) {
-        if (encryptedChat != null) {
-            log(encryptedGroup, accountNum, "Start secondary inner chat with a user.");
-            InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
-            innerChat.setEncryptedChatId(encryptedChat.id);
-            innerChat.setState(InnerEncryptedChatState.NEED_SEND_SECONDARY_INVITATION);
-            getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
+    private class SecretChatStartStrategy extends AbstractEncryptedGroupSecretChatStartStrategy {
+        @Override
+        public void onComplete(TLRPC.EncryptedChat encryptedChat) {
+            if (encryptedChat != null) {
+                log(encryptedGroup, accountNum, "Start secondary inner chat with a user.");
+                InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
+                innerChat.setEncryptedChatId(encryptedChat.id);
+                innerChat.setState(InnerEncryptedChatState.NEED_SEND_SECONDARY_INVITATION);
+                getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
+                checkInnerEncryptedChats();
+            }
+        }
+
+        @Override
+        public void retryEncryptedChatStart() {
             checkInnerEncryptedChats();
         }
     }

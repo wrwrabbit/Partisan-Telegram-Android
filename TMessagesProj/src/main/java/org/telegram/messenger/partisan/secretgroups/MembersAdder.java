@@ -20,21 +20,19 @@ public class MembersAdder implements AccountControllersProvider {
     private final EncryptedGroup encryptedGroup;
     private final List<TLRPC.User> users = new LinkedList<>();
     private final List<TLRPC.EncryptedChat> encryptedChats = new ArrayList<>();
-    private final Runnable callback;
 
-    public MembersAdder(int accountNum, Context context, EncryptedGroup encryptedGroup, List<TLRPC.User> users, Runnable callback) {
+    public MembersAdder(int accountNum, Context context, EncryptedGroup encryptedGroup, List<TLRPC.User> users) {
         this.accountNum = accountNum;
         this.context = context;
         this.users.addAll(users);
-        this.callback = callback;
         this.encryptedGroup = encryptedGroup;
     }
 
-    public static void addNewMembers(int accountNum, Context context, List<TLRPC.User> users, EncryptedGroup encryptedGroup, Runnable callback) {
+    public static void addNewMembers(int accountNum, Context context, List<TLRPC.User> users, EncryptedGroup encryptedGroup) {
         if (users == null || users.isEmpty() || context == null) {
             return;
         }
-        new MembersAdder(accountNum, context, encryptedGroup, users, callback).start();
+        new MembersAdder(accountNum, context, encryptedGroup, users).start();
     }
 
     public void start() {
@@ -62,30 +60,35 @@ public class MembersAdder implements AccountControllersProvider {
         TLRPC.User user = users.get(currentUserIndex);
         log(accountNum, "Start inner encrypted chat with new member.");
         Utilities.globalQueue.postRunnable(
-                () -> getSecretChatHelper().startSecretChat(context, user, this::onInnerEncryptedChatStarted),
+                () -> getSecretChatHelper().startSecretChat(context, user, new SecretChatStartStrategy()),
                 delay
         );
     }
 
-    private void onInnerEncryptedChatStarted(TLRPC.EncryptedChat encryptedChat) {
-        if (encryptedChat != null) {
-            encryptedChats.add(encryptedChat);
+    private class SecretChatStartStrategy extends AbstractEncryptedGroupSecretChatStartStrategy {
+        @Override
+        public void onComplete(TLRPC.EncryptedChat encryptedChat) {
+            if (encryptedChat != null) {
+                encryptedChats.add(encryptedChat);
 
-            InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
-            innerChat.setEncryptedChatId(encryptedChat.id);
-            innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION);
-            getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
+                InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
+                innerChat.setEncryptedChatId(encryptedChat.id);
+                innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION);
+                getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
+                checkInnerEncryptedChats();
+            }
+        }
+
+        @Override
+        public void retryEncryptedChatStart() {
             checkInnerEncryptedChats();
-        } else {
-            callback.run();
         }
     }
 
     private void onAllEncryptedChatsCreated() {
         AndroidUtilities.runOnUIThread(() -> {
             log(encryptedGroup, accountNum, "Members have been added.");
-            callback.run();
         });
     }
 

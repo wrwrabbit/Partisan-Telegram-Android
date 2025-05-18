@@ -8,14 +8,9 @@ import com.google.android.exoplayer2.util.Consumer;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
-import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.SecretChatHelper;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.AccountControllersProvider;
-import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
@@ -56,6 +51,8 @@ public class EncryptedGroupStarter implements AccountControllersProvider {
             if (encryptedGroup == null) {
                 callback.accept(Optional.empty());
                 return;
+            } else {
+                callback.accept(Optional.of(encryptedGroup));
             }
 
             TLRPC.Dialog dialog = createTlrpcDialog(encryptedGroup);
@@ -82,27 +79,29 @@ public class EncryptedGroupStarter implements AccountControllersProvider {
 
     private void startNextInnerEncryptedChat() {
         int currentUserIndex = encryptedChats.size();
-        int delay = encryptedChats.isEmpty() ? 0 : 10*1000;
         TLRPC.User user = users.get(currentUserIndex);
         log(accountNum, "Start inner encrypted chat with user " + user.id + ".");
-        Utilities.globalQueue.postRunnable(
-                () -> getSecretChatHelper().startSecretChat(context, user, this::onInnerEncryptedChatStarted),
-                delay
-        );
+        Utilities.globalQueue.postRunnable(() -> getSecretChatHelper().startSecretChat(context, user, new SecretChatStartStrategy()));
     }
 
-    private void onInnerEncryptedChatStarted(TLRPC.EncryptedChat encryptedChat) {
-        if (encryptedChat != null) {
-            encryptedChats.add(encryptedChat);
+    private class SecretChatStartStrategy extends AbstractEncryptedGroupSecretChatStartStrategy {
+        @Override
+        public void onComplete(TLRPC.EncryptedChat encryptedChat) {
+            if (encryptedChat != null) {
+                encryptedChats.add(encryptedChat);
 
-            InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
-            innerChat.setEncryptedChatId(encryptedChat.id);
-            innerChat.setState(InnerEncryptedChatState.NEED_SEND_INVITATION);
-            getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
+                InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
+                innerChat.setEncryptedChatId(encryptedChat.id);
+                innerChat.setState(InnerEncryptedChatState.NEED_SEND_INVITATION);
+                getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
+                checkInnerEncryptedChats();
+            }
+        }
+
+        @Override
+        public void retryEncryptedChatStart() {
             checkInnerEncryptedChats();
-        } else {
-            callback.accept(Optional.empty());
         }
     }
 
@@ -110,10 +109,7 @@ public class EncryptedGroupStarter implements AccountControllersProvider {
         AndroidUtilities.runOnUIThread(() -> {
             encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_MEMBERS);
             getMessagesStorage().updateEncryptedGroup(encryptedGroup);
-
             log(encryptedGroup, accountNum, "Created by owner.");
-
-            callback.accept(Optional.of(encryptedGroup));
         });
     }
 

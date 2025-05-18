@@ -110,8 +110,6 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
     private final ArrayList<GroupCreateSpan> allSpans = new ArrayList<>();
     private GroupCreateSpan currentDeletingSpan;
 
-    private AlertDialog creationProgressDialog;
-
     private int fieldY;
 
     private AnimatorSet currentAnimation;
@@ -950,8 +948,6 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
             template.addEditTemplate("", LocaleController.getString(R.string.EnterGroupNamePlaceholder), true);
             template.positiveListener = views -> {
                 String chatName = ((EditTextCaption)views.get(0)).getText().toString();
-                creationProgressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
-                showDialog(creationProgressDialog);
 
                 List<TLRPC.User> users = result.stream()
                         .map(id -> getMessagesController().getUser(id))
@@ -962,9 +958,6 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                         return;
                     }
                     AndroidUtilities.runOnUIThread(() -> {
-                        if (creationProgressDialog != null) {
-                            creationProgressDialog.dismiss();
-                        }
                         getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
 
                         Bundle args = new Bundle();
@@ -976,21 +969,14 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
             };
             showDialog(FakePasscodeDialogBuilder.build(getContext(), template));
         } else {
-            creationProgressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
-            showDialog(creationProgressDialog);
-
             List<TLRPC.User> users = result.stream()
                     .map(id -> getMessagesController().getUser(id))
                     .collect(Collectors.toList());
 
-            MembersAdder.addNewMembers(currentAccount, getContext(), users, encryptedGroup, () -> {
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (creationProgressDialog != null) {
-                        creationProgressDialog.dismiss();
-                    }
-                    getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
-                    finishFragment();
-                });
+            MembersAdder.addNewMembers(currentAccount, getContext(), users, encryptedGroup);
+            AndroidUtilities.runOnUIThread(() -> {
+                getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
+                finishFragment();
             });
         }
         return true;
