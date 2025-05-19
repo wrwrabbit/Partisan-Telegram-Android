@@ -1934,16 +1934,26 @@ public class SecretChatHelper extends BaseController {
     }
 
     public void startSecretChat(Context context, TLRPC.User user) {
-        startSecretChat(context, user, null);
+        SecretChatStartStrategy defaultStrategy = new SecretChatStartStrategy() {
+            @Override
+            public void onComplete(TLRPC.EncryptedChat encryptedChat) {}
+            @Override
+            public void onError(TLRPC.TL_error error) {}
+            @Override
+            public boolean allowShowingDialogs() {
+                return true;
+            }
+        };
+        startSecretChat(context, user, defaultStrategy);
     }
 
     public interface SecretChatStartStrategy {
         void onComplete(TLRPC.EncryptedChat encryptedChat);
         void onError(TLRPC.TL_error error);
-        boolean allowShowingErrorDialog();
+        boolean allowShowingDialogs();
     }
 
-    public void startSecretChat(Context context, TLRPC.User user, SecretChatStartStrategy strategy) {
+    public void startSecretChat(Context context, TLRPC.User user, @androidx.annotation.NonNull SecretChatStartStrategy strategy) {
         if (user == null || context == null) {
             return;
         }
@@ -1952,7 +1962,7 @@ public class SecretChatHelper extends BaseController {
             return;
         }
         startingSecretChat = true;
-        AlertDialog progressDialog = new AlertDialog(context, AlertDialog.ALERT_TYPE_SPINNER);
+        AlertDialog progressDialog = strategy.allowShowingDialogs() ? new AlertDialog(context, AlertDialog.ALERT_TYPE_SPINNER) : null;
         TLRPC.TL_messages_getDhConfig req = new TLRPC.TL_messages_getDhConfig();
         req.random_length = 256;
         req.version = getMessagesStorage().getLastSecretVersion();
@@ -1964,7 +1974,9 @@ public class SecretChatHelper extends BaseController {
                         AndroidUtilities.runOnUIThread(() -> {
                             try {
                                 if (!((Activity) context).isFinishing()) {
-                                    progressDialog.dismiss();
+                                    if (progressDialog != null) {
+                                        progressDialog.dismiss();
+                                    }
                                 }
                             } catch (Exception e) {
                                 FileLog.e(e);
@@ -2001,7 +2013,9 @@ public class SecretChatHelper extends BaseController {
                             startingSecretChat = false;
                             if (!((Activity) context).isFinishing()) {
                                 try {
-                                    progressDialog.dismiss();
+                                    if (progressDialog != null) {
+                                        progressDialog.dismiss();
+                                    }
                                 } catch (Exception e) {
                                     FileLog.e(e);
                                 }
@@ -2029,18 +2043,18 @@ public class SecretChatHelper extends BaseController {
                                     delayedEncryptedChatUpdates.clear();
                                 }
                             });
-                            if (strategy != null) {
-                                strategy.onComplete(chat);
-                            }
+                            strategy.onComplete(chat);
                         });
                     } else {
                         delayedEncryptedChatUpdates.clear();
-                        if (strategy == null || strategy.allowShowingErrorDialog()) {
+                        if (strategy.allowShowingDialogs()) {
                             AndroidUtilities.runOnUIThread(() -> {
                                 if (!((Activity) context).isFinishing()) {
                                     startingSecretChat = false;
                                     try {
-                                        progressDialog.dismiss();
+                                        if (progressDialog != null) {
+                                            progressDialog.dismiss();
+                                        }
                                     } catch (Exception e) {
                                         FileLog.e(e);
                                     }
@@ -2056,9 +2070,7 @@ public class SecretChatHelper extends BaseController {
                                 }
                             });
                         }
-                        if (strategy != null) {
-                            strategy.onError(error1);
-                        }
+                        strategy.onError(error1);
                     }
                 }, ConnectionsManager.RequestFlagFailOnServerErrors);
             } else {
@@ -2067,7 +2079,9 @@ public class SecretChatHelper extends BaseController {
                     startingSecretChat = false;
                     if (!((Activity) context).isFinishing()) {
                         try {
-                            progressDialog.dismiss();
+                            if (progressDialog != null) {
+                                progressDialog.dismiss();
+                            }
                         } catch (Exception e) {
                             FileLog.e(e);
                         }
@@ -2075,11 +2089,13 @@ public class SecretChatHelper extends BaseController {
                 });
             }
         }, ConnectionsManager.RequestFlagFailOnServerErrors);
-        progressDialog.setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(reqId, true));
-        try {
-            progressDialog.show();
-        } catch (Exception e) {
-            //don't promt
+        if (progressDialog != null) {
+            progressDialog.setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(reqId, true));
+            try {
+                progressDialog.show();
+            } catch (Exception e) {
+                //don't promt
+            }
         }
     }
 }

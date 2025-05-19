@@ -16,7 +16,7 @@ public abstract class AbstractEncryptedGroupSecretChatStartStrategy implements S
     protected abstract void retryEncryptedChatStart();
 
     @Override
-    public boolean allowShowingErrorDialog() {
+    public boolean allowShowingDialogs() {
         return false;
     }
 }
