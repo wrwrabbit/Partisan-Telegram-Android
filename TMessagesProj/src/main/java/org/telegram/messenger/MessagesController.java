@@ -16569,7 +16569,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                         if (DialogObject.isEncryptedDialog(dialog.id)
                                 && (FakePasscodeUtils.isFakePasscodeActivated() || dialog.pinned)
-                                && (!SharedConfig.encryptedGroupsEnabled || !EncryptedGroupUtils.isInnerEncryptedGroupChat(dialog.id, currentAccount) && !getMessagesStorage().isEncryptedGroup(dialog.id))) {
+                                && (!EncryptedGroupUtils.isInnerEncryptedGroupChat(dialog.id, currentAccount) && !getMessagesStorage().isEncryptedGroup(dialog.id))) {
                             int targetPosition = needFixPinning
                                     ? Math.max(targetCount - dialog.pinnedNum, 0)
                                     : pinnedNum;

@@ -200,9 +200,6 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
     }
 
     public void sendActionToAllMembers(EncryptedGroup encryptedGroup, EncryptedGroupAction action, boolean updateInterface) {
-        if (!SharedConfig.encryptedGroupsEnabled) {
-            return;
-        }
         for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
             Integer encryptedChatId = innerChat.getEncryptedChatId().orElse(null);
             if (encryptedChatId == null) {
@@ -221,9 +218,6 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
     }
 
     private void sendAction(TLRPC.EncryptedChat encryptedChat, EncryptedGroupAction action, boolean updateInterface) {
-        if (!SharedConfig.encryptedGroupsEnabled) {
-            return;
-        }
         EncryptedGroupsServiceMessage reqSend = new EncryptedGroupsServiceMessage();
         TLRPC.Message message;
 

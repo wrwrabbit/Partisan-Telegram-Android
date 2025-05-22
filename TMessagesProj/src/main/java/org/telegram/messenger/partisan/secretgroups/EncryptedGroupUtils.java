@@ -106,7 +106,7 @@ public class EncryptedGroupUtils {
     }
 
     public static boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, int account, Consumer<Long> action) {
-        if (!DialogObject.isEncryptedDialog(encryptedGroupDialogId) || !SharedConfig.encryptedGroupsEnabled) {
+        if (!DialogObject.isEncryptedDialog(encryptedGroupDialogId)) {
             return false;
         }
         MessagesController messagesController = MessagesController.getInstance(account);
@@ -398,11 +398,6 @@ public class EncryptedGroupUtils {
     public static boolean isInnerEncryptedGroupChat(int encryptedChatId, int account) {
         MessagesStorage messagesStorage = MessagesStorage.getInstance(account);
         return messagesStorage.getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId) != null;
-    }
-
-    public static boolean encryptedGroupsEnabled() {
-        return !FakePasscodeUtils.isFakePasscodeActivated()
-                && SharedConfig.encryptedGroupsEnabled;
     }
 
     public static boolean putEncIdOrEncGroupIdInBundle(Bundle bundle, long dialogId, int account) {

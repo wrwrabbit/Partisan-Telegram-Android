@@ -1814,7 +1814,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (DialogObject.isEncryptedDialog(peer)) {
             int encryptedId = DialogObject.getEncryptedChatId(peer);
             TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedId);
-            if (encryptedChat == null && (!SharedConfig.encryptedGroupsEnabled || getMessagesController().getEncryptedGroup(encryptedId) == null)) {
+            if (encryptedChat == null && getMessagesController().getEncryptedGroup(encryptedId) == null) {
                 return;
             }
             TLRPC.TL_document_layer82 newDocument = new TLRPC.TL_document_layer82();
@@ -5576,7 +5576,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
     private boolean sendMessageToEncryptedGroupIfNeeded(SendMessageParams sendMessageParams) {
         long dialogId = sendMessageParams.peer;
-        if (!DialogObject.isEncryptedDialog(dialogId) || !SharedConfig.encryptedGroupsEnabled) {
+        if (!DialogObject.isEncryptedDialog(dialogId)) {
             return false;
         }
         EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
@@ -8276,7 +8276,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 if (isEncrypted) {
                     int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
                     TLRPC.EncryptedChat encryptedChat = accountInstance.getMessagesController().getEncryptedChat(encryptedChatId);
-                    if (encryptedChat == null && (!SharedConfig.encryptedGroupsEnabled || accountInstance.getMessagesController().getEncryptedGroup(encryptedChatId) == null)) {
+                    if (encryptedChat == null && (accountInstance.getMessagesController().getEncryptedGroup(encryptedChatId) == null)) {
                         return;
                     }
                 }
@@ -10153,7 +10153,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     if (isEncrypted) {
                         int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
                         TLRPC.EncryptedChat encryptedChat = accountInstance.getMessagesController().getEncryptedChat(encryptedChatId);
-                        if (encryptedChat == null && (!SharedConfig.encryptedGroupsEnabled || accountInstance.getMessagesController().getEncryptedGroup(encryptedChatId) == null)) {
+                        if (encryptedChat == null && (accountInstance.getMessagesController().getEncryptedGroup(encryptedChatId) == null)) {
                             return;
                         }
                         attributeVideo = new TLRPC.TL_documentAttributeVideo_layer159();

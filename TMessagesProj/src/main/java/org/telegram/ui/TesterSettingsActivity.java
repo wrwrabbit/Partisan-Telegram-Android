@@ -104,7 +104,6 @@ public class TesterSettingsActivity extends BaseFragment {
     private int saveLogcatAfterRestartRow;
     private int showEncryptedChatsFromEncryptedGroupsRow;
     private int detailedEncryptedGroupMemberStatusRow;
-    private int enableSecretGroupsRow;
     private int dbSizeRow;
     private int accountNumRow;
     private int clearLogsWithCacheRow;
@@ -312,9 +311,6 @@ public class TesterSettingsActivity extends BaseFragment {
             } else if (position == detailedEncryptedGroupMemberStatusRow) {
                 SharedConfig.toggleDetailedEncryptedGroupMemberStatus();
                 ((TextCheckCell) view).setChecked(SharedConfig.detailedEncryptedGroupMemberStatus);
-            } else if (position == enableSecretGroupsRow) {
-                SharedConfig.toggleSecretGroups();
-                ((TextCheckCell) view).setChecked(SharedConfig.encryptedGroupsEnabled);
             } else if (position == dbSizeRow) {
                 List<Pair<String, Long>> tableSizes = getTableSizes();
                 String message = tableSizes.stream()
@@ -376,7 +372,6 @@ public class TesterSettingsActivity extends BaseFragment {
         saveLogcatAfterRestartRow = rowCount++;
         showEncryptedChatsFromEncryptedGroupsRow = rowCount++;
         detailedEncryptedGroupMemberStatusRow = rowCount++;
-        enableSecretGroupsRow = rowCount++;
         if (getMessagesStorage().fileProtectionEnabled()) {
             dbSizeRow = rowCount++;
         }
@@ -549,9 +544,6 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == detailedEncryptedGroupMemberStatusRow) {
                         textCell.setTextAndCheck("Detailed Secret Group Member Status",
                                 SharedConfig.detailedEncryptedGroupMemberStatus, true);
-                    } else if (position == enableSecretGroupsRow) {
-                        textCell.setTextAndCheck("Secret groups enabled",
-                                SharedConfig.encryptedGroupsEnabled, true);
                     } else if (position == clearLogsWithCacheRow) {
                         textCell.setTextAndCheck("Clear logs with cache",
                                 SharedConfig.clearLogsWithCache, true);
@@ -598,7 +590,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow
                     || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow
                     || position == showEncryptedChatsFromEncryptedGroupsRow || position == detailedEncryptedGroupMemberStatusRow
-                    || position == enableSecretGroupsRow || position == clearLogsWithCacheRow) {
+                    || position == clearLogsWithCacheRow) {
                 return 0;
             } else if (position == updateChannelIdRow || position == updateChannelUsernameRow
                     || (simpleDataStartRow <= position && position < simpleDataEndRow)

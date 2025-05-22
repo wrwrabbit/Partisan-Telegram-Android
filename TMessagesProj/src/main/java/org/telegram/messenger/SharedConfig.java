@@ -442,7 +442,6 @@ public class SharedConfig {
     public static boolean saveLogcatAfterRestart = false;
     public static boolean confirmDangerousActions;
     public static boolean showEncryptedChatsFromEncryptedGroups = false;
-    public static boolean encryptedGroupsEnabled = false;
     public static boolean fileProtectionForAllAccountsEnabled = true;
     public static boolean disableFileProtectionAfterRestart = false;
     public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
@@ -756,6 +755,14 @@ public class SharedConfig {
             }
             sharedConfigMigrationVersion++;
         }
+        if (sharedConfigMigrationVersion == 2) {
+            SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.remove("encryptedGroupsEnabled");
+            editor.apply();
+            sharedConfigMigrationVersion++;
+        }
+
         if (prevMigrationVersion != sharedConfigMigrationVersion) {
             saveConfig();
         }
@@ -975,7 +982,6 @@ public class SharedConfig {
             showEncryptedChatsFromEncryptedGroups = preferences.getBoolean("showEncryptedChatsFromEncryptedGroups", false);
             detailedEncryptedGroupMemberStatus = preferences.getBoolean("detailedEncryptedGroupMemberStatus", false);
             clearLogsWithCache = preferences.getBoolean("clearLogsWithCache", true);
-            encryptedGroupsEnabled = preferences.getBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
             fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
             fileProtectionWorksWhenFakePasscodeActivated = preferences.getBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
@@ -1080,14 +1086,6 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("detailedEncryptedGroupMemberStatus", detailedEncryptedGroupMemberStatus);
-        editor.commit();
-    }
-
-    public static void toggleSecretGroups() {
-        encryptedGroupsEnabled = !encryptedGroupsEnabled;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
         editor.commit();
     }
 

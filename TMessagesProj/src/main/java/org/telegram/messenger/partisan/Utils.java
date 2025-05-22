@@ -540,7 +540,7 @@ public class Utils {
 
     public static List<TLRPC.Dialog> filterDialogs(List<TLRPC.Dialog> dialogs, Optional<Integer> account) {
         List<TLRPC.Dialog> filteredDialogsByPasscode = FakePasscodeUtils.filterDialogs(dialogs, account);
-        if (!account.isPresent() || SharedConfig.showEncryptedChatsFromEncryptedGroups || !SharedConfig.encryptedGroupsEnabled) {
+        if (!account.isPresent() || SharedConfig.showEncryptedChatsFromEncryptedGroups) {
             return filteredDialogsByPasscode;
         }
         MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());

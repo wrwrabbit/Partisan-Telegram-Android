@@ -287,7 +287,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                 } else if (needPhonebook) {
                     return row != 1;
                 } else {
-                    return row != (3 + (EncryptedGroupUtils.encryptedGroupsEnabled() ? 2 : 0));
+                    return row != (3 + 2 /*encrypted groups*/);
                 }
             } else {
                 if (isEmpty) {
@@ -375,7 +375,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                 } else if (needPhonebook) {
                     return 2;
                 } else {
-                    return 4 + (EncryptedGroupUtils.encryptedGroupsEnabled() ? 2 : 0);
+                    return 4 + 2 /*encrypted groups*/;
                 }
             } else {
                 if (isEmpty) {
@@ -680,16 +680,10 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                         return isEmpty ? 5 : 2;
                     }
                 } else {
-                    if (EncryptedGroupUtils.encryptedGroupsEnabled()) {
-                        if (position == 3) {
-                            return 5;
-                        } else if (position == 5) {
-                            return isEmpty ? 5 : 2;
-                        }
-                    } else {
-                        if (position == 3) {
-                            return isEmpty ? 5 : 2;
-                        }
+                    if (position == 3) {
+                        return 5;
+                    } else if (position == 5) {
+                        return isEmpty ? 5 : 2;
                     }
                 }
             } else {

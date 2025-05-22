@@ -78,9 +78,6 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     }
 
     public TLRPC.Message handleServiceMessage() {
-        if (!SharedConfig.encryptedGroupsEnabled) {
-            return null;
-        }
         log("Handle service message " + serviceMessage.encryptedGroupAction.getClass());
 
         Method[] methods = EncryptedGroupServiceMessagesHandler.class.getDeclaredMethods();

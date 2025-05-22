@@ -4259,7 +4259,7 @@ public class MessagesStorage extends BaseController {
                         cursor2.dispose();
                         cursor2 = null;
 
-                        if (SharedConfig.encryptedGroupsEnabled && EncryptedGroupUtils.isInnerEncryptedGroupChat(did, currentAccount)){
+                        if (EncryptedGroupUtils.isInnerEncryptedGroupChat(did, currentAccount)){
                             database.executeFast("DELETE FROM messages_v2 WHERE uid = " + did).stepThis().dispose();
                             if (did == getUserConfig().getClientUserId()) {
                                 database.executeFast("DELETE FROM messages_topics WHERE uid = " + did).stepThis().dispose();
@@ -9264,7 +9264,7 @@ public class MessagesStorage extends BaseController {
                 }
             }
             if (!replyMessageRandomOwners.isEmpty()) {
-                boolean isEncryptedGroupInnerChat = SharedConfig.encryptedGroupsEnabled && EncryptedGroupUtils.isInnerEncryptedGroupChat(dialogId, currentAccount);
+                boolean isEncryptedGroupInnerChat = EncryptedGroupUtils.isInnerEncryptedGroupChat(dialogId, currentAccount);
                 if (isEncryptedGroupInnerChat) {
                     cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id, r.uid FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
                 } else {
