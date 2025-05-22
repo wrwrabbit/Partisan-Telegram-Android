@@ -273,10 +273,6 @@ public class EncryptedGroupUtils {
         log(encryptedGroup, accountNum, "Send join confirmation.");
         TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
         new EncryptedGroupProtocol(accountNum).sendJoinConfirmation(encryptedChat);
-
-        if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
-            SecondaryInnerChatStarter.startSecondaryChats(accountNum, LaunchActivity.instance, encryptedGroup);
-        }
     }
 
     public static void forceHidePreview(EncryptedGroup encryptedGroup, int accountNum) {

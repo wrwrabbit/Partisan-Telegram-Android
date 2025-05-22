@@ -953,7 +953,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                         .map(id -> getMessagesController().getUser(id))
                         .collect(Collectors.toList());
 
-                EncryptedGroupStarter.startEncryptedGroup(currentAccount, getContext(), users, chatName, group -> {
+                EncryptedGroupStarter.startEncryptedGroup(currentAccount, users, chatName, group -> {
                     if (!group.isPresent()) {
                         return;
                     }
@@ -973,7 +973,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     .map(id -> getMessagesController().getUser(id))
                     .collect(Collectors.toList());
 
-            MembersAdder.addNewMembers(currentAccount, getContext(), users, encryptedGroup);
+            MembersAdder.addNewMembers(currentAccount, users, encryptedGroup);
             AndroidUtilities.runOnUIThread(() -> {
                 getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
                 finishFragment();

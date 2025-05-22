@@ -1933,8 +1933,12 @@ public class SecretChatHelper extends BaseController {
         });
     }
 
+    public boolean isStartingSecretChat() {
+        return startingSecretChat;
+    }
+
     public void startSecretChat(Context context, TLRPC.User user) {
-        SecretChatStartStrategy defaultStrategy = new SecretChatStartStrategy() {
+        SecretChatStartDelegate defaultStrategy = new SecretChatStartDelegate() {
             @Override
             public void onComplete(TLRPC.EncryptedChat encryptedChat) {}
             @Override
@@ -1947,13 +1951,13 @@ public class SecretChatHelper extends BaseController {
         startSecretChat(context, user, defaultStrategy);
     }
 
-    public interface SecretChatStartStrategy {
+    public interface SecretChatStartDelegate {
         void onComplete(TLRPC.EncryptedChat encryptedChat);
         void onError(TLRPC.TL_error error);
         boolean allowShowingDialogs();
     }
 
-    public void startSecretChat(Context context, TLRPC.User user, @androidx.annotation.NonNull SecretChatStartStrategy strategy) {
+    public void startSecretChat(Context context, TLRPC.User user, @androidx.annotation.NonNull SecretChatStartDelegate strategy) {
         if (user == null || context == null) {
             return;
         }
@@ -2047,17 +2051,17 @@ public class SecretChatHelper extends BaseController {
                         });
                     } else {
                         delayedEncryptedChatUpdates.clear();
-                        if (strategy.allowShowingDialogs()) {
-                            AndroidUtilities.runOnUIThread(() -> {
-                                if (!((Activity) context).isFinishing()) {
-                                    startingSecretChat = false;
-                                    try {
-                                        if (progressDialog != null) {
-                                            progressDialog.dismiss();
-                                        }
-                                    } catch (Exception e) {
-                                        FileLog.e(e);
+                        AndroidUtilities.runOnUIThread(() -> {
+                            if (!((Activity) context).isFinishing()) {
+                                startingSecretChat = false;
+                                try {
+                                    if (progressDialog != null) {
+                                        progressDialog.dismiss();
                                     }
+                                } catch (Exception e) {
+                                    FileLog.e(e);
+                                }
+                                if (strategy.allowShowingDialogs()) {
                                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
                                     builder.setTitle(LocaleController.getString(R.string.AppName));
                                     if (SharedConfig.isTesterSettingsActivated()) {
@@ -2068,8 +2072,8 @@ public class SecretChatHelper extends BaseController {
                                     builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
                                     builder.show().setCanceledOnTouchOutside(true);
                                 }
-                            });
-                        }
+                            }
+                        });
                         strategy.onError(error1);
                     }
                 }, ConnectionsManager.RequestFlagFailOnServerErrors);

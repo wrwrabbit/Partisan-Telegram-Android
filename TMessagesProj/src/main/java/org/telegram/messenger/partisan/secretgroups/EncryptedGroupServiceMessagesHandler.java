@@ -298,7 +298,6 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         log("Owner confirmed initialization.");
         encryptedGroup.setState(WAITING_SECONDARY_CHAT_CREATION);
         getMessagesStorage().updateEncryptedGroup(encryptedGroup);
-        SecondaryInnerChatStarter.startSecondaryChats(accountNum, LaunchActivity.instance, encryptedGroup);
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);

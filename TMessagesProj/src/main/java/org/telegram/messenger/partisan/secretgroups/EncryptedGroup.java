@@ -68,6 +68,10 @@ public class EncryptedGroup {
         return innerChats.stream().anyMatch(c -> c.getState() == state);
     }
 
+    public boolean noneInnerChatsMatchState(InnerEncryptedChatState state) {
+        return innerChats.stream().noneMatch(c -> c.getState() == state);
+    }
+
     public List<Integer> getInitializedInnerEncryptedChatIds() {
         return getInnerEncryptedChatIds(true);
     }

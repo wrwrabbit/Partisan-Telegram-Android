@@ -6460,6 +6460,10 @@ public class MessagesController extends BaseController implements NotificationCe
         return encryptedGroups.values().stream().filter(g -> g.getExternalId() == externalId).findAny().orElse(null);
     }
 
+    public List<EncryptedGroup> getAllEncryptedGroups() {
+        return new ArrayList<>(encryptedGroups.values());
+    }
+
     public TLRPC.EncryptedChat getEncryptedChatDB(int chatId, boolean created) {
         TLRPC.EncryptedChat chat = encryptedChats.get(chatId);
         if (chat == null || created && (chat instanceof TLRPC.TL_encryptedChatWaiting || chat instanceof TLRPC.TL_encryptedChatRequested)) {

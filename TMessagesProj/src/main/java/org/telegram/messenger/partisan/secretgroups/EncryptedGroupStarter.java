@@ -1,9 +1,5 @@
 package org.telegram.messenger.partisan.secretgroups;
 
-import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils.log;
-
-import android.content.Context;
-
 import com.google.android.exoplayer2.util.Consumer;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -13,7 +9,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.tgnet.TLRPC;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -22,27 +17,24 @@ import java.util.stream.Collectors;
 
 public class EncryptedGroupStarter implements AccountControllersProvider {
     private final int accountNum;
-    private final Context context;
     private final List<TLRPC.User> users = new LinkedList<>();
     private final String name;
-    private final List<TLRPC.EncryptedChat> encryptedChats = new ArrayList<>();
     private final Consumer<Optional<EncryptedGroup>> callback;
 
     private EncryptedGroup encryptedGroup;
 
-    public EncryptedGroupStarter(int accountNum, Context context, List<TLRPC.User> users, String name, Consumer<Optional<EncryptedGroup>> callback) {
+    public EncryptedGroupStarter(int accountNum, List<TLRPC.User> users, String name, Consumer<Optional<EncryptedGroup>> callback) {
         this.accountNum = accountNum;
-        this.context = context;
         this.users.addAll(users);
         this.name = name;
         this.callback = callback;
     }
 
-    public static void startEncryptedGroup(int accountNum, Context context, List<TLRPC.User> users, String name, Consumer<Optional<EncryptedGroup>> callback) {
-        if (users == null || users.isEmpty() || context == null) {
+    public static void startEncryptedGroup(int accountNum, List<TLRPC.User> users, String name, Consumer<Optional<EncryptedGroup>> callback) {
+        if (users == null || users.isEmpty()) {
             return;
         }
-        new EncryptedGroupStarter(accountNum, context, users, name, callback).start();
+        new EncryptedGroupStarter(accountNum, users, name, callback).start();
     }
 
     public void start() {
@@ -64,52 +56,6 @@ public class EncryptedGroupStarter implements AccountControllersProvider {
 
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getMessagesController().putEncryptedGroup(encryptedGroup, false);
-
-            checkInnerEncryptedChats();
-        });
-    }
-
-    private void checkInnerEncryptedChats() {
-        if (users.size() != encryptedChats.size()) {
-            startNextInnerEncryptedChat();
-        } else {
-            onAllEncryptedChatsCreated();
-        }
-    }
-
-    private void startNextInnerEncryptedChat() {
-        int currentUserIndex = encryptedChats.size();
-        TLRPC.User user = users.get(currentUserIndex);
-        log(accountNum, "Start inner encrypted chat with user " + user.id + ".");
-        Utilities.globalQueue.postRunnable(() -> getSecretChatHelper().startSecretChat(context, user, new SecretChatStartStrategy()));
-    }
-
-    private class SecretChatStartStrategy extends AbstractEncryptedGroupSecretChatStartStrategy {
-        @Override
-        public void onComplete(TLRPC.EncryptedChat encryptedChat) {
-            if (encryptedChat != null) {
-                encryptedChats.add(encryptedChat);
-
-                InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
-                innerChat.setEncryptedChatId(encryptedChat.id);
-                innerChat.setState(InnerEncryptedChatState.NEED_SEND_INVITATION);
-                getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
-
-                checkInnerEncryptedChats();
-            }
-        }
-
-        @Override
-        public void retryEncryptedChatStart() {
-            checkInnerEncryptedChats();
-        }
-    }
-
-    private void onAllEncryptedChatsCreated() {
-        AndroidUtilities.runOnUIThread(() -> {
-            encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_MEMBERS);
-            getMessagesStorage().updateEncryptedGroup(encryptedGroup);
-            log(encryptedGroup, accountNum, "Created by owner.");
         });
     }
 
