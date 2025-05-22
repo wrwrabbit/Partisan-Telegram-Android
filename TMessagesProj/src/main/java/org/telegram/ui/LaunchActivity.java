@@ -1003,7 +1003,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
 
         RemoveAfterReadingMessages.checkReadDialogs(currentAccount);
-        FakePasscodeUtils.scheduleFakePasscodeTimer(this);
+        org.telegram.messenger.partisan.InnerPartisanTimer.getInstance().schedule(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             FingerprintController.checkKeyReady();
