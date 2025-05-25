@@ -464,6 +464,16 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
                 );
     }
 
+    public void addNewMembers(EncryptedGroup encryptedGroup, List<TLRPC.User> users) {
+        for (TLRPC.User user : users) {
+            InnerEncryptedChat innerChat = new InnerEncryptedChat(user.id, Optional.empty());
+            innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_CREATING_ENCRYPTED_CHAT);
+            encryptedGroup.addInnerChat(innerChat);
+            getMessagesStorage().addEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat.getUserId(), innerChat.getState());
+            getEncryptedGroupProtocol().sendAddMember(encryptedGroup, user.id);
+        }
+    }
+
     @Override
     public int getAccountNum() {
         return accountNum;

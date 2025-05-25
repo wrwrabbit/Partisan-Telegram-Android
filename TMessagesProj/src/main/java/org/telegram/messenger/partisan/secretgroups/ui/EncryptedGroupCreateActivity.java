@@ -55,7 +55,6 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupConstants;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupStarter;
-import org.telegram.messenger.partisan.secretgroups.MembersAdder;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -973,7 +972,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     .map(id -> getMessagesController().getUser(id))
                     .collect(Collectors.toList());
 
-            MembersAdder.addNewMembers(currentAccount, users, encryptedGroup);
+            getEncryptedGroupUtils().addNewMembers(encryptedGroup, users);
             AndroidUtilities.runOnUIThread(() -> {
                 getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
                 finishFragment();
