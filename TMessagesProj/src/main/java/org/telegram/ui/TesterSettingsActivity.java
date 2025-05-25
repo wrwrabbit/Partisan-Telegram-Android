@@ -1,6 +1,7 @@
 package org.telegram.ui;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +29,7 @@ import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.SecurityIssue;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupInnerChatStarter;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
@@ -78,6 +80,8 @@ public class TesterSettingsActivity extends BaseFragment {
             new SimpleData("User Chat Count", () ->
                     getAllDialogs().stream().filter(d -> d.id > 0).count()
                             + (!isDialogEndReached() ? " (not all)" : "")),
+            new SimpleData("Sec Group Flood Wait", () ->
+                    "" + (EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitUntil() - SystemClock.elapsedRealtime()) / 1000),
     };
 
     private ListAdapter listAdapter;

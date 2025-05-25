@@ -180,4 +180,8 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
     public int getAccountNum() {
         return accountNum;
     }
+
+    public long getFloodWaitUntil() {
+        return floodWaitUntil;
+    }
 }
