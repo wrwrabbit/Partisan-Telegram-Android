@@ -9,6 +9,8 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -21,6 +23,7 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
+import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
@@ -31,6 +34,7 @@ import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
+import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.ProfileActivity;
@@ -48,6 +52,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     private int rowCount;
 
     private int statusRow;
+    private int idRow;
     private int firstMemberRow;
     private int lastMemberRow;
 
@@ -119,7 +124,23 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listView.setAdapter(listAdapter = new ListAdapter(context));
         listView.setOnItemClickListener((view, position, x, y) -> {
-            if (firstMemberRow != -1 && firstMemberRow <= position && position <= lastMemberRow) {
+            if (position == idRow) {
+                final String chatIdStr = String.valueOf(encryptedGroup.getExternalId());
+                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                builder.setItems(new CharSequence[]{LocaleController.getString("Copy", R.string.Copy)}, (dialogInterface, i) -> {
+                    if (i == 0) {
+                        try {
+                            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
+                            android.content.ClipData clip = android.content.ClipData.newPlainText("label", chatIdStr);
+                            clipboard.setPrimaryClip(clip);
+                            BulletinFactory.of(this).createCopyBulletin(LocaleController.getString("IdCopied", R.string.IdCopied)).show();
+                        } catch (Exception e) {
+                            FileLog.e(e);
+                        }
+                    }
+                });
+                showDialog(builder.create());
+            } else if (firstMemberRow != -1 && firstMemberRow <= position && position <= lastMemberRow) {
                 Bundle args = new Bundle();
                 int index = positionToChatIndex(position);
                 TLRPC.User user = getUser(index);
@@ -143,6 +164,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
 
         if (SharedConfig.detailedEncryptedGroupMemberStatus) {
             statusRow = rowCount++;
+            idRow = rowCount++;
         }
         firstMemberRow = rowCount;
         lastMemberRow = firstMemberRow + encryptedGroup.getInnerChats().size();
@@ -281,6 +303,9 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                     if (position == statusRow) {
                         textCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
                         textCell.setText("Group Status: " + encryptedGroup.getState(), true);
+                    } else if (position == idRow) {
+                        textCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+                        textCell.setText("Group Id: " + encryptedGroup.getExternalId(), true);
                     }
                 }
             }
@@ -290,7 +315,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         public int getItemViewType(int position) {
             if (firstMemberRow <= position && position <= lastMemberRow) {
                 return VIEW_TYPE_GROUP_MEMBER;
-            } else if (position == statusRow) {
+            } else if (position == statusRow || position == idRow) {
                 return VIEW_TYPE_TEXT_CELL;
             }
             return VIEW_TYPE_GROUP_MEMBER;
