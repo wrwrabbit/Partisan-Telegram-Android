@@ -67,7 +67,6 @@ import androidx.core.graphics.drawable.IconCompat;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.voip.VoIPGroupNotification;
 import org.telegram.tgnet.ConnectionsManager;
@@ -6301,6 +6300,6 @@ public class NotificationsController extends BaseController {
     }
 
     private boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, Consumer<Long> action) {
-        return EncryptedGroupUtils.doForEachInnerDialogIdIfNeeded(encryptedGroupDialogId, currentAccount, action);
+        return getEncryptedGroupUtils().doForEachInnerDialogIdIfNeeded(encryptedGroupDialogId, action);
     }
 }

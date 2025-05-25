@@ -4259,7 +4259,7 @@ public class MessagesStorage extends BaseController {
                         cursor2.dispose();
                         cursor2 = null;
 
-                        if (EncryptedGroupUtils.isInnerEncryptedGroupChat(did, currentAccount)){
+                        if (getEncryptedGroupUtils().isInnerEncryptedGroupChat(did)){
                             database.executeFast("DELETE FROM messages_v2 WHERE uid = " + did).stepThis().dispose();
                             if (did == getUserConfig().getClientUserId()) {
                                 database.executeFast("DELETE FROM messages_topics WHERE uid = " + did).stepThis().dispose();
@@ -5810,7 +5810,7 @@ public class MessagesStorage extends BaseController {
                     TLRPC.EncryptedChat encryptedChat = encryptedChats.get(a);
                     TLRPC.User user = encUsersDict.get(encryptedChat.user_id);
                     if (user == null || FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedChat.id), currentAccount)
-                            || EncryptedGroupUtils.isInnerEncryptedGroupChat(encryptedChat, currentAccount)) {
+                            || getEncryptedGroupUtils().isInnerEncryptedGroupChat(encryptedChat)) {
                         continue;
                     }
                     long did = DialogObject.makeEncryptedDialogId(encryptedChat.id);
@@ -9264,7 +9264,7 @@ public class MessagesStorage extends BaseController {
                 }
             }
             if (!replyMessageRandomOwners.isEmpty()) {
-                boolean isEncryptedGroupInnerChat = EncryptedGroupUtils.isInnerEncryptedGroupChat(dialogId, currentAccount);
+                boolean isEncryptedGroupInnerChat = getEncryptedGroupUtils().isInnerEncryptedGroupChat(dialogId);
                 if (isEncryptedGroupInnerChat) {
                     cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id, r.uid FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
                 } else {
@@ -14342,9 +14342,9 @@ public class MessagesStorage extends BaseController {
                     int date = cursor.intValue(8);
                     if (date != 0) {
                         dialog.last_message_date = date;
-                        EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
+                        getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, encryptedGroupId -> {
                             Utilities.stageQueue.postRunnable(() -> {
-                                EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroupId, currentAccount);
+                                getEncryptedGroupUtils().updateEncryptedGroupLastMessageDate(encryptedGroupId);
                                 AndroidUtilities.runOnUIThread(() -> {
                                     getMessagesController().sortDialogs(null);
                                     getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);

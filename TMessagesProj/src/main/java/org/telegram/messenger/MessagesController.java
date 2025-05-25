@@ -60,7 +60,6 @@ import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.support.LongSparseLongArray;
@@ -9428,8 +9427,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     int lastMessageId;
                     ArrayList<MessageObject> objects = dialogMessage.get(dialog.id);
                     dialogMessage.remove(dialog.id);
-                    EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
-                        EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                    getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, encryptedGroupId -> {
+                        getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
                     });
                     if (objects != null && objects.size() > 0 && objects.get(0) != null) {
                         lastMessageId = objects.get(0).getId();
@@ -13286,8 +13285,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (currentDialog != null) {
                         int prevCount = currentDialog.unread_count;
                         currentDialog.unread_count = dialogsToUpdate.valueAt(a);
-                        EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
-                            EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroupId, currentAccount);
+                        getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, encryptedGroupId -> {
+                            getEncryptedGroupUtils().updateEncryptedGroupUnreadCount(encryptedGroupId);
                         });
                         if (BuildVars.DEBUG_PRIVATE_VERSION) {
                             FileLog.d("update dialog " + dialogId + " with new unread " + currentDialog.unread_count);
@@ -13623,8 +13622,8 @@ public class MessagesController extends BaseController implements NotificationCe
                             FileLog.d("processDialogsUpdate dialog not null");
                         }
                         currentDialog.unread_count = value.unread_count;
-                        EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(currentDialog.id, currentAccount, encryptedGroupId -> {
-                            EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroupId, currentAccount);
+                        getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(currentDialog.id, encryptedGroupId -> {
+                            getEncryptedGroupUtils().updateEncryptedGroupUnreadCount(encryptedGroupId);
                         });
                         if (currentDialog.unread_mentions_count != value.unread_mentions_count) {
                             currentDialog.unread_mentions_count = value.unread_mentions_count;
@@ -13694,8 +13693,8 @@ public class MessagesController extends BaseController implements NotificationCe
                             if (oldMsgsDeleted || messagesMaxDate(newMsgs) > messagesMaxDate(oldMsgs)) {
                                 dialogs_dict.put(key, value);
                                 dialogMessage.put(key, newMsgs);
-                                EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(key, currentAccount, encryptedGroupId -> {
-                                    EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                                getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(key, encryptedGroupId -> {
+                                    getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
                                 });
                                 if (oldMsgs != null) {
                                     for (int i = 0; i < oldMsgs.size(); ++i) {
@@ -13979,7 +13978,7 @@ public class MessagesController extends BaseController implements NotificationCe
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             return;
         }
-        if (EncryptedGroupUtils.doForEachInnerDialogIdIfNeeded(dialogId, currentAccount, innerDialogId -> markMessageAsRead(innerDialogId, randomId, ttl))) {
+        if (getEncryptedGroupUtils().doForEachInnerDialogIdIfNeeded(dialogId, innerDialogId -> markMessageAsRead(innerDialogId, randomId, ttl))) {
             return;
         }
         TLRPC.EncryptedChat chat = getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
@@ -14189,8 +14188,8 @@ public class MessagesController extends BaseController implements NotificationCe
                                 dialog.unread_count = maxNegativeId - dialog.top_message;
                             }
                         }
-                        EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
-                            EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroupId, currentAccount);
+                        getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, encryptedGroupId -> {
+                            getEncryptedGroupUtils().updateEncryptedGroupUnreadCount(encryptedGroupId);
                         });
                         boolean wasUnread;
                         if (wasUnread = dialog.unread_mark) {
@@ -16569,7 +16568,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                         if (DialogObject.isEncryptedDialog(dialog.id)
                                 && (FakePasscodeUtils.isFakePasscodeActivated() || dialog.pinned)
-                                && (!EncryptedGroupUtils.isInnerEncryptedGroupChat(dialog.id, currentAccount) && !getMessagesStorage().isEncryptedGroup(dialog.id))) {
+                                && (!getEncryptedGroupUtils().isInnerEncryptedGroupChat(dialog.id) && !getMessagesStorage().isEncryptedGroup(dialog.id))) {
                             int targetPosition = needFixPinning
                                     ? Math.max(targetCount - dialog.pinnedNum, 0)
                                     : pinnedNum;
@@ -20646,14 +20645,14 @@ public class MessagesController extends BaseController implements NotificationCe
             dialog.id = dialogId;
             int mid = dialog.top_message = lastMessage.getId();
             dialog.last_message_date = lastMessage.messageOwner.date;
-            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
-                EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroupId, currentAccount);
+            getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, encryptedGroupId -> {
+                getEncryptedGroupUtils().updateEncryptedGroupLastMessageDate(encryptedGroupId);
             });
             dialog.flags = ChatObject.isChannel(chat) ? 1 : 0;
             if (pendingUnreadCounter.get(dialogId, 0) > 0) {
                 dialog.unread_count = pendingUnreadCounter.get(dialogId);
-                EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
-                    EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroupId, currentAccount);
+                getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, encryptedGroupId -> {
+                    getEncryptedGroupUtils().updateEncryptedGroupUnreadCount(encryptedGroupId);
                 });
                 pendingUnreadCounter.delete(dialogId);
                 if (!isDialogMuted(dialogId, 0)) {
@@ -20719,8 +20718,8 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
                 dialog.top_message = lastMessage.getId();
                 dialog.last_message_date = lastMessage.messageOwner.date;
-                EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
-                    EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroupId, currentAccount);
+                getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, encryptedGroupId -> {
+                    getEncryptedGroupUtils().updateEncryptedGroupLastMessageDate(encryptedGroupId);
                 });
                 changed = true;
                 ArrayList<MessageObject> arrayList = new ArrayList<>(1);
@@ -20731,8 +20730,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
                 dialogMessage.put(dialogId, arrayList);
-                EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, currentAccount, encryptedGroupId -> {
-                    EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialogId, encryptedGroupId -> {
+                    getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
                 });
 
                 getTranslateController().checkDialogMessage(dialogId);

@@ -750,7 +750,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         public void fillItems() {
             items.clear();
             for (Long id: getChatIds()) {
-                if (id != null && EncryptedGroupUtils.isInnerEncryptedGroupChat(id, accountNum)) {
+                if (id != null && getEncryptedGroupUtils().isInnerEncryptedGroupChat(id)) {
                     continue;
                 }
                 Item item = Item.tryCreateItemById(accountNum, action, id);

@@ -304,7 +304,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
 
     @Handler()
     private TLRPC.Message handleStartSecondaryChat(StartSecondaryInnerChatAction action) {
-        encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroupByExternalId(action.externalGroupId, accountNum);
+        encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByExternalId(action.externalGroupId);
 
         innerAssert(encryptedGroup != null, "There is no encrypted group with id " + action.externalGroupId);
         innerAssert(encryptedGroup.getOwnerUserId() != getUserConfig().clientUserId, "Cannot start a secondary chat with the owner.");
@@ -321,7 +321,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
         if (encryptedGroup.getState() != INITIALIZED) {
-            EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
+            getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
         }
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -349,7 +349,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         log("User created all secondary chats.");
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
-        EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
+        getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
@@ -392,7 +392,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         } else {
             getEncryptedGroupProtocol().removeMember(encryptedGroup, action.userId);
             if (encryptedGroup.getState() == WAITING_SECONDARY_CHAT_CREATION) {
-                EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
+                getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
             }
         }
         return createMessageForStoring();
@@ -474,11 +474,11 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     }
 
     private void log(String message) {
-        EncryptedGroupUtils.log(encryptedGroup, accountNum, message);
+        getEncryptedGroupUtils().log(encryptedGroup, message);
     }
 
     private EncryptedGroup getEncryptedGroupByEncryptedChat(TLRPC.EncryptedChat encryptedChat) {
-        return EncryptedGroupUtils.getOrLoadEncryptedGroupByEncryptedChat(encryptedChat, accountNum);
+        return getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(encryptedChat);
     }
 
     @Override

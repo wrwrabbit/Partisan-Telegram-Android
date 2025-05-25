@@ -4520,7 +4520,7 @@ public class MediaDataController extends BaseController {
                 cursor.dispose();
                 if (count == -1 && DialogObject.isEncryptedDialog(dialogId) || getMessagesStorage().isEncryptedGroup(dialogId)) {
                     if (getMessagesStorage().isEncryptedGroup(dialogId)) {
-                        String dialogIdsString = TextUtils.join(",", EncryptedGroupUtils.getEncryptedGroupInnerDialogIds(dialogId, currentAccount));
+                        String dialogIdsString = TextUtils.join(",", new EncryptedGroupUtils(currentAccount).getEncryptedGroupInnerDialogIds(dialogId));
                         cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT COUNT(DISTINCT r.random_id) FROM media_v4 as m INNER JOIN randoms_v2 as r ON m.uid = r.uid AND m.mid = r.mid WHERE m.uid IN (%s) AND m.type = %d", dialogIdsString, type));
                     } else {
                         cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT COUNT(mid) FROM media_v4 WHERE uid = %d AND type = %d LIMIT 1", dialogId, type));
@@ -4706,7 +4706,7 @@ public class MediaDataController extends BaseController {
                                 cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, r.random_id FROM media_topics as m LEFT JOIN randoms_v2 as r ON r.mid = m.mid WHERE m.uid = %d AND m.topic_id = %d AND type = %d ORDER BY m.mid ASC LIMIT %d", uid, topicId, type, countToLoad));
                             }
                         } else if (getMessagesStorage().isEncryptedGroup(uid)) {
-                            String dialogIdsString = TextUtils.join(",", EncryptedGroupUtils.getEncryptedGroupInnerDialogIds(uid, currentAccount));
+                            String dialogIdsString = TextUtils.join(",", new EncryptedGroupUtils(currentAccount).getEncryptedGroupInnerDialogIds(uid));
                             if (max_id != 0) {
                                 cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, r.random_id FROM media_v4 as m LEFT JOIN randoms_v2 as r ON r.mid = m.mid WHERE m.uid IN (%s) AND m.mid > %d AND type = %d ORDER BY m.mid ASC LIMIT %d", dialogIdsString, max_id, type, countToLoad));
                             } else if (min_id != 0) {

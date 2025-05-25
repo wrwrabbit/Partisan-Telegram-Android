@@ -19,7 +19,7 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
     }
 
     public void processEncryptedChatUpdate(TLRPC.EncryptedChat encryptedChat) {
-        EncryptedGroup encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroupByEncryptedChat(encryptedChat, accountNum);
+        EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(encryptedChat);
         if (encryptedGroup == null) {
             return;
         }
@@ -83,7 +83,7 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
         getEncryptedGroupProtocol().sendSecondaryInnerChatInvitation(encryptedChat, encryptedGroup.getExternalId());
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
-        EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
+        getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
     }
 
     private void handleEncryptedChatDiscarded(EncryptedGroup encryptedGroup, TLRPC.EncryptedChat encryptedChat) {
@@ -130,6 +130,6 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
     }
 
     private void log(@Nullable EncryptedGroup encryptedGroup, String message) {
-        EncryptedGroupUtils.log(encryptedGroup, accountNum, message);
+        getEncryptedGroupUtils().log(encryptedGroup, message);
     }
 }

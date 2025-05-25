@@ -17,7 +17,6 @@ import android.util.SparseIntArray;
 
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupChatUpdateHandler;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
@@ -1125,7 +1124,7 @@ public class SecretChatHelper extends BaseController {
                         chat.ttl = serviceMessage.action.ttl_seconds;
                         newMessage.action.encryptedAction = serviceMessage.action;
                         getMessagesStorage().updateEncryptedChatTTL(chat);
-                        EncryptedGroupUtils.syncTtlIfNeeded(chat, currentAccount);
+                        getEncryptedGroupUtils().syncTtlIfNeeded(chat);
                     } else {
                         newMessage.action = new TLRPC.TL_messageEncryptedAction();
                         newMessage.action.encryptedAction = serviceMessage.action;
@@ -1148,8 +1147,8 @@ public class SecretChatHelper extends BaseController {
                         if (dialog != null) {
                             dialog.unread_count = 0;
                             getMessagesController().dialogMessage.remove(dialog.id);
-                            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
-                                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                            getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, encryptedGroupId -> {
+                                getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
                             });
                         }
                         getMessagesStorage().getStorageQueue().postRunnable(() -> AndroidUtilities.runOnUIThread(() -> {

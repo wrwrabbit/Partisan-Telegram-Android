@@ -146,9 +146,9 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
     void deleteInnerChat(EncryptedGroup encryptedGroup, long userId) {
         encryptedGroup.removeInnerChatByUserId(userId);
         getMessagesStorage().deleteEncryptedGroupInnerChat(encryptedGroup.getInternalId(), userId);
-        EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroup.getInternalId(), accountNum);
-        EncryptedGroupUtils.updateEncryptedGroupUnreadCount(encryptedGroup.getInternalId(), accountNum);
-        EncryptedGroupUtils.updateEncryptedGroupLastMessageDate(encryptedGroup.getInternalId(), accountNum);
+        getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroup.getInternalId());
+        getEncryptedGroupUtils().updateEncryptedGroupUnreadCount(encryptedGroup.getInternalId());
+        getEncryptedGroupUtils().updateEncryptedGroupLastMessageDate(encryptedGroup.getInternalId());
     }
 
     public void sendNewAvatar(EncryptedGroup encryptedGroup) {
@@ -285,10 +285,10 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
     }
 
     private void log(@Nullable EncryptedGroup encryptedGroup, String message) {
-        EncryptedGroupUtils.log(encryptedGroup, accountNum, message);
+        getEncryptedGroupUtils().log(encryptedGroup, message);
     }
 
     private void log(@Nullable Long encryptedGroupExternalId, String message) {
-        EncryptedGroupUtils.log(encryptedGroupExternalId, accountNum, message);
+        getEncryptedGroupUtils().log(encryptedGroupExternalId, message);
     }
 }

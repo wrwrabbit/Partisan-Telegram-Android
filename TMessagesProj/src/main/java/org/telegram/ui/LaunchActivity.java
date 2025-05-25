@@ -3209,12 +3209,12 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
             } else if (push_enc_id != 0) {
                 Bundle args = new Bundle();
-                if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, DialogObject.makeEncryptedDialogId(push_enc_id), currentAccount)) {
+                if (!new EncryptedGroupUtils(currentAccount).putEncIdOrEncGroupIdInBundle(args, DialogObject.makeEncryptedDialogId(push_enc_id))) {
                     return true;
                 }
-                if (EncryptedGroupUtils.isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(push_enc_id), currentAccount)) {
-                    EncryptedGroup encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroupByEncryptedChatId(push_enc_id, currentAccount);
-                    EncryptedGroupUtils.showSecretGroupJoinDialog(encryptedGroup, getLastFragment(), currentAccount, () -> {
+                if (new EncryptedGroupUtils(currentAccount).isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(push_enc_id))) {
+                    EncryptedGroup encryptedGroup = new EncryptedGroupUtils(currentAccount).getOrLoadEncryptedGroupByEncryptedChatId(push_enc_id);
+                    new EncryptedGroupUtils(currentAccount).showSecretGroupJoinDialog(encryptedGroup, getLastFragment(), () -> {
                         Bundle args2 = new Bundle();
                         args2.putInt("enc_group_id", encryptedGroup.getInternalId());
                         args2.putBoolean("just_created_chat", true);
@@ -6138,7 +6138,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.closeChats);
                 }
                 if (DialogObject.isEncryptedDialog(did)) {
-                    if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, did, account)) {
+                    if (!new EncryptedGroupUtils(account).putEncIdOrEncGroupIdInBundle(args, did)) {
                         return false;
                     }
                 } else if (DialogObject.isUserDialog(did)) {

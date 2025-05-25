@@ -5786,7 +5786,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         }
         int currentAccount = videoConvertMessage.currentAccount;
         MessageObject messageObject = videoConvertMessage.messageObject;
-        if (!EncryptedGroupUtils.isInnerEncryptedGroupChat(messageObject.getDialogId(), currentAccount) && messageObject.videoEditedInfo != null) {
+        if (!new EncryptedGroupUtils(currentAccount).isInnerEncryptedGroupChat(messageObject.getDialogId()) && messageObject.videoEditedInfo != null) {
             return false;
         }
         for (VideoConvertMessage queuedMessage : videoConvertQueue) {

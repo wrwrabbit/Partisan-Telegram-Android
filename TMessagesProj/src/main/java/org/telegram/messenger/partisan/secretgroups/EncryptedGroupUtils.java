@@ -1,7 +1,5 @@
 package org.telegram.messenger.partisan.secretgroups;
 
-import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.INITIALIZED;
-
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,15 +14,11 @@ import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SecretChatHelper;
-import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLRPC;
@@ -33,7 +27,6 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
-import org.telegram.ui.LaunchActivity;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -46,22 +39,27 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-public class EncryptedGroupUtils {
-    public static void checkAllEncryptedChatsCreated(EncryptedGroup encryptedGroup, int accountNum) {
+public class EncryptedGroupUtils implements AccountControllersProvider {
+    private final int accountNum;
+
+    public EncryptedGroupUtils(int accountNum) {
+        this.accountNum = accountNum;
+    }
+
+    public void checkAllEncryptedChatsCreated(EncryptedGroup encryptedGroup) {
         EncryptedGroupState groupState = encryptedGroup.getState();
         if (groupState != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION && groupState != EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
             throw new RuntimeException("Invalid encrypted group state: " + groupState);
         }
         if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.INITIALIZED)) {
-            log(encryptedGroup, accountNum, "All encrypted chats initialized.");
+            log(encryptedGroup, "All encrypted chats initialized.");
             encryptedGroup.setState(EncryptedGroupState.INITIALIZED);
-            MessagesStorage.getInstance(accountNum).updateEncryptedGroup(encryptedGroup);
-            if (encryptedGroup.getOwnerUserId() != UserConfig.getInstance(accountNum).clientUserId) {
-                MessagesController messagesController = MessagesController.getInstance(accountNum);
+            getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+            if (encryptedGroup.getOwnerUserId() != getUserConfig().clientUserId) {
                 int ownerEncryptedChatId = encryptedGroup.getOwnerEncryptedChatId();
-                TLRPC.EncryptedChat ownerEncryptedChat = messagesController.getEncryptedChat(ownerEncryptedChatId);
+                TLRPC.EncryptedChat ownerEncryptedChat = getMessagesController().getEncryptedChat(ownerEncryptedChatId);
                 if (groupState == EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
-                    new EncryptedGroupProtocol(accountNum).sendAllSecondaryChatsInitialized(ownerEncryptedChat);
+                    getEncryptedGroupProtocol().sendAllSecondaryChatsInitialized(ownerEncryptedChat);
                 }
             }
         } else if (PartisanLog.logsAllowed()) {
@@ -69,7 +67,7 @@ public class EncryptedGroupUtils {
                     .filter(innerChat -> innerChat.getState() != InnerEncryptedChatState.INITIALIZED)
                     .map(innerChat -> Long.toString(innerChat.getUserId()))
                     .collect(Collectors.joining(", "));
-            log(encryptedGroup, accountNum, "NOT all encrypted chats initialized: " + notInitializedInnerChats.length() + ".");
+            log(encryptedGroup, "NOT all encrypted chats initialized: " + notInitializedInnerChats.length() + ".");
         }
     }
 
@@ -95,22 +93,20 @@ public class EncryptedGroupUtils {
         }
     }
 
-    public static void getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(long dialogId, int account, Consumer<Integer> action) {
+    public void getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(long dialogId, Consumer<Integer> action) {
         if (DialogObject.isEncryptedDialog(dialogId)) {
-            Integer encryptedGroupId = MessagesStorage.getInstance(account)
-                    .getEncryptedGroupIdByInnerEncryptedChatId(DialogObject.getEncryptedChatId(dialogId));
+            Integer encryptedGroupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(DialogObject.getEncryptedChatId(dialogId));
             if (encryptedGroupId != null) {
                 action.accept(encryptedGroupId);
             }
         }
     }
 
-    public static boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, int account, Consumer<Long> action) {
+    public boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, Consumer<Long> action) {
         if (!DialogObject.isEncryptedDialog(encryptedGroupDialogId)) {
             return false;
         }
-        MessagesController messagesController = MessagesController.getInstance(account);
-        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(DialogObject.getEncryptedChatId(encryptedGroupDialogId));
+        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(encryptedGroupDialogId));
         if (encryptedGroup == null) {
             return false;
         }
@@ -121,40 +117,36 @@ public class EncryptedGroupUtils {
         return true;
     }
 
-    public static void updateEncryptedGroupUnreadCount(int encryptedGroupId, int account) {
-        if (isNotInitializedEncryptedGroup(encryptedGroupId, account)) {
+    public void updateEncryptedGroupUnreadCount(int encryptedGroupId) {
+        if (isNotInitializedEncryptedGroup(encryptedGroupId)) {
             return;
         }
-        MessagesController messagesController = MessagesController.getInstance(account);
-
-        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId, account);
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId);
         if (encryptedGroup == null) {
             return;
         }
-        TLRPC.Dialog encryptedGroupDialog = messagesController.getDialog(DialogObject.makeEncryptedDialogId(encryptedGroupId));
+        TLRPC.Dialog encryptedGroupDialog = getMessagesController().getDialog(DialogObject.makeEncryptedDialogId(encryptedGroupId));
         if (encryptedGroupDialog == null) {
-            Utilities.globalQueue.postRunnable(() -> updateEncryptedGroupUnreadCount(encryptedGroupId, account), 100);
+            Utilities.globalQueue.postRunnable(() -> updateEncryptedGroupUnreadCount(encryptedGroupId), 100);
             return;
         }
         encryptedGroupDialog.unread_count = 0;
         for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
             if (innerChat.getDialogId().isPresent()) {
-                TLRPC.Dialog innerDialog = messagesController.getDialog(innerChat.getDialogId().get());
+                TLRPC.Dialog innerDialog = getMessagesController().getDialog(innerChat.getDialogId().get());
                 if (innerDialog != null) {
                     encryptedGroupDialog.unread_count += innerDialog.unread_count;
                 }
             }
         }
-        MessagesStorage.getInstance(account).updateEncryptedGroupDialog(encryptedGroupDialog);
+        getMessagesStorage().updateEncryptedGroupDialog(encryptedGroupDialog);
     }
 
-    public static void updateEncryptedGroupLastMessage(int encryptedGroupId, int account) {
-        if (isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(encryptedGroupId), account)) {
+    public void updateEncryptedGroupLastMessage(int encryptedGroupId) {
+        if (isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(encryptedGroupId))) {
             return;
         }
-        MessagesController messagesController = MessagesController.getInstance(account);
-
-        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(encryptedGroupId);
         if (encryptedGroup == null) {
             return;
         }
@@ -163,7 +155,7 @@ public class EncryptedGroupUtils {
             if (!innerChat.getDialogId().isPresent()) {
                 continue;
             }
-            ArrayList<MessageObject> currentMessages = messagesController.dialogMessage.get(innerChat.getDialogId().get());
+            ArrayList<MessageObject> currentMessages = getMessagesController().dialogMessage.get(innerChat.getDialogId().get());
             if (currentMessages == null || currentMessages.isEmpty()) {
                 continue;
             }
@@ -173,58 +165,54 @@ public class EncryptedGroupUtils {
         }
         long groupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroupId);
         if (lastMessage != null) {
-            messagesController.dialogMessage.put(groupDialogId, new ArrayList<>(Collections.singletonList(lastMessage)));
+            getMessagesController().dialogMessage.put(groupDialogId, new ArrayList<>(Collections.singletonList(lastMessage)));
         } else {
-            messagesController.dialogMessage.remove(groupDialogId);
+            getMessagesController().dialogMessage.remove(groupDialogId);
         }
     }
 
-    public static void updateEncryptedGroupLastMessageDate(int encryptedGroupId, int account) {
-        if (isNotInitializedEncryptedGroup(encryptedGroupId, account)) {
+    public void updateEncryptedGroupLastMessageDate(int encryptedGroupId) {
+        if (isNotInitializedEncryptedGroup(encryptedGroupId)) {
             return;
         }
-        MessagesController messagesController = MessagesController.getInstance(account);
-
-        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId, account);
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId);
         if (encryptedGroup == null) {
             return;
         }
-        TLRPC.Dialog encryptedGroupDialog = messagesController.getDialog(DialogObject.makeEncryptedDialogId(encryptedGroupId));
+        TLRPC.Dialog encryptedGroupDialog = getMessagesController().getDialog(DialogObject.makeEncryptedDialogId(encryptedGroupId));
         if (encryptedGroupDialog == null) {
-            Utilities.globalQueue.postRunnable(() -> updateEncryptedGroupLastMessageDate(encryptedGroupId, account), 100);
+            Utilities.globalQueue.postRunnable(() -> updateEncryptedGroupLastMessageDate(encryptedGroupId), 100);
             return;
         }
         encryptedGroupDialog.last_message_date = encryptedGroup.getInnerChats().stream()
                 .map(InnerEncryptedChat::getDialogId)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(messagesController::getDialog)
+                .map(dialogId -> getMessagesController().getDialog(dialogId))
                 .filter(Objects::nonNull)
                 .mapToInt(dialog -> dialog.last_message_date)
                 .max()
                 .orElse(0);
-        MessagesStorage.getInstance(account).updateEncryptedGroupDialog(encryptedGroupDialog);
+        getMessagesStorage().updateEncryptedGroupDialog(encryptedGroupDialog);
     }
 
-    public static void showSecretGroupJoinDialog(EncryptedGroup encryptedGroup, BaseFragment fragment, int accountNum, Runnable onJoined) {
-        MessagesController messagesController = MessagesController.getInstance(accountNum);
-
+    public void showSecretGroupJoinDialog(EncryptedGroup encryptedGroup, BaseFragment fragment, Runnable onJoined) {
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
         builder.setTitle(LocaleController.getString(R.string.AppName));
-        TLRPC.User ownerUser = messagesController.getUser(encryptedGroup.getOwnerUserId());
+        TLRPC.User ownerUser = getMessagesController().getUser(encryptedGroup.getOwnerUserId());
         String message = LocaleController.formatString(R.string.SecretGroupJoiningConfirmation,
                 UserObject.getUserName(ownerUser),
                 LocaleController.getString(R.string.DeclineJoiningToSecretGroup));
         builder.setMessage(AndroidUtilities.replaceTags(message));
         builder.setPositiveButton(LocaleController.getString(R.string.JoinSecretGroup), (dialog, which) -> {
-            tryConfirmJoining(encryptedGroup, accountNum);
+            tryConfirmJoining(encryptedGroup);
             if (onJoined != null) {
                 onJoined.run();
             }
         });
         builder.setNegativeButton(LocaleController.getString(R.string.DeclineJoiningToSecretGroup), (dialog, which) -> {
             long dialogId = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
-            messagesController.deleteDialog(dialogId, 0, false);
+            getMessagesController().deleteDialog(dialogId, 0, false);
         });
         AlertDialog alertDialog = builder.create();
         fragment.showDialog(alertDialog);
@@ -234,33 +222,27 @@ public class EncryptedGroupUtils {
         }
     }
 
-    private static void tryConfirmJoining(EncryptedGroup encryptedGroup, int accountNum) {
-        MessagesController messagesController = MessagesController.getInstance(accountNum);
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
-
+    private void tryConfirmJoining(EncryptedGroup encryptedGroup) {
         if (encryptedGroup.getState() != EncryptedGroupState.JOINING_NOT_CONFIRMED && encryptedGroup.getState() != EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
             throw new RuntimeException("Invalid encrypted group state");
         }
-        if (canJoinToGroup(encryptedGroup, messagesController)) {
-            confirmJoining(encryptedGroup, accountNum);
+        if (canJoinToGroup(encryptedGroup)) {
+            confirmJoining(encryptedGroup);
         } else {
-            joiningFailed(encryptedGroup, accountNum, messagesStorage, messagesController);
+            joiningFailed(encryptedGroup);
         }
     }
 
-    private static boolean canJoinToGroup(EncryptedGroup encryptedGroup, MessagesController messagesController) {
+    private boolean canJoinToGroup(EncryptedGroup encryptedGroup) {
         return encryptedGroup.getInnerUserIds()
                 .stream()
-                .allMatch(user_id -> messagesController.getUser(user_id) != null);
+                .allMatch(user_id -> getMessagesController().getUser(user_id) != null);
     }
 
-    private static void confirmJoining(EncryptedGroup encryptedGroup, int accountNum) {
-        MessagesController messagesController = MessagesController.getInstance(accountNum);
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
-
-        forceHidePreview(encryptedGroup, accountNum);
+    private void confirmJoining(EncryptedGroup encryptedGroup) {
+        forceHidePreview(encryptedGroup);
         for (int i = 1; i <= 20; i++) {
-            AndroidUtilities.runOnUIThread(() -> EncryptedGroupUtils.forceHidePreview(encryptedGroup, accountNum), 100 * i);
+            AndroidUtilities.runOnUIThread(() -> forceHidePreview(encryptedGroup), 100 * i);
         }
 
         if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
@@ -268,34 +250,32 @@ public class EncryptedGroupUtils {
         } else if (encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
             encryptedGroup.setState(EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION);
         }
-        messagesStorage.updateEncryptedGroup(encryptedGroup);
+        getMessagesStorage().updateEncryptedGroup(encryptedGroup);
 
-        log(encryptedGroup, accountNum, "Send join confirmation.");
-        TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
-        new EncryptedGroupProtocol(accountNum).sendJoinConfirmation(encryptedChat);
+        log(encryptedGroup, "Send join confirmation.");
+        TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
+        getEncryptedGroupProtocol().sendJoinConfirmation(encryptedChat);
     }
 
-    public static void forceHidePreview(EncryptedGroup encryptedGroup, int accountNum) {
-        if (encryptedGroup.getState() != INITIALIZED) {
+    public void forceHidePreview(EncryptedGroup encryptedGroup) {
+        if (encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
             Integer ownerEncryptedChatId = encryptedGroup.getInnerChatByUserId(encryptedGroup.getOwnerUserId()).getEncryptedChatId().orElse(null);
             long chatDialogId = DialogObject.makeEncryptedDialogId(ownerEncryptedChatId);
             long groupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
-
-            MessagesController messagesController = MessagesController.getInstance(accountNum);
-            messagesController.deleteDialog(chatDialogId, 1);
-            if (messagesController.dialogMessage.get(groupDialogId) != null) {
-                messagesController.dialogMessage.put(groupDialogId, null);
-                NotificationCenter.getInstance(accountNum).postNotificationName(NotificationCenter.dialogsNeedReload);
+            getMessagesController().deleteDialog(chatDialogId, 1);
+            if (getMessagesController().dialogMessage.get(groupDialogId) != null) {
+                getMessagesController().dialogMessage.put(groupDialogId, null);
+                getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             }
         }
     }
 
-    private static void joiningFailed(EncryptedGroup encryptedGroup, int accountNum, MessagesStorage messagesStorage, MessagesController messagesController) {
+    private void joiningFailed(EncryptedGroup encryptedGroup) {
         encryptedGroup.setState(EncryptedGroupState.INITIALIZATION_FAILED);
-        messagesStorage.updateEncryptedGroup(encryptedGroup);
-        TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
-        log(encryptedGroup, accountNum, "Not all users are known.");
-        new EncryptedGroupProtocol(accountNum).sendGroupInitializationFailed(encryptedChat);
+        getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+        TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(encryptedGroup.getOwnerEncryptedChatId());
+        log(encryptedGroup, "Not all users are known.");
+        getEncryptedGroupProtocol().sendGroupInitializationFailed(encryptedChat);
     }
 
     public static void showNotImplementedDialog(BaseFragment fragment) {
@@ -307,102 +287,93 @@ public class EncryptedGroupUtils {
         fragment.showDialog(alertDialog);
     }
 
-    static void log(int account, String message) {
-        log((Long)null, account, message);
+    void log(String message) {
+        log((Long)null, message);
     }
 
-    static void log(@Nullable EncryptedGroup encryptedGroup, int account, String message) {
+    void log(@Nullable EncryptedGroup encryptedGroup, String message) {
         Long externalId = encryptedGroup != null ? encryptedGroup.getExternalId() : null;
-        log(externalId, account, message);
+        log(externalId, message);
     }
 
-    static void log(@Nullable Long encryptedGroupExternalId, int account, String message) {
+    void log(@Nullable Long encryptedGroupExternalId, String message) {
         if (encryptedGroupExternalId != null) {
-            PartisanLog.d("Account: " + account + ". Encrypted group: " + encryptedGroupExternalId + ". " + message);
+            PartisanLog.d("Account: " + accountNum + ". Encrypted group: " + encryptedGroupExternalId + ". " + message);
         } else {
-            PartisanLog.d("Account: " + account + ". Encrypted group: unknown. " + message);
+            PartisanLog.d("Account: " + accountNum + ". Encrypted group: unknown. " + message);
         }
     }
 
-    public static EncryptedGroup getOrLoadEncryptedGroupByEncryptedChat(TLRPC.EncryptedChat encryptedChat, int accountNum) {
+    public EncryptedGroup getOrLoadEncryptedGroupByEncryptedChat(TLRPC.EncryptedChat encryptedChat) {
         if (encryptedChat == null) {
             return null;
         }
-        return getOrLoadEncryptedGroupByEncryptedChatId(encryptedChat.id, accountNum);
+        return getOrLoadEncryptedGroupByEncryptedChatId(encryptedChat.id);
     }
 
-    public static EncryptedGroup getOrLoadEncryptedGroupByEncryptedChatId(int encryptedChatId, int accountNum) {
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
-        Integer groupId = messagesStorage.getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
+    public EncryptedGroup getOrLoadEncryptedGroupByEncryptedChatId(int encryptedChatId) {
+        Integer groupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
         if (groupId == null) {
             return null;
         }
-        return getOrLoadEncryptedGroup(groupId, accountNum);
+        return getOrLoadEncryptedGroup(groupId);
     }
 
-    public static boolean isNotInitializedEncryptedGroup(long dialogId, int accountNum) {
+    public boolean isNotInitializedEncryptedGroup(long dialogId) {
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             return false;
         }
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
-
         int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
-        Integer encryptedGroupId = messagesStorage.getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
+        Integer encryptedGroupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
         if (encryptedGroupId == null) {
             return false;
         }
-        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId, accountNum);
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId);
         return encryptedGroup == null || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED;
     }
 
-    public static EncryptedGroup getOrLoadEncryptedGroup(int encryptedGroupId, int accountNum) {
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
-        MessagesController messagesController = MessagesController.getInstance(accountNum);
-        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroup(encryptedGroupId);
+    public EncryptedGroup getOrLoadEncryptedGroup(int encryptedGroupId) {
+        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(encryptedGroupId);
         if (encryptedGroup == null) {
             try {
-                encryptedGroup = messagesStorage.loadEncryptedGroup(encryptedGroupId);
+                encryptedGroup = getMessagesStorage().loadEncryptedGroup(encryptedGroupId);
             } catch (Exception ignore) {
             }
         }
         return encryptedGroup;
     }
 
-    public static EncryptedGroup getOrLoadEncryptedGroupByExternalId(long externalId, int accountNum) {
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(accountNum);
-        MessagesController messagesController = MessagesController.getInstance(accountNum);
-        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroupByExternalId(externalId);
+    public EncryptedGroup getOrLoadEncryptedGroupByExternalId(long externalId) {
+        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroupByExternalId(externalId);
         if (encryptedGroup == null) {
             try {
-                encryptedGroup = messagesStorage.loadEncryptedGroupByExternalId(externalId);
+                encryptedGroup = getMessagesStorage().loadEncryptedGroupByExternalId(externalId);
             } catch (Exception ignore) {
             }
         }
         return encryptedGroup;
     }
 
-    public static boolean isInnerEncryptedGroupChat(long dialogId, int account) {
+    public boolean isInnerEncryptedGroupChat(long dialogId) {
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             return false;
         }
-        return isInnerEncryptedGroupChat(DialogObject.getEncryptedChatId(dialogId), account);
+        return isInnerEncryptedGroupChat(DialogObject.getEncryptedChatId(dialogId));
     }
 
-    public static boolean isInnerEncryptedGroupChat(TLRPC.EncryptedChat encryptedChat, int account) {
+    public boolean isInnerEncryptedGroupChat(TLRPC.EncryptedChat encryptedChat) {
         if (encryptedChat == null) {
             return false;
         }
-        return isInnerEncryptedGroupChat(encryptedChat.id, account);
+        return isInnerEncryptedGroupChat(encryptedChat.id);
     }
 
-    public static boolean isInnerEncryptedGroupChat(int encryptedChatId, int account) {
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(account);
-        return messagesStorage.getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId) != null;
+    public boolean isInnerEncryptedGroupChat(int encryptedChatId) {
+        return getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId) != null;
     }
 
-    public static boolean putEncIdOrEncGroupIdInBundle(Bundle bundle, long dialogId, int account) {
-        EncryptedGroup encryptedGroup = MessagesController.getInstance(account)
-                .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+    public boolean putEncIdOrEncGroupIdInBundle(Bundle bundle, long dialogId) {
+        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
         if (encryptedGroup != null) {
             if (encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED || encryptedGroup.getState() == EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED) {
                 return false;
@@ -416,8 +387,8 @@ public class EncryptedGroupUtils {
         }
     }
 
-    public static List<Long> getEncryptedGroupInnerDialogIds(long dialogId, int account) {
-        EncryptedGroup encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroup(DialogObject.getEncryptedChatId(dialogId), account);
+    public List<Long> getEncryptedGroupInnerDialogIds(long dialogId) {
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
         return encryptedGroup.getInnerChats().stream()
                 .map(innerChat -> innerChat.getDialogId().orElse(null))
                 .filter(Objects::nonNull)
@@ -475,22 +446,26 @@ public class EncryptedGroupUtils {
         }
     }
 
-    public static void syncTtlIfNeeded(TLRPC.EncryptedChat encryptedChat, int account) {
-        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroupByEncryptedChat(encryptedChat, account);
+    public void syncTtlIfNeeded(TLRPC.EncryptedChat encryptedChat) {
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroupByEncryptedChat(encryptedChat);
         if (encryptedGroup == null) {
             return;
         }
-        MessagesController messagesController = MessagesController.getInstance(account);
         encryptedGroup.getInnerEncryptedChatIds(false).stream()
-                .map(messagesController::getEncryptedChat)
+                .map(encryptedChatId -> getMessagesController().getEncryptedChat(encryptedChatId))
                 .filter(Objects::nonNull)
                 .filter(otherEncryptedChat -> otherEncryptedChat.ttl != encryptedChat.ttl)
                 .forEach(otherEncryptedChat ->
                     AndroidUtilities.runOnUIThread(() -> {
                         otherEncryptedChat.ttl = encryptedChat.ttl;
-                        SecretChatHelper.getInstance(account).sendTTLMessage(otherEncryptedChat, null);
-                        MessagesStorage.getInstance(account).updateEncryptedChatTTL(otherEncryptedChat);
+                        getSecretChatHelper().sendTTLMessage(otherEncryptedChat, null);
+                        getMessagesStorage().updateEncryptedChatTTL(otherEncryptedChat);
                     })
                 );
+    }
+
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 }

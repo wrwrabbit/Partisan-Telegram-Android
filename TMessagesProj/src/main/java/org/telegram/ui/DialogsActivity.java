@@ -138,7 +138,6 @@ import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.messenger.voip.ConferenceCall;
 import org.telegram.tgnet.ConnectionsManager;
@@ -8335,10 +8334,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else {
             Bundle args = new Bundle();
             if (DialogObject.isEncryptedDialog(dialogId)) {
-                if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, dialogId, currentAccount)) {
+                if (!getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundle(args, dialogId)) {
                     EncryptedGroup encryptedGroup = getMessagesController()
                             .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
-                    EncryptedGroupUtils.showSecretGroupJoinDialog(encryptedGroup, this, currentAccount, () -> {
+                    getEncryptedGroupUtils().showSecretGroupJoinDialog(encryptedGroup, this, () -> {
                         Bundle args2 = new Bundle();
                         args2.putInt("enc_group_id", encryptedGroup.getInternalId());
                         args2.putBoolean("just_created_chat", true);
@@ -9596,7 +9595,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
             } else if (action == read) {
                 if (selectedDialogs.stream().anyMatch(dialogId -> getMessagesStorage().isEncryptedGroup(dialogId))) {
-                    EncryptedGroupUtils.showNotImplementedDialog(this);
+                    getEncryptedGroupUtils().showNotImplementedDialog(this);
                     return;
                 }
                 if (canReadCount != 0) {

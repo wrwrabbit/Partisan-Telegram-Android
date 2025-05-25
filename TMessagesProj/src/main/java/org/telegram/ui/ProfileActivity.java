@@ -6076,7 +6076,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         return;
                     }
                     Bundle args = new Bundle();
-                    EncryptedGroup encryptedGroup = EncryptedGroupUtils.getOrLoadEncryptedGroupByEncryptedChat(currentEncryptedChat, currentAccount);
+                    EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(currentEncryptedChat);
                     if (encryptedGroup != null && !SharedConfig.showEncryptedChatsFromEncryptedGroups) {
                         args.putInt("enc_group_id", encryptedGroup.getInternalId());
                     } else {
@@ -9292,7 +9292,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 //                if (phoneRow != -1 || userInfoRow != -1 || usernameRow != -1 || bizHoursRow != -1 || bizLocationRow != -1) {
 //                    notificationsDividerRow = rowCount++;
 //                }
-                if (userId != getUserConfig().getClientUserId() && !EncryptedGroupUtils.isInnerEncryptedGroupChat(currentEncryptedChat, currentAccount)) {
+                if (userId != getUserConfig().getClientUserId() && !getEncryptedGroupUtils().isInnerEncryptedGroupChat(currentEncryptedChat)) {
                     notificationsRow = rowCount++;
                 }
                 if (isBot && user != null && user.bot_has_main_app) {
@@ -9332,7 +9332,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
 
                 if (currentEncryptedChat instanceof TLRPC.TL_encryptedChat) {
-                    if (!EncryptedGroupUtils.isInnerEncryptedGroupChat(currentEncryptedChat, currentAccount)) {
+                    if (!getEncryptedGroupUtils().isInnerEncryptedGroupChat(currentEncryptedChat)) {
                         settingsTimerRow = rowCount++;
                     }
                     settingsKeyRow = rowCount++;

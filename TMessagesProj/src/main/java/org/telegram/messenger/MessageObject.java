@@ -8284,7 +8284,7 @@ public class MessageObject {
         } else {
             channelSignatureProfiles = getDialogId() == UserObject.VERIFY;
         }
-        return !isSponsored() && (isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null || EncryptedGroupUtils.isInnerEncryptedGroupChat(getDialogId(), currentAccount) && !isOutOwner());
+        return !isSponsored() && (isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null || new EncryptedGroupUtils(currentAccount).isInnerEncryptedGroupChat(getDialogId()) && !isOutOwner());
     }
 
     private boolean needDrawAvatarInternal() {
@@ -8307,7 +8307,7 @@ public class MessageObject {
         } else {
             channelSignatureProfiles = getDialogId() == UserObject.VERIFY;
         }
-        return !isSponsored() && (isFromChat() && isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null || EncryptedGroupUtils.isInnerEncryptedGroupChat(getDialogId(), currentAccount) && !isOutOwner());
+        return !isSponsored() && (isFromChat() && isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null || new EncryptedGroupUtils(currentAccount).isInnerEncryptedGroupChat(getDialogId()) && !isOutOwner());
     }
 
     public boolean isFromChat() {
@@ -10216,7 +10216,7 @@ public class MessageObject {
         if (ChatObject.isChannelAndNotMegaGroup(chat) && message.action instanceof TLRPC.TL_messageActionChatJoinedByRequest) {
             return false;
         }
-        if (EncryptedGroupUtils.isInnerEncryptedGroupChat(message.dialog_id, currentAccount) && !isOut(message)) {
+        if (new EncryptedGroupUtils(currentAccount).isInnerEncryptedGroupChat(message.dialog_id) && !isOut(message)) {
             return false;
         }
         if (message.id < 0) {

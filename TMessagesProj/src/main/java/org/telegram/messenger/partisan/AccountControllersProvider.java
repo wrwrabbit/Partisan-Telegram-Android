@@ -10,6 +10,7 @@ import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
 
 public interface AccountControllersProvider {
@@ -57,5 +58,9 @@ public interface AccountControllersProvider {
 
     default MediaDataController getMediaDataController() {
         return MediaDataController.getInstance(getAccountNum());
+    }
+
+    default EncryptedGroupUtils getEncryptedGroupUtils() {
+        return new EncryptedGroupUtils(getAccountNum());
     }
 }

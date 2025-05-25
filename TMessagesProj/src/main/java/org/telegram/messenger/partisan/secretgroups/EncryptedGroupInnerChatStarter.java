@@ -4,7 +4,6 @@ import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.C
 import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.INITIALIZED;
 import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION;
 import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION;
-import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils.log;
 
 import android.os.SystemClock;
 import android.util.Pair;
@@ -25,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
 
 public class EncryptedGroupInnerChatStarter implements AccountControllersProvider {
     private final int accountNum;
@@ -62,7 +63,7 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
             InnerEncryptedChat uninitializedInnerChat = pair.first;
             EncryptedGroup encryptedGroup = pair.second;
             TLRPC.User user = getMessagesController().getUser(uninitializedInnerChat.getUserId());
-            log(encryptedGroup, accountNum, "Start secondary inner chat with a user.");
+            log(encryptedGroup, "Start secondary inner chat with a user.");
             currentDelegate = new SecretChatStartDelegate(encryptedGroup);
             Utilities.globalQueue.postRunnable(() ->
                     getSecretChatHelper().startSecretChat(LaunchActivity.instance, user, currentDelegate)
@@ -135,7 +136,7 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
                 InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
                 innerChat.setEncryptedChatId(encryptedChat.id);
                 if (encryptedGroup.getState() == CREATING_ENCRYPTED_CHATS) {
-                    log(encryptedGroup, accountNum, "A primary inner chat with a user started.");
+                    log(encryptedGroup, "A primary inner chat with a user started.");
                     innerChat.setState(InnerEncryptedChatState.NEED_SEND_INVITATION);
                     getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
@@ -143,17 +144,17 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
                         AndroidUtilities.runOnUIThread(() -> {
                             encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_MEMBERS);
                             getMessagesStorage().updateEncryptedGroup(encryptedGroup);
-                            log(encryptedGroup, accountNum, "Group created by owner.");
+                            log(encryptedGroup, "Group created by owner.");
                         });
                     }
                 } else if (ImmutableSet.of(WAITING_SECONDARY_CHAT_CREATION, NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION).contains(encryptedGroup.getState())) {
-                    log(encryptedGroup, accountNum, "A secondary inner chat with a user started.");
+                    log(encryptedGroup, "A secondary inner chat with a user started.");
                     innerChat.setState(InnerEncryptedChatState.NEED_SEND_SECONDARY_INVITATION);
                     getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
-                    EncryptedGroupUtils.checkAllEncryptedChatsCreated(encryptedGroup, accountNum);
+                    getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
                 } else {
-                    log(encryptedGroup, accountNum, "A member added.");
+                    log(encryptedGroup, "A member added.");
                     innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION);
                     getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
                 }
@@ -183,5 +184,9 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
 
     public long getFloodWaitUntil() {
         return floodWaitUntil;
+    }
+
+    private void log(@Nullable EncryptedGroup encryptedGroup, String message) {
+        getEncryptedGroupUtils().log(encryptedGroup, message);
     }
 }

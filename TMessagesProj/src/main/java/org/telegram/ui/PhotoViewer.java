@@ -5105,7 +5105,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (currentMessageObject != null) {
                         dialogId = currentMessageObject.getDialogId();
                     }
-                    if (EncryptedGroupUtils.isInnerEncryptedGroupChat(dialogId, currentAccount)) {
+                    if (new EncryptedGroupUtils(currentAccount).isInnerEncryptedGroupChat(dialogId)) {
                         return;
                     }
                     if (DialogObject.isEncryptedDialog(dialogId)) {

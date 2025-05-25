@@ -189,7 +189,6 @@ import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.findmessages.FindMessagesController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.utils.PhotoUtilities;
@@ -4187,7 +4186,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     @Override
                     public void toggleSound() {
                         if (getMessagesStorage().isEncryptedGroup(dialog_id)) {
-                            EncryptedGroupUtils.showNotImplementedDialog(ChatActivity.this);
+                            getEncryptedGroupUtils().showNotImplementedDialog(ChatActivity.this);
                             return;
                         }
                         SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
@@ -4220,7 +4219,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     public void showCustomize() {
                         if (dialog_id != 0 && chatMode != MODE_SAVED) {
                             if (getMessagesStorage().isEncryptedGroup(dialog_id)) {
-                                EncryptedGroupUtils.showNotImplementedDialog(ChatActivity.this);
+                                getEncryptedGroupUtils().showNotImplementedDialog(ChatActivity.this);
                                 return;
                             }
                             if (currentUser != null) {
@@ -18045,7 +18044,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         chatActivityEnterView.setVisibility(View.VISIBLE);
                     }
                 } else {
-                    bottomOverlayText.setText(EncryptedGroupUtils.getGroupStateDescription(currentEncryptedGroup.getState()));
+                    bottomOverlayText.setText(getEncryptedGroupUtils().getGroupStateDescription(currentEncryptedGroup.getState()));
                     bottomOverlay.setVisibility(View.VISIBLE);
                     chatActivityEnterView.setVisibility(View.INVISIBLE);
                     chatActivityEnterView.setFieldText("");
@@ -33326,7 +33325,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 Bundle args = new Bundle();
                 args.putBoolean("scrollToTopOnResume", scrollToTopOnResume);
                 if (DialogObject.isEncryptedDialog(did)) {
-                    if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args, did, currentAccount)) {
+                    if (!getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundle(args, did)) {
                         return true;
                     }
                 } else {
