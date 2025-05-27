@@ -80,8 +80,11 @@ public class TesterSettingsActivity extends BaseFragment {
             new SimpleData("User Chat Count", () ->
                     getAllDialogs().stream().filter(d -> d.id > 0).count()
                             + (!isDialogEndReached() ? " (not all)" : "")),
-            new SimpleData("Sec Group Flood Wait", () ->
-                    "" + (EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitUntil() - SystemClock.elapsedRealtime()) / 1000),
+            new SimpleData("Sec Group Flood Wait", () -> {
+                long floodWaitUntil = (EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitUntil());
+                long remainingTime = (floodWaitUntil - SystemClock.elapsedRealtime()) / 1000;
+                return "" + Math.max(0,  remainingTime);
+            }),
     };
 
     private ListAdapter listAdapter;
@@ -543,7 +546,7 @@ public class TesterSettingsActivity extends BaseFragment {
                         textCell.setTextAndCheck("Save logcat after restart",
                                 SharedConfig.saveLogcatAfterRestart, true);
                     } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
-                        textCell.setTextAndCheck("Show encrypted chats from encrypted groups",
+                        textCell.setTextAndCheck("Show sec. chats from sec. groups",
                                 SharedConfig.showEncryptedChatsFromEncryptedGroups, true);
                     } else if (position == detailedEncryptedGroupMemberStatusRow) {
                         textCell.setTextAndCheck("Detailed Secret Group Member Status",
