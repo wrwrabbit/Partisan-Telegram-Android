@@ -18,6 +18,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.AccountControllersProvider;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.secretgroups.action.AbstractCreateGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.AddMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.AllSecondaryChatsInitializedAction;
@@ -168,6 +169,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         try {
             return (TLRPC.Message)method.invoke(this, serviceMessage.encryptedGroupAction);
         } catch (IllegalAccessException | InvocationTargetException e) {
+            PartisanLog.e(e);
             throw new RuntimeException(e);
         }
     }
