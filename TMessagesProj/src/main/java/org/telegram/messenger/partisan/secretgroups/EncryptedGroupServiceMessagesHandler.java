@@ -169,7 +169,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         try {
             return (TLRPC.Message)method.invoke(this, serviceMessage.encryptedGroupAction);
         } catch (IllegalAccessException | InvocationTargetException e) {
-            PartisanLog.e("invokeMethod exception" + method.getName(), e);
+            PartisanLog.e("invokeMethod exception " + method.getName(), e);
             throw new RuntimeException(e);
         }
     }
