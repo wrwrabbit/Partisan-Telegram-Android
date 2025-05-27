@@ -169,6 +169,9 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         try {
             return (TLRPC.Message)method.invoke(this, serviceMessage.encryptedGroupAction);
         } catch (IllegalAccessException | InvocationTargetException e) {
+            if (e instanceof InvocationTargetException && ((InvocationTargetException) e).getTargetException() instanceof AssertionException) {
+                return null;
+            }
             PartisanLog.e("invokeMethod exception " + method.getName(), e);
             throw new RuntimeException(e);
         }
@@ -337,7 +340,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     private static boolean areSecondaryChatStatesValid(EncryptedGroupState groupState, InnerEncryptedChatState innerChatState) {
         if (innerChatState == InnerEncryptedChatState.CREATING_ENCRYPTED_CHAT) {
             return groupState == WAITING_SECONDARY_CHAT_CREATION;
-        } else if (innerChatState == InnerEncryptedChatState.NEW_MEMBER_CREATING_ENCRYPTED_CHAT) {
+        } else if (innerChatState == InnerEncryptedChatState.NEW_MEMBER_WAITING_SECONDARY_CHATS_CREATION) {
             return groupState == INITIALIZED;
         } else {
             return false;
@@ -406,7 +409,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         innerAssert(action.userId != getUserConfig().clientUserId, "Can't add myself");
         innerAssert(encryptedGroup.getInnerChatByUserId(action.userId) == null, "The member already exists");
         InnerEncryptedChat innerChat = new InnerEncryptedChat(action.userId, Optional.empty());
-        innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_CREATING_ENCRYPTED_CHAT);
+        innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_WAITING_SECONDARY_CHATS_CREATION);
         encryptedGroup.addInnerChat(innerChat);
         getMessagesStorage().addEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat.getUserId(), innerChat.getState());
         AndroidUtilities.runOnUIThread(() ->
