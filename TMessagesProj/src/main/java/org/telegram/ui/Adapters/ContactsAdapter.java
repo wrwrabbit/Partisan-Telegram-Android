@@ -287,7 +287,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                 } else if (needPhonebook) {
                     return row != 1;
                 } else {
-                    return row != (3 + 2 /*encrypted groups*/);
+                    return row != (3 + (!FakePasscodeUtils.isFakePasscodeActivated() ? 2 /*encrypted groups*/ : 0));
                 }
             } else {
                 if (isEmpty) {
@@ -375,7 +375,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                 } else if (needPhonebook) {
                     return 2;
                 } else {
-                    return 4 + 2 /*encrypted groups*/;
+                    return 4 + (!FakePasscodeUtils.isFakePasscodeActivated() ? 2 /*encrypted groups*/ : 0);
                 }
             } else {
                 if (isEmpty) {
@@ -680,10 +680,16 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                         return isEmpty ? 5 : 2;
                     }
                 } else {
-                    if (position == 3) {
-                        return 5;
-                    } else if (position == 5) {
-                        return isEmpty ? 5 : 2;
+                    if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+                        if (position == 3) {
+                            return 5;
+                        } else if (position == 5) {
+                            return isEmpty ? 5 : 2;
+                        }
+                    } else {
+                        if (position == 3) {
+                            return isEmpty ? 5 : 2;
+                        }
                     }
                 }
             } else {
