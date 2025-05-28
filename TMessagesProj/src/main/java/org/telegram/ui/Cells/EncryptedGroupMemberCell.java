@@ -128,6 +128,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
                         statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInvitationSent));
                         break;
                     case WAITING_SECONDARY_CHATS_CREATION:
+                    case NEW_MEMBER_WAITING_SECONDARY_CHATS_CREATION:
                     case NEED_SEND_SECONDARY_INVITATION:
                         statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
                         statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInitialization));
