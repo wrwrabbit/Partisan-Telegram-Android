@@ -6,6 +6,7 @@ import org.telegram.tgnet.OutputSerializedData;
 public class StartSecondaryInnerChatAction extends EncryptedGroupAction {
     public static final int constructor = 0x19fbd964;
 
+    @ExternalGroupIdProvider()
     public long externalGroupId;
 
     @Override

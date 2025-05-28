@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 public abstract class AbstractCreateGroupAction extends EncryptedGroupAction {
+    @ExternalGroupIdProvider()
     public long externalGroupId;
     public String name;
     public List<Long> memberIds = new ArrayList<>();
