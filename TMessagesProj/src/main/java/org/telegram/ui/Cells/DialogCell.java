@@ -1471,7 +1471,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                     messageString = LocaleController.getString(R.string.EncryptedChatStartedIncoming);
                                 }
                             }
-                        } else if (encryptedGroup != null && encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+                        } else if (encryptedGroup != null && encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)) {
                             currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                             messageString = EncryptedGroupUtils.getGroupStateDescription(encryptedGroup.getState());
                         } else {
@@ -1869,7 +1869,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 drawMention = false;
                 drawReactionMention = false;
                 drawError = false;
-                if (encryptedGroup != null && encryptedGroup.getState() == EncryptedGroupState.JOINING_NOT_CONFIRMED) {
+                if (encryptedGroup != null && encryptedGroup.isInState(EncryptedGroupState.JOINING_NOT_CONFIRMED)) {
                     drawCount = true;
                     drawMention = false;
                     countString = String.format("%d", 1);
@@ -2941,7 +2941,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         if (DialogObject.isEncryptedDialog(dialog.id)) {
                             int encryptedChatId = DialogObject.getEncryptedChatId(dialog.id);
                             EncryptedGroup tempEncryptedGroup = MessagesController.getInstance(currentAccount).getEncryptedGroup(encryptedChatId);
-                            if (tempEncryptedGroup != null && tempEncryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+                            if (tempEncryptedGroup != null && tempEncryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)) {
                                 newMessage = null;
                                 MessagesController.getInstance(currentAccount).dialogMessage.put(dialog.id, null);
                             }

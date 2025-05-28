@@ -96,7 +96,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         action.userId = userId;
         sendActionToAllMembers(encryptedGroup, action, true);
 
-        if (innerChat.getState() != InnerEncryptedChatState.CANCELLED) {
+        if (innerChat.isNotInState(InnerEncryptedChatState.CANCELLED)) {
             NotificationCenter.NotificationCenterDelegate observer = new NotificationCenter.NotificationCenterDelegate() {
                 @Override
                 public void didReceivedNotification(int id, int account, Object... args) {
@@ -156,7 +156,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
     }
 
     public void sendNewAvatar(EncryptedGroup encryptedGroup, TLRPC.EncryptedChat encryptedChat) {
-        if (encryptedGroup.getOwnerUserId() != getUserConfig().getClientUserId() || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+        if (encryptedGroup.getOwnerUserId() != getUserConfig().getClientUserId() || encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)) {
             return;
         }
         NewAvatarAction action = new NewAvatarAction();
@@ -169,7 +169,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
     }
 
     public void deleteAvatar(EncryptedGroup encryptedGroup) {
-        if (encryptedGroup.getOwnerUserId() != getUserConfig().getClientUserId() || encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+        if (encryptedGroup.getOwnerUserId() != getUserConfig().getClientUserId() || encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)) {
             return;
         }
         sendActionToAllMembers(encryptedGroup, new DeleteAvatarAction(), true);

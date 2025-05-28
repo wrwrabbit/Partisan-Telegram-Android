@@ -86,7 +86,7 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
         for (EncryptedGroup encryptedGroup : getEncryptedGroupsByStates(WAITING_SECONDARY_CHAT_CREATION, NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION)) {
             InnerEncryptedChat uninitializedInnerChat = encryptedGroup.getInnerChats().stream()
                     // Users with smaller ids will initialize chats with users with bigger ids. New members will initialize chats with all other users.
-                    .filter(c -> !c.getEncryptedChatId().isPresent() && (c.getUserId() > getUserConfig().clientUserId || encryptedGroup.getState() == NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION))
+                    .filter(c -> !c.getEncryptedChatId().isPresent() && (c.getUserId() > getUserConfig().clientUserId || encryptedGroup.isInState(NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION)))
                     .findAny()
                     .orElse(null);
             if (uninitializedInnerChat != null) {
@@ -105,17 +105,16 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
     }
 
     private List<EncryptedGroup> getEncryptedGroupsByStates(EncryptedGroupState... states) {
-        Set<EncryptedGroupState> statesSet = new HashSet<>(Arrays.asList(states));
         return getMessagesController().getAllEncryptedGroups()
                 .stream()
-                .filter(group -> statesSet.contains(group.getState()))
+                .filter(group -> group.isInState(states))
                 .collect(Collectors.toList());
     }
 
     private Pair<InnerEncryptedChat, EncryptedGroup> getFirstInnerEncryptedChatByState(EncryptedGroupState groupState, InnerEncryptedChatState innerChatState) {
         for (EncryptedGroup encryptedGroup : getEncryptedGroupsByStates(groupState)) {
             for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
-                if (innerChat.getState() == innerChatState) {
+                if (innerChat.isInState(innerChatState)) {
                     return new Pair<>(innerChat, encryptedGroup);
                 }
             }
@@ -135,7 +134,7 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
             if (encryptedChat != null) {
                 InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
                 innerChat.setEncryptedChatId(encryptedChat.id);
-                if (encryptedGroup.getState() == CREATING_ENCRYPTED_CHATS) {
+                if (encryptedGroup.isInState(CREATING_ENCRYPTED_CHATS)) {
                     log(encryptedGroup, "A primary inner chat with a user started.");
                     innerChat.setState(InnerEncryptedChatState.NEED_SEND_INVITATION);
                     getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
@@ -147,7 +146,7 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
                             log(encryptedGroup, "Group created by owner.");
                         });
                     }
-                } else if (ImmutableSet.of(WAITING_SECONDARY_CHAT_CREATION, NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION).contains(encryptedGroup.getState())) {
+                } else if (encryptedGroup.isInState(WAITING_SECONDARY_CHAT_CREATION, NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION)) {
                     log(encryptedGroup, "A secondary inner chat with a user started.");
                     innerChat.setState(InnerEncryptedChatState.NEED_SEND_SECONDARY_INVITATION);
                     getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);

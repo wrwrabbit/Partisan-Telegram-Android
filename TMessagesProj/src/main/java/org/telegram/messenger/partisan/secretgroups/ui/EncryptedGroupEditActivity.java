@@ -391,7 +391,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
         setAvatarCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
         setAvatarCell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
         setAvatarCell.setOnClickListener(v -> {
-            if (encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+            if (encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setMessage(getString(R.string.EncryptedGroupAvatarChangeForbidden));
                 builder.setTitle(getString(R.string.ChatSetNewPhoto));
@@ -420,7 +420,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
         deleteAvatarCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
         deleteAvatarCell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
         deleteAvatarCell.setOnClickListener(v -> {
-            if (encryptedGroup.getState() != EncryptedGroupState.INITIALIZED) {
+            if (encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setMessage(getString(R.string.EncryptedGroupAvatarChangeForbidden));
                 builder.setTitle(getString(R.string.DeletePhoto));
@@ -455,7 +455,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
                 return;
             }
             if (position == addMemberRow) {
-                if (encryptedGroup.getState() != EncryptedGroupState.INITIALIZED
+                if (encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_CREATING_ENCRYPTED_CHAT)
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION)
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_INVITATION_SENT)) {

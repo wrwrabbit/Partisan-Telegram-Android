@@ -18038,7 +18038,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     chatActivityEnterView.setVisibility(View.VISIBLE);
                 }
             } else if (currentEncryptedGroup != null) {
-                if (currentEncryptedGroup.getState() == EncryptedGroupState.INITIALIZED) {
+                if (currentEncryptedGroup.isInState(EncryptedGroupState.INITIALIZED)) {
                     bottomOverlay.setVisibility(View.INVISIBLE);
                     if (!inPreviewMode && !isInsideContainer && chatMode != MODE_SAVED) {
                         chatActivityEnterView.setVisibility(View.VISIBLE);

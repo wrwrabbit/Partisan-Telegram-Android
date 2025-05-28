@@ -141,8 +141,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             if (encryptedGroup == null) {
                 throw new RuntimeException("Wrong annotation usage");
             }
-            List<EncryptedGroupState> stateList = Arrays.asList(states);
-            if (stateList.stream().noneMatch(state -> state == encryptedGroup.getState())) {
+            if (encryptedGroup.isNotInState(states)) {
                 log("Invalid encrypted group state.");
                 return false;
             }
@@ -155,9 +154,8 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             if (encryptedGroup == null) {
                 throw new RuntimeException("Wrong annotation usage");
             }
-            List<InnerEncryptedChatState> stateList = Arrays.asList(states);
             InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByEncryptedChatId(encryptedChat.id);
-            if (stateList.stream().noneMatch(state -> state == innerChat.getState())) {
+            if (innerChat.isNotInState(states)) {
                 log("Invalid inner chat state.");
                 return false;
             }
@@ -326,7 +324,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
-        if (encryptedGroup.getState() != INITIALIZED) {
+        if (encryptedGroup.isNotInState(INITIALIZED)) {
             getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
         }
         AndroidUtilities.runOnUIThread(() -> {
@@ -397,7 +395,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getMessagesController().deleteDialog(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), 0, true);
         } else {
             getEncryptedGroupProtocol().removeMember(encryptedGroup, action.userId);
-            if (encryptedGroup.getState() == WAITING_SECONDARY_CHAT_CREATION) {
+            if (encryptedGroup.isInState(WAITING_SECONDARY_CHAT_CREATION)) {
                 getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
             }
         }
@@ -420,7 +418,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
 
     @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER})
     private TLRPC.Message handleNewAvatar(NewAvatarAction action) {
-        innerAssert(encryptedGroup.getState() != JOINING_NOT_CONFIRMED, "Invalid encrypted group state.");
+        innerAssert(encryptedGroup.isNotInState(JOINING_NOT_CONFIRMED), "Invalid encrypted group state.");
         final int maxWidth = 150;
         final int maxHeight = 150;
         final int colorDepth = 3;

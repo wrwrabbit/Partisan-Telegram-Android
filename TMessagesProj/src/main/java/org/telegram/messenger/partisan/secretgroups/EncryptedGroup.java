@@ -3,6 +3,7 @@ package org.telegram.messenger.partisan.secretgroups;
 import android.graphics.Bitmap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -111,6 +112,14 @@ public class EncryptedGroup {
 
     public EncryptedGroupState getState() {
         return state;
+    }
+
+    public boolean isInState(EncryptedGroupState... targetStates) {
+        return Arrays.stream(targetStates).anyMatch(targetState -> state == targetState);
+    }
+
+    public boolean isNotInState(EncryptedGroupState... targetStates) {
+        return Arrays.stream(targetStates).noneMatch(targetState -> state == targetState);
     }
 
     public void setState(EncryptedGroupState state) {

@@ -104,7 +104,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
         if (currentEncryptedGroup.getOwnerUserId() == user.id) {
             statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
             statusTextView.setText(LocaleController.getString(R.string.ChannelCreator));
-        } else if (innerChat == null || innerChat.getState() == InnerEncryptedChatState.INITIALIZED) {
+        } else if (innerChat == null || innerChat.isInState(InnerEncryptedChatState.INITIALIZED)) {
             if (user.id == UserConfig.getInstance(currentAccount).getClientUserId() || user.status != null && user.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime() || MessagesController.getInstance(currentAccount).onlinePrivacy.containsKey(user.id)) {
                 statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
                 statusTextView.setText(getString(R.string.Online));
