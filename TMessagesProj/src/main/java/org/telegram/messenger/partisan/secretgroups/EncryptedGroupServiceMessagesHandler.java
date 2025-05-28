@@ -220,6 +220,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
 
     private TLRPC.Message invokeMethod(Method method) {
         try {
+            log("Invoke service message handler method " + method.getName());
             return (TLRPC.Message)method.invoke(this, serviceMessage.encryptedGroupAction);
         } catch (IllegalAccessException | InvocationTargetException e) {
             if (e instanceof InvocationTargetException && ((InvocationTargetException) e).getTargetException() instanceof AssertionException) {
@@ -232,9 +233,6 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
 
     @Handler(conditions = {HandlerCondition.GROUP_NOT_EXISTS, HandlerCondition.FAKE_PASSCODE_NOT_ACTIVATED})
     private TLRPC.Message handleGroupCreation(AbstractCreateGroupAction action) {
-        if (FakePasscodeUtils.isFakePasscodeActivated()) {
-            return null;
-        }
         encryptedGroup = createEncryptedGroup(encryptedChat, action);
         log("Created.");
 
@@ -322,7 +320,6 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             groupStates = INITIALIZED,
             innerChatStates = InnerEncryptedChatState.NEW_MEMBER_INVITATION_SENT)
     private TLRPC.Message handleConfirmNewMemberJoinAction(ConfirmJoinAction action) {
-        log("Handle confirm join.");
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
         if (encryptedGroup.hasAvatar()) {
@@ -353,7 +350,6 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
 
     @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER}, groupStates = WAITING_CONFIRMATION_FROM_OWNER)
     private TLRPC.Message handleConfirmGroupInitialization(ConfirmGroupInitializationAction action) {
-        log("Owner confirmed initialization.");
         encryptedGroup.setState(WAITING_SECONDARY_CHAT_CREATION);
         getMessagesStorage().updateEncryptedGroup(encryptedGroup);
         getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
@@ -399,7 +395,6 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             groupStates = WAITING_SECONDARY_CHAT_CREATION,
             innerChatStates = InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)
     private TLRPC.Message handleAllSecondaryChatsInitialized(AllSecondaryChatsInitializedAction action) {
-        log("User created all secondary chats.");
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
         getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
