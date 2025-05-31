@@ -7,7 +7,6 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.messenger.partisan.secretgroups.action.AddMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.AllSecondaryChatsInitializedAction;

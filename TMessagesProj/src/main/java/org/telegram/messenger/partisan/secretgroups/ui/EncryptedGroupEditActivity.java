@@ -459,7 +459,8 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_CREATING_ENCRYPTED_CHAT)
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION)
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_INVITATION_SENT)
-                        || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_WAITING_SECONDARY_CHATS_CREATION)) {
+                        || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_WAITING_SECONDARY_CHATS_CREATION)
+                        || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
                     showDialog(AlertsCreator.createSimpleAlert(context, getString(R.string.AppName), getString(R.string.CantAddNewMemberToEncryptedGroupMessage)).create());
                 } else {
                     presentFragment(new EncryptedGroupCreateActivity(encryptedGroup), false);

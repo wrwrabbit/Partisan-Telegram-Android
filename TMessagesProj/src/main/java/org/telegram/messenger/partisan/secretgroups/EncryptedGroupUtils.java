@@ -58,9 +58,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
             if (encryptedGroup.getOwnerUserId() != getUserConfig().clientUserId) {
                 int ownerEncryptedChatId = encryptedGroup.getOwnerEncryptedChatId();
                 TLRPC.EncryptedChat ownerEncryptedChat = getMessagesController().getEncryptedChat(ownerEncryptedChatId);
-                if (groupState == EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
-                    getEncryptedGroupProtocol().sendAllSecondaryChatsInitialized(ownerEncryptedChat);
-                }
+                getEncryptedGroupProtocol().sendAllSecondaryChatsInitialized(ownerEncryptedChat);
             }
         } else if (PartisanLog.logsAllowed()) {
             String notInitializedInnerChats = encryptedGroup.getInnerChats().stream()

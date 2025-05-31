@@ -320,7 +320,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             groupStates = INITIALIZED,
             innerChatStates = InnerEncryptedChatState.NEW_MEMBER_INVITATION_SENT)
     private TLRPC.Message handleConfirmNewMemberJoinAction(ConfirmJoinAction action) {
-        innerChat.setState(InnerEncryptedChatState.INITIALIZED);
+        innerChat.setState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
         if (encryptedGroup.hasAvatar()) {
             getEncryptedGroupProtocol().sendNewAvatar(encryptedGroup, encryptedChat);
@@ -398,6 +398,19 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
         getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+        AndroidUtilities.runOnUIThread(() -> {
+            getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
+            getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
+        });
+        return null;
+    }
+
+    @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.INNER_CHAT_EXISTS},
+            groupStates = INITIALIZED,
+            innerChatStates = InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)
+    private TLRPC.Message handleNewMemberAllSecondaryChatsInitialized(AllSecondaryChatsInitializedAction action) {
+        innerChat.setState(InnerEncryptedChatState.INITIALIZED);
+        getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
