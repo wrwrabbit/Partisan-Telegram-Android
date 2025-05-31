@@ -47,8 +47,9 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
     }
 
     public void checkAllEncryptedChatsCreated(EncryptedGroup encryptedGroup) {
-        if (encryptedGroup.isNotInState(EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION, EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION)) {
-            throw new RuntimeException("Invalid encrypted group state: " + encryptedGroup.getState());
+        EncryptedGroupState groupState = encryptedGroup.getState();
+        if (groupState != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION && groupState != EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
+            throw new RuntimeException("Invalid encrypted group state: " + groupState);
         }
         if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.INITIALIZED)) {
             log(encryptedGroup, "All encrypted chats initialized.");
@@ -57,13 +58,13 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
             if (encryptedGroup.getOwnerUserId() != getUserConfig().clientUserId) {
                 int ownerEncryptedChatId = encryptedGroup.getOwnerEncryptedChatId();
                 TLRPC.EncryptedChat ownerEncryptedChat = getMessagesController().getEncryptedChat(ownerEncryptedChatId);
-                if (encryptedGroup.isInState(EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION)) {
+                if (groupState == EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION) {
                     getEncryptedGroupProtocol().sendAllSecondaryChatsInitialized(ownerEncryptedChat);
                 }
             }
         } else if (PartisanLog.logsAllowed()) {
             String notInitializedInnerChats = encryptedGroup.getInnerChats().stream()
-                    .filter(innerChat -> innerChat.isNotInState(InnerEncryptedChatState.INITIALIZED))
+                    .filter(innerChat -> innerChat.getState() != InnerEncryptedChatState.INITIALIZED)
                     .map(innerChat -> Long.toString(innerChat.getUserId()))
                     .collect(Collectors.joining(", "));
             log(encryptedGroup, "NOT all encrypted chats initialized: " + notInitializedInnerChats.length() + ".");
