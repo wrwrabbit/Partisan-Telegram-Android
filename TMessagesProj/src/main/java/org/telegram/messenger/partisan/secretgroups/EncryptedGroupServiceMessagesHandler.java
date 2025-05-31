@@ -152,7 +152,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
                     }
                     break;
                 case GROUP_NOT_EXISTS:
-                    if (encryptedGroup == null) {
+                    if (encryptedGroup != null) {
                         log("There is already an encrypted group with the external id");
                         return false;
                     }
