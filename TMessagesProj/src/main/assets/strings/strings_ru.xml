@@ -287,10 +287,6 @@
     <string name="NotAllSelectedDialogsHaveThisOption">Не все выбранные диалоги имеют эту опцию.</string>
     <string name="ThisFeatureIsNotImplemented">Эта функция ещё не реализована.</string>
     <string name="DeleteSecretGroupOptionForMembers">Удалить сообщения для остальных</string>
-    <string name="PartisanExperimentalSettingsHeader">Экспериментальные настройки</string>
-    <string name="EnableSecretGroups">Включить секретные группы</string>
-    <string name="SecretGroupsEnabled">Секретные группы включены</string>
-    <string name="EnableSecretGroupsInfo">Секретные группы позволяют нескольким пользователям общаться с использованием сквозного шифрования. Чтобы создать секретную группу, включите этот функционал при помощи кнопки выше, вернитесь в список диалогов, нажмите на иконку карандаша в правом нижнем углу и выберите \"%1$s\".</string>
     <string name="FileProtection">Защита файлов</string>
     <string name="FileProtectionInfo">Защита файлов позволяет защититься от извлечения информации при досмотре телефона. Включение опции может привести к некорректной работе приложения. После включения защиты файлов кэш сообщений будет очищен, а приложение перезагрузится.</string>
     <string name="ApplicationWillBeRestarted">Приложение будет перезапущено.</string>

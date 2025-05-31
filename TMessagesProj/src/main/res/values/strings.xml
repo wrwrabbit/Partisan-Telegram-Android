@@ -9408,10 +9408,6 @@
     <string name="NotAllSelectedDialogsHaveThisOption">Not all selected dialogs have this option.</string>
     <string name="ThisFeatureIsNotImplemented">This feature is not yet implemented.</string>
     <string name="DeleteSecretGroupOptionForMembers">Delete messages for others</string>
-    <string name="PartisanExperimentalSettingsHeader">Experimental Settings</string>
-    <string name="EnableSecretGroups">Enable Secret Groups</string>
-    <string name="SecretGroupsEnabled">Secret Groups Enabled</string>
-    <string name="EnableSecretGroupsInfo">Secret groups allow multiple users to communicate using end-to-end encryption. To create a secret group, enable this feature using the button above, return to the list of conversations, click the pencil icon in the lower right corner and select \"%1$s\".</string>
     <string name="FileProtection">File Protection</string>
     <string name="FileProtectionInfo">File protection allows you to protect yourself from information extraction during phone inspection. Enabling this option may cause the application to work incorrectly. After enabling file protection, the message cache will be cleared and the application will reboot.</string>
     <string name="ApplicationWillBeRestarted">The application will be restarted.</string>
