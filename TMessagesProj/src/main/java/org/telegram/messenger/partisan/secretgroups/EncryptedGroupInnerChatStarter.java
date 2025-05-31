@@ -8,8 +8,6 @@ import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.W
 import android.os.SystemClock;
 import android.util.Pair;
 
-import com.google.common.collect.ImmutableSet;
-
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.UserConfig;
@@ -19,10 +17,7 @@ import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.LaunchActivity;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -135,30 +130,42 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
                 InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
                 innerChat.setEncryptedChatId(encryptedChat.id);
                 if (encryptedGroup.isInState(CREATING_ENCRYPTED_CHATS)) {
-                    log(encryptedGroup, "A primary inner chat with a user started.");
-                    innerChat.setState(InnerEncryptedChatState.NEED_SEND_INVITATION);
-                    getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
-
-                    if (encryptedGroup.noneInnerChatsMatchState(InnerEncryptedChatState.CREATING_ENCRYPTED_CHAT)) {
-                        AndroidUtilities.runOnUIThread(() -> {
-                            encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_MEMBERS);
-                            getMessagesStorage().updateEncryptedGroup(encryptedGroup);
-                            log(encryptedGroup, "Group created by owner.");
-                        });
-                    }
+                    onPrimaryChatStarted(innerChat);
                 } else if (encryptedGroup.isInState(WAITING_SECONDARY_CHAT_CREATION, NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION)) {
-                    log(encryptedGroup, "A secondary inner chat with a user started.");
-                    innerChat.setState(InnerEncryptedChatState.NEED_SEND_SECONDARY_INVITATION);
-                    getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
-
-                    getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+                    onSecondaryChatStarted(innerChat);
                 } else {
-                    log(encryptedGroup, "A member added.");
-                    innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION);
-                    getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
+                    onMemberAdded(innerChat);
                 }
             }
             currentDelegate = null;
+        }
+
+        private void onPrimaryChatStarted(InnerEncryptedChat innerChat) {
+            log(encryptedGroup, "A primary inner chat with a user started.");
+            innerChat.setState(InnerEncryptedChatState.NEED_SEND_INVITATION);
+            getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
+
+            if (encryptedGroup.noneInnerChatsMatchState(InnerEncryptedChatState.CREATING_ENCRYPTED_CHAT)) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    encryptedGroup.setState(EncryptedGroupState.WAITING_CONFIRMATION_FROM_MEMBERS);
+                    getMessagesStorage().updateEncryptedGroup(encryptedGroup);
+                    log(encryptedGroup, "Group created by owner.");
+                });
+            }
+        }
+
+        private void onSecondaryChatStarted(InnerEncryptedChat innerChat) {
+            log(encryptedGroup, "A secondary inner chat with a user started.");
+            innerChat.setState(InnerEncryptedChatState.NEED_SEND_SECONDARY_INVITATION);
+            getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
+
+            getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+        }
+
+        private void onMemberAdded(InnerEncryptedChat innerChat) {
+            log(encryptedGroup, "A member added.");
+            innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION);
+            getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
         }
 
         @Override
