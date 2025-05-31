@@ -191,8 +191,9 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
         return accountNum;
     }
 
-    public long getFloodWaitUntil() {
-        return floodWaitUntil;
+    public long getFloodWaitRemaining() {
+        long remainingTime = (floodWaitUntil - SystemClock.elapsedRealtime()) / 1000;
+        return Math.max(0, remainingTime);
     }
 
     private void log(@Nullable EncryptedGroup encryptedGroup, String message) {

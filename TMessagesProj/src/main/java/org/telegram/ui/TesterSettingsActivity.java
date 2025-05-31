@@ -80,11 +80,7 @@ public class TesterSettingsActivity extends BaseFragment {
             new SimpleData("User Chat Count", () ->
                     getAllDialogs().stream().filter(d -> d.id > 0).count()
                             + (!isDialogEndReached() ? " (not all)" : "")),
-            new SimpleData("Sec Group Flood Wait", () -> {
-                long floodWaitUntil = (EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitUntil());
-                long remainingTime = (floodWaitUntil - SystemClock.elapsedRealtime()) / 1000;
-                return "" + Math.max(0,  remainingTime);
-            }),
+            new SimpleData("Sec Group Flood Wait", () -> "" + EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining()),
     };
 
     private ListAdapter listAdapter;

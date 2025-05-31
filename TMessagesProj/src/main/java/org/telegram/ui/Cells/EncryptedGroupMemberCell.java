@@ -15,13 +15,13 @@ import android.widget.ImageView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupInnerChatStarter;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChatState;
 import org.telegram.tgnet.ConnectionsManager;
@@ -119,9 +119,13 @@ public class EncryptedGroupMemberCell extends FrameLayout {
             } else {
                 switch (innerChat.getState()) {
                     case CREATING_ENCRYPTED_CHAT:
+                    case NEW_MEMBER_CREATING_ENCRYPTED_CHAT:
+                        statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+                        String delay = AndroidUtilities.formatTimestamp((int)EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining());
+                        statusTextView.setText(LocaleController.formatString(R.string.InnerEncryptedChatStateSecretChatCreating, delay));
+                        break;
                     case NEED_SEND_INVITATION:
                     case INVITATION_SENT:
-                    case NEW_MEMBER_CREATING_ENCRYPTED_CHAT:
                     case NEW_MEMBER_NEED_SEND_INVITATION:
                     case NEW_MEMBER_INVITATION_SENT:
                         statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
