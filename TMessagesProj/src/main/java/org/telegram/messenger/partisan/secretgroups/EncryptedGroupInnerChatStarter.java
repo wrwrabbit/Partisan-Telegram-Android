@@ -58,6 +58,9 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
             InnerEncryptedChat uninitializedInnerChat = pair.first;
             EncryptedGroup encryptedGroup = pair.second;
             TLRPC.User user = getMessagesController().getUser(uninitializedInnerChat.getUserId());
+            if (user == null) {
+                return;
+            }
             log(encryptedGroup, "Start secondary inner chat with a user.");
             currentDelegate = new SecretChatStartDelegate(encryptedGroup);
             Utilities.globalQueue.postRunnable(() ->
