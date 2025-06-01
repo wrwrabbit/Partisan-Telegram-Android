@@ -10,6 +10,7 @@ import org.telegram.messenger.AppStartReceiver;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupInnerChatStarter;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupPreviewDeleter;
 
 public class InnerPartisanTimer implements Runnable {
     private static InnerPartisanTimer instance;
@@ -50,5 +51,6 @@ public class InnerPartisanTimer implements Runnable {
     public void executeScheduledActions() {
         FakePasscodeUtils.tryActivateByTimer();
         EncryptedGroupInnerChatStarter.checkForAllAccounts();
+        EncryptedGroupPreviewDeleter.deletePreviewForAllAccounts();
     }
 }

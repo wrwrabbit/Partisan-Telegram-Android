@@ -10722,6 +10722,41 @@ public class MessagesStorage extends BaseController {
         });
     }
 
+    public void deleteEncryptedGroupPreview(long innerDialogId) {
+        Set<Integer> messageIds = getPreviewMessageIds(innerDialogId);
+        for (int messageId : messageIds) {
+            deleteEncryptedGroupPreviewMessageById(innerDialogId, messageId);
+        }
+    }
+
+    private Set<Integer> getPreviewMessageIds(long innerDialogId) {
+        String sql = "SELECT mid, data FROM messages_v2 WHERE uid = ?";
+        Object[] args = {innerDialogId};
+        return partisanSelect(sql, args, cursor -> {
+            Set<Integer> messageIds = new HashSet<>();
+            while (cursor.next()) {
+                int messageId = cursor.intValue(0);
+                NativeByteBuffer data = cursor.byteBufferValue(1);
+                if (data != null) {
+                    TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                    if (message.message != null) {
+                        messageIds.add(messageId);
+                    }
+                    data.reuse();
+                }
+            }
+            return messageIds;
+        });
+    }
+
+    private void deleteEncryptedGroupPreviewMessageById(long innerDialogId, int messageId) {
+        partisanExecute("DELETE FROM messages_v2 WHERE uid = ? AND mid = ?", state -> {
+            state.bindLong(1, innerDialogId);
+            state.bindInteger(2, messageId);
+            state.step();
+        });
+    }
+
     private interface SQLitePreparedStatementConsumer {
         void accept(SQLitePreparedStatement state) throws SQLiteException;
     }
