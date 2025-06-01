@@ -1872,6 +1872,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 if (encryptedGroup != null && encryptedGroup.isInState(EncryptedGroupState.JOINING_NOT_CONFIRMED, EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED)) {
                     drawCount = true;
                     drawMention = false;
+                    unreadCount = 1;
                     countString = String.format("%d", 1);
                 }
             } else {
