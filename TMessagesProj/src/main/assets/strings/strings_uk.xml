@@ -296,7 +296,7 @@
     <string name="FileProtectionDisabledTitle">Захист файлів вимкнено</string>
     <string name="FileProtectionDisabledDetails">Розмір бази даних став занадто великим. Захист файлів тимчасово вимкнено. Ви можете увімкнути цю функцію знову.</string>
     <string name="FileProtectionEnableAgain">Увімкнути знову</string>
-    <string name="InnerEncryptedChatStateSecretChatCreating">Створення секретного чату (%1$s)</string>
+    <string name="InnerEncryptedChatStateSecretChatCreating">Створення секретного чату</string>
     <string name="InnerEncryptedChatStateInvitationSent">Запрошення надіслано</string>
     <string name="InnerEncryptedChatStateInitialization">Ініціалізація</string>
     <string name="InnerEncryptedChatStateCancelled">Скасовано</string>

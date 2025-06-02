@@ -121,8 +121,12 @@ public class EncryptedGroupMemberCell extends FrameLayout {
                     case CREATING_ENCRYPTED_CHAT:
                     case NEW_MEMBER_CREATING_ENCRYPTED_CHAT:
                         statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
-                        String delay = AndroidUtilities.formatTimestamp((int)EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining());
-                        statusTextView.setText(LocaleController.formatString(R.string.InnerEncryptedChatStateSecretChatCreating, delay));
+                        int floodWaitingRemaining = (int)EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining();
+                        String statusText = LocaleController.getString(R.string.InnerEncryptedChatStateSecretChatCreating);
+                        if (floodWaitingRemaining > 0) {
+                            statusText += " (" + AndroidUtilities.formatTimestamp(floodWaitingRemaining) + ")";
+                        }
+                        statusTextView.setText(statusText);
                         break;
                     case NEED_SEND_INVITATION:
                     case INVITATION_SENT:

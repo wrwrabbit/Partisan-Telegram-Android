@@ -9417,7 +9417,7 @@
     <string name="FileProtectionDisabledTitle">File protection is disabled</string>
     <string name="FileProtectionDisabledDetails">The database size has become too large. File protection is temporarily disabled. You can enable this feature again.</string>
     <string name="FileProtectionEnableAgain">Enable again</string>
-    <string name="InnerEncryptedChatStateSecretChatCreating">Secret chat creating (%1$s)</string>
+    <string name="InnerEncryptedChatStateSecretChatCreating">Secret chat creating</string>
     <string name="InnerEncryptedChatStateInvitationSent">Invitation sent</string>
     <string name="InnerEncryptedChatStateInitialization">Initialization</string>
     <string name="InnerEncryptedChatStateInvitationDeclined">Invitation declined</string>

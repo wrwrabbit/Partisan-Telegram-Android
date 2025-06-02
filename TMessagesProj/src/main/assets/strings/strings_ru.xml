@@ -296,7 +296,7 @@
     <string name="FileProtectionDisabledTitle">Защита файлов отключена</string>
     <string name="FileProtectionDisabledDetails">Размер базы данных стал слишком большим. Защита файлов временно отключена. Вы можете снова включить эту функцию.</string>
     <string name="FileProtectionEnableAgain">Включить снова</string>
-    <string name="InnerEncryptedChatStateSecretChatCreating">Создание секретного чата (%1$s)</string>
+    <string name="InnerEncryptedChatStateSecretChatCreating">Создание секретного чата</string>
     <string name="InnerEncryptedChatStateInvitationSent">Приглашение отправлено</string>
     <string name="InnerEncryptedChatStateInitialization">Инициализация</string>
     <string name="InnerEncryptedChatStateInvitationDeclined">Приглашение отклонено</string>
