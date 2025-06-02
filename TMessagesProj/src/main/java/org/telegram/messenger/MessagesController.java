@@ -10549,7 +10549,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                         type = 5;
                     } else {
-                        if (isGroup) {
+                        if (isGroup || getEncryptedGroupUtils().isInnerEncryptedGroupChat(key)) {
                             text = LocaleController.formatString("IsTypingGroup", R.string.IsTypingGroup, getUserNameForTyping(user));
                         } else {
                             text = LocaleController.getString(R.string.Typing);
