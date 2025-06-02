@@ -301,6 +301,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -809,6 +810,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private Map<Long, Boolean[]> endReachedEncryptedGroup = new HashMap<>();
     private Map<Long, Boolean[]> cacheEndReachedEncryptedGroup = new HashMap<>();
     private Map<Long, Boolean[]> forwardEndReachedEncryptedGroup = new HashMap<>();
+
+    private Set<Integer> postponedScrollToLastMessageQueryIndexesSetForEncryptedGroup = new HashSet<>();
 
     private boolean hideForwardEndReached;
     private boolean loading = true;
@@ -15031,10 +15034,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             postponedScrollIsCanceled = false;
             waitingForLoad.clear();
 
-            waitingForLoad.add(lastLoadIndex);
-            AndroidUtilities.runOnUIThread(() -> {
-                getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 30, 0, 0, true, 0, classGuid, 0, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
-            }, SCROLL_DEBUG_DELAY ? 7500 : 0);
+            if (!isEncryptedGroup()) {
+                waitingForLoad.add(lastLoadIndex);
+                AndroidUtilities.runOnUIThread(() -> {
+                    getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 30, 0, 0, true, 0, classGuid, 0, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
+                }, SCROLL_DEBUG_DELAY ? 7500 : 0);
+            } else {
+                postponedScrollToLastMessageQueryIndex = 0;
+                AndroidUtilities.runOnUIThread(() -> {
+                    forEachDialogId(dialog_id -> {
+                        postponedScrollToLastMessageQueryIndexesSetForEncryptedGroup.add(lastLoadIndex);
+                        waitingForLoad.add(lastLoadIndex);
+                        getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 30, 0, 0, true, 0, classGuid, 0, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
+                    });
+                }, SCROLL_DEBUG_DELAY ? 7500 : 0);
+            }
         }
     }
 
@@ -19620,11 +19634,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             long currentUserId = getUserConfig().getClientUserId();
             int mode = (Integer) args[14];
             boolean isCache = (Boolean) args[3];
-            boolean postponedScroll = postponedScrollToLastMessageQueryIndex > 0 && queryLoadIndex == postponedScrollToLastMessageQueryIndex;
+            boolean postponedScroll = postponedScrollToLastMessageQueryIndex > 0 && queryLoadIndex == postponedScrollToLastMessageQueryIndex
+                    || postponedScrollToLastMessageQueryIndexesSetForEncryptedGroup.contains(queryLoadIndex);
             boolean fakePostponedScroll = this.fakePostponedScroll;
             this.fakePostponedScroll = false;
             if (postponedScroll) {
                 postponedScrollToLastMessageQueryIndex = 0;
+                postponedScrollToLastMessageQueryIndexesSetForEncryptedGroup.remove(queryLoadIndex);
             }
 
             if (index == -1) {
@@ -19751,13 +19767,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             if (postponedScroll) {
                 if (load_type == 0 && isCache && messArr.size() < count) {
+                    if (isEncryptedGroup()) {
+                        return;
+                    }
                     postponedScrollToLastMessageQueryIndex = lastLoadIndex;
                     waitingForLoad.add(lastLoadIndex);
                     final int countFinal = count;
                     forEachDialogId(dialog_id ->
                         getMessagesController().loadMessages(dialog_id, mergeDialogId, false, countFinal, 0, 0, false, 0, classGuid, 0, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic)
                     );
-                    return;
                 }
 
                 if (load_type == 4) {
