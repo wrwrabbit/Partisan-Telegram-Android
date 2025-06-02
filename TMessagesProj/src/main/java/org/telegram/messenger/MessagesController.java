@@ -480,8 +480,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                     }
                 }
-                encryptedGroups.remove(encryptedGroup.getInternalId());
-            }
+                if (onlyHistory != 2) {
+                    encryptedGroups.remove(encryptedGroup.getInternalId());
+                }}
         }
     }
 
