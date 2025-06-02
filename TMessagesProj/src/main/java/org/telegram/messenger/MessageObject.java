@@ -46,9 +46,10 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
-import org.telegram.messenger.partisan.secretgroups.action.AbstractCreateGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.AddMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.ChangeGroupInfoAction;
+import org.telegram.messenger.partisan.secretgroups.action.CreateGroupAction;
+import org.telegram.messenger.partisan.secretgroups.action.CreateGroupForNewMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
@@ -4798,7 +4799,7 @@ public class MessageObject {
                         } else {
                             messageText = replaceWithLink(getString(R.string.ActionTakeScreenshoot), "un1", fromObject);
                         }
-                    } else if (messageOwner.action.encryptedAction instanceof AbstractCreateGroupAction) {
+                    } else if (messageOwner.action.encryptedAction instanceof CreateGroupAction) {
                         if (isOut()) {
                             messageText = getString(R.string.ActionYouCreateGroup);
                         } else {
@@ -4823,8 +4824,11 @@ public class MessageObject {
                         } else {
                             messageText = replaceWithLink(getString(R.string.ActionRemovedPhoto), "un1", fromObject);
                         }
-                    } else if (messageOwner.action.encryptedAction instanceof AddMemberAction) {
-                        long userId = ((AddMemberAction)messageOwner.action.encryptedAction).userId;
+                    } else if (messageOwner.action.encryptedAction instanceof AddMemberAction ||
+                            messageOwner.action.encryptedAction instanceof CreateGroupForNewMemberAction) {
+                        long userId = messageOwner.action.encryptedAction instanceof AddMemberAction
+                                ? ((AddMemberAction)messageOwner.action.encryptedAction).userId
+                                : messageOwner.peer_id.user_id;
                         TLRPC.User whoUser = getUser(users, sUsers, userId);
                         if (isOut()) {
                             messageText = replaceWithLink(getString(R.string.ActionYouAddUser), "un2", whoUser);
