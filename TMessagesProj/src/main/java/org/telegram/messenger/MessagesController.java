@@ -469,6 +469,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (innerChat.getDialogId().isPresent()) {
                         deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
                         dialogMessage.remove(innerChat.getDialogId().get());
+                        getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(innerChat.getDialogId().get(), encryptedGroupId -> {
+                            getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
+                        });
                         TLRPC.Dialog dialog = getDialog(innerChat.getDialogId().get());
                         if (dialog != null) {
                             dialog.unread_count = 0;
