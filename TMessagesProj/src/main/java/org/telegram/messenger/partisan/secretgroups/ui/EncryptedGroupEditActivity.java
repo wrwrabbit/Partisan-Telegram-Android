@@ -41,6 +41,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupConstants;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
@@ -455,7 +456,9 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
                 return;
             }
             if (position == addMemberRow) {
-                if (encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)
+                if (encryptedGroup.getInnerChats().size() + /*current user*/ 1 >= EncryptedGroupConstants.MAX_MEMBER_COUNT) {
+                    showDialog(AlertsCreator.createSimpleAlert(context, getString(R.string.AppName), getString(R.string.LimitReached)).create());
+                } else if (encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_CREATING_ENCRYPTED_CHAT)
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION)
                         || encryptedGroup.anyInnerChatsMatchState(InnerEncryptedChatState.NEW_MEMBER_INVITATION_SENT)
