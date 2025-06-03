@@ -2667,6 +2667,7 @@ public class MessagesStorage extends BaseController {
             ArrayList<Long> usersToLoad = new ArrayList<>();
             ArrayList<Long> chatsToLoad = new ArrayList<>();
             ArrayList<Integer> encryptedToLoad = new ArrayList<>();
+            ArrayList<Integer> encryptedGroupsToLoad = new ArrayList<>();
             LongSparseIntArray dialogsByFolders = new LongSparseIntArray();
 
             LongSparseIntArray forumUnreadCount = new LongSparseIntArray();
@@ -2683,6 +2684,9 @@ public class MessagesStorage extends BaseController {
             while (cursor.next()) {
                 int folderId = cursor.intValue(1);
                 long did = cursor.longValue(0);
+                EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChatDialogId(did);
+                int encryptedGroupDialogId = encryptedGroup != null ? encryptedGroup.getInternalId() : 0;
+                boolean encryptedGroupChanged = false;
                 int unread;
                 int mentions = 0;
                 if (isForum(did)) {
@@ -2695,7 +2699,13 @@ public class MessagesStorage extends BaseController {
                     mentions = cursor.intValue(3);
                 }
                 if (unread > 0) {
-                    dialogsWithUnread.put(did, unread);
+                    if (encryptedGroup == null) {
+                        dialogsWithUnread.put(did, unread);
+                    } else {
+                        int oldValue = dialogsWithUnread.get(encryptedGroupDialogId, 0);
+                        dialogsWithUnread.put(encryptedGroupDialogId, oldValue + unread);
+                        encryptedGroupChanged = oldValue == 0;
+                    }
                 }
                 if (mentions > 0) {
                     dialogsWithMentions.put(did, mentions);
@@ -2703,11 +2713,18 @@ public class MessagesStorage extends BaseController {
                 /*if (BuildVars.DEBUG_VERSION) {
                     FileLog.d("unread chat " + did + " counters = " + unread + " and " + mentions);
                 }*/
-                dialogsByFolders.put(did, folderId);
+                dialogsByFolders.put(encryptedGroup == null ? did : encryptedGroupDialogId, folderId);
                 if (DialogObject.isEncryptedDialog(did)) {
-                    int encryptedChatId = DialogObject.getEncryptedChatId(did);
-                    if (!encryptedToLoad.contains(encryptedChatId)) {
-                        encryptedToLoad.add(encryptedChatId);
+                    if (encryptedGroup == null) {
+                        int encryptedChatId = DialogObject.getEncryptedChatId(did);
+                        if (!encryptedToLoad.contains(encryptedChatId)) {
+                            encryptedToLoad.add(encryptedChatId);
+                        }
+                    } else {
+                        int encrypteGroupId = DialogObject.getEncryptedChatId(encryptedGroupDialogId);
+                        if (!encryptedGroupsToLoad.contains(encrypteGroupId) && encryptedGroupChanged) {
+                            encryptedGroupsToLoad.add(encrypteGroupId);
+                        }
                     }
                 } else if (DialogObject.isUserDialog(did)) {
                     if (!usersToLoad.contains(did)) {
@@ -2787,6 +2804,19 @@ public class MessagesStorage extends BaseController {
                         int count = encryptedChatsByUsersCount.get(user.id, 0);
                         encryptedChatsByUsersCount.put(user.id, count + 1);
                     }
+                }
+            }
+            if (!encryptedGroupsToLoad.isEmpty()) {
+                List<EncryptedGroup> encryptedGroups = getEncryptedGroupsInternal(encryptedGroupsToLoad);
+                for (EncryptedGroup encryptedGroup : encryptedGroups) {
+                    if (FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), currentAccount)) {
+                        continue;
+                    }
+                    long did = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
+                    boolean muted = getMessagesController().isDialogMuted(did, 0);
+                    int idx1 = dialogsByFolders.get(did);
+                    int idx2 = muted ? 1 : 0;
+                    groups[idx1][idx2]++;
                 }
             }
             if (!chatsToLoad.isEmpty()) {
@@ -5694,6 +5724,7 @@ public class MessagesStorage extends BaseController {
         ArrayList<Long> usersToLoad = new ArrayList<>();
         ArrayList<Long> chatsToLoad = new ArrayList<>();
         ArrayList<Integer> encryptedToLoad = new ArrayList<>();
+        ArrayList<Integer> encryptedGroupsToLoad = new ArrayList<>();
         LongSparseArray<Integer> dialogsByFolders = new LongSparseArray<>();
         LongSparseArray<Integer> newUnreadDialogs = new LongSparseArray<>();
 
@@ -5708,9 +5739,27 @@ public class MessagesStorage extends BaseController {
                     continue;
                 }
                 long did = array.keyAt(a);
+                EncryptedGroup encryptedGroup =  getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChatDialogId(did);
+                Long encryptedGroupDialogId = null;
+                List<Long> innerEncryptedGroupChatsDialogIds = null;
+                boolean encryptedGroupChanged = false;
+                if (encryptedGroup != null) {
+                    encryptedGroupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
+                    innerEncryptedGroupChatsDialogIds = encryptedGroup.getInnerChats().stream()
+                            .filter(innerChat -> innerChat != null && innerChat.getEncryptedChatId().isPresent())
+                            .map(innerChat -> innerChat.getEncryptedChatId().get())
+                            .map(DialogObject::makeEncryptedDialogId)
+                            .collect(Collectors.toList());
+                }
                 if (read) {
                     if (b == 0) {
                         dialogsWithUnread.remove(did);
+                        if (encryptedGroup != null) {
+                            if (!innerEncryptedGroupChatsDialogIds.stream().anyMatch(dialogsWithUnread::containsKey)) {
+                                dialogsWithUnread.remove(encryptedGroupDialogId);
+                                encryptedGroupChanged = true;
+                            }
+                        }
                         /*if (BuildVars.DEBUG_VERSION) {
                             FileLog.d("read remove = " + did);
                         }*/
@@ -5721,11 +5770,24 @@ public class MessagesStorage extends BaseController {
                         }*/
                     }
                 } else {
+                    int encryptedGroupSumUnread = 0;
+                    if (encryptedGroup != null) {
+                        encryptedGroupSumUnread = innerEncryptedGroupChatsDialogIds.stream()
+                                .mapToInt(innerChatDid -> dialogsWithUnread.get(innerChatDid, 0))
+                                .sum();
+                    }
                     if (dialogsWithMentions.indexOfKey(did) < 0 && dialogsWithUnread.indexOfKey(did) < 0) {
                         newUnreadDialogs.put(did, count);
+                        if (encryptedGroup != null && dialogsWithUnread.indexOfKey(encryptedGroupDialogId) < 0) {
+                            newUnreadDialogs.put(encryptedGroupDialogId, encryptedGroupSumUnread + count);
+                        }
                     }
                     if (b == 0) {
                         dialogsWithUnread.put(did, count);
+                        if (encryptedGroup != null) {
+                            dialogsWithUnread.put(encryptedGroupDialogId, encryptedGroupSumUnread + count);
+                            encryptedGroupChanged = encryptedGroupSumUnread == 0;
+                        }
                         /*if (BuildVars.DEBUG_VERSION) {
                             FileLog.d("read add = " + did);
                         }*/
@@ -5748,9 +5810,16 @@ public class MessagesStorage extends BaseController {
                 }
 
                 if (DialogObject.isEncryptedDialog(did)) {
-                    int encryptedChatId = DialogObject.getEncryptedChatId(did);
-                    if (!encryptedToLoad.contains(encryptedChatId)) {
-                        encryptedToLoad.add(encryptedChatId);
+                    if (encryptedGroup == null) {
+                        int encryptedChatId = DialogObject.getEncryptedChatId(did);
+                        if (!encryptedToLoad.contains(encryptedChatId)) {
+                            encryptedToLoad.add(encryptedChatId);
+                        }
+                    } else {
+                        int encrypteGroupId = DialogObject.getEncryptedChatId(encryptedGroupDialogId);
+                        if (!encryptedGroupsToLoad.contains(encrypteGroupId) && encryptedGroupChanged) {
+                            encryptedGroupsToLoad.add(encrypteGroupId);
+                        }
                     }
                 } else if (DialogObject.isUserDialog(did)) {
                     if (!usersToLoad.contains(did)) {
@@ -5809,8 +5878,7 @@ public class MessagesStorage extends BaseController {
                 for (int a = 0, N = encryptedChats.size(); a < N; a++) {
                     TLRPC.EncryptedChat encryptedChat = encryptedChats.get(a);
                     TLRPC.User user = encUsersDict.get(encryptedChat.user_id);
-                    if (user == null || FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedChat.id), currentAccount)
-                            || getEncryptedGroupUtils().isInnerEncryptedGroupChat(encryptedChat)) {
+                    if (user == null || FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedChat.id), currentAccount)) {
                         continue;
                     }
                     long did = DialogObject.makeEncryptedDialogId(encryptedChat.id);
@@ -5832,6 +5900,20 @@ public class MessagesStorage extends BaseController {
                     int count = encryptedChatsByUsersCount.get(user.id, 0);
                     encryptedChatsByUsersCount.put(user.id, count + 1);
                 }
+            }
+        }
+        if (!encryptedGroupsToLoad.isEmpty()) {
+            List<EncryptedGroup> encryptedGroups = getEncryptedGroupsInternal(encryptedGroupsToLoad);
+            for (EncryptedGroup encryptedGroup : encryptedGroups) {
+                if (FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), currentAccount)) {
+                    continue;
+                }
+                long did = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
+                boolean muted = getMessagesController().isDialogMuted(did, 0);
+                Integer folderId = dialogsByFolders.get(did);
+                int idx1 = folderId == null || folderId < 0 || folderId > 1 ? 0 : folderId;
+                int idx2 = muted ? 1 : 0;
+                groups[idx1][idx2]++;
             }
         }
         if (!chatsToLoad.isEmpty()) {
@@ -10568,6 +10650,11 @@ public class MessagesStorage extends BaseController {
             }
         }
         cursor.dispose();
+    }
+
+    private List<EncryptedGroup> getEncryptedGroupsInternal(List<Integer> encryptedToLoad) throws Exception {
+        String encryptedGroupsCondition = String.format(Locale.US, "WHERE encrypted_group_id IN(%s)", TextUtils.join(",", encryptedToLoad));
+        return getEncryptedGroupsInternal(encryptedGroupsCondition, null);
     }
 
     private List<EncryptedGroup> getEncryptedGroupsInternal(String condition, Object param) throws Exception {

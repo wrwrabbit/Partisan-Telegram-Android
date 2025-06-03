@@ -317,6 +317,13 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         return getOrLoadEncryptedGroup(groupId);
     }
 
+    public EncryptedGroup getOrLoadEncryptedGroupByEncryptedChatDialogId(long encryptedChatDialogId) {
+        if (!DialogObject.isEncryptedDialog(encryptedChatDialogId)) {
+            return null;
+        }
+        return getOrLoadEncryptedGroupByEncryptedChatId(DialogObject.getEncryptedChatId(encryptedChatDialogId));
+    }
+
     public boolean isNotInitializedEncryptedGroup(long dialogId) {
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             return false;
