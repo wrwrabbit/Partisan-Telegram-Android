@@ -465,21 +465,19 @@ public class MessagesController extends BaseController implements NotificationCe
         if (DialogObject.isEncryptedDialog(did)) {
             EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
             if (encryptedGroup != null) {
-                for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
-                    if (innerChat.getDialogId().isPresent()) {
-                        deleteDialog(innerChat.getDialogId().get(), onlyHistory, revoke);
-                        dialogMessage.remove(innerChat.getDialogId().get());
-                        getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(innerChat.getDialogId().get(), encryptedGroupId -> {
-                            getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
-                        });
-                        TLRPC.Dialog dialog = getDialog(innerChat.getDialogId().get());
-                        if (dialog != null) {
-                            dialog.unread_count = 0;
-                            TLRPC.EncryptedChat encryptedChat = getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
-                            if (encryptedChat != null) {
-                                TLRPC.User user = getUser(encryptedChat.user_id);
-                                getMessagesStorage().putEncryptedChat(encryptedChat, user, dialog);
-                            }
+                for (long innerChatDialogId : encryptedGroup.getInnerEncryptedChatDialogIds()) {
+                    deleteDialog(innerChatDialogId, onlyHistory, revoke);
+                    dialogMessage.remove(innerChatDialogId);
+                    getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(innerChatDialogId, encryptedGroupId -> {
+                        getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
+                    });
+                    TLRPC.Dialog dialog = getDialog(innerChatDialogId);
+                    if (dialog != null) {
+                        dialog.unread_count = 0;
+                        TLRPC.EncryptedChat encryptedChat = getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
+                        if (encryptedChat != null) {
+                            TLRPC.User user = getUser(encryptedChat.user_id);
+                            getMessagesStorage().putEncryptedChat(encryptedChat, user, dialog);
                         }
                     }
                 }

@@ -5745,11 +5745,7 @@ public class MessagesStorage extends BaseController {
                 boolean encryptedGroupChanged = false;
                 if (encryptedGroup != null) {
                     encryptedGroupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
-                    innerEncryptedGroupChatsDialogIds = encryptedGroup.getInnerChats().stream()
-                            .filter(innerChat -> innerChat != null && innerChat.getEncryptedChatId().isPresent())
-                            .map(innerChat -> innerChat.getEncryptedChatId().get())
-                            .map(DialogObject::makeEncryptedDialogId)
-                            .collect(Collectors.toList());
+                    innerEncryptedGroupChatsDialogIds = encryptedGroup.getInnerEncryptedChatDialogIds();
                 }
                 if (read) {
                     if (b == 0) {

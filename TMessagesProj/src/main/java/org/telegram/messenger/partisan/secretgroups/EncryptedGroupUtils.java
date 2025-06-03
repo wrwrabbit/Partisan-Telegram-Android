@@ -129,13 +129,8 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
             return;
         }
         encryptedGroupDialog.unread_count = 0;
-        for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
-            if (innerChat.getDialogId().isPresent()) {
-                TLRPC.Dialog innerDialog = getMessagesController().getDialog(innerChat.getDialogId().get());
-                if (innerDialog != null) {
-                    encryptedGroupDialog.unread_count += innerDialog.unread_count;
-                }
-            }
+        for (TLRPC.Dialog innerDialog : getEncryptedGroupInnerDialogs(encryptedGroup)) {
+            encryptedGroupDialog.unread_count += innerDialog.unread_count;
         }
         getMessagesStorage().updateEncryptedGroupDialog(encryptedGroupDialog);
     }
@@ -149,11 +144,8 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
             return;
         }
         MessageObject lastMessage = null;
-        for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
-            if (!innerChat.getDialogId().isPresent()) {
-                continue;
-            }
-            ArrayList<MessageObject> currentMessages = getMessagesController().dialogMessage.get(innerChat.getDialogId().get());
+        for (long innerChatDialogId : encryptedGroup.getInnerEncryptedChatDialogIds()) {
+            ArrayList<MessageObject> currentMessages = getMessagesController().dialogMessage.get(innerChatDialogId);
             if (currentMessages == null || currentMessages.isEmpty()) {
                 continue;
             }
@@ -182,12 +174,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
             Utilities.globalQueue.postRunnable(() -> updateEncryptedGroupLastMessageDate(encryptedGroupId), 100);
             return;
         }
-        encryptedGroupDialog.last_message_date = encryptedGroup.getInnerChats().stream()
-                .map(InnerEncryptedChat::getDialogId)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(dialogId -> getMessagesController().getDialog(dialogId))
-                .filter(Objects::nonNull)
+        encryptedGroupDialog.last_message_date = getEncryptedGroupInnerDialogs(encryptedGroup).stream()
                 .mapToInt(dialog -> dialog.last_message_date)
                 .max()
                 .orElse(0);
@@ -394,8 +381,12 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
 
     public List<Long> getEncryptedGroupInnerDialogIds(long dialogId) {
         EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
-        return encryptedGroup.getInnerChats().stream()
-                .map(innerChat -> innerChat.getDialogId().orElse(null))
+        return encryptedGroup.getInnerEncryptedChatDialogIds();
+    }
+
+    private List<TLRPC.Dialog> getEncryptedGroupInnerDialogs(EncryptedGroup encryptedGroup) {
+        return encryptedGroup.getInnerEncryptedChatDialogIds().stream()
+                .map(did -> getMessagesController().getDialog(did))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }

@@ -88,6 +88,14 @@ public class EncryptedGroup {
                 .collect(Collectors.toList());
     }
 
+    public List<Long> getInnerEncryptedChatDialogIds() {
+        return innerChats.stream()
+                .map(InnerEncryptedChat::getDialogId)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
     public boolean containsEncryptedChatId(int encryptedChatId) {
         return innerChats.stream()
                 .anyMatch(innerChat -> innerChat.getEncryptedChatId().isPresent()
