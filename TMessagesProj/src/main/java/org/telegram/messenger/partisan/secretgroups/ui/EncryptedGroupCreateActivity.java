@@ -68,6 +68,7 @@ import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.GroupCreateSectionCell;
 import org.telegram.ui.Cells.GroupCreateUserCell;
 import org.telegram.ui.ChatActivity;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.EditTextCaption;
@@ -724,12 +725,23 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                         showDialog(builder.create());
                         return;
                     }
+                    long did = 0;
                     if (object instanceof TLRPC.User) {
                         TLRPC.User user = (TLRPC.User) object;
                         getMessagesController().putUser(user, !searching);
+                        did = user.id;
                     } else if (object instanceof TLRPC.Chat) {
                         TLRPC.Chat chat = (TLRPC.Chat) object;
                         getMessagesController().putChat(chat, !searching);
+                        did = chat.id;
+                    }
+                    if (isAddToGroup()) {
+                        long finalDid = did;
+                        AlertsCreator.showConfirmationDialog(this, context, LocaleController.getString(R.string.AddMember), () -> {
+                            selectedContacts.put(finalDid, null);
+                            onDonePressed();
+                        });
+                        return;
                     }
                     GroupCreateSpan span = new GroupCreateSpan(editText.getContext(), object, currentAccount);
                     spansContainer.addSpan(span);
@@ -930,7 +942,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
     }
 
     private boolean onDonePressed() {
-        if (!doneButtonVisible) {
+        if (!doneButtonVisible && !isAddToGroup()) {
             return false;
         }
         if (selectedContacts.isEmpty() && isAddToGroup()) {
