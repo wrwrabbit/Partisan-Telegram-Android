@@ -14106,6 +14106,9 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void markDialogAsRead(long dialogId, int maxPositiveId, int maxNegativeId, int maxDate, boolean popup, long threadId, int countDiff, boolean readNow, int scheduledCount) {
+        getEncryptedGroupUtils().doForEachInnerDialogIdIfNeeded(dialogId, innerDialogId ->
+                markDialogAsRead(innerDialogId, maxPositiveId, maxNegativeId, maxDate, popup, threadId, countDiff, readNow, scheduledCount)
+        );
         boolean createReadTask;
 
         if (threadId != 0) {

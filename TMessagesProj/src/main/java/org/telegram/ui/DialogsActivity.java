@@ -9594,10 +9594,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     pinDialog(selectedDialog, false, filter, minPinnedNum, count == 1);
                 }
             } else if (action == read) {
-                if (selectedDialogs.stream().anyMatch(dialogId -> getMessagesStorage().isEncryptedGroup(dialogId))) {
-                    getEncryptedGroupUtils().showNotImplementedDialog(this);
-                    return;
-                }
                 if (canReadCount != 0) {
                     markAsRead(selectedDialog);
                 } else {
