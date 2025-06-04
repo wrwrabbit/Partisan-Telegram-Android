@@ -462,28 +462,28 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     void deleteEncryptedGroupInnerDialogsIfNeeded(long did, int onlyHistory, boolean revoke) {
-        if (DialogObject.isEncryptedDialog(did)) {
-            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(did));
-            if (encryptedGroup != null) {
-                for (long innerChatDialogId : encryptedGroup.getInnerEncryptedChatDialogIds()) {
-                    deleteDialog(innerChatDialogId, onlyHistory, revoke);
-                    dialogMessage.remove(innerChatDialogId);
-                    getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(innerChatDialogId, encryptedGroupId -> {
-                        getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
-                    });
-                    TLRPC.Dialog dialog = getDialog(innerChatDialogId);
-                    if (dialog != null) {
-                        dialog.unread_count = 0;
-                        TLRPC.EncryptedChat encryptedChat = getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
-                        if (encryptedChat != null) {
-                            TLRPC.User user = getUser(encryptedChat.user_id);
-                            getMessagesStorage().putEncryptedChat(encryptedChat, user, dialog);
-                        }
-                    }
+        EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByDialogId(did);
+        if (encryptedGroup == null) {
+            return;
+        }
+        for (long innerChatDialogId : encryptedGroup.getInnerEncryptedChatDialogIds()) {
+            deleteDialog(innerChatDialogId, onlyHistory, revoke);
+            dialogMessage.remove(innerChatDialogId);
+            getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(innerChatDialogId, encryptedGroupId -> {
+                getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
+            });
+            TLRPC.Dialog dialog = getDialog(innerChatDialogId);
+            if (dialog != null) {
+                dialog.unread_count = 0;
+                TLRPC.EncryptedChat encryptedChat = getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));
+                if (encryptedChat != null) {
+                    TLRPC.User user = getUser(encryptedChat.user_id);
+                    getMessagesStorage().putEncryptedChat(encryptedChat, user, dialog);
                 }
-                if (onlyHistory != 2) {
-                    encryptedGroups.remove(encryptedGroup.getInternalId());
-                }}
+            }
+        }
+        if (onlyHistory != 2) {
+            encryptedGroups.remove(encryptedGroup.getInternalId());
         }
     }
 
@@ -20215,15 +20215,21 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isDialogNotificationsSoundEnabled(long dialogId, long topicId) {
+        EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByDialogId(dialogId);
+        if (encryptedGroup != null) {
+            return encryptedGroup.getInnerEncryptedChatIds(false).stream().anyMatch(innerId ->
+                    isDialogNotificationsSoundEnabled(DialogObject.makeEncryptedDialogId(innerId), topicId)
+            );
+        }
         return notificationsPreferences.getBoolean("sound_enabled_" + NotificationsController.getSharedPrefKey(dialogId, topicId), true);
     }
 
     public boolean isDialogMuted(long dialogId, long topicId, TLRPC.Chat chat) {
-        if (getMessagesStorage().isEncryptedGroup(dialogId)) {
-            EncryptedGroup encryptedGroup = getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
-            if (encryptedGroup != null) {
-                return encryptedGroup.getInnerEncryptedChatIds(false).stream().anyMatch(innerId -> isDialogMuted(DialogObject.makeEncryptedDialogId(innerId), 0));
-            }
+        EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByDialogId(dialogId);
+        if (encryptedGroup != null) {
+            return encryptedGroup.getInnerEncryptedChatIds(false).stream().anyMatch(innerId ->
+                    isDialogMuted(DialogObject.makeEncryptedDialogId(innerId), topicId, chat)
+            );
         }
         int mute_type = notificationsPreferences.getInt("notify2_" + NotificationsController.getSharedPrefKey(dialogId, topicId), -1);
         if (mute_type == -1) {
