@@ -10742,6 +10742,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     for (int innerChatId : encryptedGroup.getInitializedInnerEncryptedChatIds()) {
                         result |= sendTyping(DialogObject.makeEncryptedDialogId(innerChatId), threadMsgId, action, emojicon, classGuid);
                     }
+                    return result;
                 }
             }
             if (chat != null && chat.auth_key != null && chat.auth_key.length > 1 && chat instanceof TLRPC.TL_encryptedChat) {
