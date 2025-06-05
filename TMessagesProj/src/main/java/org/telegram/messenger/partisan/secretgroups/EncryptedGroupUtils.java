@@ -263,19 +263,6 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         getEncryptedGroupProtocol().sendGroupInitializationFailed(encryptedChat);
     }
 
-    public static void showNotImplementedDialog(BaseFragment fragment) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
-        builder.setTitle(LocaleController.getString(R.string.AppName));
-        builder.setMessage(LocaleController.getString(R.string.ThisFeatureIsNotImplemented));
-        builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
-        AlertDialog alertDialog = builder.create();
-        fragment.showDialog(alertDialog);
-    }
-
-    void log(String message) {
-        log((Long)null, message);
-    }
-
     void log(@Nullable EncryptedGroup encryptedGroup, String message) {
         Long externalId = encryptedGroup != null ? encryptedGroup.getExternalId() : null;
         log(externalId, message);

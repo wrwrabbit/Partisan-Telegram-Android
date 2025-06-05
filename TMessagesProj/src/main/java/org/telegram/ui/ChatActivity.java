@@ -4219,10 +4219,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     @Override
                     public void showCustomize() {
                         if (dialog_id != 0 && chatMode != MODE_SAVED) {
-                            if (getMessagesStorage().isEncryptedGroup(dialog_id)) {
-                                getEncryptedGroupUtils().showNotImplementedDialog(ChatActivity.this);
-                                return;
-                            }
                             if (currentUser != null) {
                                 getMessagesController().putUser(currentUser, true);
                             }

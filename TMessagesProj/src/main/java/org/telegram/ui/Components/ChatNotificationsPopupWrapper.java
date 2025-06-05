@@ -28,6 +28,7 @@ public class ChatNotificationsPopupWrapper {
     ActionBarMenuSubItem muteUnmuteButton;
     ActionBarMenuSubItem muteForLastSelected;
     ActionBarMenuSubItem muteForLastSelected2;
+    ActionBarMenuSubItem customizeSubItem;
     public ActionBarPopupWindow.ActionBarPopupWindowLayout windowLayout;
     int currentAccount;
     ActionBarPopupWindow popupWindow;
@@ -113,7 +114,7 @@ public class ChatNotificationsPopupWrapper {
             });
         });
 
-        item = ActionBarMenuItem.addItem(windowLayout, R.drawable.msg_customize, LocaleController.getString(R.string.NotificationsCustomize), false, resourcesProvider);
+        customizeSubItem = item = ActionBarMenuItem.addItem(windowLayout, R.drawable.msg_customize, LocaleController.getString(R.string.NotificationsCustomize), false, resourcesProvider);
         item.setOnClickListener(view -> {
             dismiss();
             callback.showCustomize();
@@ -187,6 +188,10 @@ public class ChatNotificationsPopupWrapper {
 
         if (type == TYPE_PREVIEW_MENU) {
             backItem.setVisibility(View.GONE);
+        }
+
+        if (org.telegram.messenger.MessagesStorage.getInstance(currentAccount).isEncryptedGroup(dialogId)) {
+            customizeSubItem.setVisibility(View.GONE);
         }
 
         int time1;
