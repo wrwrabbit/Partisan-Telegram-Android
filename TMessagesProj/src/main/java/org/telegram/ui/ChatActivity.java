@@ -30577,38 +30577,47 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (!isEncryptedGroup()) {
             return null;
         }
-        List<MessageObject> srcMessages;
-        if (finalSelectedObject != null) {
-            srcMessages = Collections.singletonList(finalSelectedObject);
-        } else {
-            srcMessages = new ArrayList<>();
-            for (int a = 1; a >= 0; a--) {
-                for (int b = 0; b < selectedMessagesIds[a].size(); b++) {
-                    srcMessages.add(selectedMessagesIds[a].valueAt(b));
-                }
-            }
-        }
         Map<TLRPC.EncryptedChat, List<MessageObject>> encryptedGroupMessages = new HashMap<>();
-        for (MessageObject message : srcMessages) {
-            List<MessageObject> messageCopies;
-            if (message.isOut()) {
-                long randomId = message.messageOwner.random_id;
-                messageCopies = new ArrayList<>(hiddenEncryptedGroupOutMessages.computeIfAbsent(randomId, k -> new ArrayList<>()));
-                messageCopies.add(message);
-            } else {
-                messageCopies = Collections.singletonList(message);
-            }
-            for (MessageObject messageCopy : messageCopies) {
-                long dialogId = messageCopy.getDialogId();
-                TLRPC.EncryptedChat encryptedChat = getCurrentEncryptedChatList(false).stream()
-                        .filter(c -> DialogObject.makeEncryptedDialogId(c.id) == dialogId)
-                        .findAny()
-                        .orElse(null);
+        for (MessageObject message : getSrcMessages(finalSelectedObject)) {
+            for (MessageObject messageCopy : getMessageCopies(message)) {
+                TLRPC.EncryptedChat encryptedChat = getEncryptedChatByDialogId(messageCopy.getDialogId());
                 List<MessageObject> dialogMessages = encryptedGroupMessages.computeIfAbsent(encryptedChat, k -> new ArrayList<>());
                 dialogMessages.add(messageCopy);
             }
         }
         return encryptedGroupMessages;
+    }
+
+    private List<MessageObject> getSrcMessages(MessageObject finalSelectedObject) {
+        if (finalSelectedObject != null) {
+            return Collections.singletonList(finalSelectedObject);
+        } else {
+            List<MessageObject>srcMessages = new ArrayList<>();
+            for (int a = 1; a >= 0; a--) {
+                for (int b = 0; b < selectedMessagesIds[a].size(); b++) {
+                    srcMessages.add(selectedMessagesIds[a].valueAt(b));
+                }
+            }
+            return srcMessages;
+        }
+    }
+
+    private List<MessageObject> getMessageCopies(MessageObject message) {
+        if (message.isOut()) {
+            long randomId = message.messageOwner.random_id;
+            List<MessageObject> messageCopies = new ArrayList<>(hiddenEncryptedGroupOutMessages.computeIfAbsent(randomId, k -> new ArrayList<>()));
+            messageCopies.add(message);
+            return messageCopies;
+        } else {
+            return Collections.singletonList(message);
+        }
+    }
+
+    private TLRPC.EncryptedChat getEncryptedChatByDialogId(long dialogId) {
+        if (!DialogObject.isEncryptedDialog(dialogId)) {
+            return null;
+        }
+        return getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
     }
 
     private void forEachMessageCopy(MessageObject message, Consumer<MessageObject> action) {
