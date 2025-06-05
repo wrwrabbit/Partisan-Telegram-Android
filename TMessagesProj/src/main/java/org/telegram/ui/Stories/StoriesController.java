@@ -93,6 +93,7 @@ public class StoriesController {
     private final int currentAccount;
     private final LongSparseArray<ArrayList<UploadingStory>> uploadingStoriesByDialogId = new LongSparseArray<>();
     private final LongSparseArray<ArrayList<UploadingStory>> uploadingAndEditingStories = new LongSparseArray<>();
+    public int uploadedStories = 0;
     private final LongSparseArray<HashMap<Integer, UploadingStory>> editingStories = new LongSparseArray<>();
     public LongSparseIntArray dialogIdToMaxReadId = new LongSparseIntArray();
 
@@ -608,9 +609,9 @@ public class StoriesController {
                 }
                 editigStoriesMap.put(entry.editStoryId, uploadingStory);
             } else {
-                addUploadingStoryToList(dialogId, uploadingStory, uploadingStoriesByDialogId);
+                addUploadingStoryToList(dialogId, uploadingStory, uploadingStoriesByDialogId, false);
             }
-            addUploadingStoryToList(dialogId, uploadingStory, uploadingAndEditingStories);
+            addUploadingStoryToList(dialogId, uploadingStory, uploadingAndEditingStories, true);
             if (dialogId != UserConfig.getInstance(currentAccount).clientUserId) {
                 boolean found = false;
                 for (int i = 0; i < dialogListStories.size(); i++) {
@@ -644,8 +645,11 @@ public class StoriesController {
         NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.storiesUpdated);
     }
 
-    private void addUploadingStoryToList(long dialogId, UploadingStory uploadingStory, LongSparseArray<ArrayList<UploadingStory>> sparseArray) {
+    private void addUploadingStoryToList(long dialogId, UploadingStory uploadingStory, LongSparseArray<ArrayList<UploadingStory>> sparseArray, boolean resetUploaded) {
         ArrayList<StoriesController.UploadingStory> arrayList = sparseArray.get(dialogId);
+        if (resetUploaded && (arrayList == null || arrayList.isEmpty())) {
+            uploadedStories = 0;
+        }
         if (arrayList == null) {
             arrayList = new ArrayList<>();
             sparseArray.put(dialogId, arrayList);
@@ -657,7 +661,7 @@ public class StoriesController {
         for (StoryEntry entry : entries) {
             UploadingStory uploadingStory = new UploadingStory(entry);
             long dialogId = uploadingStory.dialogId;
-            addUploadingStoryToList(dialogId, uploadingStory, uploadingStoriesByDialogId);
+            addUploadingStoryToList(dialogId, uploadingStory, uploadingStoriesByDialogId, false);
         }
         NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.storiesUpdated);
     }
@@ -1923,6 +1927,11 @@ public class StoriesController {
             ArrayList<UploadingStory> list = uploadingAndEditingStories.get(dialogId);
             if (list != null) {
                 list.remove(UploadingStory.this);
+                if (!list.isEmpty()) {
+                    uploadedStories++;
+                } else {
+                    uploadedStories = 0;
+                }
             }
             if (edit) {
                 HashMap<Integer, UploadingStory> map = editingStories.get(dialogId);
@@ -2352,7 +2361,7 @@ public class StoriesController {
                 error.text = "FORCED_TO_FAIL";
                 requestDelegate.run(null, error);
             } else {
-                currentRequest = ConnectionsManager.getInstance(currentAccount).sendRequest(req, requestDelegate);
+                currentRequest = ConnectionsManager.getInstance(currentAccount).sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagInvokeAfter);
             }
         }
 
@@ -4061,7 +4070,7 @@ public class StoriesController {
             MessagesController.getInstance(currentAccount).storyExpiringLimitDefault;
 
         if (getMyStoriesCount() >= countLimit) {
-            return new StoryLimit(StoryLimit.LIMIT_COUNT, 0);
+            return new StoryLimit(StoryLimit.LIMIT_COUNT, 0, 0);
         }
 
         if (storyLimitFetched) {
@@ -4074,6 +4083,10 @@ public class StoriesController {
             storyLimitFetched = true;
             if (res instanceof TLRPC.TL_boolTrue) {
                 storyLimitCached = null;
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.storiesLimitUpdate);
+            } else if (res instanceof TL_stories.canSendStoryCount) {
+                final TL_stories.canSendStoryCount r = (TL_stories.canSendStoryCount) res;
+                storyLimitCached = new StoryLimit(StoryLimit.LIMIT_COUNT, r.count_remains, -1);
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.storiesLimitUpdate);
             } else {
                 checkStoryError(err);
@@ -4147,17 +4160,17 @@ public class StoriesController {
                 try {
                     until = Long.parseLong(err.text.substring("STORY_SEND_FLOOD_WEEKLY_".length()));
                 } catch (Exception ignore) {}
-                storyLimitCached = new StoryLimit(StoryLimit.LIMIT_WEEK, until);
+                storyLimitCached = new StoryLimit(StoryLimit.LIMIT_WEEK, 0, until);
                 limitUpdate = true;
             } else if (err.text.startsWith("STORY_SEND_FLOOD_MONTHLY_")) {
                 long until = 0;
                 try {
                     until = Long.parseLong(err.text.substring("STORY_SEND_FLOOD_MONTHLY_".length()));
                 } catch (Exception ignore) {}
-                storyLimitCached = new StoryLimit(StoryLimit.LIMIT_MONTH, until);
+                storyLimitCached = new StoryLimit(StoryLimit.LIMIT_MONTH, 0, until);
                 limitUpdate = true;
             } else if (err.text.equals("STORIES_TOO_MUCH")) {
-                storyLimitCached = new StoryLimit(StoryLimit.LIMIT_COUNT, 0);
+                storyLimitCached = new StoryLimit(StoryLimit.LIMIT_COUNT, 0, 0);
                 limitUpdate = true;
             } else if (err.text.equals("PREMIUM_ACCOUNT_REQUIRED")) {
                 MessagesController mc = MessagesController.getInstance(currentAccount);
@@ -4179,6 +4192,11 @@ public class StoriesController {
         return storyLimit != null && storyLimit.active(currentAccount);
     }
 
+    public boolean hasStoryLimit(int count) {
+        StoryLimit storyLimit = checkStoryLimit();
+        return storyLimit != null && storyLimit.active(currentAccount, count);
+    }
+
     public void invalidateStoryLimit() {
         storyLimitFetched = false;
         storyLimitCached = null;
@@ -4190,12 +4208,14 @@ public class StoriesController {
         public static final int LIMIT_WEEK = 2;
         public static final int LIMIT_MONTH = 3;
 
+        public int remains_count;
         public int type;
         public long until;
 
-        public StoryLimit(int type, long until) {
+        public StoryLimit(int type, int remains_count, long until) {
             this.type = type;
             this.until = until;
+            this.remains_count = remains_count;
         }
 
         public int getLimitReachedType() {
@@ -4211,11 +4231,16 @@ public class StoriesController {
         }
 
         public boolean active(int currentAccount) {
+            return active(currentAccount, 1);
+        }
+
+        public boolean active(int currentAccount, int count) {
             switch (type) {
                 case LIMIT_WEEK:
                 case LIMIT_MONTH:
                     return ConnectionsManager.getInstance(currentAccount).getCurrentTime() < until;
                 case LIMIT_COUNT:
+                    return remains_count < count;
                 default:
                     return true;
             }
