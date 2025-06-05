@@ -19638,26 +19638,26 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         if (chatMode == MODE_SUGGESTIONS && currentChat != null) {
             if (isSubscriberSuggestions) {
-                avatarContainer.setTitle(ForumUtilities.getMonoForumTitle(currentAccount, currentChat), currentChat.scam, currentChat.fake, currentChat.verified, false, null, animated);
+                avatarContainer.setTitle(ForumUtilities.getMonoForumTitle(currentAccount, currentChat), currentChat.isScam(), currentChat.isFake(), currentChat.isVerified(), false, null, animated);
             } else if (ChatObject.isMonoForum(currentChat)) {
                 if (threadMessageId == 0) {
                     if (currentChat.linked_monoforum_id != 0) {
                         TLRPC.Chat chat = getMessagesController().getChat(currentChat.linked_monoforum_id);
                         if (chat == null) chat = currentChat;
-                        avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat.title)), chat.scam, chat.fake, chat.verified, false, chat.emoji_status, animated);
+                        avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat.title)), chat.isScam(), chat.isFake(), chat.isVerified(), false, chat.emoji_status, animated);
                     } else {
-                        avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.scam, currentChat.fake, currentChat.verified, false, currentChat.emoji_status, animated);
+                        avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.isScam(), currentChat.isFake(), currentChat.isVerified(), false, currentChat.emoji_status, animated);
                     }
                 } else if (threadMessageId > 0) {
                     final TLRPC.User user = getMessagesController().getUser(threadMessageId);
-                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(user))), user.scam, user.fake, user.verified, user.premium, user.emoji_status, animated);
+                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(user))), user.isScam(), user.isFake(), user.isVerified(), user.premium, user.emoji_status, animated);
                 } else {
                     TLRPC.Chat chat = getMessagesController().getChat(-threadMessageId);
                     if (chat == null) chat = currentChat;
-                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat.title)), chat.scam, chat.fake, chat.verified, false, chat.emoji_status, animated);
+                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat.title)), chat.isScam(), chat.isFake(), chat.isVerified(), false, chat.emoji_status, animated);
                 }
             } else {
-                avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.scam, currentChat.fake, currentChat.verified, false, currentChat.emoji_status, animated);
+                avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.isScam(), currentChat.isFake(), currentChat.isVerified(), false, currentChat.emoji_status, animated);
             }
         } else if (chatMode == MODE_QUICK_REPLIES) {
             if (QuickRepliesController.GREETING.equalsIgnoreCase(quickReplyShortcut)) {
@@ -20498,20 +20498,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 threadMessageAdded = false;
                 for (int a = 1; a >= 0; a--) {
                     messagesDict[a].clear();
-                    if (currentEncryptedChat == null) {
-                        maxMessageId[a] = Integer.MAX_VALUE;
-                        minMessageId[a] = Integer.MIN_VALUE;
+                    if (!isEncryptedChat()) {
+                        setMaxMessageId(a, Integer.MAX_VALUE);
+                        setMinMessageId(a, Integer.MIN_VALUE);
                     } else {
-                        maxMessageId[a] = Integer.MIN_VALUE;
-                        minMessageId[a] = Integer.MAX_VALUE;
+                        setMaxMessageId(a, Integer.MIN_VALUE);
+                        setMinMessageId(a, Integer.MAX_VALUE);
                     }
-                    maxDate[a] = Integer.MIN_VALUE;
-                    minDate[a] = 0;
+                    setMaxDate(a, Integer.MIN_VALUE);
+                    setMinDate(a, 0);
                     selectedMessagesIds[a].clear();
                     selectedMessagesCanCopyIds[a].clear();
                     selectedMessagesCanStarIds[a].clear();
-                    endReached[a] = false;
-                    forwardEndReached[a] = true;
+                    setEndReached(a, false);
+                    setForwardEndReached(a, true);
                 }
                 hideForwardEndReached = false;
                 hideActionMode();

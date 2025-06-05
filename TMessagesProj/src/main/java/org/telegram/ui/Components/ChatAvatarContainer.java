@@ -1346,7 +1346,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
             }
         } else if (parentFragment != null && parentFragment.isEncryptedGroup()) {
             avatarDrawable.setScaleSize(.8f);
-            EncryptedGroupUtils.applyAvatar(avatarImageView, avatarDrawable, parentFragment.getEncryptedGroup());
+            org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils.applyAvatar(avatarImageView, avatarDrawable, parentFragment.getEncryptedGroup());
         } else if (ChatObject.isMonoForum(chat)) {
             final long dialogId = parentFragment.getTopicId();
             if (ChatObject.canManageMonoForum(currentAccount, chat) && dialogId != 0) {
