@@ -737,7 +737,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     }
                     if (isAddToGroup()) {
                         long finalDid = did;
-                        AlertsCreator.showConfirmationDialog(this, context, LocaleController.getString(R.string.AddMember), () -> {
+                        AlertsCreator.showConfirmationDialog(this, context, LocaleController.getString(R.string.VoipGroupAddMemberTitle), () -> {
                             selectedContacts.put(finalDid, null);
                             onDonePressed();
                         });
