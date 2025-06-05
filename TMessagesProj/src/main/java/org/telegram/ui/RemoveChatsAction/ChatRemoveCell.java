@@ -167,16 +167,7 @@ public class ChatRemoveCell extends FrameLayout implements AccountControllersPro
     }
 
     private void updateAvatar() {
-        if (item.getAvatarType().isPresent()) {
-            avatarDrawable.setAvatarType(item.getAvatarType().get());
-            avatarImageView.setImage(null, "50_50", avatarDrawable, item.getProfileObject());
-        } else if (item.getProfileObject() != null) {
-            avatarDrawable.setInfo(currentAccount, item.getProfileObject());
-            avatarImageView.setForUserOrChat(item.getProfileObject(), avatarDrawable);
-        } else {
-            avatarDrawable.setInfo(item.getId(), item.getDisplayName().toString(), "");
-            avatarImageView.setForUserOrChat(null, avatarDrawable);
-        }
+        item.applyAvatar(avatarImageView, avatarDrawable);
     }
 
     private void updateName() {

@@ -1,6 +1,5 @@
 package org.telegram.ui.RemoveChatsAction.items;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
@@ -12,6 +11,8 @@ import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -127,8 +128,14 @@ public abstract class Item implements AccountControllersProvider {
                 || lowercaseName.contains(" " + lowercaseQuery);
     }
 
-    public Optional<Integer> getAvatarType() {
-        return Optional.empty();
+    public void applyAvatar(BackupImageView avatarImageView, AvatarDrawable avatarDrawable) {
+        if (getProfileObject() != null) {
+            avatarDrawable.setInfo(accountNum, getProfileObject());
+            avatarImageView.setForUserOrChat(getProfileObject(), avatarDrawable);
+        } else {
+            avatarDrawable.setInfo(getId(), getDisplayName().toString(), "");
+            avatarImageView.setForUserOrChat(null, avatarDrawable);
+        }
     }
 
     public OptionPermission getDeletePermission() {
