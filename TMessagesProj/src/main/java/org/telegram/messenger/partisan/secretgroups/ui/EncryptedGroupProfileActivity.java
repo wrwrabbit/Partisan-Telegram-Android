@@ -165,6 +165,9 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
         if (SharedConfig.detailedEncryptedGroupMemberStatus) {
             statusRow = rowCount++;
             idRow = rowCount++;
+        } else {
+            statusRow = -1;
+            idRow = -1;
         }
         firstMemberRow = rowCount;
         lastMemberRow = firstMemberRow + encryptedGroup.getInnerChats().size();
