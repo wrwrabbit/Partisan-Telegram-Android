@@ -21115,9 +21115,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 previous = null;
                                 for (int i = messages.size() - 1; i >= 0; i--) {
                                     MessageObject otherMessage = messages.get(i);
-                                    if (otherMessage.getDialogId() == obj.getDialogId() && otherMessage.type != MessageObject.TYPE_DATE) {
-                                        previous = otherMessage;
-                                        break;
+                                    for (MessageObject otherMessageCopy : getMessageCopies(otherMessage)) {
+                                        if (otherMessageCopy.getDialogId() == obj.getDialogId() && otherMessageCopy.type != MessageObject.TYPE_DATE) {
+                                            previous = otherMessageCopy;
+                                            break;
+                                        }
                                     }
                                 }
                             } else {
@@ -30570,7 +30572,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         AlertsCreator.createDeleteMessagesAlert(this, currentUser, currentChat, currentEncryptedChatSingle, chatInfo, mergeDialogId, finalSelectedObject, selectedMessagesIds, finalSelectedGroup, (int) getTopicId(), chatMode, null, () -> {
             hideActionMode();
             updatePinnedMessageView(true);
-        }, hideDimAfter ? () -> dimBehindView(false) : null, themeDelegate, createEncryptedMessagesMapToDelete(finalSelectedObject));
+        },
+                hideDimAfter ? () -> dimBehindView(false) : null,
+                themeDelegate,
+                createEncryptedMessagesMapToDelete(finalSelectedObject),
+                createEncryptedMessagesGroupMapToDelete(finalSelectedGroup)
+        );
     }
 
     private Map<TLRPC.EncryptedChat, List<MessageObject>> createEncryptedMessagesMapToDelete(MessageObject finalSelectedObject) {
@@ -30618,6 +30625,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return null;
         }
         return getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
+    }
+
+    private Map<TLRPC.EncryptedChat, MessageObject.GroupedMessages> createEncryptedMessagesGroupMapToDelete(MessageObject.GroupedMessages finalSelectedGroup) {
+        if (!isEncryptedGroup() || finalSelectedGroup == null || finalSelectedGroup.messages.isEmpty()) {
+            return null;
+        }
+
+        Map<TLRPC.EncryptedChat, MessageObject.GroupedMessages> encryptedGroupMessageGroups = new HashMap<>();
+        for (MessageObject message : getMessageCopies(finalSelectedGroup.messages.get(0))) {
+            MessageObject.GroupedMessages messageGroup = getValidGroupedMessage(message);
+            if (messageGroup != null) {
+                TLRPC.EncryptedChat encryptedChat = getEncryptedChatByDialogId(message.getDialogId());
+                encryptedGroupMessageGroups.put(encryptedChat, messageGroup);
+            }
+        }
+        return encryptedGroupMessageGroups;
     }
 
     private void forEachMessageCopy(MessageObject message, Consumer<MessageObject> action) {
