@@ -14068,10 +14068,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     waitingForLoad.add(lastLoadIndex);
                     getMessagesController().loadMessages(mergeDialogId, 0, false, 50, getMinMessageId(dialog_id, 1), 0, true, getMaxDate(dialog_id, 1), classGuid, 1, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
                     loadingForward = true;
-                } else if (!getForwardEndReached(dialog_id, 0)) {
-                    waitingForLoad.add(lastLoadIndex);
-                    getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 50, getMinMessageId(dialog_id, 0), 0, true, getMaxDate(dialog_id, 0), classGuid, 1, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
-                    loadingForward = true;
+                } else if (!forwardEndReachedForAll(0)) {
+                    forEachDialogId(dialog_id -> {
+                        waitingForLoad.add(lastLoadIndex);
+                        getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 50, getMinMessageId(dialog_id, 0), 0, true, getMaxDate(dialog_id, 0), classGuid, 1, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
+                        loadingForward = true;
+                    });
                 }
             }
         });
@@ -43793,6 +43795,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (!isEncryptedGroup()) {
                 return singleArray[index];
             } else {
+                if (dialogId == DialogObject.makeEncryptedDialogId(currentEncryptedGroup.getInternalId())) {
+                    T defaultValue = mappingFunction.apply(dialogId)[index];
+                    return defaultValue;
+                }
                 initEncryptedGroupMapIfNeeded();
                 return encryptedGroupMap.computeIfAbsent(dialogId, mappingFunction)[index];
             }
