@@ -7,6 +7,7 @@ import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.W
 import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.WAITING_CONFIRMATION_FROM_OWNER;
 import static org.telegram.messenger.partisan.secretgroups.EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION;
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -14,6 +15,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.AccountControllersProvider;
@@ -40,8 +42,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 
 public class EncryptedGroupServiceMessagesHandler implements AccountControllersProvider {
@@ -326,6 +330,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getEncryptedGroupProtocol().sendNewAvatar(encryptedGroup, encryptedChat);
         }
         syncNewInnerChatTtl();
+        syncNewInnerChatNotificationSettings();
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
@@ -346,6 +351,42 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
                             getMessagesStorage().updateEncryptedChatTTL(encryptedChat);
                         })
                 );
+    }
+
+    private void syncNewInnerChatNotificationSettings() {
+        Long otherDialogId = encryptedGroup.getInnerEncryptedChatIds(false).stream()
+                .filter(id -> id != encryptedChat.id)
+                .map(DialogObject::makeEncryptedDialogId)
+                .findFirst()
+                .orElse(null);
+        if (otherDialogId == null) {
+            return;
+        }
+        syncNotificationSetting("notify2_", otherDialogId);
+        syncNotificationSetting("notifyuntil_", otherDialogId);
+        syncNotificationSetting("sound_enabled_", otherDialogId);
+    }
+
+    private <T> void syncNotificationSetting(String settingsTypeKey, long sourceDialogId) {
+        String sourceKey = makeNotificationSettingsKey(settingsTypeKey, sourceDialogId);
+        String destinationKey = makeNotificationSettingsKey(settingsTypeKey, DialogObject.makeEncryptedDialogId(encryptedChat.id));
+        SharedPreferences preferences = MessagesController.getNotificationsSettings(accountNum);
+        if (!preferences.contains(sourceKey)) {
+            return;
+        }
+        Map<String, ?> allValues = preferences.getAll();
+        Object value = allValues.get(sourceKey);
+        SharedPreferences.Editor editor = preferences.edit();
+        if (value instanceof Integer) {
+            editor.putInt(destinationKey, (int)value);
+        } else if (value instanceof Boolean) {
+            editor.putBoolean(destinationKey, (boolean)value);
+        }
+        editor.apply();
+    }
+
+    private static String makeNotificationSettingsKey(String settingsTypeKey, long dialogId) {
+        return settingsTypeKey + NotificationsController.getSharedPrefKey(dialogId, 0);
     }
 
     @Handler(conditions = {HandlerCondition.GROUP_EXISTS, HandlerCondition.ACTION_FROM_OWNER}, groupStates = WAITING_CONFIRMATION_FROM_OWNER)
@@ -378,6 +419,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
         });
         syncNewInnerChatTtl();
+        syncNewInnerChatNotificationSettings();
         return null;
     }
 
