@@ -1219,6 +1219,7 @@ public class SharedConfig {
                 if (!overriddenDialogIds.isEmpty()) {
                     MessagesStorage.getInstance(i).updateOverriddenWidgets(overriddenDialogIds);
                 }
+                MessagesStorage.getInstance(i).unreadCounterChangedByFakePasscode();
             }
         }
         FakePasscode passcode = FakePasscodeUtils.getActivatedFakePasscode();

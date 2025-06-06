@@ -3,18 +3,15 @@ package org.telegram.messenger.fakepasscode;
 import static org.telegram.messenger.MessagesController.DIALOG_FILTER_FLAG_ALL_CHATS;
 import static org.telegram.messenger.MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED;
 import static org.telegram.messenger.MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ;
-import static org.telegram.messenger.MessagesController.showCantOpenAlert;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.android.exoplayer2.util.Log;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
@@ -214,7 +211,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         }
         unpinHiddenDialogs();
         SharedConfig.saveConfig();
-        getMessagesStorage().removeChatsActionExecuted();
+        getMessagesStorage().unreadCounterChangedByFakePasscode();
         postNotifications(foldersCleared);
         LongSparseIntArray dialogsToUpdate = new LongSparseIntArray(hiddenChatEntries.size());
         hiddenChatEntries.stream().forEach(entry -> dialogsToUpdate.put(entry.chatId, 0));

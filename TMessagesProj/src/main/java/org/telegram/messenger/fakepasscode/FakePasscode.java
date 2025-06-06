@@ -191,7 +191,7 @@ public class FakePasscode {
                 }
                 NotificationCenter notificationCenter = NotificationCenter.getInstance(account);
                 if (!removeResult.hiddenChatEntries.isEmpty()) {
-                    MessagesStorage.getInstance(account).removeChatsActionExecuted();
+                    MessagesStorage.getInstance(account).unreadCounterChangedByFakePasscode();
                     notificationCenter.postNotificationName(NotificationCenter.dialogsHidingChanged);
                 }
                 if (!removeResult.hiddenFolders.isEmpty()) {
