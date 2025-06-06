@@ -33594,10 +33594,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             moveScrollToLastMessage(false);
                         }
                     } else {
-                        if (getSendMessagesHelper().retrySendMessage(object, false, payStars)) {
-                            updateVisibleRows();
-                            if (chatMode == 0) {
-                                moveScrollToLastMessage(false);
+                        for (MessageObject objectCopy : getMessageCopies(object)) {
+                            if (getSendMessagesHelper().retrySendMessage(objectCopy, false, payStars)) {
+                                updateVisibleRows();
+                                if (chatMode == 0) {
+                                    moveScrollToLastMessage(false);
+                                }
                             }
                         }
                     }
