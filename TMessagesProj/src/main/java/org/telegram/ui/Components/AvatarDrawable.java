@@ -177,7 +177,7 @@ public class AvatarDrawable extends Drawable {
     }
 
     public AvatarDrawable(TLRPC.Chat chat, boolean profile, int accountNum) {
-        this(chat, profile, UserConfig.getChatTitleOverride(accountNum, chat));
+        this(chat, profile, chat != null ? UserConfig.getChatTitleOverride(accountNum, chat) : null);
     }
 
     public AvatarDrawable(TLRPC.Chat chat, boolean profile, String titleOverride) {
