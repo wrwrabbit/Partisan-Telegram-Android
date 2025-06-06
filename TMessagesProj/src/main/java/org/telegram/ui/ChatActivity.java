@@ -25623,7 +25623,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 obj.stableId = lastStableId++;
                 getMessagesController().getTranslateController().checkTranslation(obj, false);
                 if (!addMessage(placeToPaste, obj)) {
-                    return;
+                    continue;
                 }
                 if (placeToPaste == 0 && !obj.isSponsored()) {
                     needMoveScrollToLastMessage = true;
