@@ -95,27 +95,35 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         action.userId = userId;
         sendActionToAllMembers(encryptedGroup, action, true);
 
-        if (innerChat.isNotInState(InnerEncryptedChatState.CANCELLED)) {
-            NotificationCenter.NotificationCenterDelegate observer = new NotificationCenter.NotificationCenterDelegate() {
-                @Override
-                public void didReceivedNotification(int id, int account, Object... args) {
-                    long dialogId = (long)args[3];
-                    InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(userId);
-                    if (dialogId == innerChat.getDialogId().orElse(0L)) {
-                        getNotificationCenter().removeObserver(this, NotificationCenter.messageReceivedByServer);
-                        removeMember(encryptedGroup, userId);
-                        if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
-                            requestMembersToCreateSecondaryChats(encryptedGroup);
-                        }
-                    }
-                }
-            };
-            getNotificationCenter().addObserver(observer, NotificationCenter.messageReceivedByServer);
+        boolean needWaitForMessageReceiving = innerChat.isNotInState(InnerEncryptedChatState.CANCELLED)
+                && innerChat.getDialogId().isPresent();
+        if (needWaitForMessageReceiving) {
+            waitForMessageReceivingByServer(innerChat.getDialogId().orElse(0L), () ->
+                    finishKickingMember(encryptedGroup, userId)
+            );
         } else {
-            removeMember(encryptedGroup, userId);
-            if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
-                requestMembersToCreateSecondaryChats(encryptedGroup);
+            finishKickingMember(encryptedGroup, userId);
+        }
+    }
+
+    private void waitForMessageReceivingByServer(long targetDialogId, Runnable action) {
+        NotificationCenter.NotificationCenterDelegate observer = new NotificationCenter.NotificationCenterDelegate() {
+            @Override
+            public void didReceivedNotification(int id, int account, Object... args) {
+                long currentDialogId = (long)args[3];
+                if (currentDialogId == targetDialogId) {
+                    getNotificationCenter().removeObserver(this, NotificationCenter.messageReceivedByServer);
+                    action.run();
+                }
             }
+        };
+        getNotificationCenter().addObserver(observer, NotificationCenter.messageReceivedByServer);
+    }
+
+    private void finishKickingMember(EncryptedGroup encryptedGroup, long userId) {
+        removeMember(encryptedGroup, userId);
+        if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.WAITING_SECONDARY_CHATS_CREATION)) {
+            requestMembersToCreateSecondaryChats(encryptedGroup);
         }
     }
 

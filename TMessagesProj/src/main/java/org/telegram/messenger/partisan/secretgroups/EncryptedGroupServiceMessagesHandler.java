@@ -38,14 +38,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 
 public class EncryptedGroupServiceMessagesHandler implements AccountControllersProvider {
@@ -131,19 +129,11 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     }
 
     private Long extractExternalGroupIdFromAction() {
-        Field[] fields = serviceMessage.encryptedGroupAction.getClass().getDeclaredFields();
-        for (Field field : fields) {
-            ExternalGroupIdProvider annotation = field.getAnnotation(ExternalGroupIdProvider.class);
-            if (annotation != null) {
-                try {
-                    return (Long)field.get(serviceMessage.encryptedGroupAction);
-                } catch (IllegalAccessException e) {
-                    PartisanLog.e(e);
-                    throw new RuntimeException(e);
-                }
-            }
+        if (serviceMessage.encryptedGroupAction instanceof ExternalGroupIdProvider) {
+            return ((ExternalGroupIdProvider)serviceMessage.encryptedGroupAction).getExternalGroupId();
+        } else {
+            return null;
         }
-        return null;
     }
 
     private boolean validateHandlerConditions(HandlerCondition[] conditions) {
@@ -393,7 +383,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     private TLRPC.Message handleConfirmGroupInitialization(ConfirmGroupInitializationAction action) {
         encryptedGroup.setState(WAITING_SECONDARY_CHAT_CREATION);
         getMessagesStorage().updateEncryptedGroup(encryptedGroup);
-        getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+        getEncryptedGroupUtils().finalizeEncryptedGroupIfAllChatsCreated(encryptedGroup);
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
@@ -412,7 +402,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
         if (encryptedGroup.isNotInState(INITIALIZED)) {
-            getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+            getEncryptedGroupUtils().finalizeEncryptedGroupIfAllChatsCreated(encryptedGroup);
         }
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -439,7 +429,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
     private TLRPC.Message handleAllSecondaryChatsInitialized(AllSecondaryChatsInitializedAction action) {
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
-        getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+        getEncryptedGroupUtils().finalizeEncryptedGroupIfAllChatsCreated(encryptedGroup);
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupUpdated, encryptedGroup);
@@ -495,7 +485,7 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
         } else {
             getEncryptedGroupProtocol().removeMember(encryptedGroup, action.userId);
             if (encryptedGroup.isInState(WAITING_SECONDARY_CHAT_CREATION)) {
-                getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+                getEncryptedGroupUtils().finalizeEncryptedGroupIfAllChatsCreated(encryptedGroup);
             }
         }
         return createMessageForStoring();

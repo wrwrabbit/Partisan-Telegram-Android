@@ -1124,7 +1124,7 @@ public class SecretChatHelper extends BaseController {
                         chat.ttl = serviceMessage.action.ttl_seconds;
                         newMessage.action.encryptedAction = serviceMessage.action;
                         getMessagesStorage().updateEncryptedChatTTL(chat);
-                        getEncryptedGroupUtils().syncTtlIfNeeded(chat);
+                        getEncryptedGroupUtils().syncTtlWithOtherMembersIfNeeded(chat);
                     } else {
                         newMessage.action = new TLRPC.TL_messageEncryptedAction();
                         newMessage.action.encryptedAction = serviceMessage.action;

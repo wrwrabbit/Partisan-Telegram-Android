@@ -3234,7 +3234,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
             } else if (push_enc_id != 0) {
                 Bundle args = new Bundle();
-                if (!new EncryptedGroupUtils(currentAccount).putEncIdOrEncGroupIdInBundle(args, DialogObject.makeEncryptedDialogId(push_enc_id))) {
+                if (!new EncryptedGroupUtils(currentAccount).putEncIdOrEncGroupIdInBundleIfPossible(args, DialogObject.makeEncryptedDialogId(push_enc_id))) {
                     return true;
                 }
                 if (new EncryptedGroupUtils(currentAccount).isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(push_enc_id))) {
@@ -6163,7 +6163,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.closeChats);
                 }
                 if (DialogObject.isEncryptedDialog(did)) {
-                    if (!new EncryptedGroupUtils(account).putEncIdOrEncGroupIdInBundle(args, did)) {
+                    if (!new EncryptedGroupUtils(account).putEncIdOrEncGroupIdInBundleIfPossible(args, did)) {
                         return false;
                     }
                 } else if (DialogObject.isUserDialog(did)) {

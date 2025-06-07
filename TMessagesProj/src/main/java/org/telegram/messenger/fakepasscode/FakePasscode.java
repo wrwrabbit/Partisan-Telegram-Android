@@ -3,12 +3,10 @@ package org.telegram.messenger.fakepasscode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.android.exoplayer2.util.Log;
 import com.google.common.collect.Lists;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
@@ -20,6 +18,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -94,8 +93,7 @@ public class FakePasscode {
         return base + " " + (SharedConfig.fakePasscodeIndex);
     }
 
-    List<Action> actions()
-    {
+    private List<Action> getAllActions() {
         List<Action> result = new ArrayList<>(Arrays.asList(clearCacheAction, clearDownloadsAction, smsAction));
         result.addAll(accountActions);
         result.add(clearProxiesAction);
@@ -106,7 +104,7 @@ public class FakePasscode {
     public AccountActions getAccountActions(int accountNum) {
         for (AccountActions actions : accountActions) {
             Integer actionsAccountNum = actions.getAccountNum();
-            if (actionsAccountNum != null && actionsAccountNum == accountNum) {
+            if (Objects.equals(actionsAccountNum, accountNum)) {
                 return actions;
             }
         }
@@ -114,15 +112,12 @@ public class FakePasscode {
     }
 
     public AccountActions getOrCreateAccountActions(int accountNum) {
-        for (AccountActions actions : accountActions) {
-            Integer actionsAccountNum = actions.getAccountNum();
-            if (actionsAccountNum != null && actionsAccountNum == accountNum) {
-                return actions;
-            }
+        AccountActions actions = getAccountActions(accountNum);
+        if (actions == null) {
+            actions = new AccountActions();
+            actions.setAccountNum(accountNum);
+            accountActions.add(actions);
         }
-        AccountActions actions = new AccountActions();
-        actions.setAccountNum(accountNum);
-        accountActions.add(actions);
         return actions;
     }
 
@@ -151,18 +146,16 @@ public class FakePasscode {
         actionsResult.setActivated();
         SharedConfig.fakePasscodeActionsResult = actionsResult;
         SharedConfig.saveConfig();
-        for (Action action : actions()) {
+        for (Action action : getAllActions()) {
             action.setExecutionScheduled();
         }
         Utils.runOnUIThreadAsSoonAsPossible(() -> {
             activated = true;
-            for (Action action : actions()) {
+            for (Action action : getAllActions()) {
                 try {
                     action.execute(this);
                 } catch (Exception e) {
-                    if (BuildConfig.DEBUG) {
-                        Log.e("FakePasscode", "Error", e);
-                    }
+                    PartisanLog.e("FakePasscode error", e);
                 }
             }
             checkClearAfterActivation();
@@ -249,7 +242,7 @@ public class FakePasscode {
             deletePasscodesAfterActivation.setSelected(Collections.emptyList());
         }
         deleteOtherPasscodesAfterActivation = null;
-        actions().stream().forEach(Action::migrate);
+        getAllActions().stream().forEach(Action::migrate);
         if (actionsResult != null) {
             actionsResult.migrate();
         }
@@ -285,12 +278,12 @@ public class FakePasscode {
     }
 
     private int getMaxAccountCount() {
-        return hasNotHiddenPremium()
+        return hasAnyPremiumAccountThatWillNotBeHidden()
                 ? UserConfig.FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT
                 : UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
     }
 
-    private boolean hasNotHiddenPremium() {
+    private boolean hasAnyPremiumAccountThatWillNotBeHidden() {
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             UserConfig userConfig = UserConfig.getInstance(a);
             if (userConfig.isPremium() && (getAccountActions(a) == null || !getAccountActions(a).isLogOutOrHideAccount())) {

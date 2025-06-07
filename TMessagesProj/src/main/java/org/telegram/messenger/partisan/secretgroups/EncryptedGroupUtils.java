@@ -29,6 +29,7 @@ import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,10 +47,9 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         this.accountNum = accountNum;
     }
 
-    public void checkAllEncryptedChatsCreated(EncryptedGroup encryptedGroup) {
-        EncryptedGroupState groupState = encryptedGroup.getState();
-        if (groupState != EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION && groupState != EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION) {
-            throw new RuntimeException("Invalid encrypted group state: " + groupState);
+    public void finalizeEncryptedGroupIfAllChatsCreated(EncryptedGroup encryptedGroup) {
+        if (encryptedGroup.isNotInState(EncryptedGroupState.WAITING_SECONDARY_CHAT_CREATION, EncryptedGroupState.NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION)) {
+            throw new RuntimeException("Invalid encrypted group state: " + encryptedGroup.getState());
         }
         if (encryptedGroup.allInnerChatsMatchState(InnerEncryptedChatState.INITIALIZED)) {
             log(encryptedGroup, "All encrypted chats initialized.");
@@ -61,11 +61,10 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
                 getEncryptedGroupProtocol().sendAllSecondaryChatsInitialized(ownerEncryptedChat);
             }
         } else if (PartisanLog.logsAllowed()) {
-            String notInitializedInnerChats = encryptedGroup.getInnerChats().stream()
+            long notInitializedInnerChatCount = encryptedGroup.getInnerChats().stream()
                     .filter(innerChat -> innerChat.getState() != InnerEncryptedChatState.INITIALIZED)
-                    .map(innerChat -> Long.toString(innerChat.getUserId()))
-                    .collect(Collectors.joining(", "));
-            log(encryptedGroup, "NOT all encrypted chats initialized: " + notInitializedInnerChats.length() + ".");
+                    .count();
+            log(encryptedGroup, "NOT all encrypted chats initialized: " + notInitializedInnerChatCount + ".");
         }
     }
 
@@ -100,7 +99,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         }
     }
 
-    public boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, Consumer<Long> action) {
+    public boolean forEachInnerDialogIdIfEncryptedGroup(long encryptedGroupDialogId, Consumer<Long> action) {
         if (!DialogObject.isEncryptedDialog(encryptedGroupDialogId)) {
             return false;
         }
@@ -225,9 +224,9 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
     }
 
     private void confirmJoining(EncryptedGroup encryptedGroup) {
-        forceHidePreview(encryptedGroup);
+        deleteInvitationMessageForNonPtgUsers(encryptedGroup);
         for (int i = 1; i <= 20; i++) {
-            AndroidUtilities.runOnUIThread(() -> forceHidePreview(encryptedGroup), 100 * i);
+            AndroidUtilities.runOnUIThread(() -> deleteInvitationMessageForNonPtgUsers(encryptedGroup), 100 * i);
         }
 
         if (encryptedGroup.isInState(EncryptedGroupState.JOINING_NOT_CONFIRMED)) {
@@ -242,7 +241,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         getEncryptedGroupProtocol().sendJoinConfirmation(encryptedChat);
     }
 
-    public void forceHidePreview(EncryptedGroup encryptedGroup) {
+    public void deleteInvitationMessageForNonPtgUsers(EncryptedGroup encryptedGroup) {
         if (encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED)) {
             Integer ownerEncryptedChatId = encryptedGroup.getInnerChatByUserId(encryptedGroup.getOwnerUserId()).getEncryptedChatId().orElse(null);
             long chatDialogId = DialogObject.makeEncryptedDialogId(ownerEncryptedChatId);
@@ -336,7 +335,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
     public EncryptedGroup getOrLoadEncryptedGroupByDialogId(long dialogId) {
         EncryptedGroup encryptedGroup = null;
         if (DialogObject.isEncryptedDialog(dialogId)) {
-            encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+            encryptedGroup = getOrLoadEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
         }
         return encryptedGroup;
     }
@@ -359,7 +358,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         return getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId) != null;
     }
 
-    public boolean putEncIdOrEncGroupIdInBundle(Bundle bundle, long dialogId) {
+    public boolean putEncIdOrEncGroupIdInBundleIfPossible(Bundle bundle, long dialogId) {
         EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
         if (encryptedGroup != null) {
             if (encryptedGroup.isInState(EncryptedGroupState.JOINING_NOT_CONFIRMED, EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED)) {
@@ -423,9 +422,13 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
     }
 
     public static byte[] serializeAvatar(EncryptedGroup encryptedGroup) {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        encryptedGroup.getAvatar().compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, stream);
-        return stream.toByteArray();
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            encryptedGroup.getAvatar().compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, stream);
+            return stream.toByteArray();
+        } catch (IOException e) {
+            PartisanLog.e("Error serializing encrypted group avatar", e);
+            return new byte[0];
+        }
     }
 
     public static Bitmap deserializeAvatarFromByteBuffer(NativeByteBuffer buffer) {
@@ -437,7 +440,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         }
     }
 
-    public void syncTtlIfNeeded(TLRPC.EncryptedChat encryptedChat) {
+    public void syncTtlWithOtherMembersIfNeeded(TLRPC.EncryptedChat encryptedChat) {
         EncryptedGroup encryptedGroup = getOrLoadEncryptedGroupByEncryptedChat(encryptedChat);
         if (encryptedGroup == null) {
             return;

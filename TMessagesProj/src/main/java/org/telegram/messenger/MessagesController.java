@@ -60,7 +60,6 @@ import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.support.LongSparseLongArray;
 import org.telegram.messenger.voip.VoIPPreNotificationService;
@@ -14130,7 +14129,7 @@ public class MessagesController extends BaseController implements NotificationCe
         if (!DialogObject.isEncryptedDialog(dialogId)) {
             return;
         }
-        if (getEncryptedGroupUtils().doForEachInnerDialogIdIfNeeded(dialogId, innerDialogId -> markMessageAsRead(innerDialogId, randomId, ttl))) {
+        if (getEncryptedGroupUtils().forEachInnerDialogIdIfEncryptedGroup(dialogId, innerDialogId -> markMessageAsRead(innerDialogId, randomId, ttl))) {
             return;
         }
         TLRPC.EncryptedChat chat = getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
@@ -14263,7 +14262,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void markDialogAsRead(long dialogId, int maxPositiveId, int maxNegativeId, int maxDate, boolean popup, long threadId, int countDiff, boolean readNow, int scheduledCount) {
-        getEncryptedGroupUtils().doForEachInnerDialogIdIfNeeded(dialogId, innerDialogId ->
+        getEncryptedGroupUtils().forEachInnerDialogIdIfEncryptedGroup(dialogId, innerDialogId ->
                 markDialogAsRead(innerDialogId, maxPositiveId, maxNegativeId, maxDate, popup, threadId, countDiff, readNow, scheduledCount)
         );
         boolean createReadTask;

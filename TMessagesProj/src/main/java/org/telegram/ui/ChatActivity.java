@@ -24375,7 +24375,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (needAddMessage) {
             messages.add(pos, obj);
             messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
-            boolean added = !removeServiceMessagesDuplications();
+            boolean added = !removeServiceMessageDuplicationsIfAny();
             if (obj.isOut()) {
                 hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
             }
@@ -24387,8 +24387,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
     }
 
-    private boolean removeServiceMessagesDuplications() {
-        boolean modified = false;
+    private boolean removeServiceMessageDuplicationsIfAny() {
+        boolean duplicationsFound = false;
         for (int i = messages.size() - 1; i >= 0; i--) {
             if (i > 0) {
                 TLRPC.DecryptedMessageAction currentAction = getMessageAction(messages.get(i));
@@ -24396,11 +24396,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                 if (actionsEquals(currentAction, previousAction)) {
                     messages.remove(i);
-                    modified = true;
+                    duplicationsFound = true;
                 }
             }
         }
-        return modified;
+        return duplicationsFound;
     }
 
     private static TLRPC.DecryptedMessageAction getMessageAction(MessageObject message) {
@@ -34495,7 +34495,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 Bundle args = new Bundle();
                 args.putBoolean("scrollToTopOnResume", scrollToTopOnResume);
                 if (DialogObject.isEncryptedDialog(did)) {
-                    if (!getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundle(args, did)) {
+                    if (!getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundleIfPossible(args, did)) {
                         return true;
                     }
                 } else {
