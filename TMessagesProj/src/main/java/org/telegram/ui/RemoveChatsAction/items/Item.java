@@ -8,6 +8,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.fakepasscode.RemoveChatsAction;
+import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -15,7 +16,7 @@ import org.telegram.tgnet.TLRPC;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public abstract class Item {
+public abstract class Item implements AccountControllersProvider {
     protected final int accountNum;
 
     public abstract TLObject getProfileObject();
@@ -172,15 +173,8 @@ public abstract class Item {
         return DialogObject.isEncryptedDialog(getId());
     }
 
-    private AccountInstance getAccountInstance() {
-        return AccountInstance.getInstance(accountNum);
-    }
-
-    protected MessagesController getMessagesController() {
-        return getAccountInstance().getMessagesController();
-    }
-
-    protected UserConfig getUserConfig() {
-        return getAccountInstance().getUserConfig();
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 }

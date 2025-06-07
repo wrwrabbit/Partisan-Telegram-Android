@@ -4690,7 +4690,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     Bundle args1 = new Bundle();
                     args1.putBoolean("scrollToTopOnResume", true);
                     if (DialogObject.isEncryptedDialog(did)) {
-                        if (!EncryptedGroupUtils.putEncIdOrEncGroupIdInBundle(args1, did, profileActivity.getCurrentAccount())) {
+                        if (!profileActivity.getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundle(args1, did)) {
                             return true;
                         }
                     } else {

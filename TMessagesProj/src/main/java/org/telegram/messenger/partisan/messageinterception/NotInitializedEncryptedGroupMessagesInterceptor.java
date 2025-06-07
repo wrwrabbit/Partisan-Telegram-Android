@@ -8,6 +8,6 @@ public class NotInitializedEncryptedGroupMessagesInterceptor implements MessageI
     @Override
     public InterceptionResult interceptMessage(int accountNum, TLRPC.Message message) {
         long dialogId = FakePasscodeUtils.getMessageDialogId(message);
-        return new InterceptionResult(EncryptedGroupUtils.isNotInitializedEncryptedGroup(dialogId, accountNum));
+        return new InterceptionResult(new EncryptedGroupUtils(accountNum).isNotInitializedEncryptedGroup(dialogId) && message.message != null);
     }
 }

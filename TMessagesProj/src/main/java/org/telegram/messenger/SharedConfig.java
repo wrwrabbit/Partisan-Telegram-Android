@@ -243,6 +243,7 @@ public class SharedConfig {
     public static boolean pushStatSent;
     public static byte[] pushAuthKey;
     public static byte[] pushAuthKeyId;
+    public static boolean forceForumTabs;
 
     public static String directShareHash;
 
@@ -341,6 +342,7 @@ public class SharedConfig {
     public static int repeatMode;
     public static boolean allowBigEmoji;
     public static boolean useSystemEmoji;
+    public static boolean useSystemBoldFont;
     public static int fontSize = 16;
     public static boolean fontSizeIsDefault;
     public static int bubbleRadius = 17;
@@ -442,11 +444,11 @@ public class SharedConfig {
     public static boolean saveLogcatAfterRestart = false;
     public static boolean confirmDangerousActions;
     public static boolean showEncryptedChatsFromEncryptedGroups = false;
-    public static boolean encryptedGroupsEnabled = false;
     public static boolean fileProtectionForAllAccountsEnabled = true;
     public static boolean disableFileProtectionAfterRestart = false;
     public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
     public static boolean detailedEncryptedGroupMemberStatus = false;
+    public static boolean clearLogsWithCache = true;
 
     private static final int[] LOW_SOC = {
             -1775228513, // EXYNOS 850
@@ -737,7 +739,9 @@ public class SharedConfig {
             inappBrowser = false;
             Utilities.globalQueue.postRunnable(() -> {
                 AndroidUtilities.runOnUIThread(() -> Utils.clearWebBrowserCache(ApplicationLoader.applicationContext));
-                BrowserHistory.clearHistory();
+                if (BrowserHistory.historyLoaded) {
+                    BrowserHistory.clearHistory();
+                }
             }, 1000);
             sharedConfigMigrationVersion++;
         }
@@ -753,6 +757,14 @@ public class SharedConfig {
             }
             sharedConfigMigrationVersion++;
         }
+        if (sharedConfigMigrationVersion == 2) {
+            SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.remove("encryptedGroupsEnabled");
+            editor.apply();
+            sharedConfigMigrationVersion++;
+        }
+
         if (prevMigrationVersion != sharedConfigMigrationVersion) {
             saveConfig();
         }
@@ -914,6 +926,11 @@ public class SharedConfig {
             ivFontSize = preferences.getInt("iv_font_size", fontSize);
             allowBigEmoji = preferences.getBoolean("allowBigEmoji", true);
             useSystemEmoji = preferences.getBoolean("useSystemEmoji", false);
+            useSystemBoldFont = preferences.getBoolean("useSystemBoldFont", false);
+            forceForumTabs = preferences.getBoolean("forceForumTabs", false);
+            if (useSystemBoldFont) {
+                AndroidUtilities.mediumTypeface = null;
+            }
             streamMedia = preferences.getBoolean("streamMedia", true);
             saveStreamMedia = preferences.getBoolean("saveStreamMedia", true);
             pauseMusicOnRecord = preferences.getBoolean("pauseMusicOnRecord", true);
@@ -971,7 +988,7 @@ public class SharedConfig {
             confirmDangerousActions = preferences.getBoolean("confirmDangerousActions", false);
             showEncryptedChatsFromEncryptedGroups = preferences.getBoolean("showEncryptedChatsFromEncryptedGroups", false);
             detailedEncryptedGroupMemberStatus = preferences.getBoolean("detailedEncryptedGroupMemberStatus", false);
-            encryptedGroupsEnabled = preferences.getBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
+            clearLogsWithCache = preferences.getBoolean("clearLogsWithCache", true);
             fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
             fileProtectionWorksWhenFakePasscodeActivated = preferences.getBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
@@ -1079,11 +1096,11 @@ public class SharedConfig {
         editor.commit();
     }
 
-    public static void toggleSecretGroups() {
-        encryptedGroupsEnabled = !encryptedGroupsEnabled;
+    public static void toggleClearLogsWithCache() {
+        clearLogsWithCache = !clearLogsWithCache;
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("encryptedGroupsEnabled", encryptedGroupsEnabled);
+        editor.putBoolean("clearLogsWithCache", clearLogsWithCache);
         editor.commit();
     }
 
@@ -1607,6 +1624,23 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("allowBigEmoji", allowBigEmoji);
+        editor.apply();
+    }
+
+    public static void toggleUseSystemBoldFont() {
+        useSystemBoldFont = !useSystemBoldFont;
+        AndroidUtilities.mediumTypeface = null;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("useSystemBoldFont", useSystemBoldFont);
+        editor.apply();
+    }
+
+    public static void toggleForceForumTabs() {
+        forceForumTabs = !forceForumTabs;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("forceForumTabs", forceForumTabs);
         editor.apply();
     }
 

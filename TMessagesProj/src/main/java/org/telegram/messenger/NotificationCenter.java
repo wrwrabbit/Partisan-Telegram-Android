@@ -34,6 +34,7 @@ public class NotificationCenter {
     public static final int historyCleared = totalEvents++;
     public static final int messagesRead = totalEvents++;
     public static final int threadMessagesRead = totalEvents++;
+    public static final int monoForumMessagesRead = totalEvents++;
     public static final int commentsRead = totalEvents++;
     public static final int changeRepliesCounter = totalEvents++;
     public static final int messagesDidLoad = totalEvents++;
@@ -269,6 +270,7 @@ public class NotificationCenter {
     public static final int messagesFeeUpdated = totalEvents++;
     public static final int commonChatsLoaded = totalEvents++;
     public static final int appConfigUpdated = totalEvents++;
+    public static final int conferenceEmojiUpdated = totalEvents++;
 
     //partisan
     public static final int dialogDeletedByAction = totalEvents++;
@@ -288,6 +290,8 @@ public class NotificationCenter {
     public static final int unknownPartisanActionLinkOpened = totalEvents++;
     public static final int updateDownloadingStarted = totalEvents++;
     public static final int encryptedGroupUpdated = totalEvents++;
+    public static final int encryptedGroupMemberRemoved = totalEvents++;
+    public static final int encryptedGroupMembersAdded = totalEvents++;
     public static final int onFileProtectedDbCleared = totalEvents++;
 
 
@@ -359,7 +363,7 @@ public class NotificationCenter {
     public static final int permissionsGranted = totalEvents++;
     public static final int activityPermissionsGranted = totalEvents++;
     public static final int topicsDidLoaded = totalEvents++;
-    public static final int chatSwithcedToForum = totalEvents++;
+    public static final int chatSwitchedForum = totalEvents++;
     public static final int didUpdateGlobalAutoDeleteTimer = totalEvents++;
     public static final int onDatabaseReset = totalEvents++;
     public static final int wallpaperSettedToUser = totalEvents++;

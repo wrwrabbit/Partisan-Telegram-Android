@@ -5,20 +5,23 @@ import static org.telegram.messenger.LocaleController.getString;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.view.Gravity;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupInnerChatStarter;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChatState;
 import org.telegram.tgnet.ConnectionsManager;
@@ -34,6 +37,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
     private final SimpleTextView statusTextView;
     private final BackupImageView avatarImageView;
     private final AvatarDrawable avatarDrawable;
+    private ImageView optionsButton;
 
     private boolean needDivider;
     private EncryptedGroup currentEncryptedGroup;
@@ -100,7 +104,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
         if (currentEncryptedGroup.getOwnerUserId() == user.id) {
             statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
             statusTextView.setText(LocaleController.getString(R.string.ChannelCreator));
-        } else if (innerChat == null || innerChat.getState() == InnerEncryptedChatState.INITIALIZED) {
+        } else if (innerChat == null || innerChat.isInState(InnerEncryptedChatState.INITIALIZED)) {
             if (user.id == UserConfig.getInstance(currentAccount).getClientUserId() || user.status != null && user.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime() || MessagesController.getInstance(currentAccount).onlinePrivacy.containsKey(user.id)) {
                 statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
                 statusTextView.setText(getString(R.string.Online));
@@ -115,12 +119,24 @@ public class EncryptedGroupMemberCell extends FrameLayout {
             } else {
                 switch (innerChat.getState()) {
                     case CREATING_ENCRYPTED_CHAT:
+                    case NEW_MEMBER_CREATING_ENCRYPTED_CHAT:
+                        statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+                        int floodWaitingRemaining = (int)EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining();
+                        String statusText = LocaleController.getString(R.string.InnerEncryptedChatStateSecretChatCreating);
+                        if (floodWaitingRemaining > 0) {
+                            statusText += " (" + AndroidUtilities.formatTimestamp(floodWaitingRemaining) + ")";
+                        }
+                        statusTextView.setText(statusText);
+                        break;
                     case NEED_SEND_INVITATION:
                     case INVITATION_SENT:
+                    case NEW_MEMBER_NEED_SEND_INVITATION:
+                    case NEW_MEMBER_INVITATION_SENT:
                         statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
                         statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInvitationSent));
                         break;
                     case WAITING_SECONDARY_CHATS_CREATION:
+                    case NEW_MEMBER_WAITING_SECONDARY_CHATS_CREATION:
                     case NEED_SEND_SECONDARY_INVITATION:
                         statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
                         statusTextView.setText(LocaleController.getString(R.string.InnerEncryptedChatStateInitialization));
@@ -140,6 +156,27 @@ public class EncryptedGroupMemberCell extends FrameLayout {
         avatarImageView.setForUserOrChat(user, avatarDrawable);
         needDivider = divider;
         setWillNotDraw(!divider);
+    }
+
+    public void setNeedOptions(boolean needOption, OnClickListener onClickListener) {
+        if (needOption) {
+            if (optionsButton == null) {
+                optionsButton = new ImageView(getContext());
+                optionsButton.setFocusable(false);
+                optionsButton.setBackgroundDrawable(Theme.createSelectorDrawable(Theme.getColor(Theme.key_stickers_menuSelector)));
+                optionsButton.setImageResource(R.drawable.ic_ab_other);
+                optionsButton.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_stickers_menu), PorterDuff.Mode.MULTIPLY));
+                optionsButton.setScaleType(ImageView.ScaleType.CENTER);
+                addView(optionsButton, LayoutHelper.createFrame(60, 64, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP));
+                optionsButton.setContentDescription(LocaleController.getString(R.string.AccDescrUserOptions));
+            }
+            optionsButton.setOnClickListener(onClickListener);
+            optionsButton.setVisibility(VISIBLE);
+        } else {
+            if (optionsButton != null) {
+                optionsButton.setVisibility(GONE);
+            }
+        }
     }
 
     @Override

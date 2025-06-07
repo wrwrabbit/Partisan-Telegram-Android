@@ -1,5 +1,6 @@
 package org.telegram.messenger;
 
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.Components.Paint.PersistColorPalette;
 
@@ -47,6 +48,10 @@ public class BaseController {
 
     protected final NotificationCenter getNotificationCenter() {
         return parentAccountInstance.getNotificationCenter();
+    }
+
+    public EncryptedGroupUtils getEncryptedGroupUtils() {
+        return new EncryptedGroupUtils(currentAccount);
     }
 
     protected final UserConfig getUserConfig() {

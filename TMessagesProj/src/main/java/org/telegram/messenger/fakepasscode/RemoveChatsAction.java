@@ -218,7 +218,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         postNotifications(foldersCleared);
         LongSparseIntArray dialogsToUpdate = new LongSparseIntArray(hiddenChatEntries.size());
         hiddenChatEntries.stream().forEach(entry -> dialogsToUpdate.put(entry.chatId, 0));
-        getAccount().getNotificationsController().processDialogsUpdateRead(dialogsToUpdate);
+        getNotificationsController().processDialogsUpdateRead(dialogsToUpdate);
         Utilities.globalQueue.postRunnable(this::checkChatsRemoved, 3000);
     }
 
@@ -280,18 +280,6 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         synchronized (pendingRemovalChats) {
             pendingRemovalChats.clear();
         }
-    }
-
-    private AccountInstance getAccount() {
-        return AccountInstance.getInstance(accountNum);
-    }
-
-    private MessagesController getMessagesController() {
-        return getAccount().getMessagesController();
-    }
-
-    private MessagesStorage getMessagesStorage() {
-        return getAccount().getMessagesStorage();
     }
 
     private boolean clearFolders(boolean retry) {
@@ -358,7 +346,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
 
         TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
         req.id = folder.id;
-        getAccount().getConnectionsManager().sendRequest(req, (response, error) -> {
+        getConnectionsManager().sendRequest(req, (response, error) -> {
             Utilities.globalQueue.postRunnable(() -> {
                 hiddenFolders.removeIf(id -> id == folder.id);
                 RemoveChatsResult result = fakePasscode.actionsResult.getRemoveChatsResult(accountNum);
@@ -390,7 +378,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         fillPeerArray(folder.neverShow, req.filter.exclude_peers);
         List<Long> pinnedDialogs = getFolderPinnedDialogs(folder);
         fillPeerArray(pinnedDialogs, req.filter.pinned_peers);
-        getAccount().getConnectionsManager().sendRequest(req, (response, error) -> { });
+        getConnectionsManager().sendRequest(req, (response, error) -> { });
     }
 
     private void hideFolders(boolean retry) {
@@ -423,7 +411,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
             return folder.alwaysShow;
         } else if ((folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) == 0) {
             return getMessagesController().getDialogs(0).stream()
-                    .filter(d -> folder.includesDialog(getAccount(), d.id))
+                    .filter(d -> folder.includesDialog(getAccountInstance(), d.id))
                     .map(d -> d.id)
                     .collect(Collectors.toList());
         } else {
@@ -594,10 +582,6 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
 
         Utils.deleteDialog(accountNum, dialogId);
         getNotificationCenter().postNotificationName(NotificationCenter.dialogDeletedByAction, dialogId);
-    }
-
-    private NotificationCenter getNotificationCenter() {
-        return NotificationCenter.getInstance(accountNum);
     }
 
     private synchronized void checkChatsRemoved() {

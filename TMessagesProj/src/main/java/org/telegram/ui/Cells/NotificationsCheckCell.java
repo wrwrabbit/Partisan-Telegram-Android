@@ -25,8 +25,6 @@ import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
@@ -126,13 +124,22 @@ public class NotificationsCheckCell extends FrameLayout {
 
     @Override
     public void setEnabled(boolean enabled) {
-        super.setEnabled(enabled);
-        checkBox.setEnabled(enabled);
-        textView.setAlpha(enabled ? 1.0f : 0.5f);
-        checkBox.setAlpha(enabled ? 1.0f : 0.5f);
+        setComponentsEnabled(enabled, enabled);
+    }
+
+    public void setComponentsEnabled(boolean checkBoxEnabled, boolean textViewEnabled) {
+        super.setEnabled(checkBoxEnabled || textViewEnabled);
+        checkBox.setEnabled(checkBoxEnabled);
+        textView.setAlpha(textViewEnabled ? 1.0f : 0.5f);
+        checkBox.setAlpha(checkBoxEnabled ? 1.0f : 0.5f);
         if (valueTextView.getVisibility() == VISIBLE) {
-            valueTextView.setAlpha(enabled ? 1.0f : 0.5f);
+            valueTextView.setAlpha(textViewEnabled ? 1.0f : 0.5f);
         }
+    }
+
+    public boolean isCheckboxClicked(float x) {
+        return LocaleController.isRTL && x <= AndroidUtilities.dp(76)
+                || !LocaleController.isRTL && x >= getMeasuredWidth() - AndroidUtilities.dp(76);
     }
 
     @Override
