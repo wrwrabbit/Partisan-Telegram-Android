@@ -742,10 +742,14 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                             onDonePressed();
                         });
                         return;
+                    } else {
+                        GroupCreateSpan span = new GroupCreateSpan(editText.getContext(), object, currentAccount);
+                        spansContainer.addSpan(span);
+                        span.setOnClickListener(EncryptedGroupCreateActivity.this);
+                        if (getFullMembersCount() == EncryptedGroupConstants.FAST_GROUP_CREATION_MEMBER_COUNT) {
+                            AlertsCreator.showSimpleAlert(this, LocaleController.getString(R.string.Warning), LocaleController.getString(R.string.SlowSecretGroupCreationWarning));
+                        }
                     }
-                    GroupCreateSpan span = new GroupCreateSpan(editText.getContext(), object, currentAccount);
-                    spansContainer.addSpan(span);
-                    span.setOnClickListener(EncryptedGroupCreateActivity.this);
                 }
                 selectedCountUpdated();
                 if (searching || searchWas) {

@@ -304,4 +304,5 @@
     <string name="EncryptedGroupMemberRemovalConfirmation">Вы уверены, что хотите удалить этого участника из секретной группы? Все его сообщения будут удалены.</string>
     <string name="EncryptedGroupAvatarChangeForbidden">Нельзя изменить аватар до инициализации группы.</string>
     <string name="CantAddNewMemberToEncryptedGroupMessage">Необходимо дождаться подтверждения от предыдущих членов перед добавлением нового.</string>
+    <string name="SlowSecretGroupCreationWarning">A secret group of 7 or more members will be created longer than usual.</string>
 </resources>

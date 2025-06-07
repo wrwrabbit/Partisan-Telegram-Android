@@ -305,4 +305,5 @@
     <string name="EncryptedGroupMemberRemovalConfirmation">Вы ўпэўненыя, што жадаеце выдаліць гэтага ўдзельніка з сакрэтнай групы? Усе яго паведамленні будуць выдалены.</string>
     <string name="EncryptedGroupAvatarChangeForbidden">Нельга змяніць аватар да ініцыялізацыі групы.</string>
     <string name="CantAddNewMemberToEncryptedGroupMessage">Неабходна дачакацца пацверджання ад папярэдніх чальцоў перад даданнем новага.</string>
+    <string name="SlowSecretGroupCreationWarning">Сакрэтная група на 7 і больш удзельнікаў будзе стварацца даўжэй, чым звычайна.</string>
 </resources>
