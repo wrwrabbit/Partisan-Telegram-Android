@@ -33589,16 +33589,18 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     if (group != null) {
                         boolean success = true;
                         for (int a = 0; a < group.messages.size(); a++) {
-                            if (!getSendMessagesHelper().retrySendMessage(group.messages.get(a), false, payStars)) {
-                                success = false;
+                            for (MessageObject messageCopy : getMessageCopies(group.messages.get(a))) {
+                                if (!getSendMessagesHelper().retrySendMessage(messageCopy, false, payStars)) {
+                                    success = false;
+                                }
                             }
                         }
                         if (success && chatMode == 0) {
                             moveScrollToLastMessage(false);
                         }
                     } else {
-                        for (MessageObject objectCopy : getMessageCopies(object)) {
-                            if (getSendMessagesHelper().retrySendMessage(objectCopy, false, payStars)) {
+                        for (MessageObject messageCopy : getMessageCopies(object)) {
+                            if (getSendMessagesHelper().retrySendMessage(messageCopy, false, payStars)) {
                                 updateVisibleRows();
                                 if (chatMode == 0) {
                                     moveScrollToLastMessage(false);
