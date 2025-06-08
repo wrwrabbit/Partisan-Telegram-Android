@@ -6,7 +6,7 @@ import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.messenger.FileLog;
 
 public class PartisanDatabaseMigrationHelper {
-    private static final int LAST_PARTISAN_DB_VERSION = 4;
+    private static final int LAST_PARTISAN_DB_VERSION = 5;
 
     private final SQLiteDatabase database;
     private int currentVersion = 0;
@@ -88,6 +88,12 @@ public class PartisanDatabaseMigrationHelper {
             database.executeFast("DROP INDEX IF EXISTS enc_group_virtual_messages_to_messages_v2_idx").stepThis().dispose();
             database.executeFast("DROP TABLE IF EXISTS enc_group_virtual_messages_to_messages_v2").stepThis().dispose();
             database.executeFast("DROP TABLE IF EXISTS enc_group_virtual_messages").stepThis().dispose();
+
+            increaseVersion();
+        }
+
+        if (currentVersion == 4) {
+            database.executeFast("ALTER TABLE enc_groups ADD COLUMN avatar BLOB").stepThis().dispose();
 
             increaseVersion();
         }

@@ -1,6 +1,9 @@
 package org.telegram.messenger.partisan.secretgroups;
 
+import android.graphics.Bitmap;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +17,7 @@ public class EncryptedGroup {
     private String name;
     private long ownerUserId;
     private EncryptedGroupState state;
+    private Bitmap avatar;
 
     public int getInternalId() {
         return internalId;
@@ -27,6 +31,10 @@ public class EncryptedGroup {
         return Collections.unmodifiableList(innerChats);
     }
 
+    public void addInnerChat(InnerEncryptedChat innerChat) {
+        innerChats.add(innerChat);
+    }
+
     public InnerEncryptedChat getInnerChatByEncryptedChatId(int chatId) {
         return innerChats.stream()
                 .filter(c -> c.getEncryptedChatId().isPresent() && c.getEncryptedChatId().get() == chatId)
@@ -34,8 +42,8 @@ public class EncryptedGroup {
                 .orElse(null);
     }
 
-    public void removeInnerChat(int chatId) {
-        innerChats.removeIf(c -> c.getEncryptedChatId().isPresent() && c.getEncryptedChatId().get() == chatId);
+    public void removeInnerChatByUserId(long userId) {
+        innerChats.removeIf(c -> c.getUserId() == userId);
     }
 
     public InnerEncryptedChat getInnerChatByUserId(long userId) {
@@ -57,6 +65,14 @@ public class EncryptedGroup {
         return innerChats.stream().allMatch(c -> c.getState() == state);
     }
 
+    public boolean anyInnerChatsMatchState(InnerEncryptedChatState state) {
+        return innerChats.stream().anyMatch(c -> c.getState() == state);
+    }
+
+    public boolean noneInnerChatsMatchState(InnerEncryptedChatState state) {
+        return innerChats.stream().noneMatch(c -> c.getState() == state);
+    }
+
     public List<Integer> getInitializedInnerEncryptedChatIds() {
         return getInnerEncryptedChatIds(true);
     }
@@ -67,6 +83,14 @@ public class EncryptedGroup {
             stream = stream.filter(innerChat -> innerChat.getState() == InnerEncryptedChatState.INITIALIZED);
         }
         return stream.map(InnerEncryptedChat::getEncryptedChatId)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
+    public List<Long> getInnerEncryptedChatDialogIds() {
+        return innerChats.stream()
+                .map(InnerEncryptedChat::getDialogId)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
@@ -86,6 +110,10 @@ public class EncryptedGroup {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public long getOwnerUserId() {
         return ownerUserId;
     }
@@ -94,8 +122,28 @@ public class EncryptedGroup {
         return state;
     }
 
+    public boolean isInState(EncryptedGroupState... targetStates) {
+        return Arrays.stream(targetStates).anyMatch(targetState -> state == targetState);
+    }
+
+    public boolean isNotInState(EncryptedGroupState... targetStates) {
+        return Arrays.stream(targetStates).noneMatch(targetState -> state == targetState);
+    }
+
     public void setState(EncryptedGroupState state) {
         this.state = state;
+    }
+
+    public void setAvatar(Bitmap avatar) {
+        this.avatar = avatar;
+    }
+
+    public Bitmap getAvatar() {
+        return avatar;
+    }
+
+    public boolean hasAvatar() {
+        return avatar != null;
     }
 
     public static class EncryptedGroupBuilder {
@@ -127,6 +175,10 @@ public class EncryptedGroup {
 
         public void setState(EncryptedGroupState state) {
             encryptedGroup.state = state;
+        }
+
+        public void setAvatar(Bitmap avatar) {
+            encryptedGroup.avatar = avatar;
         }
 
         public EncryptedGroup create() {

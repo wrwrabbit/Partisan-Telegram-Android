@@ -35,6 +35,7 @@ import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
@@ -885,6 +886,13 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                         } else {
                             cell.setCustomMessage(null);
                         }
+                    } else if (i == 1 && parentFragment != null && dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD && parentFragment.forwardOriginalChannel != 0 && dialog.top_message == 0) {
+                        MessagesController.DialogFilter filter = getCurrentFilter();
+                        if (filter == null || filter.isDefault()) {
+                            cell.setCustomMessage(DialogObject.getStatus(parentFragment.forwardOriginalChannel));
+                        } else {
+                            cell.setCustomMessage(null);
+                        }
                     } else {
                         cell.setCustomMessage(null);
                     }
@@ -980,6 +988,12 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 if (parentFragment != null && parentFragment.isReplyTo) {
                     if (i == 0) {
                         cell.setText(getString(R.string.ReplyDialogMessageAuthor));
+                    } else {
+                        cell.setText(getString(R.string.ReplyDialogYourChats));
+                    }
+                } else if (dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD) {
+                    if (i == 0) {
+                        cell.setText(getString(R.string.ForwardDialogYourChannel));
                     } else {
                         cell.setText(getString(R.string.ReplyDialogYourChats));
                     }
@@ -1428,6 +1442,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
 
     private void updateItemList() {
+        boolean containedEmptyViewBefore = itemInternals.stream().anyMatch(item -> item.viewType == VIEW_TYPE_EMPTY);
         itemInternals.clear();
         updateHasHints();
 
@@ -1478,6 +1493,21 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             if (foundDialog == null) {
                 foundDialog = new TLRPC.TL_dialog();
                 foundDialog.id = parentFragment.replyMessageAuthor;
+            }
+            itemInternals.add(new ItemInternal(VIEW_TYPE_DIALOG, foundDialog));
+            itemInternals.add(new ItemInternal(VIEW_TYPE_GRAY_SECTION));
+        } else if ((filter == null || filter.isDefault()) && parentFragment != null && dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD && parentFragment.forwardOriginalChannel != 0) {
+            itemInternals.add(new ItemInternal(VIEW_TYPE_GRAY_SECTION));
+            TLRPC.Dialog foundDialog = null;
+            for (int i = 0; i < array.size(); ++i) {
+                if (array.get(i).id == parentFragment.forwardOriginalChannel) {
+                    foundDialog = array.get(i);
+                    break;
+                }
+            }
+            if (foundDialog == null) {
+                foundDialog = new TLRPC.TL_dialog();
+                foundDialog.id = parentFragment.forwardOriginalChannel;
             }
             itemInternals.add(new ItemInternal(VIEW_TYPE_DIALOG, foundDialog));
             itemInternals.add(new ItemInternal(VIEW_TYPE_GRAY_SECTION));
@@ -1599,6 +1629,10 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     i--;
                 }
             }
+        }
+        boolean containsEmptyViewNow = itemInternals.stream().anyMatch(item -> item.viewType == VIEW_TYPE_EMPTY);
+        if (MessagesStorage.getInstance(currentAccount).fileProtectionEnabled() && containedEmptyViewBefore && !containsEmptyViewNow) {
+            AndroidUtilities.runOnUIThread(() -> parentFragment.setScrollDisabled(false));
         }
     }
 

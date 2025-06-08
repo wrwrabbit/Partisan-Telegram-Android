@@ -15,13 +15,16 @@ import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.fakepasscode.AccountActions;
+import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.HideAccountAction;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.NotificationsCheckCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
@@ -35,6 +38,7 @@ public class AccountHidingSettingsActivity extends BaseFragment {
     private ListAdapter listAdapter;
     private RecyclerListView listView;
 
+    private final FakePasscode fakePasscode;
     private final AccountActions actions;
 
     private int rowCount;
@@ -45,8 +49,9 @@ public class AccountHidingSettingsActivity extends BaseFragment {
     private int strictHidingRow;
     private int strictHidingDetailsRow;
 
-    public AccountHidingSettingsActivity(@NotNull AccountActions actions) {
+    public AccountHidingSettingsActivity(@NotNull FakePasscode fakePasscode, @NotNull AccountActions actions) {
         super();
+        this.fakePasscode = fakePasscode;
         this.actions = actions;
     }
 
@@ -172,7 +177,7 @@ public class AccountHidingSettingsActivity extends BaseFragment {
             if (position == strictHidingRow) {
                 return actions.isHideAccount();
             } else if (position == enableRow) {
-                return true;
+                return actions.allowChangingAccountHiding(fakePasscode);
             }
             return false;
         }
@@ -215,7 +220,7 @@ public class AccountHidingSettingsActivity extends BaseFragment {
                     } else if (position == strictHidingRow) {
                         boolean checked = actions.getHideAccountAction() != null && actions.getHideAccountAction().strictHiding;
                         textCell.setTextAndCheck(LocaleController.getString(R.string.StrictHiding), checked, false);
-                        textCell.setEnabled(isEnabled(holder));
+                        textCell.setEnabled(isEnabled(holder), null);
                     }
                     break;
                 }
@@ -241,6 +246,15 @@ public class AccountHidingSettingsActivity extends BaseFragment {
                     break;
                 }
             }
+        }
+
+        @Override
+        public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
+            if (holder.getItemViewType() == VIEW_TYPE_CHECK) {
+                TextCheckCell textCell = (TextCheckCell) holder.itemView;
+                textCell.setEnabled(isEnabled(holder), null);
+            }
+            holder.itemView.setEnabled(isEnabled(holder));
         }
 
         @Override

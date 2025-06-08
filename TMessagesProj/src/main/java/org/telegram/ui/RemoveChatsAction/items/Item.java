@@ -1,6 +1,5 @@
 package org.telegram.ui.RemoveChatsAction.items;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
@@ -8,14 +7,17 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.fakepasscode.RemoveChatsAction;
+import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public abstract class Item {
+public abstract class Item implements AccountControllersProvider {
     protected final int accountNum;
 
     public abstract TLObject getProfileObject();
@@ -126,8 +128,14 @@ public abstract class Item {
                 || lowercaseName.contains(" " + lowercaseQuery);
     }
 
-    public Optional<Integer> getAvatarType() {
-        return Optional.empty();
+    public void applyAvatar(BackupImageView avatarImageView, AvatarDrawable avatarDrawable) {
+        if (getProfileObject() != null) {
+            avatarDrawable.setInfo(accountNum, getProfileObject());
+            avatarImageView.setForUserOrChat(getProfileObject(), avatarDrawable);
+        } else {
+            avatarDrawable.setInfo(getId(), getDisplayName().toString(), "");
+            avatarImageView.setForUserOrChat(null, avatarDrawable);
+        }
     }
 
     public OptionPermission getDeletePermission() {
@@ -172,15 +180,8 @@ public abstract class Item {
         return DialogObject.isEncryptedDialog(getId());
     }
 
-    private AccountInstance getAccountInstance() {
-        return AccountInstance.getInstance(accountNum);
-    }
-
-    protected MessagesController getMessagesController() {
-        return getAccountInstance().getMessagesController();
-    }
-
-    protected UserConfig getUserConfig() {
-        return getAccountInstance().getUserConfig();
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 }

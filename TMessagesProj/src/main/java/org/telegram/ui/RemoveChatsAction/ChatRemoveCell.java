@@ -26,6 +26,7 @@ import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
@@ -34,7 +35,7 @@ import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.RemoveChatsAction.items.Item;
 
-public class ChatRemoveCell extends FrameLayout {
+public class ChatRemoveCell extends FrameLayout implements AccountControllersProvider {
 
     private final BackupImageView avatarImageView;
     private final LinearLayout nameLayout;
@@ -166,16 +167,7 @@ public class ChatRemoveCell extends FrameLayout {
     }
 
     private void updateAvatar() {
-        if (item.getAvatarType().isPresent()) {
-            avatarDrawable.setAvatarType(item.getAvatarType().get());
-            avatarImageView.setImage(null, "50_50", avatarDrawable, item.getProfileObject());
-        } else if (item.getProfileObject() != null) {
-            avatarDrawable.setInfo(currentAccount, item.getProfileObject());
-            avatarImageView.setForUserOrChat(item.getProfileObject(), avatarDrawable);
-        } else {
-            avatarDrawable.setInfo(item.getId(), item.getDisplayName().toString(), "");
-            avatarImageView.setForUserOrChat(null, avatarDrawable);
-        }
+        item.applyAvatar(avatarImageView, avatarDrawable);
     }
 
     private void updateName() {
@@ -214,7 +206,8 @@ public class ChatRemoveCell extends FrameLayout {
         return false;
     }
 
-    private MessagesController getMessagesController() {
-        return MessagesController.getInstance(currentAccount);
+    @Override
+    public int getAccountNum() {
+        return currentAccount;
     }
 }

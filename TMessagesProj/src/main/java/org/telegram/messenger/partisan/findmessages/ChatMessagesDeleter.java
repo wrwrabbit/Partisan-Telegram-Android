@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
+import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.messenger.partisan.KnownChatUsernameResolver;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.tgnet.ConnectionsManager;
@@ -14,7 +15,7 @@ import org.telegram.ui.ChatActivity;
 import java.util.ArrayList;
 import java.util.List;
 
-class ChatMessagesDeleter {
+class ChatMessagesDeleter implements AccountControllersProvider {
     interface Delegate {
         void chatProcessed(long chatId, boolean wasError);
     }
@@ -144,15 +145,8 @@ class ChatMessagesDeleter {
         delegate.chatProcessed(chatData.chatId, false);
     }
 
-    private MessagesController getMessagesController() {
-        return MessagesController.getInstance(accountNum);
-    }
-
-    private MessagesStorage getMessagesStorage() {
-        return MessagesStorage.getInstance(accountNum);
-    }
-
-    private ConnectionsManager getConnectionsManager() {
-        return ConnectionsManager.getInstance(accountNum);
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 }

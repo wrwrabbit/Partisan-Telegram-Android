@@ -53,6 +53,7 @@ import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ArticleViewer;
 import org.telegram.ui.Components.LayoutHelper;
@@ -896,6 +897,10 @@ public abstract class BaseFragment {
 
     public NotificationCenter getNotificationCenter() {
         return getAccountInstance().getNotificationCenter();
+    }
+
+    public EncryptedGroupUtils getEncryptedGroupUtils() {
+        return new EncryptedGroupUtils(currentAccount);
     }
 
     public MediaController getMediaController() {

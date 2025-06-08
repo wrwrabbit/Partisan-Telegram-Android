@@ -165,8 +165,4 @@ public class UpdateChecker extends AbstractChannelChecker {
             return CYBER_PARTISAN_SECURITY_TG_CHANNEL_USERNAME;
         }
     }
-
-    private MediaDataController getMediaDataController() {
-        return getAccountInstance().getMediaDataController();
-    }
 }

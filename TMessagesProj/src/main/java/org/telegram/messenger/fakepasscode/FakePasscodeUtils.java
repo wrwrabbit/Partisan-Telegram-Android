@@ -1,14 +1,8 @@
 package org.telegram.messenger.fakepasscode;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
 import android.os.SystemClock;
 import android.text.TextUtils;
 
-import org.telegram.messenger.AppStartReceiver;
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationsController;
@@ -17,7 +11,6 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.fakepasscode.results.TelegramMessageResult;
-import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stories;
@@ -29,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
@@ -422,18 +414,6 @@ public class FakePasscodeUtils {
                 SharedConfig.fakePasscodeActivated(SharedConfig.fakePasscodes.indexOf(lastPasscode));
                 SharedConfig.saveConfig();
             }
-        } catch (Exception ignore) {
-        }
-    }
-
-    public static void scheduleFakePasscodeTimer(Context context) {
-        try {
-            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            Intent intent = new Intent(context, AppStartReceiver.class);
-            int flags = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
-            PendingIntent pintent = PendingIntent.getBroadcast(context, 0, intent, flags);
-            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + 60 * 1000, 5 * 60 * 1000, pintent);
-            InnerFakePasscodeTimer.schedule();
         } catch (Exception ignore) {
         }
     }

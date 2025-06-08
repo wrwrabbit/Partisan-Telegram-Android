@@ -1,19 +1,11 @@
 package org.telegram.messenger.partisan.secretgroups.action;
 
-import org.telegram.tgnet.AbstractSerializedData;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.OutputSerializedData;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class CreateGroupAction extends EncryptedGroupAction {
+public class CreateGroupAction extends AbstractCreateGroupAction {
     public static final int constructor = 0x44498b93;
-
-    public long externalGroupId;
-    public String name;
-    public List<Long> memberIds = new ArrayList<>();
-    public Long ownerUserId;
 
     @Override
     public void readParams(InputSerializedData stream, boolean exception) {
@@ -38,5 +30,10 @@ public class CreateGroupAction extends EncryptedGroupAction {
         for (int i = 0; i < count; i++) {
             stream.writeInt64(memberIds.get(i));
         }
+    }
+
+    @Override
+    public EncryptedGroupState getInitialEncryptedGroupState() {
+        return EncryptedGroupState.JOINING_NOT_CONFIRMED;
     }
 }

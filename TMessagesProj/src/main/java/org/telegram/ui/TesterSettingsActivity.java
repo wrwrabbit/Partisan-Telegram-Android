@@ -1,6 +1,7 @@
 package org.telegram.ui;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +30,7 @@ import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.SecurityIssue;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupInnerChatStarter;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
@@ -79,6 +81,7 @@ public class TesterSettingsActivity extends BaseFragment {
             new SimpleData("User Chat Count", () ->
                     getAllDialogs().stream().filter(d -> d.id > 0).count()
                             + (!isDialogEndReached() ? " (not all)" : "")),
+            new SimpleData("Sec Group Flood Wait", () -> "" + EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining()),
     };
 
     private ListAdapter listAdapter;
@@ -107,9 +110,9 @@ public class TesterSettingsActivity extends BaseFragment {
     private int saveLogcatAfterRestartRow;
     private int showEncryptedChatsFromEncryptedGroupsRow;
     private int detailedEncryptedGroupMemberStatusRow;
-    private int enableSecretGroupsRow;
     private int dbSizeRow;
     private int accountNumRow;
+    private int clearLogsWithCacheRow;
 
     public static boolean showPlainBackup;
 
@@ -323,9 +326,6 @@ public class TesterSettingsActivity extends BaseFragment {
             } else if (position == detailedEncryptedGroupMemberStatusRow) {
                 SharedConfig.toggleDetailedEncryptedGroupMemberStatus();
                 ((TextCheckCell) view).setChecked(SharedConfig.detailedEncryptedGroupMemberStatus);
-            } else if (position == enableSecretGroupsRow) {
-                SharedConfig.toggleSecretGroups();
-                ((TextCheckCell) view).setChecked(SharedConfig.encryptedGroupsEnabled);
             } else if (position == dbSizeRow) {
                 List<Pair<String, Long>> tableSizes = getTableSizes();
                 String message = tableSizes.stream()
@@ -339,6 +339,9 @@ public class TesterSettingsActivity extends BaseFragment {
                 builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
                 AlertDialog alertDialog = builder.create();
                 showDialog(alertDialog);
+            } else if (position == clearLogsWithCacheRow) {
+                SharedConfig.toggleClearLogsWithCache();
+                ((TextCheckCell) view).setChecked(SharedConfig.clearLogsWithCache);
             }
         });
 
@@ -390,11 +393,11 @@ public class TesterSettingsActivity extends BaseFragment {
         saveLogcatAfterRestartRow = rowCount++;
         showEncryptedChatsFromEncryptedGroupsRow = rowCount++;
         detailedEncryptedGroupMemberStatusRow = rowCount++;
-        enableSecretGroupsRow = rowCount++;
         if (getMessagesStorage().fileProtectionEnabled()) {
             dbSizeRow = rowCount++;
         }
         accountNumRow = rowCount++;
+        clearLogsWithCacheRow = rowCount++;
     }
 
     @Override
@@ -560,14 +563,14 @@ public class TesterSettingsActivity extends BaseFragment {
                         textCell.setTextAndCheck("Show permission disabled dialog",
                                 SharedConfig.showPermissionDisabledDialog, true);
                     } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
-                        textCell.setTextAndCheck("Show encrypted chats from encrypted groups",
+                        textCell.setTextAndCheck("Show sec. chats from sec. groups",
                                 SharedConfig.showEncryptedChatsFromEncryptedGroups, true);
                     } else if (position == detailedEncryptedGroupMemberStatusRow) {
                         textCell.setTextAndCheck("Detailed Secret Group Member Status",
                                 SharedConfig.detailedEncryptedGroupMemberStatus, true);
-                    } else if (position == enableSecretGroupsRow) {
-                        textCell.setTextAndCheck("Secret groups enabled",
-                                SharedConfig.encryptedGroupsEnabled, true);
+                    } else if (position == clearLogsWithCacheRow) {
+                        textCell.setTextAndCheck("Clear logs with cache",
+                                SharedConfig.clearLogsWithCache, true);
                     }
                     break;
                 } case 1: {
@@ -611,7 +614,9 @@ public class TesterSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == sessionTerminateActionWarningRow || position == showPlainBackupRow
                     || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow || position == showPermissionDisabledDialogRow
-                    || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow) {
+                    || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow
+                    || position == showEncryptedChatsFromEncryptedGroupsRow || position == detailedEncryptedGroupMemberStatusRow
+                    || position == clearLogsWithCacheRow) {
                 return 0;
             } else if (position == updateChannelIdRow || position == updateChannelUsernameRow
                     || (simpleDataStartRow <= position && position < simpleDataEndRow)
