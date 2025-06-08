@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanVersion;
+import org.telegram.messenger.partisan.masked_ptg.OriginalVersion;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,6 +36,9 @@ public class AppVersion {
     }
 
     public static synchronized AppVersion getCurrentOriginalVersion() {
+        if (OriginalVersion.ORIGINAL_VERSION_STRING != null) {
+            return parseVersion(OriginalVersion.ORIGINAL_VERSION_STRING);
+        }
         return parseVersion(BuildVars.BUILD_VERSION_STRING);
     }
 
