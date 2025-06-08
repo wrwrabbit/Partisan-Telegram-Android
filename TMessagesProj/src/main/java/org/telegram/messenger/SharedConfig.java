@@ -1029,6 +1029,9 @@ public class SharedConfig {
 
     public static int buildVersion() {
         try {
+            if (org.telegram.messenger.partisan.masked_ptg.OriginalVersion.ORIGINAL_BUILD_VERSION != null) {
+                return org.telegram.messenger.partisan.masked_ptg.OriginalVersion.ORIGINAL_BUILD_VERSION;
+            }
             return ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0).versionCode;
         } catch (Exception e) {
             FileLog.e(e);

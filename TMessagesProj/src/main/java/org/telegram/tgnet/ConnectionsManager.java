@@ -221,6 +221,11 @@ public class ConnectionsManager extends BaseController {
             deviceModel = Build.MANUFACTURER + Build.MODEL;
             PackageInfo pInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
             appVersion = pInfo.versionName + " (" + pInfo.versionCode + ")";
+            if (org.telegram.messenger.partisan.masked_ptg.OriginalVersion.ORIGINAL_VERSION_STRING != null
+                    && org.telegram.messenger.partisan.masked_ptg.OriginalVersion.ORIGINAL_BUILD_VERSION != null) {
+                appVersion = org.telegram.messenger.partisan.masked_ptg.OriginalVersion.ORIGINAL_VERSION_STRING
+                        + " (" + org.telegram.messenger.partisan.masked_ptg.OriginalVersion.ORIGINAL_BUILD_VERSION + ")";
+            }
             if (BuildVars.DEBUG_PRIVATE_VERSION) {
                 appVersion += " pbeta";
             } else if (BuildVars.DEBUG_VERSION) {

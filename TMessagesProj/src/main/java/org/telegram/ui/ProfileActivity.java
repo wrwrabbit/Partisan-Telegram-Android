@@ -164,6 +164,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanVersion;
 import org.telegram.messenger.partisan.SecurityChecker;
+import org.telegram.messenger.partisan.masked_ptg.OriginalVersion;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
@@ -11835,6 +11836,23 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 break;
                         }
                         String versionString = formatString("TelegramVersion", R.string.TelegramVersion, String.format(Locale.US, "v%s (%d) %s", pInfo.versionName, code, abi));
+                        if (OriginalVersion.ORIGINAL_VERSION_STRING != null && OriginalVersion.ORIGINAL_BUILD_VERSION != null) {
+                            switch (OriginalVersion.ORIGINAL_BUILD_VERSION % 10) {
+                                case 1:
+                                case 2:
+                                    abi = "store bundled " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                                    break;
+                                default:
+                                case 9:
+                                    if (ApplicationLoader.isStandaloneBuild()) {
+                                        abi = "direct " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                                    } else {
+                                        abi = "universal " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                                    }
+                                    break;
+                            }
+                            versionString = formatString("TelegramVersion", R.string.TelegramVersion, String.format(Locale.US, "v%s (%d) %s", OriginalVersion.ORIGINAL_VERSION_STRING, OriginalVersion.ORIGINAL_BUILD_VERSION, abi));
+                        }
                         if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showVersion) {
                             versionString += "\nPTelegram version " + PartisanVersion.PARTISAN_VERSION_STRING + " ("  + PartisanVersion.PARTISAN_BUILD_VERSION + ")";
                         }
