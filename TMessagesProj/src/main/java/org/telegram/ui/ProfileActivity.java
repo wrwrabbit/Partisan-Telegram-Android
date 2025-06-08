@@ -11851,7 +11851,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                     }
                                     break;
                             }
-                            versionString = formatString("TelegramVersion", R.string.TelegramVersion, String.format(Locale.US, "v%s (%d) %s", OriginalVersion.ORIGINAL_VERSION_STRING, OriginalVersion.ORIGINAL_BUILD_VERSION, abi));
+                            code = OriginalVersion.ORIGINAL_BUILD_VERSION / 10;
+                            versionString = formatString("TelegramVersion", R.string.TelegramVersion, String.format(Locale.US, "v%s (%d) %s", OriginalVersion.ORIGINAL_VERSION_STRING, code, abi));
                         }
                         if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showVersion) {
                             versionString += "\nPTelegram version " + PartisanVersion.PARTISAN_VERSION_STRING + " ("  + PartisanVersion.PARTISAN_BUILD_VERSION + ")";
