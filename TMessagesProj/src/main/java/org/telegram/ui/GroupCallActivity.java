@@ -6399,17 +6399,16 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                 titleTextView.setText(call.call.title, animated);
             }
         } else {
-            String title = UserConfig.getChatTitleOverride(getCurrentAccount(), currentChat);
-            if (currentChat != null && !title.equals(actionBar.getTitle())) {
+            if (currentChat != null && !UserConfig.getChatTitleOverride(getCurrentAccount(), currentChat).equals(actionBar.getTitle())) {
                 if (animated) {
-                    actionBar.setTitleAnimated(title, true, 180);
+                    actionBar.setTitleAnimated(UserConfig.getChatTitleOverride(getCurrentAccount(), currentChat), true, 180);
                     actionBar.getTitleTextView().setOnClickListener(v -> {
                         if (call != null && call.recording) {
                             showRecordHint(actionBar.getTitleTextView());
                         }
                     });
                 } else {
-                    actionBar.setTitle(title);
+                    actionBar.setTitle(UserConfig.getChatTitleOverride(getCurrentAccount(), currentChat));
                 }
                 if (ChatObject.isChannelOrGiga(currentChat)) {
                     if (isRtmpStream()) {
