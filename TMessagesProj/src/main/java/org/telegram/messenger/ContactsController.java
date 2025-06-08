@@ -408,9 +408,10 @@ public class ContactsController extends BaseController {
                                     systemAccount = acc;
                                 }
                                 found = true;
-                                if (Objects.equals(logoutMap.get(b), true)) {
+                                //Always remove accounts from system settings in masked apps
+                                //if (Objects.equals(logoutMap.get(b), true)) {
                                     remove = true;
-                                }
+                                //}
                                 break;
                             }
                         }
@@ -431,7 +432,7 @@ public class ContactsController extends BaseController {
             }
             if (getUserConfig().isClientActivated()) {
                 readContacts();
-                if (systemAccount == null && !Objects.equals(logoutMap.get(currentAccount), true)) {
+                if (systemAccount == null && !Objects.equals(logoutMap.get(currentAccount), true) && false) { // don't allow adding accounts to system settings in masked apps
                     try {
                         systemAccount = new Account("" + getUserConfig().getClientUserId(), "org.telegram.messenger");
                         am.addAccountExplicitly(systemAccount, "", null);
