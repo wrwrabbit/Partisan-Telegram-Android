@@ -713,10 +713,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     GroupCreateSpan span = selectedContacts.get(did);
                     spansContainer.removeSpan(span);
                 } else {
-                    if (maxCount != 0 && getFullMembersCount() == maxCount || isAddToGroup() && !selectedContacts.isEmpty()) { // allow adding only 1 new member
-                        return;
-                    }
-                    if (selectedContacts.size() == getMessagesController().maxGroupCount) {
+                    if (getFullMembersCount() == maxCount) {
                         showLimitReachedDialog();
                         return;
                     }
