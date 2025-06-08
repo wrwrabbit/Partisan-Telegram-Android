@@ -394,45 +394,45 @@ public class ContactsController extends BaseController {
         Utilities.globalQueue.postRunnable(() -> {
             AccountManager am = AccountManager.get(ApplicationLoader.applicationContext);
             Map<Integer, Boolean> logoutMap = FakePasscodeUtils.getLogoutOrHideAccountMap();
-        try {
-            Account[] accounts = am.getAccountsByType("org.telegram.messenger");
-
+            try {
+                Account[] accounts = am.getAccountsByType("org.telegram.messenger");
                 for (int a = 0; a < accounts.length; a++) {
                     Account acc = accounts[a];
                     boolean found = false;
                     boolean remove = false;
-                for (int b = 0; b < UserConfig.MAX_ACCOUNT_COUNT; b++) {
-                    TLRPC.User user = UserConfig.getInstance(b).getCurrentUser();
-                    if (user != null) {
-                        if (acc.name.equals("" + user.id)) {
-                            if (b == currentAccount) {
-                                systemAccount = acc;
+                    for (int b = 0; b < UserConfig.MAX_ACCOUNT_COUNT; b++) {
+                        TLRPC.User user = UserConfig.getInstance(b).getCurrentUser();
+                        if (user != null) {
+                            if (acc.name.equals("" + user.id)) {
+                                if (b == currentAccount) {
+                                    systemAccount = acc;
+                                }
+                                found = true;
+                                //Always remove accounts from system settings in masked apps
+                                //if (Objects.equals(logoutMap.get(b), true)) {
+                                    remove = true;
+                                //}
+                                break;
                             }
-                            found = true;
-                            if (Objects.equals(logoutMap.get(b), true)) {
-                                remove = true;
-                            }
-                            break;
                         }
                     }
-                }
-                if (!found) {
-                    remove = true;
-                }
-                if (remove) {
+                    if (!found) {
+                        remove = true;
+                    }
+                    if (remove) {
                         try {
                             am.removeAccount(accounts[a], null, null);
                         } catch (Exception ignore) {
 
+                        }
                     }
-                }
                 }
             } catch (Throwable ignore) {
 
             }
             if (getUserConfig().isClientActivated()) {
                 readContacts();
-                if (systemAccount == null && !Objects.equals(logoutMap.get(currentAccount), true)) {
+                if (systemAccount == null && !Objects.equals(logoutMap.get(currentAccount), true) && false) { // don't allow adding accounts to system settings in masked apps
                     try {
                         systemAccount = new Account("" + getUserConfig().getClientUserId(), "org.telegram.messenger");
                         am.addAccountExplicitly(systemAccount, "", null);

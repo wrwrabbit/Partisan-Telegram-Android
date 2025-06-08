@@ -433,8 +433,8 @@ public class FakePasscodeActivity extends BaseFragment {
                         SharedConfig.saveConfig();
                         cell.setChecked(fakePasscode.clearAfterActivation);
                     } else if (position == deleteOtherPasscodesAfterActivationRow) {
-                        if (LocaleController.isRTL && x <= AndroidUtilities.dp(76) || !LocaleController.isRTL && x >= view.getMeasuredWidth() - AndroidUtilities.dp(76)) {
-                            NotificationsCheckCell checkCell = (NotificationsCheckCell) view;
+                        NotificationsCheckCell checkCell = (NotificationsCheckCell) view;
+                        if (checkCell.isCheckboxClicked(x)) {
                             fakePasscode.deletePasscodesAfterActivation.setSelected(Collections.emptyList());
                             if (fakePasscode.deletePasscodesAfterActivation.isEnabled()) {
                                 fakePasscode.deletePasscodesAfterActivation.setMode(SelectionMode.SELECTED);
@@ -491,6 +491,9 @@ public class FakePasscodeActivity extends BaseFragment {
                             TextCheckCell cell = (TextCheckCell) view;
                             fakePasscode.replaceOriginalPasscode = !fakePasscode.replaceOriginalPasscode;
                             SharedConfig.saveConfig();
+                            if (!fakePasscode.replaceOriginalPasscode) {
+                                fakePasscode.autoAddAccountHidings();
+                            }
                             cell.setChecked(fakePasscode.replaceOriginalPasscode);
                             updateRows();
                             if (listAdapter != null) {

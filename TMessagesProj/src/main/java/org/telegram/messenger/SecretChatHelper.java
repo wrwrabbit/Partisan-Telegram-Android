@@ -15,11 +15,9 @@ import android.text.TextUtils;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 
-import com.google.android.exoplayer2.util.Consumer;
-
 import org.telegram.SQLite.SQLiteCursor;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupChatUpdateHandler;
+import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.InputSerializedData;
@@ -250,7 +248,7 @@ public class SecretChatHelper extends BaseController {
                 getNotificationCenter().postNotificationName(NotificationCenter.encryptedChatUpdated, newChat);
             });
         }
-        AndroidUtilities.runOnUIThread(() -> new EncryptedGroupProtocol(currentAccount).processEncryptedChatUpdate(newChat));
+        AndroidUtilities.runOnUIThread(() -> new EncryptedGroupChatUpdateHandler(currentAccount).processEncryptedChatUpdate(newChat));
         if (newChat instanceof TLRPC.TL_encryptedChatDiscarded && newChat.history_deleted) {
             AndroidUtilities.runOnUIThread(() -> getMessagesController().deleteDialog(dialog_id, 0));
         }
@@ -581,11 +579,11 @@ public class SecretChatHelper extends BaseController {
     }
 
     public static boolean isSecretVisibleMessage(TLRPC.Message message) {
-        return message.action instanceof TLRPC.TL_messageEncryptedAction && (message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL);
+        return message.action instanceof TLRPC.TL_messageEncryptedAction && (message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL || EncryptedGroupAction.isVisibleAction(message.action.encryptedAction));
     }
 
     public static boolean isSecretInvisibleMessage(TLRPC.Message message) {
-        return message.action instanceof TLRPC.TL_messageEncryptedAction && !(message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL);
+        return message.action instanceof TLRPC.TL_messageEncryptedAction && !(message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionScreenshotMessages || message.action.encryptedAction instanceof TLRPC.TL_decryptedMessageActionSetMessageTTL || EncryptedGroupAction.isVisibleAction(message.action.encryptedAction));
     }
 
     protected void performSendEncryptedRequest(TLRPC.TL_messages_sendEncryptedMultiMedia req, SendMessagesHelper.DelayedMessage message) {
@@ -1126,6 +1124,7 @@ public class SecretChatHelper extends BaseController {
                         chat.ttl = serviceMessage.action.ttl_seconds;
                         newMessage.action.encryptedAction = serviceMessage.action;
                         getMessagesStorage().updateEncryptedChatTTL(chat);
+                        getEncryptedGroupUtils().syncTtlWithOtherMembersIfNeeded(chat);
                     } else {
                         newMessage.action = new TLRPC.TL_messageEncryptedAction();
                         newMessage.action.encryptedAction = serviceMessage.action;
@@ -1148,8 +1147,8 @@ public class SecretChatHelper extends BaseController {
                         if (dialog != null) {
                             dialog.unread_count = 0;
                             getMessagesController().dialogMessage.remove(dialog.id);
-                            EncryptedGroupUtils.getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, currentAccount, encryptedGroupId -> {
-                                EncryptedGroupUtils.updateEncryptedGroupLastMessage(encryptedGroupId, currentAccount);
+                            getEncryptedGroupUtils().getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(dialog.id, encryptedGroupId -> {
+                                getEncryptedGroupUtils().updateEncryptedGroupLastMessage(encryptedGroupId);
                             });
                         }
                         getMessagesStorage().getStorageQueue().postRunnable(() -> AndroidUtilities.runOnUIThread(() -> {
@@ -1331,8 +1330,12 @@ public class SecretChatHelper extends BaseController {
                     return null;
                 }
             } else if (object instanceof org.telegram.messenger.partisan.secretgroups.EncryptedGroupsServiceMessage) {
-                new org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol(currentAccount)
-                        .handleServiceMessage(chat, (org.telegram.messenger.partisan.secretgroups.EncryptedGroupsServiceMessage)object);
+                return new org.telegram.messenger.partisan.secretgroups.EncryptedGroupServiceMessagesHandler(
+                            chat,
+                            (org.telegram.messenger.partisan.secretgroups.EncryptedGroupsServiceMessage)object,
+                            date,
+                            currentAccount
+                        ).handleServiceMessage();
             } else {
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.e("unknown message " + object);
@@ -1929,11 +1932,31 @@ public class SecretChatHelper extends BaseController {
         });
     }
 
-    public void startSecretChat(Context context, TLRPC.User user) {
-        startSecretChat(context, user, null);
+    public boolean isStartingSecretChat() {
+        return startingSecretChat;
     }
 
-    public void startSecretChat(Context context, TLRPC.User user, Consumer<TLRPC.EncryptedChat> onComplete) {
+    public void startSecretChat(Context context, TLRPC.User user) {
+        SecretChatStartDelegate defaultStrategy = new SecretChatStartDelegate() {
+            @Override
+            public void onComplete(TLRPC.EncryptedChat encryptedChat) {}
+            @Override
+            public void onError(TLRPC.TL_error error) {}
+            @Override
+            public boolean allowShowingDialogs() {
+                return true;
+            }
+        };
+        startSecretChat(context, user, defaultStrategy);
+    }
+
+    public interface SecretChatStartDelegate {
+        void onComplete(TLRPC.EncryptedChat encryptedChat);
+        void onError(TLRPC.TL_error error);
+        boolean allowShowingDialogs();
+    }
+
+    public void startSecretChat(Context context, TLRPC.User user, @androidx.annotation.NonNull SecretChatStartDelegate strategy) {
         if (user == null || context == null) {
             return;
         }
@@ -1942,7 +1965,7 @@ public class SecretChatHelper extends BaseController {
             return;
         }
         startingSecretChat = true;
-        AlertDialog progressDialog = new AlertDialog(context, AlertDialog.ALERT_TYPE_SPINNER);
+        AlertDialog progressDialog = strategy.allowShowingDialogs() ? new AlertDialog(context, AlertDialog.ALERT_TYPE_SPINNER) : null;
         TLRPC.TL_messages_getDhConfig req = new TLRPC.TL_messages_getDhConfig();
         req.random_length = 256;
         req.version = getMessagesStorage().getLastSecretVersion();
@@ -1954,7 +1977,9 @@ public class SecretChatHelper extends BaseController {
                         AndroidUtilities.runOnUIThread(() -> {
                             try {
                                 if (!((Activity) context).isFinishing()) {
-                                    progressDialog.dismiss();
+                                    if (progressDialog != null) {
+                                        progressDialog.dismiss();
+                                    }
                                 }
                             } catch (Exception e) {
                                 FileLog.e(e);
@@ -1991,7 +2016,9 @@ public class SecretChatHelper extends BaseController {
                             startingSecretChat = false;
                             if (!((Activity) context).isFinishing()) {
                                 try {
-                                    progressDialog.dismiss();
+                                    if (progressDialog != null) {
+                                        progressDialog.dismiss();
+                                    }
                                 } catch (Exception e) {
                                     FileLog.e(e);
                                 }
@@ -2019,9 +2046,7 @@ public class SecretChatHelper extends BaseController {
                                     delayedEncryptedChatUpdates.clear();
                                 }
                             });
-                            if (onComplete != null) {
-                                onComplete.accept(chat);
-                            }
+                            strategy.onComplete(chat);
                         });
                     } else {
                         delayedEncryptedChatUpdates.clear();
@@ -2029,20 +2054,26 @@ public class SecretChatHelper extends BaseController {
                             if (!((Activity) context).isFinishing()) {
                                 startingSecretChat = false;
                                 try {
-                                    progressDialog.dismiss();
+                                    if (progressDialog != null) {
+                                        progressDialog.dismiss();
+                                    }
                                 } catch (Exception e) {
                                     FileLog.e(e);
                                 }
-                                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                                builder.setTitle(LocaleController.getString(R.string.AppName));
-                                builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError));
-                                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
-                                builder.show().setCanceledOnTouchOutside(true);
+                                if (strategy.allowShowingDialogs()) {
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                                    builder.setTitle(LocaleController.getString(R.string.AppName));
+                                    if (SharedConfig.isTesterSettingsActivated()) {
+                                        builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError) + "\n" + error1.text);
+                                    } else {
+                                        builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError));
+                                    }
+                                    builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+                                    builder.show().setCanceledOnTouchOutside(true);
+                                }
                             }
                         });
-                        if (onComplete != null) {
-                            onComplete.accept(null);
-                        }
+                        strategy.onError(error1);
                     }
                 }, ConnectionsManager.RequestFlagFailOnServerErrors);
             } else {
@@ -2051,7 +2082,9 @@ public class SecretChatHelper extends BaseController {
                     startingSecretChat = false;
                     if (!((Activity) context).isFinishing()) {
                         try {
-                            progressDialog.dismiss();
+                            if (progressDialog != null) {
+                                progressDialog.dismiss();
+                            }
                         } catch (Exception e) {
                             FileLog.e(e);
                         }
@@ -2059,11 +2092,13 @@ public class SecretChatHelper extends BaseController {
                 });
             }
         }, ConnectionsManager.RequestFlagFailOnServerErrors);
-        progressDialog.setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(reqId, true));
-        try {
-            progressDialog.show();
-        } catch (Exception e) {
-            //don't promt
+        if (progressDialog != null) {
+            progressDialog.setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(reqId, true));
+            try {
+                progressDialog.show();
+            } catch (Exception e) {
+                //don't promt
+            }
         }
     }
 }

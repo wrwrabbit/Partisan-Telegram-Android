@@ -1,6 +1,8 @@
 package org.telegram.ui.RemoveChatsAction.items;
 
 import org.telegram.tgnet.TLObject;
+import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
 
 import java.util.Optional;
 
@@ -66,8 +68,8 @@ public class SearchItem extends Item {
     }
 
     @Override
-    public Optional<Integer> getAvatarType() {
-        return innerItem.getAvatarType();
+    public void applyAvatar(BackupImageView avatarImageView, AvatarDrawable avatarDrawable) {
+        innerItem.applyAvatar(avatarImageView, avatarDrawable);
     }
 
     @Override

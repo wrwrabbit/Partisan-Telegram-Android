@@ -98,7 +98,9 @@ public class Utils {
     public static void clearCache(Context context, Runnable callback) {
         Utilities.globalQueue.postRunnable(() -> {
             AndroidUtilities.runOnUIThread(() -> clearWebBrowserCache(context));
-            BrowserHistory.clearHistory();
+            if (BrowserHistory.historyLoaded) {
+                BrowserHistory.clearHistory();
+            }
 
             for (int a = 0; a < 8; a++) {
                 int type = -1;
@@ -173,10 +175,12 @@ public class Utils {
                     }
                 }
 
-                logs = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "logs");
-                if (logs.exists()) {
-                    CacheControlActivity.cleanDirJava(logs.getAbsolutePath(), 0, null, x -> {});
-                    logs.delete();
+                if (SharedConfig.clearLogsWithCache) {
+                    logs = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "logs");
+                    if (logs.exists()) {
+                        CacheControlActivity.cleanDirJava(logs.getAbsolutePath(), 0, null, x -> {});
+                        logs.delete();
+                    }
                 }
             }
 
@@ -614,7 +618,7 @@ public class Utils {
 
     public static List<TLRPC.Dialog> filterDialogs(List<TLRPC.Dialog> dialogs, Optional<Integer> account) {
         List<TLRPC.Dialog> filteredDialogsByPasscode = FakePasscodeUtils.filterDialogs(dialogs, account);
-        if (!account.isPresent() || SharedConfig.showEncryptedChatsFromEncryptedGroups || !SharedConfig.encryptedGroupsEnabled) {
+        if (!account.isPresent() || SharedConfig.showEncryptedChatsFromEncryptedGroups) {
             return filteredDialogsByPasscode;
         }
         MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());

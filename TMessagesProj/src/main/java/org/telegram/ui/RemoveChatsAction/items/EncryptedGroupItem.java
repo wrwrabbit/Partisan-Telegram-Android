@@ -3,8 +3,10 @@ package org.telegram.ui.RemoveChatsAction.items;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.TLObject;
 import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
 
 import java.util.Optional;
 
@@ -50,7 +52,7 @@ public class EncryptedGroupItem extends Item {
     }
 
     @Override
-    public Optional<Integer> getAvatarType() {
-        return Optional.of(AvatarDrawable.AVATAR_TYPE_ANONYMOUS);
+    public void applyAvatar(BackupImageView avatarImageView, AvatarDrawable avatarDrawable) {
+        EncryptedGroupUtils.applyAvatar(avatarImageView, avatarDrawable, encryptedGroup);
     }
 }

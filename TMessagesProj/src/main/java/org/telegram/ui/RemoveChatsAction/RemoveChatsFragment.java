@@ -40,7 +40,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.RemoveChatsAction;
 import org.telegram.messenger.partisan.Utils;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -750,7 +749,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         public void fillItems() {
             items.clear();
             for (Long id: getChatIds()) {
-                if (id != null && EncryptedGroupUtils.isInnerEncryptedGroupChat(id, accountNum)) {
+                if (id != null && getEncryptedGroupUtils().isInnerEncryptedGroupChat(id)) {
                     continue;
                 }
                 Item item = Item.tryCreateItemById(accountNum, action, id);

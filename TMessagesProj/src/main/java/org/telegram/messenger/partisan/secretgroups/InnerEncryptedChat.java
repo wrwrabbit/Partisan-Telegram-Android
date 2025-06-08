@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import org.telegram.messenger.DialogObject;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 public class InnerEncryptedChat {
@@ -39,5 +40,13 @@ public class InnerEncryptedChat {
 
     public void setState(InnerEncryptedChatState state) {
         this.state = state;
+    }
+
+    public boolean isInState(InnerEncryptedChatState... targetStates) {
+        return Arrays.stream(targetStates).anyMatch(targetState -> state == targetState);
+    }
+
+    public boolean isNotInState(InnerEncryptedChatState... targetStates) {
+        return Arrays.stream(targetStates).noneMatch(targetState -> state == targetState);
     }
 }

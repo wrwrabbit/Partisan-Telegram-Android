@@ -139,8 +139,7 @@ public class FileProtectionActivity extends BaseFragment {
     }
 
     private boolean isChanged() {
-        return fileProtectedAccountsChanged()
-                || fileProtectionWorksWhenFakePasscodeActivated != SharedConfig.fileProtectionWorksWhenFakePasscodeActivated;
+        return fileProtectedAccountsChanged() || fileProtectionWorksWhenFakePasscodeActivatedChanged();
     }
 
     private boolean fileProtectedAccountsChanged() {
@@ -156,6 +155,10 @@ public class FileProtectionActivity extends BaseFragment {
             }
         }
         return false;
+    }
+
+    private boolean fileProtectionWorksWhenFakePasscodeActivatedChanged() {
+        return fileProtectionWorksWhenFakePasscodeActivated != SharedConfig.fileProtectionWorksWhenFakePasscodeActivated;
     }
 
     private void confirmExit() {
@@ -186,7 +189,9 @@ public class FileProtectionActivity extends BaseFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setMessage(LocaleController.getString(R.string.ApplicationWillBeRestarted));
         builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialogInterface, i) -> {
-            SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+            if (fileProtectionWorksWhenFakePasscodeActivatedChanged()) {
+                SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+            }
             Map<Integer, Boolean> map = new HashMap<>();
             for (FileProtectionAccountCellInfo cellInfo : accounts) {
                 map.put(cellInfo.accountNum, cellInfo.fileProtectionEnabled);

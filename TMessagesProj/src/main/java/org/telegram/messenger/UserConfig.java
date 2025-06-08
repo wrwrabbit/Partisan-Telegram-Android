@@ -22,6 +22,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SecurityIssue;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
@@ -852,6 +853,33 @@ public class UserConfig extends BaseController {
         fileProtectionDialogLoadOffsets.put(folderId, offsets);
     }
 
+    public static Integer getAccountIndexForLoginIfPossible() {
+        int usedAccounts = 0;
+        Integer availableAccount = null;
+        for (int a = UserConfig.MAX_ACCOUNT_COUNT - 1; a >= 0; a--) {
+            if (!UserConfig.getInstance(a).isClientActivated()) {
+                if (availableAccount == null) {
+                    availableAccount = a;
+                }
+            } else if (!FakePasscodeUtils.isHideAccount(a)) {
+                usedAccounts++;
+            }
+        }
+        int maxAccountCount;
+        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+            maxAccountCount = UserConfig.MAX_ACCOUNT_COUNT;
+        } else if (UserConfig.hasPremiumOnAccounts()) {
+            maxAccountCount = UserConfig.FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT;
+        } else {
+            maxAccountCount = UserConfig.getMaxAccountCount();
+        }
+        if (usedAccounts < maxAccountCount) {
+            return availableAccount;
+        } else {
+            return null;
+        }
+    }
+
     int globalTtl = 0;
     boolean ttlIsLoading = false;
     long lastLoadingTime;
@@ -884,5 +912,14 @@ public class UserConfig extends BaseController {
     public void clearFilters() {
         getPreferences().edit().remove("filtersLoaded").apply();
         filtersLoaded = false;
+    }
+
+    public static int getProductionAccount() {
+        for (int i = -1; i < MAX_ACCOUNT_COUNT; ++i) {
+            final int account = i < 0 ? selectedAccount : i;
+            if (getInstance(account).isClientActivated() && !ConnectionsManager.getInstance(account).isTestBackend())
+                return account;
+        }
+        return selectedAccount;
     }
 }
