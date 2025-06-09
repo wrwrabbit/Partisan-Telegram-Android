@@ -6325,7 +6325,7 @@ public class NotificationsController extends BaseController {
     }
 
     private boolean doForEachInnerDialogIdIfNeeded(long encryptedGroupDialogId, Consumer<Long> action) {
-        return getEncryptedGroupUtils().doForEachInnerDialogIdIfNeeded(encryptedGroupDialogId, action);
+        return getEncryptedGroupUtils().forEachInnerDialogIdIfEncryptedGroup(encryptedGroupDialogId, action);
     }
 
     private String getTitle(TLRPC.Chat chat) {

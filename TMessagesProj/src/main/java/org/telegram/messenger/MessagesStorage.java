@@ -1291,7 +1291,7 @@ public class MessagesStorage extends BaseController {
         storageQueue.postRunnable(() -> resetAllUnreadCounters(true));
     }
 
-    public void removeChatsActionExecuted() {
+    public void unreadCounterChangedByFakePasscode() {
         for (int a = 0, N = dialogFilters.size(); a < N; a++) {
             MessagesController.DialogFilter filter = dialogFilters.get(a);
             filter.pendingUnreadCount = -1;
@@ -2855,7 +2855,8 @@ public class MessagesStorage extends BaseController {
             if (!encryptedGroupsToLoad.isEmpty()) {
                 List<EncryptedGroup> encryptedGroups = getEncryptedGroupsInternal(encryptedGroupsToLoad);
                 for (EncryptedGroup encryptedGroup : encryptedGroups) {
-                    if (FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), currentAccount)) {
+                    if (FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), currentAccount)
+                            || FakePasscodeUtils.isFakePasscodeActivated()) {
                         continue;
                     }
                     long did = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());
@@ -5947,7 +5948,8 @@ public class MessagesStorage extends BaseController {
         if (!encryptedGroupsToLoad.isEmpty()) {
             List<EncryptedGroup> encryptedGroups = getEncryptedGroupsInternal(encryptedGroupsToLoad);
             for (EncryptedGroup encryptedGroup : encryptedGroups) {
-                if (FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), currentAccount)) {
+                if (FakePasscodeUtils.isHideChat(DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId()), currentAccount)
+                    || FakePasscodeUtils.isFakePasscodeActivated()) {
                     continue;
                 }
                 long did = DialogObject.makeEncryptedDialogId(encryptedGroup.getInternalId());

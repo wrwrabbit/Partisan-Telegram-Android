@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.secretgroups.ui;
 
+import static org.telegram.messenger.LocaleController.getString;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -446,9 +448,9 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
         if (isAddToGroup()) {
-            actionBar.setTitle(LocaleController.getString(R.string.GroupAddMembers));
+            actionBar.setTitle(getString(R.string.GroupAddMembers));
         } else {
-            actionBar.setTitle(LocaleController.getString(R.string.NewEncryptedGroup));
+            actionBar.setTitle(getString(R.string.NewEncryptedGroup));
         }
 
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
@@ -680,7 +682,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         emptyView = new StickerEmptyView(context, flickerLoadingView, StickerEmptyView.STICKER_TYPE_SEARCH);
         emptyView.addView(flickerLoadingView);
         emptyView.showProgress(true, false);
-        emptyView.title.setText(LocaleController.getString(R.string.NoResult));
+        emptyView.title.setText(getString(R.string.NoResult));
 
         frameLayout.addView(emptyView);
 
@@ -699,53 +701,37 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
             if (view instanceof GroupCreateUserCell) {
                 GroupCreateUserCell cell = (GroupCreateUserCell) view;
                 Object object = cell.getObject();
-                long id;
-                if (object instanceof TLRPC.User) {
-                    id = ((TLRPC.User) object).id;
-                } else if (object instanceof TLRPC.Chat) {
-                    id = -((TLRPC.Chat) object).id;
-                } else {
+                if (!(object instanceof TLRPC.User)) {
                     return;
                 }
-                if (encryptedGroup != null && encryptedGroup.getInnerChatByUserId(id) != null) {
+                TLRPC.User user = (TLRPC.User) object;
+                long did = user.id;
+                if (encryptedGroup != null && encryptedGroup.getInnerChatByUserId(did) != null) {
                     return;
                 }
-                if (selectedContacts.indexOfKey(id) >= 0) {
-                    GroupCreateSpan span = selectedContacts.get(id);
+                if (selectedContacts.indexOfKey(did) >= 0) {
+                    GroupCreateSpan span = selectedContacts.get(did);
                     spansContainer.removeSpan(span);
                 } else {
-                    if (maxCount != 0 && getFullMembersCount() == maxCount || isAddToGroup() && !selectedContacts.isEmpty()) { // allow adding only 1 new member
+                    if (getFullMembersCount() == maxCount) {
+                        showLimitReachedDialog();
                         return;
                     }
-                    if (selectedContacts.size() == getMessagesController().maxGroupCount) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                        builder.setTitle(LocaleController.getString(R.string.AppName));
-                        builder.setMessage(LocaleController.getString(R.string.SoftUserLimitAlert));
-                        builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
-                        showDialog(builder.create());
-                        return;
-                    }
-                    long did = 0;
-                    if (object instanceof TLRPC.User) {
-                        TLRPC.User user = (TLRPC.User) object;
-                        getMessagesController().putUser(user, !searching);
-                        did = user.id;
-                    } else if (object instanceof TLRPC.Chat) {
-                        TLRPC.Chat chat = (TLRPC.Chat) object;
-                        getMessagesController().putChat(chat, !searching);
-                        did = chat.id;
-                    }
+                    getMessagesController().putUser(user, !searching);
                     if (isAddToGroup()) {
-                        long finalDid = did;
-                        AlertsCreator.showConfirmationDialog(this, context, LocaleController.getString(R.string.VoipGroupAddMemberTitle), () -> {
-                            selectedContacts.put(finalDid, null);
+                        AlertsCreator.showConfirmationDialog(this, context, getString(R.string.VoipGroupAddMemberTitle), () -> {
+                            selectedContacts.put(did, null);
                             onDonePressed();
                         });
                         return;
+                    } else {
+                        GroupCreateSpan span = new GroupCreateSpan(editText.getContext(), object, currentAccount);
+                        spansContainer.addSpan(span);
+                        span.setOnClickListener(EncryptedGroupCreateActivity.this);
+                        if (getFullMembersCount() == EncryptedGroupConstants.FAST_GROUP_CREATION_MEMBER_COUNT) {
+                            showSlowGroupCreationWarning();
+                        }
                     }
-                    GroupCreateSpan span = new GroupCreateSpan(editText.getContext(), object, currentAccount);
-                    spansContainer.addSpan(span);
-                    span.setOnClickListener(EncryptedGroupCreateActivity.this);
                 }
                 selectedCountUpdated();
                 if (searching || searchWas) {
@@ -810,10 +796,22 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
             floatingButton.setScaleY(0.0f);
             floatingButton.setAlpha(0.0f);
         }
-        floatingButton.setContentDescription(LocaleController.getString(R.string.Next));
+        floatingButton.setContentDescription(getString(R.string.Next));
 
         selectedCountUpdated();
         return fragmentView;
+    }
+
+    private void showSlowGroupCreationWarning() {
+        AlertsCreator.showSimpleAlert(this, getString(R.string.Warning), getString(R.string.SlowSecretGroupCreationWarning));
+    }
+
+    private void showLimitReachedDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setTitle(getString(R.string.AppName));
+        builder.setMessage(getString(R.string.LimitReached));
+        builder.setPositiveButton(getString(R.string.OK), null);
+        showDialog(builder.create());
     }
 
     private void updateEditTextHint() {
@@ -821,9 +819,9 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
             return;
         }
         if (isAddToGroup() || (adapter != null && adapter.noContactsStubRow == 0)) {
-            editText.setHintText(LocaleController.getString(R.string.SearchForPeople));
+            editText.setHintText(getString(R.string.SearchForPeople));
         } else {
-            editText.setHintText(LocaleController.getString(R.string.SendMessageTo));
+            editText.setHintText(getString(R.string.SendMessageTo));
         }
     }
 
@@ -930,7 +928,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                 int position = listView.getChildAdapterPosition(child);
                 if (position == adapter.firstSectionRow) {
                     GraySectionCell cell = (GraySectionCell) child;
-                    cell.setRightText(!selectedContacts.isEmpty() ? LocaleController.getString(R.string.DeselectAll) : "", true, v -> {
+                    cell.setRightText(!selectedContacts.isEmpty() ? getString(R.string.DeselectAll) : "", true, v -> {
                         selectedContacts.clear();
                         spansContainer.removeAllSpans(true);
                         checkVisibleRows();
@@ -955,8 +953,8 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         if (encryptedGroup == null) {
             DialogTemplate template = new DialogTemplate();
             template.type = DialogType.CREATE;
-            template.title = LocaleController.getString(R.string.GroupName);
-            template.addEditTemplate("", LocaleController.getString(R.string.EnterGroupNamePlaceholder), true);
+            template.title = getString(R.string.GroupName);
+            template.addEditTemplate("", getString(R.string.EnterGroupNamePlaceholder), true);
             template.positiveListener = views -> {
                 String chatName = ((EditTextCaption)views.get(0)).getText().toString();
 
@@ -1198,7 +1196,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     };
                     stickerEmptyView.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
                     stickerEmptyView.subtitle.setVisibility(View.GONE);
-                    stickerEmptyView.title.setText(LocaleController.getString(R.string.NoContacts));
+                    stickerEmptyView.title.setText(getString(R.string.NoContacts));
                     stickerEmptyView.setAnimateLayoutChange(true);
                     view = stickerEmptyView;
                     break;
@@ -1212,12 +1210,12 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                 case 0: {
                     GraySectionCell cell = (GraySectionCell) holder.itemView;
                     if (searching) {
-                        cell.setText(LocaleController.getString(R.string.GlobalSearch));
+                        cell.setText(getString(R.string.GlobalSearch));
                     } else if (position == userTypesHeaderRow) {
-                        cell.setText(LocaleController.getString(R.string.PrivacyUserTypes));
+                        cell.setText(getString(R.string.PrivacyUserTypes));
                     }
                     if (position == firstSectionRow) {
-                        cell.setRightText(!selectedContacts.isEmpty() ? LocaleController.getString(R.string.DeselectAll) : "", true, v -> {
+                        cell.setRightText(!selectedContacts.isEmpty() ? getString(R.string.DeselectAll) : "", true, v -> {
                             selectedContacts.clear();
                             spansContainer.removeAllSpans(true);
                             checkVisibleRows();

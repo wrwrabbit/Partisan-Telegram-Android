@@ -5156,7 +5156,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
         TLRPC.EncryptedChat encryptedChat = parentFragment != null ? parentFragment.getCurrentEncryptedChatSingle() : null;
         messageEditText.setAllowTextEntitiesIntersection(supportsSendingNewEntities());
         int flags = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
-        if (isKeyboardSupportIncognitoMode() && encryptedChat != null) {
+        if (isKeyboardSupportIncognitoMode() && (encryptedChat != null || getParentFragment() != null && getParentFragment().isEncryptedGroup())) {
             flags |= EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING;
         }
         messageEditText.setIncludeFontPadding(false);

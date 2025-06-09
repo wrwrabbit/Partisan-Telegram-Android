@@ -140,7 +140,6 @@ import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
-import org.telegram.messenger.voip.ConferenceCall;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
@@ -8334,7 +8333,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else {
             Bundle args = new Bundle();
             if (DialogObject.isEncryptedDialog(dialogId)) {
-                if (!getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundle(args, dialogId)) {
+                if (!getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundleIfPossible(args, dialogId)) {
                     EncryptedGroup encryptedGroup = getMessagesController()
                             .getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
                     getEncryptedGroupUtils().showSecretGroupJoinDialog(encryptedGroup, this, () -> {

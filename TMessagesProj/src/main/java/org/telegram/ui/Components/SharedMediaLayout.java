@@ -92,7 +92,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -4617,7 +4616,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 showActionMode(false);
                 actionBar.closeSearchField();
                 cantDeleteMessagesCount = 0;
-            }, null, resourcesProvider, null);
+            }, null, resourcesProvider, null, null);
         } else if (id == forward) {
             if (info != null) {
                 TLRPC.Chat chat = profileActivity.getMessagesController().getChat(info.id);
@@ -4690,7 +4689,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     Bundle args1 = new Bundle();
                     args1.putBoolean("scrollToTopOnResume", true);
                     if (DialogObject.isEncryptedDialog(did)) {
-                        if (!profileActivity.getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundle(args1, did)) {
+                        if (!profileActivity.getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundleIfPossible(args1, did)) {
                             return true;
                         }
                     } else {

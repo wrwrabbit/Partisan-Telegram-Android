@@ -4292,9 +4292,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                     @Override
                     public void toggleSound() {
+                        boolean wasEnabled = isEncryptedGroup()
+                                ? currentEncryptedGroup.getInnerEncryptedChatDialogIds().stream()
+                                    .anyMatch(innerDialogId -> getMessagesController().isDialogNotificationsSoundEnabled(innerDialogId, getTopicId()))
+                                : false;
                         forEachDialogId(dialog_id -> {
                             SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
                             boolean enabled = !preferences.getBoolean("sound_enabled_" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), true);
+                            if (isEncryptedGroup()) {
+                                enabled = !wasEnabled;
+                            }
                             preferences.edit().putBoolean("sound_enabled_" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), enabled).apply();
                             if (BulletinFactory.canShowBulletin(ChatActivity.this)) {
                                 BulletinFactory.createSoundEnabledBulletin(ChatActivity.this, enabled ? NotificationsController.SETTING_SOUND_ON : NotificationsController.SETTING_SOUND_OFF, getResourceProvider()).show();
@@ -12885,7 +12892,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 }
                                 final boolean updateStickersOrderFinal = updateStickersOrder;
                                 if (autoDeleteDelay != null) {
-                                    SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, chatMode, updateStickersOrderFinal, null, quickReplyShortcut, getQuickReplyId(), effectId, invertMedia, payStars, autoDeleteDelay);
+                                    SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, chatMode, updateStickersOrderFinal, null, quickReplyShortcut, getQuickReplyId(), effectId, invertMedia, payStars, getSendMonoForumPeerId(), autoDeleteDelay);
                                 } else {
                                     SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, chatMode, updateStickersOrderFinal, null, quickReplyShortcut, getQuickReplyId(), effectId, invertMedia, payStars, getSendMonoForumPeerId());
                                 }
@@ -14068,10 +14075,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     waitingForLoad.add(lastLoadIndex);
                     getMessagesController().loadMessages(mergeDialogId, 0, false, 50, getMinMessageId(dialog_id, 1), 0, true, getMaxDate(dialog_id, 1), classGuid, 1, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
                     loadingForward = true;
-                } else if (!getForwardEndReached(dialog_id, 0)) {
-                    waitingForLoad.add(lastLoadIndex);
-                    getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 50, getMinMessageId(dialog_id, 0), 0, true, getMaxDate(dialog_id, 0), classGuid, 1, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
-                    loadingForward = true;
+                } else if (!forwardEndReachedForAll(0)) {
+                    forEachDialogId(dialog_id -> {
+                        waitingForLoad.add(lastLoadIndex);
+                        getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 50, getMinMessageId(dialog_id, 0), 0, true, getMaxDate(dialog_id, 0), classGuid, 1, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
+                        loadingForward = true;
+                    });
                 }
             }
         });
@@ -21113,9 +21122,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 previous = null;
                                 for (int i = messages.size() - 1; i >= 0; i--) {
                                     MessageObject otherMessage = messages.get(i);
-                                    if (otherMessage.getDialogId() == obj.getDialogId() && otherMessage.type != MessageObject.TYPE_DATE) {
-                                        previous = otherMessage;
-                                        break;
+                                    for (MessageObject otherMessageCopy : getMessageCopies(otherMessage)) {
+                                        if (otherMessageCopy.getDialogId() == obj.getDialogId() && otherMessageCopy.type != MessageObject.TYPE_DATE) {
+                                            previous = otherMessageCopy;
+                                            break;
+                                        }
                                     }
                                 }
                             } else {
@@ -24364,7 +24375,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (needAddMessage) {
             messages.add(pos, obj);
             messages.sort(Collections.reverseOrder(Comparator.comparingInt(m -> m.messageOwner.date)));
-            boolean added = !removeServiceMessagesDuplications();
+            boolean added = !removeServiceMessageDuplicationsIfAny();
             if (obj.isOut()) {
                 hiddenEncryptedGroupOutMessages.put(obj.messageOwner.random_id, new ArrayList<>());
             }
@@ -24376,8 +24387,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
     }
 
-    private boolean removeServiceMessagesDuplications() {
-        boolean modified = false;
+    private boolean removeServiceMessageDuplicationsIfAny() {
+        boolean duplicationsFound = false;
         for (int i = messages.size() - 1; i >= 0; i--) {
             if (i > 0) {
                 TLRPC.DecryptedMessageAction currentAction = getMessageAction(messages.get(i));
@@ -24385,11 +24396,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                 if (actionsEquals(currentAction, previousAction)) {
                     messages.remove(i);
-                    modified = true;
+                    duplicationsFound = true;
                 }
             }
         }
-        return modified;
+        return duplicationsFound;
     }
 
     private static TLRPC.DecryptedMessageAction getMessageAction(MessageObject message) {
@@ -25619,7 +25630,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 obj.stableId = lastStableId++;
                 getMessagesController().getTranslateController().checkTranslation(obj, false);
                 if (!addMessage(placeToPaste, obj)) {
-                    return;
+                    continue;
                 }
                 if (placeToPaste == 0 && !obj.isSponsored()) {
                     needMoveScrollToLastMessage = true;
@@ -30568,45 +30579,75 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         AlertsCreator.createDeleteMessagesAlert(this, currentUser, currentChat, currentEncryptedChatSingle, chatInfo, mergeDialogId, finalSelectedObject, selectedMessagesIds, finalSelectedGroup, (int) getTopicId(), chatMode, null, () -> {
             hideActionMode();
             updatePinnedMessageView(true);
-        }, hideDimAfter ? () -> dimBehindView(false) : null, themeDelegate, createEncryptedMessagesMapToDelete(finalSelectedObject));
+        },
+                hideDimAfter ? () -> dimBehindView(false) : null,
+                themeDelegate,
+                createEncryptedMessagesMapToDelete(finalSelectedObject),
+                createEncryptedMessagesGroupMapToDelete(finalSelectedGroup)
+        );
     }
 
     private Map<TLRPC.EncryptedChat, List<MessageObject>> createEncryptedMessagesMapToDelete(MessageObject finalSelectedObject) {
         if (!isEncryptedGroup()) {
             return null;
         }
-        List<MessageObject> srcMessages;
-        if (finalSelectedObject != null) {
-            srcMessages = Collections.singletonList(finalSelectedObject);
-        } else {
-            srcMessages = new ArrayList<>();
-            for (int a = 1; a >= 0; a--) {
-                for (int b = 0; b < selectedMessagesIds[a].size(); b++) {
-                    srcMessages.add(selectedMessagesIds[a].valueAt(b));
-                }
-            }
-        }
         Map<TLRPC.EncryptedChat, List<MessageObject>> encryptedGroupMessages = new HashMap<>();
-        for (MessageObject message : srcMessages) {
-            List<MessageObject> messageCopies;
-            if (message.isOut()) {
-                long randomId = message.messageOwner.random_id;
-                messageCopies = new ArrayList<>(hiddenEncryptedGroupOutMessages.computeIfAbsent(randomId, k -> new ArrayList<>()));
-                messageCopies.add(message);
-            } else {
-                messageCopies = Collections.singletonList(message);
-            }
-            for (MessageObject messageCopy : messageCopies) {
-                long dialogId = messageCopy.getDialogId();
-                TLRPC.EncryptedChat encryptedChat = getCurrentEncryptedChatList(false).stream()
-                        .filter(c -> DialogObject.makeEncryptedDialogId(c.id) == dialogId)
-                        .findAny()
-                        .orElse(null);
+        for (MessageObject message : getSrcMessages(finalSelectedObject)) {
+            for (MessageObject messageCopy : getMessageCopies(message)) {
+                TLRPC.EncryptedChat encryptedChat = getEncryptedChatByDialogId(messageCopy.getDialogId());
                 List<MessageObject> dialogMessages = encryptedGroupMessages.computeIfAbsent(encryptedChat, k -> new ArrayList<>());
                 dialogMessages.add(messageCopy);
             }
         }
         return encryptedGroupMessages;
+    }
+
+    private List<MessageObject> getSrcMessages(MessageObject finalSelectedObject) {
+        if (finalSelectedObject != null) {
+            return Collections.singletonList(finalSelectedObject);
+        } else {
+            List<MessageObject>srcMessages = new ArrayList<>();
+            for (int a = 1; a >= 0; a--) {
+                for (int b = 0; b < selectedMessagesIds[a].size(); b++) {
+                    srcMessages.add(selectedMessagesIds[a].valueAt(b));
+                }
+            }
+            return srcMessages;
+        }
+    }
+
+    private List<MessageObject> getMessageCopies(MessageObject message) {
+        if (message.isOut()) {
+            long randomId = message.messageOwner.random_id;
+            List<MessageObject> messageCopies = new ArrayList<>(hiddenEncryptedGroupOutMessages.computeIfAbsent(randomId, k -> new ArrayList<>()));
+            messageCopies.add(message);
+            return messageCopies;
+        } else {
+            return Collections.singletonList(message);
+        }
+    }
+
+    private TLRPC.EncryptedChat getEncryptedChatByDialogId(long dialogId) {
+        if (!DialogObject.isEncryptedDialog(dialogId)) {
+            return null;
+        }
+        return getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
+    }
+
+    private Map<TLRPC.EncryptedChat, MessageObject.GroupedMessages> createEncryptedMessagesGroupMapToDelete(MessageObject.GroupedMessages finalSelectedGroup) {
+        if (!isEncryptedGroup() || finalSelectedGroup == null || finalSelectedGroup.messages.isEmpty()) {
+            return null;
+        }
+
+        Map<TLRPC.EncryptedChat, MessageObject.GroupedMessages> encryptedGroupMessageGroups = new HashMap<>();
+        for (MessageObject message : getMessageCopies(finalSelectedGroup.messages.get(0))) {
+            MessageObject.GroupedMessages messageGroup = getValidGroupedMessage(message);
+            if (messageGroup != null) {
+                TLRPC.EncryptedChat encryptedChat = getEncryptedChatByDialogId(message.getDialogId());
+                encryptedGroupMessageGroups.put(encryptedChat, messageGroup);
+            }
+        }
+        return encryptedGroupMessageGroups;
     }
 
     private void forEachMessageCopy(MessageObject message, Consumer<MessageObject> action) {
@@ -33548,18 +33589,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     if (group != null) {
                         boolean success = true;
                         for (int a = 0; a < group.messages.size(); a++) {
-                            if (!getSendMessagesHelper().retrySendMessage(group.messages.get(a), false, payStars)) {
-                                success = false;
+                            for (MessageObject messageCopy : getMessageCopies(group.messages.get(a))) {
+                                if (!getSendMessagesHelper().retrySendMessage(messageCopy, false, payStars)) {
+                                    success = false;
+                                }
                             }
                         }
                         if (success && chatMode == 0) {
                             moveScrollToLastMessage(false);
                         }
                     } else {
-                        if (getSendMessagesHelper().retrySendMessage(object, false, payStars)) {
-                            updateVisibleRows();
-                            if (chatMode == 0) {
-                                moveScrollToLastMessage(false);
+                        for (MessageObject messageCopy : getMessageCopies(object)) {
+                            if (getSendMessagesHelper().retrySendMessage(messageCopy, false, payStars)) {
+                                updateVisibleRows();
+                                if (chatMode == 0) {
+                                    moveScrollToLastMessage(false);
+                                }
                             }
                         }
                     }
@@ -34452,7 +34497,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 Bundle args = new Bundle();
                 args.putBoolean("scrollToTopOnResume", scrollToTopOnResume);
                 if (DialogObject.isEncryptedDialog(did)) {
-                    if (!getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundle(args, did)) {
+                    if (!getEncryptedGroupUtils().putEncIdOrEncGroupIdInBundleIfPossible(args, did)) {
                         return true;
                     }
                 } else {
@@ -43793,6 +43838,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (!isEncryptedGroup()) {
                 return singleArray[index];
             } else {
+                if (dialogId == DialogObject.makeEncryptedDialogId(currentEncryptedGroup.getInternalId())) {
+                    T defaultValue = mappingFunction.apply(dialogId)[index];
+                    return defaultValue;
+                }
                 initEncryptedGroupMapIfNeeded();
                 return encryptedGroupMap.computeIfAbsent(dialogId, mappingFunction)[index];
             }

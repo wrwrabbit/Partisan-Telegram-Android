@@ -3,7 +3,6 @@ package org.telegram.messenger.partisan.secretgroups;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SendMessagesHelper;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.tgnet.TLRPC;
 
@@ -83,7 +82,7 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
         getEncryptedGroupProtocol().sendSecondaryInnerChatInvitation(encryptedChat, encryptedGroup.getExternalId());
         innerChat.setState(InnerEncryptedChatState.INITIALIZED);
         getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
-        getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+        getEncryptedGroupUtils().finalizeEncryptedGroupIfAllChatsCreated(encryptedGroup);
     }
 
     private void handleEncryptedChatDiscarded(EncryptedGroup encryptedGroup, TLRPC.EncryptedChat encryptedChat) {

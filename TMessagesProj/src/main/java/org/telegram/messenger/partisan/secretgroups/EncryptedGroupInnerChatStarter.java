@@ -53,7 +53,7 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
         if (floodWaitUntil > 0 && floodWaitUntil > SystemClock.elapsedRealtime()) {
             return;
         }
-        Pair<InnerEncryptedChat, EncryptedGroup> pair = getNextUninitializedInnerChat();
+        Pair<InnerEncryptedChat, EncryptedGroup> pair = findNextInnerChatToInitialize();
         if (pair != null) {
             InnerEncryptedChat uninitializedInnerChat = pair.first;
             EncryptedGroup encryptedGroup = pair.second;
@@ -69,7 +69,7 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
         }
     }
 
-    private Pair<InnerEncryptedChat, EncryptedGroup> getNextUninitializedInnerChat() {
+    private Pair<InnerEncryptedChat, EncryptedGroup> findNextInnerChatToInitialize() {
         Pair<InnerEncryptedChat, EncryptedGroup> uninitializedInnerChat = getNextSecondaryChat();
         if (uninitializedInnerChat == null) {
             uninitializedInnerChat = getNextPrimaryChat();
@@ -129,21 +129,23 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
 
         @Override
         public void onComplete(TLRPC.EncryptedChat encryptedChat) {
-            if (encryptedChat != null) {
-                InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
-                innerChat.setEncryptedChatId(encryptedChat.id);
-                if (encryptedGroup.isInState(CREATING_ENCRYPTED_CHATS)) {
-                    onPrimaryChatStarted(innerChat);
-                } else if (encryptedGroup.isInState(WAITING_SECONDARY_CHAT_CREATION, NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION)) {
-                    onSecondaryChatStarted(innerChat);
-                } else {
-                    onMemberAdded(innerChat);
-                }
+            if (encryptedChat == null) {
+                currentDelegate = null;
+                return;
+            }
+            InnerEncryptedChat innerChat = encryptedGroup.getInnerChatByUserId(encryptedChat.user_id);
+            innerChat.setEncryptedChatId(encryptedChat.id);
+            if (encryptedGroup.isInState(CREATING_ENCRYPTED_CHATS)) {
+                handlePrimaryChatStarted(innerChat);
+            } else if (encryptedGroup.isInState(WAITING_SECONDARY_CHAT_CREATION, NEW_MEMBER_WAITING_SECONDARY_CHAT_CREATION)) {
+                handleSecondaryChatStarted(innerChat);
+            } else {
+                handleNewMemberChatStarted(innerChat);
             }
             currentDelegate = null;
         }
 
-        private void onPrimaryChatStarted(InnerEncryptedChat innerChat) {
+        private void handlePrimaryChatStarted(InnerEncryptedChat innerChat) {
             log(encryptedGroup, "A primary inner chat with a user started.");
             innerChat.setState(InnerEncryptedChatState.NEED_SEND_INVITATION);
             getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
@@ -157,15 +159,15 @@ public class EncryptedGroupInnerChatStarter implements AccountControllersProvide
             }
         }
 
-        private void onSecondaryChatStarted(InnerEncryptedChat innerChat) {
+        private void handleSecondaryChatStarted(InnerEncryptedChat innerChat) {
             log(encryptedGroup, "A secondary inner chat with a user started.");
             innerChat.setState(InnerEncryptedChatState.NEED_SEND_SECONDARY_INVITATION);
             getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
 
-            getEncryptedGroupUtils().checkAllEncryptedChatsCreated(encryptedGroup);
+            getEncryptedGroupUtils().finalizeEncryptedGroupIfAllChatsCreated(encryptedGroup);
         }
 
-        private void onMemberAdded(InnerEncryptedChat innerChat) {
+        private void handleNewMemberChatStarted(InnerEncryptedChat innerChat) {
             log(encryptedGroup, "A member added.");
             innerChat.setState(InnerEncryptedChatState.NEW_MEMBER_NEED_SEND_INVITATION);
             getMessagesStorage().updateEncryptedGroupInnerChat(encryptedGroup.getInternalId(), innerChat);
