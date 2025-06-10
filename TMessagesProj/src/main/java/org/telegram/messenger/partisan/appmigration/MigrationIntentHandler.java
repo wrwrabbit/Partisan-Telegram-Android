@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.text.TextUtils;
 
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.appmigration.intenthandlers.AbstractIntentHandler;
 import org.telegram.messenger.partisan.appmigration.intenthandlers.MigrationResultHandler;
 import org.telegram.messenger.partisan.appmigration.intenthandlers.SignatureConfirmationHandler;
@@ -30,6 +31,7 @@ public class MigrationIntentHandler {
 
         for (AbstractIntentHandler handler : handlers) {
             if (handler.needHandleIntent(intent, activity)) {
+                PartisanLog.d("MigrationZipReceiver: handle " + handler.getClass());
                 handler.handleIntent(intent, activity);
 
                 BaseFragment fragmentToPresent = handler.getFragmentToPresent(intent);

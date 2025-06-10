@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 
 public class SignatureConfirmationHandler extends AbstractIntentHandler {
@@ -26,12 +27,15 @@ public class SignatureConfirmationHandler extends AbstractIntentHandler {
             String packageName = intent.getStringExtra("packageName");
             String activityName = intent.getStringExtra("activityName");
             if (packageName != null && activityName != null) {
+                PartisanLog.d("MigrationZipReceiver: intent packageName " + packageName + ", intent activityName " + activityName);
                 signatureConfirmationSent = true;
                 Intent requestZipIntent = new Intent(Intent.ACTION_MAIN);
                 requestZipIntent.setClassName(packageName, activityName);
                 requestZipIntent.putExtra("fromOtherPtg", true);
                 requestZipIntent.putExtra("requestZip", true);
                 activity.startActivityForResult(requestZipIntent, AppMigrator.CONFIRM_SIGNATURE_CODE);
+            } else {
+                PartisanLog.d("MigrationZipReceiver: intent packageName or activityName is null");
             }
         });
     }
