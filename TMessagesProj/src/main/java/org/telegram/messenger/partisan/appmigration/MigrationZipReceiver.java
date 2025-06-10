@@ -68,16 +68,25 @@ public class MigrationZipReceiver {
 
     private void receiveZipInternal() {
         try {
+            PartisanLog.d("MigrationZipReceiver: 1");
             if (finishReceivingMigrationIfNeed()) {
+                PartisanLog.d("MigrationZipReceiver: finishMigration");
                 return;
             }
+            PartisanLog.d("MigrationZipReceiver: 2");
             deleteSharedPrefs();
+            PartisanLog.d("MigrationZipReceiver: 3");
             ZipInputStream zipStream = createZipStream();
+            PartisanLog.d("MigrationZipReceiver: 4");
             unpackZip(zipStream);
+            PartisanLog.d("MigrationZipReceiver: 5");
             zipStream.close();
+            PartisanLog.d("MigrationZipReceiver: 6");
             //noinspection ResultOfrttMethodCallIgnored
             new File(activity.getFilesDir(), "updater_files_copied").createNewFile();
+            PartisanLog.d("MigrationZipReceiver: 7");
             finishReceivingMigration(null);
+            PartisanLog.d("MigrationZipReceiver: 8");
         } catch (Exception e) {
             PartisanLog.e("ReceiveDataFromOtherPtg", e);
             showMigrationReceiveError(e);
@@ -87,19 +96,22 @@ public class MigrationZipReceiver {
     private boolean finishReceivingMigrationIfNeed() {
         if (AppMigrator.appAlreadyHasAccounts()) {
             if (SharedConfig.filesCopiedFromOldTelegram) { // already migrated
-                PartisanLog.d("appAlreadyHasAccounts: filesCopiedFromOldTelegram");
+                PartisanLog.d("MigrationZipReceiver: appAlreadyHasAccounts: filesCopiedFromOldTelegram");
                 finishReceivingMigration(null);
             } else {
                 finishReceivingMigration("alreadyHasAccounts");
-                PartisanLog.d("appAlreadyHasAccounts: error = alreadyHasAccounts");
+                PartisanLog.d("MigrationZipReceiver: appAlreadyHasAccounts: error = alreadyHasAccounts");
             }
             return true;
         } else if (isSourceAppVersionGreater()) {
+            PartisanLog.d("MigrationZipReceiver: isSourceAppVersionGreater");
             finishReceivingMigration("srcVersionGreater");
             return true;
         }
+        PartisanLog.d("MigrationZipReceiver: getZipIssues");
         Set<String> zipIssues = getZipIssues();
         if (!zipIssues.isEmpty()) {
+            PartisanLog.d("MigrationZipReceiver: !zipIssues.isEmpty()");
             finishReceivingMigration("settingsDoNotSuitMaskedApps", zipIssues);
             return true;
         }
@@ -286,12 +298,15 @@ public class MigrationZipReceiver {
     private void unpackZip(ZipInputStream zipStream) throws IOException {
         ZipEntry zipEntry = zipStream.getNextEntry();
         while (zipEntry != null) {
+            PartisanLog.d("MigrationZipReceiver: unpack zip entry");
             File newFile = createFileFromZipEntry(activity.getFilesDir(), zipEntry);
             if (zipEntry.isDirectory()) {
+                PartisanLog.d("MigrationZipReceiver: unpack zip directory");
                 if (!newFile.isDirectory() && !newFile.mkdirs()) {
                     throw new IOException("Failed to create directory " + newFile);
                 }
             } else {
+                PartisanLog.d("MigrationZipReceiver: unpack zip file");
                 File parent = newFile.getParentFile();
                 if (parent == null || !parent.isDirectory() && !parent.mkdirs()) {
                     throw new IOException("Failed to create directory " + parent);
@@ -301,6 +316,7 @@ public class MigrationZipReceiver {
             }
             zipEntry = zipStream.getNextEntry();
         }
+        PartisanLog.d("MigrationZipReceiver: zip unpacked");
     }
 
     private static File createFileFromZipEntry(File destinationDir, ZipEntry zipEntry) throws IOException {
@@ -319,6 +335,7 @@ public class MigrationZipReceiver {
     private static void writeFileContent(ZipInputStream zipStream, File newFile) throws IOException {
         byte[] buffer = new byte[8192];
         FileOutputStream fileOutputStream = new FileOutputStream(newFile);
+        PartisanLog.d("MigrationZipReceiver: write file content");
         while (true) {
             int len = zipStream.read(buffer);
             if (len <= 0) {
@@ -326,6 +343,7 @@ public class MigrationZipReceiver {
             }
             fileOutputStream.write(buffer, 0, len);
         }
+        PartisanLog.d("MigrationZipReceiver: write file content finished");
         fileOutputStream.close();
     }
 
