@@ -14,6 +14,7 @@ import android.widget.TextView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.appmigration.intenthandlers.ZipHandler;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -104,8 +105,10 @@ public class MigrationReceiveActivity extends BaseFragment {
     @Override
     public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
         super.onActivityResultFragment(requestCode, resultCode, data);
+        PartisanLog.d("MigrationZipReceiver: onActivityResultFragment");
         if (requestCode == AppMigrator.CONFIRM_SIGNATURE_CODE) {
             if (resultCode == Activity.RESULT_OK && data != null && data.hasExtra("zipPassword")) {
+                PartisanLog.d("MigrationZipReceiver: receive zip");
                 MigrationZipReceiver.receiveZip(getParentActivity(), data, (error, issues) -> {
                     Intent intent = ZipHandler.createZipReceivingResultIntent(error, issues);
                     intent.setAction(Intent.ACTION_MAIN);
@@ -118,7 +121,19 @@ public class MigrationReceiveActivity extends BaseFragment {
                     getParentActivity().finish();
                     android.os.Process.killProcess(android.os.Process.myPid());
                 });
+            } else {
+                if (resultCode != Activity.RESULT_OK) {
+                    PartisanLog.d("MigrationZipReceiver: resultCode is wrong");
+                } else if (data == null) {
+                    PartisanLog.d("MigrationZipReceiver: data is null");
+                } else if (!data.hasExtra("zipPassword")) {
+                    PartisanLog.d("MigrationZipReceiver: data is null");
+                } else {
+                    PartisanLog.d("MigrationZipReceiver: unknown error");
+                }
             }
+        } else {
+            PartisanLog.d("MigrationZipReceiver: requestCode is wrong");
         }
     }
 

@@ -63,6 +63,7 @@ public class MigrationZipReceiver {
     }
 
     public static void receiveZip(Activity activity, Intent intent, ZipReceiverDelegate delegate) {
+        PartisanLog.d("MigrationZipReceiver: 0");
         new Thread(() -> new MigrationZipReceiver(activity, intent, delegate).receiveZipInternal()).start();
     }
 
