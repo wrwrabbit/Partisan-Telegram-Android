@@ -19,7 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class AbstractChannelChecker implements NotificationCenter.NotificationCenterDelegate {
+public abstract class AbstractChannelChecker implements NotificationCenter.NotificationCenterDelegate, AccountControllersProvider {
     private final int MESSAGES_COUNT_PER_LOAD = 50;
     private final int classGuid;
     protected final int currentAccount;
@@ -194,23 +194,8 @@ public abstract class AbstractChannelChecker implements NotificationCenter.Notif
         getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
     }
 
-    protected AccountInstance getAccountInstance() {
-        return AccountInstance.getInstance(currentAccount);
-    }
-
-    private NotificationCenter getNotificationCenter() {
-        return getAccountInstance().getNotificationCenter();
-    }
-
-    private MessagesController getMessagesController() {
-        return getAccountInstance().getMessagesController();
-    }
-
-    private MessagesStorage getMessagesStorage() {
-        return getAccountInstance().getMessagesStorage();
-    }
-
-    protected ConnectionsManager getConnectionsManager() {
-        return getAccountInstance().getConnectionsManager();
+    @Override
+    public int getAccountNum() {
+        return currentAccount;
     }
 }

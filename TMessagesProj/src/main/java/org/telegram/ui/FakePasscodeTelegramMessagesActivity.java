@@ -702,7 +702,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                         }
                     }
                 } else if (DialogObject.isEncryptedDialog(id)) {
-                    if (EncryptedGroupUtils.isInnerEncryptedGroupChat(id, accountNum)) {
+                    if (getEncryptedGroupUtils().isInnerEncryptedGroupChat(id)) {
                         continue;
                     }
                     TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(id));
@@ -738,7 +738,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                         }
                     }
                 } else if (DialogObject.isEncryptedDialog(dialog.id)) {
-                    if (EncryptedGroupUtils.isInnerEncryptedGroupChat(dialog.id, accountNum)) {
+                    if (getEncryptedGroupUtils().isInnerEncryptedGroupChat(dialog.id)) {
                         continue;
                     }
                     TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(dialog.id));

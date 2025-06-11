@@ -7,7 +7,7 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 
-public class KnownChatUsernameResolver {
+public class KnownChatUsernameResolver implements AccountControllersProvider {
     public interface KnownChatUsernameResolverDelegate {
         void onResolved(boolean success);
     }
@@ -63,15 +63,8 @@ public class KnownChatUsernameResolver {
         getMessagesStorage().putUsersAndChats(res.users, res.chats, false, true);
     }
 
-    private MessagesController getMessagesController() {
-        return MessagesController.getInstance(accountNum);
-    }
-
-    private MessagesStorage getMessagesStorage() {
-        return MessagesStorage.getInstance(accountNum);
-    }
-
-    private ConnectionsManager getConnectionsManager() {
-        return ConnectionsManager.getInstance(accountNum);
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 }

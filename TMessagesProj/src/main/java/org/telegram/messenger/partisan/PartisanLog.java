@@ -22,6 +22,12 @@ public class PartisanLog {
         }
     }
 
+    public static void e(final Throwable exception) {
+        if (logsAllowed()) {
+            FileLog.e(exception);
+        }
+    }
+
     public static void e(final String message, final Throwable exception) {
         if (logsAllowed()) {
             FileLog.e(message, exception);

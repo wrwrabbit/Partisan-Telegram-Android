@@ -7,6 +7,7 @@ import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
 
 import java.util.Optional;
 
@@ -73,11 +74,12 @@ class UserItem extends AbstractUserItem {
     }
 
     @Override
-    public Optional<Integer> getAvatarType() {
+    public void applyAvatar(BackupImageView avatarImageView, AvatarDrawable avatarDrawable) {
         if (isSelf()) {
-            return Optional.of(AvatarDrawable.AVATAR_TYPE_SAVED);
+            avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_SAVED);
+            avatarImageView.setImage(null, "50_50", avatarDrawable, getProfileObject());
         } else {
-            return super.getAvatarType();
+            super.applyAvatar(avatarImageView, avatarDrawable);
         }
     }
 }

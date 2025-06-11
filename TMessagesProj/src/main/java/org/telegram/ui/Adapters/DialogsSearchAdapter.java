@@ -66,6 +66,7 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.ForegroundColorSpanThemable;
+import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RLottieDrawable;
@@ -277,7 +278,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             if (user != null) {
                 name = UserObject.getFirstName(user);
             } else if (chat != null) {
-                name = UserConfig.getChatTitleOverride(currentAccount, chat);
+                name = chat.monoforum ? ForumUtilities.getMonoForumTitle(currentAccount, chat): UserConfig.getChatTitleOverride(currentAccount, chat);
             }
             cell.setDialog(did, true, name);
         }
@@ -1841,7 +1842,11 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                         if (user != null) {
                             nameSearch = ContactsController.formatName(user.first_name, user.last_name);
                         } else if (chat != null) {
-                            nameSearch = UserConfig.getChatTitleOverride(currentAccount, chat);
+                            if (chat.monoforum) {
+                                nameSearch = ForumUtilities.getMonoForumTitle(currentAccount, chat);
+                            } else {
+                                nameSearch = UserConfig.getChatTitleOverride(currentAccount, chat);
+                            }
                         }
                         if (nameSearch != null && (index = AndroidUtilities.indexOfIgnoreCase(nameSearch, foundUserName)) != -1) {
                             SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(nameSearch);
@@ -2094,7 +2099,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                                 }
                             } else if (delegate != null && localMessagesCount > 0 && position - globalCount <= 1) {
                                 TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-delegate.getSearchForumDialogId());
-                                title = LocaleController.formatString(R.string.SearchMessagesIn, (chat == null ? "null" : chat.title));
+                                title = LocaleController.formatString(R.string.SearchMessagesIn, (chat == null ? "null" : chat.monoforum ? ForumUtilities.getMonoForumTitle(currentAccount, chat) : chat.title));
                             } else {
                                 messagesSectionPosition = position;
                                 customRightText = getFilterFromString(currentMessagesFilter);
@@ -2359,7 +2364,8 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             }
             String title = null, username = null;
             if (obj.object instanceof TLRPC.Chat) {
-                title = ((TLRPC.Chat) obj.object).title;
+                TLRPC.Chat chat = (TLRPC.Chat) obj.object;
+                title = chat.monoforum ? ForumUtilities.getMonoForumTitle(currentAccount, chat) : chat.title;
                 username = ((TLRPC.Chat) obj.object).username;
             } else if (obj.object instanceof TLRPC.User) {
                 title = UserObject.getUserName((TLRPC.User) obj.object, currentAccount);

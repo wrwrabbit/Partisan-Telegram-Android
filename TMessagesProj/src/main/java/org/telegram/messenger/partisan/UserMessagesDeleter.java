@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
-public class UserMessagesDeleter implements NotificationCenter.NotificationCenterDelegate {
+public class UserMessagesDeleter implements NotificationCenter.NotificationCenterDelegate, AccountControllersProvider {
     private final long userId;
     private final long dialogId;
     private final long topicId;
@@ -237,16 +237,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
     }
 
-    private MessagesController getMessagesController() {
-        return MessagesController.getInstance(accountNum);
-    }
-
-    private MediaDataController getMediaDataController() {
-        return MediaDataController.getInstance(accountNum);
-    }
-
-    private NotificationCenter getNotificationCenter() {
-        return NotificationCenter.getInstance(accountNum);
+    @Override
+    public int getAccountNum() {
+        return accountNum;
     }
 
     private void log(String message) {

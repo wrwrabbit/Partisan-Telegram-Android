@@ -147,22 +147,6 @@ public class TelegramMessageAction extends AccountAction implements Notification
         }
     }
 
-    AccountInstance getAccountInstance() {
-        return AccountInstance.getInstance(accountNum);
-    }
-
-    MessagesController getMessagesController() {
-        return getAccountInstance().getMessagesController();
-    }
-
-    SendMessagesHelper getSendMessagesHelper() {
-        return getAccountInstance().getSendMessagesHelper();
-    }
-
-    NotificationCenter getNotificationCenter() {
-        return getAccountInstance().getNotificationCenter();
-    }
-
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (account != accountNum) {

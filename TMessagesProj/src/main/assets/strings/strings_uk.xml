@@ -287,10 +287,6 @@
     <string name="NotAllSelectedDialogsHaveThisOption">Не всі вибрані діалоги мають цю опцію.</string>
     <string name="ThisFeatureIsNotImplemented">Ця функція ще не реалізована.</string>
     <string name="DeleteSecretGroupOptionForMembers">Видалити повідомлення для інших</string>
-    <string name="PartisanExperimentalSettingsHeader">Експериментальні налаштування</string>
-    <string name="EnableSecretGroups">Увімкнути секретні групи</string>
-    <string name="SecretGroupsEnabled">Секретні групи включені</string>
-    <string name="EnableSecretGroupsInfo">Секретні групи дозволяють декільком користувачам спілкуватися з використанням наскрізного шифрування. Щоб створити секретну групу, увімкніть цей функціонал за допомогою кнопки вище, поверніться до списку діалогів, натисніть на іконку олівця в правому нижньому кутку та виберіть \"%1$s\".</string>
 
     <string name="PermissionDisabledTitle">Дозвіл вимкнено</string>
     <string name="PermissionDisabledMessage">Цей дозвіл вимкнено у вашій версії Партизанського Телеграма.</string>
@@ -322,9 +318,14 @@
     <string name="FileProtectionDisabledTitle">Захист файлів вимкнено</string>
     <string name="FileProtectionDisabledDetails">Розмір бази даних став занадто великим. Захист файлів тимчасово вимкнено. Ви можете увімкнути цю функцію знову.</string>
     <string name="FileProtectionEnableAgain">Увімкнути знову</string>
+    <string name="InnerEncryptedChatStateSecretChatCreating">Створення секретного чату</string>
     <string name="InnerEncryptedChatStateInvitationSent">Запрошення надіслано</string>
     <string name="InnerEncryptedChatStateInitialization">Ініціалізація</string>
     <string name="InnerEncryptedChatStateCancelled">Скасовано</string>
     <string name="InnerEncryptedChatStateInvitationDeclined">Запрошення відхилено</string>
     <string name="InnerEncryptedChatStateMemberDeleted">Учасник видалено</string>
+    <string name="EncryptedGroupMemberRemovalConfirmation">Ви впевнені, що хочете видалити цього учасника із секретної групи? Усі його повідомлення будуть видалені.</string>
+    <string name="EncryptedGroupAvatarChangeForbidden">Не можна змінити аватар до ініціалізації групи.</string>
+    <string name="CantAddNewMemberToEncryptedGroupMessage">Перед додаванням нового необхідно дочекатися підтвердження від попередніх членів.</string>
+    <string name="SlowSecretGroupCreationWarning">Секретна група на 7 і більше учасників буде створюватися довше, ніж зазвичай.</string>
 </resources>

@@ -614,7 +614,7 @@ public class ContactsActivity extends BaseFragment implements NotificationCenter
                                 preferences.edit().putBoolean("channel_intro", true).commit();
                             }
                         } else if (row == 4) {
-                            presentFragment(new SecretGroupCreateActivity(), false);
+                            presentFragment(new org.telegram.messenger.partisan.secretgroups.ui.EncryptedGroupCreateActivity(null), false);
                         }
                     }
                 } else {
@@ -846,7 +846,7 @@ public class ContactsActivity extends BaseFragment implements NotificationCenter
                 combinedDrawable.setIconSize(AndroidUtilities.dp(56), AndroidUtilities.dp(56));
                 drawable = combinedDrawable;
             }
-            floatingButton.setBackgroundDrawable(drawable);
+            floatingButton.setBackground(drawable);
             floatingButton.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chats_actionIcon), PorterDuff.Mode.MULTIPLY));
             SharedPreferences preferences = MessagesController.getGlobalMainSettings();
             boolean configAnimationsEnabled = preferences.getBoolean("view_animations", true);
