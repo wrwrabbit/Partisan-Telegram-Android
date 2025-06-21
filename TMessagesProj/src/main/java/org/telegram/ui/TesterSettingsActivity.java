@@ -1,7 +1,6 @@
 package org.telegram.ui;
 
 import android.content.Context;
-import android.os.SystemClock;
 import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,12 +32,14 @@ import org.telegram.messenger.partisan.secretgroups.EncryptedGroupInnerChatStart
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
+import org.telegram.messenger.partisan.SeekBarCell;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -110,8 +111,11 @@ public class TesterSettingsActivity extends BaseFragment {
     private int dbSizeRow;
     private int accountNumRow;
     private int clearLogsWithCacheRow;
+    private int pitchFactorHeaderRow;
+    private int pitchFactorRow;
 
     public static boolean showPlainBackup;
+    public static double pitchFactor = 1.0;
 
     public TesterSettingsActivity() {
         super();
@@ -380,6 +384,8 @@ public class TesterSettingsActivity extends BaseFragment {
         }
         accountNumRow = rowCount++;
         clearLogsWithCacheRow = rowCount++;
+        pitchFactorHeaderRow = rowCount++;
+        pitchFactorRow = rowCount++;
     }
 
     @Override
@@ -516,6 +522,14 @@ public class TesterSettingsActivity extends BaseFragment {
                     view = new TextSettingsCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
+                case 2:
+                    view = new HeaderCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case 3:
+                    view = new SeekBarCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
             }
             return new RecyclerListView.Holder(view);
         }
@@ -583,6 +597,24 @@ public class TesterSettingsActivity extends BaseFragment {
                         textCell.setTextAndValue("Account num", Integer.toString(currentAccount), true);
                     }
                     break;
+                } case 2: {
+                    HeaderCell headerCell = (HeaderCell) holder.itemView;
+                    if (position == pitchFactorHeaderRow) {
+                        headerCell.setText("Pitch Factor");
+                    }
+                    break;
+                } case 3: {
+                    SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
+                    if (position == pitchFactorRow) {
+                        List<Object> values = new ArrayList<>();
+                        for (double value = 0.2; value <= 3.01; value += 0.2) {
+                            values.add(value);
+                        }
+                        seekBarCell.setValues(values.toArray(), pitchFactor);
+                        seekBarCell.setDelegate(value -> pitchFactor = (double)value);
+                        seekBarCell.invalidate();
+                    }
+                    break;
                 }
             }
         }
@@ -603,6 +635,10 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == resetVerificationLastCheckTimeRow || position == dbSizeRow
                     || position == accountNumRow) {
                 return 1;
+            } else if (position == pitchFactorHeaderRow) {
+                return 2;
+            } else if (position == pitchFactorRow) {
+                return 3;
             }
             return 0;
         }

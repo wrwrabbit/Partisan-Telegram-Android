@@ -3,6 +3,10 @@ apply plugin: 'com.android.application'
 repositories {
     mavenCentral()
     google()
+    maven {
+        name = "TarsosDSP repository"
+        url = "https://mvn.0110.be/releases"
+    }
 }
 
 configurations {

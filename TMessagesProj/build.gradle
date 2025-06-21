@@ -5,6 +5,10 @@ apply plugin: 'com.android.library'
 repositories {
     mavenCentral()
     google()
+    maven {
+        name = "TarsosDSP repository"
+        url = "https://mvn.0110.be/releases"
+    }
 }
 
 configurations {
@@ -70,6 +74,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-core:2.12.2'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.12.2'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.2'
+
+    implementation 'be.tarsos.dsp:core:2.5'
 
     implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: '2.12.2'
     implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.12.2'

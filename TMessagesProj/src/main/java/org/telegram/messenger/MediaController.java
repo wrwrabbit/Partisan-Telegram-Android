@@ -81,6 +81,7 @@ import org.telegram.messenger.chromecast.ChromecastFileServer;
 import org.telegram.messenger.chromecast.ChromecastMedia;
 import org.telegram.messenger.chromecast.ChromecastMediaVariations;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.voicechange.VoiceChanger;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.ConnectionsManager;
@@ -1040,7 +1041,15 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 buffer.rewind();
                 int len = audioRecorder.read(buffer, buffer.capacity());
                 if (len > 0) {
-                    buffer.limit(len);
+                    if (Math.abs(org.telegram.ui.TesterSettingsActivity.pitchFactor - 1.0) > 0.01) {
+                        byte[] changedVoice = VoiceChanger.changeVoice(buffer.array(), org.telegram.ui.TesterSettingsActivity.pitchFactor, sampleRate);
+                        len = changedVoice.length;
+                        buffer = ByteBuffer.allocateDirect(len);
+                        buffer.order(ByteOrder.nativeOrder());
+                        buffer.put(changedVoice, 0, len);
+                        buffer.rewind();
+                    }
+
                     double sum = 0;
                     try {
                         long newSamplesCount = samplesCount + len / 2;
