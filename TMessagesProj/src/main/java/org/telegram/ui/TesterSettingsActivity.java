@@ -113,9 +113,12 @@ public class TesterSettingsActivity extends BaseFragment {
     private int clearLogsWithCacheRow;
     private int pitchFactorHeaderRow;
     private int pitchFactorRow;
+    private int timeStretchFactorHeaderRow;
+    private int timeStretchFactorRow;
 
     public static boolean showPlainBackup;
     public static double pitchFactor = 1.0;
+    public static double timeStretchFactor = 1.0;
 
     public TesterSettingsActivity() {
         super();
@@ -386,6 +389,8 @@ public class TesterSettingsActivity extends BaseFragment {
         clearLogsWithCacheRow = rowCount++;
         pitchFactorHeaderRow = rowCount++;
         pitchFactorRow = rowCount++;
+        timeStretchFactorHeaderRow = rowCount++;
+        timeStretchFactorRow = rowCount++;
     }
 
     @Override
@@ -497,7 +502,7 @@ public class TesterSettingsActivity extends BaseFragment {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            if (position >= simpleDataStartRow && position < simpleDataEndRow) {
+            if (position >= simpleDataStartRow && position < simpleDataEndRow || holder.getItemViewType() == 2) {
                 return false;
             }
             return true;
@@ -601,17 +606,35 @@ public class TesterSettingsActivity extends BaseFragment {
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
                     if (position == pitchFactorHeaderRow) {
                         headerCell.setText("Pitch Factor");
+                    } else if (position == timeStretchFactorHeaderRow) {
+                        headerCell.setText("Time Stretch Factor");
                     }
                     break;
                 } case 3: {
                     SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
                     if (position == pitchFactorRow) {
                         List<Object> values = new ArrayList<>();
-                        for (double value = 0.2; value <= 3.01; value += 0.2) {
-                            values.add(value);
+                        for (double value = 0.2; value <= 3.01; value += (value - 1.0 > -0.21 && value - 1.0 < 0.19) ? 0.05 : 0.2) {
+                            if (Math.abs(value - pitchFactor) < 0.01) {
+                                values.add(pitchFactor);
+                            } else {
+                                values.add(value);
+                            }
                         }
                         seekBarCell.setValues(values.toArray(), pitchFactor);
                         seekBarCell.setDelegate(value -> pitchFactor = (double)value);
+                        seekBarCell.invalidate();
+                    } else if (position == timeStretchFactorRow) {
+                        List<Object> values = new ArrayList<>();
+                        for (double value = 0.2; value <= 3.01; value += (value - 1.0 > -0.21 && value - 1.0 < 0.19) ? 0.05 : 0.2) {
+                            if (Math.abs(value - timeStretchFactor) < 0.01) {
+                                values.add(timeStretchFactor);
+                            } else {
+                                values.add(value);
+                            }
+                        }
+                        seekBarCell.setValues(values.toArray(), timeStretchFactor);
+                        seekBarCell.setDelegate(value -> timeStretchFactor = (double)value);
                         seekBarCell.invalidate();
                     }
                     break;
@@ -635,9 +658,9 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == resetVerificationLastCheckTimeRow || position == dbSizeRow
                     || position == accountNumRow) {
                 return 1;
-            } else if (position == pitchFactorHeaderRow) {
+            } else if (position == pitchFactorHeaderRow || position == timeStretchFactorHeaderRow) {
                 return 2;
-            } else if (position == pitchFactorRow) {
+            } else if (position == pitchFactorRow || position == timeStretchFactorRow) {
                 return 3;
             }
             return 0;

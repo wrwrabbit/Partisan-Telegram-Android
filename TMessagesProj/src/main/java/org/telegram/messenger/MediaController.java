@@ -106,6 +106,7 @@ import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.Stories.DarkThemeResourceProvider;
 import org.telegram.ui.Stories.recorder.StoryEntry;
+import org.telegram.ui.TesterSettingsActivity;
 
 import java.io.File;
 import java.io.FileDescriptor;
@@ -1041,8 +1042,13 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 buffer.rewind();
                 int len = audioRecorder.read(buffer, buffer.capacity());
                 if (len > 0) {
-                    if (Math.abs(org.telegram.ui.TesterSettingsActivity.pitchFactor - 1.0) > 0.01) {
-                        byte[] changedVoice = VoiceChanger.changeVoice(buffer.array(), org.telegram.ui.TesterSettingsActivity.pitchFactor, sampleRate);
+                    if (Math.abs(org.telegram.ui.TesterSettingsActivity.pitchFactor - 1.0) > 0.01 || Math.abs(TesterSettingsActivity.timeStretchFactor - 1.0) > 0.01) {
+                        byte[] changedVoice = VoiceChanger.changeVoice(
+                                buffer.array(),
+                                org.telegram.ui.TesterSettingsActivity.pitchFactor,
+                                TesterSettingsActivity.timeStretchFactor,
+                                sampleRate
+                        );
                         len = changedVoice.length;
                         buffer = ByteBuffer.allocateDirect(len);
                         buffer.order(ByteOrder.nativeOrder());
