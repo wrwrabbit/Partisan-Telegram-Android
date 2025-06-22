@@ -1340,7 +1340,8 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 if (minBuferSize <= 0) {
                     minBuferSize = 1280;
                 }
-                recordBufferSize = minBuferSize;
+                // TODO: read opus file instead of using big buffer
+                recordBufferSize = 256*1024;//minBuferSize;
 
                 for (int a = 0; a < 5; a++) {
                     ByteBuffer buffer = ByteBuffer.allocateDirect(recordBufferSize);
