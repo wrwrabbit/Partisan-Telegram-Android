@@ -111,12 +111,14 @@ public class TesterSettingsActivity extends BaseFragment {
     private int dbSizeRow;
     private int accountNumRow;
     private int clearLogsWithCacheRow;
+    private int forceSearchDuringDeletionRow;
     private int pitchFactorHeaderRow;
     private int pitchFactorRow;
     private int timeStretchFactorHeaderRow;
     private int timeStretchFactorRow;
 
     public static boolean showPlainBackup;
+    public static boolean forceSearchDuringDeletion;
     public static double pitchFactor = 1.0;
     public static double timeStretchFactor = 1.0;
 
@@ -337,6 +339,9 @@ public class TesterSettingsActivity extends BaseFragment {
             } else if (position == clearLogsWithCacheRow) {
                 SharedConfig.toggleClearLogsWithCache();
                 ((TextCheckCell) view).setChecked(SharedConfig.clearLogsWithCache);
+            } else if (position == forceSearchDuringDeletionRow) {
+                forceSearchDuringDeletion = !forceSearchDuringDeletion;
+                ((TextCheckCell) view).setChecked(forceSearchDuringDeletion);
             }
         });
 
@@ -387,6 +392,7 @@ public class TesterSettingsActivity extends BaseFragment {
         }
         accountNumRow = rowCount++;
         clearLogsWithCacheRow = rowCount++;
+        forceSearchDuringDeletionRow = rowCount++;
         pitchFactorHeaderRow = rowCount++;
         pitchFactorRow = rowCount++;
         timeStretchFactorHeaderRow = rowCount++;
@@ -569,6 +575,9 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == clearLogsWithCacheRow) {
                         textCell.setTextAndCheck("Clear logs with cache",
                                 SharedConfig.clearLogsWithCache, true);
+                    } else if (position == forceSearchDuringDeletionRow) {
+                        textCell.setTextAndCheck("Force search during deletion",
+                                forceSearchDuringDeletion, true);
                     }
                     break;
                 } case 1: {
@@ -648,7 +657,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow
                     || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow
                     || position == showEncryptedChatsFromEncryptedGroupsRow || position == detailedEncryptedGroupMemberStatusRow
-                    || position == clearLogsWithCacheRow) {
+                    || position == clearLogsWithCacheRow || position == forceSearchDuringDeletionRow) {
                 return 0;
             } else if (position == updateChannelIdRow || position == updateChannelUsernameRow
                     || (simpleDataStartRow <= position && position < simpleDataEndRow)

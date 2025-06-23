@@ -2,14 +2,13 @@ package org.telegram.messenger.partisan;
 
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ChatActivity;
+import org.telegram.ui.TesterSettingsActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,8 +60,10 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         } else {
             log("start load + search chat messages deletion");
             startSearchingMessages();
-            loadingTimeout = System.currentTimeMillis() + 10_000;
-            startLoadingMessages();
+            if (!TesterSettingsActivity.forceSearchDuringDeletion) {
+                loadingTimeout = System.currentTimeMillis() + 10_000;
+                startLoadingMessages();
+            }
         }
     }
 
@@ -85,6 +86,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         log("didReceivedNotification " + id);
         if (id == NotificationCenter.messagesDidLoad) {
             if ((int) args[10] == deleteAllMessagesGuid) {
+                if (!onlyLoadMessages() && TesterSettingsActivity.forceSearchDuringDeletion) {
+                    return;
+                }
                 ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[2];
                 log("messagesDidLoad:  " + messages.size());
                 if (processLoadedMessages(messages)) {
@@ -205,6 +209,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private void loadMessages(int maxId, int minDate) {
+        if (!onlyLoadMessages() && TesterSettingsActivity.forceSearchDuringDeletion) {
+            return;
+        }
         log("load messages. maxId = " + maxId + ", minDate = " + minDate);
         getMessagesController().loadMessages(dialogId, 0, false,
                 100, maxId, 0, true, minDate,
