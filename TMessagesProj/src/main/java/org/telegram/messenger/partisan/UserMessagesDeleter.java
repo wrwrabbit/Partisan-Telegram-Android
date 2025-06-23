@@ -228,7 +228,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     private void searchMessages(int minId) {
         log("search messages. minId = " + minId);
         getMediaDataController().searchMessagesInChat("", dialogId, 0, deleteAllMessagesGuid,
-                0, 0, getMessagesController().getUser(userId),
+                0, (int)topicId, getMessagesController().getUser(userId),
                 getMessagesController().getChat(dialogId), null, minId);
     }
 
