@@ -29,8 +29,23 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     private int loadIndex = 1;
     private Long loadingTimeout = null;
 
-    private int minMessageId = Integer.MAX_VALUE;
-    private int maxMessageId = Integer.MIN_VALUE;
+    private static class MinMaxMessageIds {
+        private int minMessageId = Integer.MAX_VALUE;
+        private int maxMessageId = Integer.MIN_VALUE;
+
+        public boolean compareAndUpdateValuesIfNeeded(int currentMinId, int currentMaxId) {
+            if (currentMinId >= minMessageId && currentMaxId <= maxMessageId) {
+                return false;
+            } else {
+                minMessageId = Math.min(minMessageId, currentMinId);
+                maxMessageId = Math.max(maxMessageId, currentMaxId);
+                return true;
+            }
+        }
+    }
+
+    private MinMaxMessageIds minMaxLoadedIds;
+    private MinMaxMessageIds minMaxSearchedIds;
 
     private static class MessagesToDelete {
         public ArrayList<Integer> messagesIds = new ArrayList<>();
@@ -51,8 +66,8 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     public void start() {
-        minMessageId = Integer.MAX_VALUE;
-        maxMessageId = Integer.MIN_VALUE;
+        minMaxLoadedIds = new MinMaxMessageIds();
+        minMaxSearchedIds = new MinMaxMessageIds();
 
         if (onlyLoadMessages()) {
             log("start only load chat messages deletion");
@@ -91,7 +106,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
                 }
                 ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[2];
                 log("messagesDidLoad:  " + messages.size());
-                if (processLoadedMessages(messages)) {
+                if (processLoadedMessages(messages, minMaxLoadedIds)) {
                     loadNewMessagesIfNeeded(messages);
                 } else if (onlyLoadMessages()) {
                     finishDeletion();
@@ -106,7 +121,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
             if ((int)args[0] == deleteAllMessagesGuid) {
                 ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[1];
                 log("chatSearchResultsAvailableAll:  " + messages.size());
-                if (processLoadedMessages(messages)) {
+                if (processLoadedMessages(messages, minMaxSearchedIds)) {
                     searchNewMessages(messages);
                 } else {
                     finishDeletion();
@@ -115,17 +130,15 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         }
     }
 
-    private boolean processLoadedMessages(ArrayList<MessageObject> messages) {
+    private boolean processLoadedMessages(ArrayList<MessageObject> messages, MinMaxMessageIds minMaxMessageIds) {
         log("processLoadedMessages: " + messages.size());
         if (!messages.isEmpty()) {
             int currentMinId = messages.stream().mapToInt(m -> m.messageOwner.id).min().orElse(Integer.MAX_VALUE);
             int currentMaxId = messages.stream().mapToInt(m -> m.messageOwner.id).max().orElse(Integer.MIN_VALUE);
-            if (currentMinId >= minMessageId && currentMaxId <= maxMessageId) {
+            if (!minMaxMessageIds.compareAndUpdateValuesIfNeeded(currentMinId, currentMaxId)) {
                 log("processLoadedMessages: no new messages loaded");
                 return false;
             } else {
-                minMessageId = Math.min(minMessageId, currentMinId);
-                maxMessageId = Math.max(maxMessageId, currentMaxId);
                 deleteMessages(getMessagesToDelete(messages));
                 getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
                 return true;
