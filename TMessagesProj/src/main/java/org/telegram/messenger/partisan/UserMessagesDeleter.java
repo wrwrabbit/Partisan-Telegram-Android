@@ -1,10 +1,13 @@
 package org.telegram.messenger.partisan;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ChatActivity;
@@ -13,6 +16,7 @@ import org.telegram.ui.TesterSettingsActivity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -83,7 +87,6 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private void startSearchingMessages() {
-        getNotificationCenter().addObserver(this, NotificationCenter.chatSearchResultsAvailableAll);
         searchMessages(0);
     }
 
@@ -117,20 +120,10 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
                 log("loadingMessagesFailed");
                 finishDeletion();
             }
-        } else if (id == NotificationCenter.chatSearchResultsAvailableAll) {
-            if ((int)args[0] == deleteAllMessagesGuid) {
-                ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[1];
-                log("chatSearchResultsAvailableAll:  " + messages.size());
-                if (processLoadedMessages(messages, minMaxSearchedIds)) {
-                    searchNewMessages(messages);
-                } else {
-                    finishDeletion();
-                }
-            }
         }
     }
 
-    private boolean processLoadedMessages(ArrayList<MessageObject> messages, MinMaxMessageIds minMaxMessageIds) {
+    private boolean processLoadedMessages(List<MessageObject> messages, MinMaxMessageIds minMaxMessageIds) {
         log("processLoadedMessages: " + messages.size());
         if (!messages.isEmpty()) {
             int currentMinId = messages.stream().mapToInt(m -> m.messageOwner.id).min().orElse(Integer.MAX_VALUE);
@@ -240,9 +233,52 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
 
     private void searchMessages(int minId) {
         log("search messages. minId = " + minId);
-        getMediaDataController().searchMessagesInChat("", dialogId, 0, deleteAllMessagesGuid,
-                0, (int)topicId, getMessagesController().getUser(userId),
-                getMessagesController().getChat(dialogId), null, minId);
+        TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
+        req.peer = getMessagesController().getInputPeer(dialogId);
+        if (req.peer == null) {
+            return;
+        }
+        req.limit = 100;
+        req.q = "";
+        req.offset_id = minId;
+        TLRPC.User user = getMessagesController().getUser(userId);
+        TLRPC.Chat chat = getMessagesController().getChat(dialogId);
+        if (user != null) {
+            req.from_id = MessagesController.getInputPeer(user);
+            req.flags |= 1;
+        } else if (chat != null) {
+            req.from_id = MessagesController.getInputPeer(chat);
+            req.flags |= 1;
+        }
+        if (topicId != 0) {
+            req.top_msg_id = (int) topicId;
+            req.flags |= 2;
+        }
+        req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+                AndroidUtilities.runOnUIThread(() -> onSearchResultAvailable(res.messages));
+            } else if (error.text.startsWith("FLOOD_WAIT")) {
+                int floodWait = Utilities.parseInt(error.text);
+                AndroidUtilities.runOnUIThread(() -> searchMessages(minId), (floodWait + 1) * 1000L);
+            } else {
+                log("Unknown search error: " + error.text);
+                finishDeletion();
+            }
+        });
+    }
+
+    private void onSearchResultAvailable(List<TLRPC.Message> messages) {
+        List<MessageObject> messageObjects = messages.stream()
+                .map(m -> new MessageObject(accountNum, m, null, null, null, null, null, true, true, 0, false, false, false))
+                .collect(Collectors.toList());
+        log("chatSearchResultsAvailableAll:  " + messageObjects.size());
+        if (processLoadedMessages(messageObjects, minMaxSearchedIds)) {
+            searchNewMessages(messageObjects);
+        } else {
+            finishDeletion();
+        }
     }
 
     boolean onlyLoadMessages() {
@@ -253,7 +289,6 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         log("deletion finished");
         getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.loadingMessagesFailed);
-        getNotificationCenter().removeObserver(this, NotificationCenter.chatSearchResultsAvailableAll);
         getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
     }
 
