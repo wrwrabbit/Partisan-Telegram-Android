@@ -1560,6 +1560,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private final static int search = 40;
     private final static int delete_messages = 140;
     private final static int save = 142;
+    private final static int send_test_messages = 143;
 
     private final static int topic_close = 60;
     private final static int open_forum = 61;
@@ -4047,6 +4048,42 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     }
                     saveItem.setVisibility(View.GONE);
+                } else if (id == send_test_messages) {
+                    DialogTemplate template = new DialogTemplate();
+                    template.type = DialogType.OK;
+                    template.title = "Send Test Messages";
+                    template.addNumberEditTemplate("", "Count", true);
+                    template.positiveListener = views -> {
+                        int[] count = new int[] {Integer.parseInt(((EditTextCaption)views.get(0)).getText().toString())};
+                        Runnable runnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(
+                                        "" + count[0],
+                                        dialog_id,
+                                        replyingMessageObject,
+                                        getThreadMessage(),
+                                        null,
+                                        false,
+                                        null,
+                                        null,
+                                        null,
+                                        false,
+                                        0,
+                                        null,
+                                        false
+                                );
+                                getSendMessagesHelper().sendMessage(params);
+                                count[0]--;
+                                if (count[0] > 0) {
+                                    AndroidUtilities.runOnUIThread(this, 350);
+                                }
+                            }
+                        };
+                        AndroidUtilities.runOnUIThread(runnable, 350);
+                    };
+                    AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
+                    showDialog(dialog);
                 } else if (id == change_colors) {
                     showChatThemeBottomSheet();
                 } else if (id == topic_close) {
@@ -4470,6 +4507,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             if (!isTopic && getUserConfig().isChannelSavingAllowed(chat)) {
                 saveItem = headerItem.lazilyAddSubItem(save, R.drawable.msg_fave, LocaleController.getString("Save", R.string.Save));
+            }
+            if (SharedConfig.isTesterSettingsActivated()) {
+                headerItem.lazilyAddSubItem(send_test_messages, R.drawable.msg_send, "Send Test Messages");
             }
         } else if (chatMode == MODE_EDIT_BUSINESS_LINK) {
             headerItem = menu.addItem(chat_menu_options, R.drawable.ic_ab_other, themeDelegate);
