@@ -32,6 +32,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
 
     private int loadIndex = 1;
     private Long loadingTimeout = null;
+    private int searchOffsetId;
 
     private static class MinMaxMessageIds {
         private int minMessageId = Integer.MAX_VALUE;
@@ -72,22 +73,19 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     public void start() {
         minMaxLoadedIds = new MinMaxMessageIds();
         minMaxSearchedIds = new MinMaxMessageIds();
+        searchOffsetId = 0;
 
         if (onlyLoadMessages()) {
             log("start only load chat messages deletion");
             startLoadingMessages();
         } else {
             log("start load + search chat messages deletion");
-            startSearchingMessages();
+            searchMessages();
             if (!TesterSettingsActivity.forceSearchDuringDeletion) {
                 loadingTimeout = System.currentTimeMillis() + 10_000;
                 startLoadingMessages();
             }
         }
-    }
-
-    private void startSearchingMessages() {
-        searchMessages(0);
     }
 
     private void startLoadingMessages() {
@@ -126,8 +124,8 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     private boolean processLoadedMessages(List<MessageObject> messages, MinMaxMessageIds minMaxMessageIds) {
         log("processLoadedMessages: " + messages.size());
         if (!messages.isEmpty()) {
-            int currentMinId = messages.stream().mapToInt(m -> m.messageOwner.id).min().orElse(Integer.MAX_VALUE);
-            int currentMaxId = messages.stream().mapToInt(m -> m.messageOwner.id).max().orElse(Integer.MIN_VALUE);
+            int currentMinId = messages.stream().mapToInt(MessageObject::getId).min().orElse(Integer.MAX_VALUE);
+            int currentMaxId = messages.stream().mapToInt(MessageObject::getId).max().orElse(Integer.MIN_VALUE);
             if (!minMaxMessageIds.compareAndUpdateValuesIfNeeded(currentMinId, currentMaxId)) {
                 log("processLoadedMessages: no new messages loaded");
                 return false;
@@ -225,22 +223,33 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
                 0, topicId, 0, loadIndex++, topicId != 0);
     }
 
-    private void searchNewMessages(List<MessageObject> messages) {
-        log("search new messages");
-        int minId = messages.stream().mapToInt(MessageObject::getId).min().orElse(0);
-        searchMessages(minId);
+    private void searchMessages() {
+        log("search messages. searchOffsetId = " + searchOffsetId);
+        TLRPC.TL_messages_search req = createSearchRequest();
+        if (req == null) {
+            return;
+        }
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+                    onSearchResultAvailable(res.messages);
+                });
+            } else {
+                handleSearchError(error);
+            }
+        });
     }
 
-    private void searchMessages(int minId) {
-        log("search messages. minId = " + minId);
+    private TLRPC.TL_messages_search createSearchRequest() {
         TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
         req.peer = getMessagesController().getInputPeer(dialogId);
         if (req.peer == null) {
-            return;
+            return null;
         }
         req.limit = 100;
         req.q = "";
-        req.offset_id = minId;
+        req.offset_id = searchOffsetId;
         TLRPC.User user = getMessagesController().getUser(userId);
         TLRPC.Chat chat = getMessagesController().getChat(dialogId);
         if (user != null) {
@@ -255,30 +264,35 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
             req.flags |= 2;
         }
         req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
-                AndroidUtilities.runOnUIThread(() -> onSearchResultAvailable(res.messages));
-            } else if (error.text.startsWith("FLOOD_WAIT")) {
-                int floodWait = Utilities.parseInt(error.text);
-                AndroidUtilities.runOnUIThread(() -> searchMessages(minId), (floodWait + 1) * 1000L);
-            } else {
-                log("Unknown search error: " + error.text);
-                finishDeletion();
-            }
-        });
+        return req;
+    }
+
+    private void handleSearchError(TLRPC.TL_error error) {
+        if (error.text.startsWith("FLOOD_WAIT")) {
+            int floodWait = Utilities.parseInt(error.text);
+            long delayMs = (floodWait + 1) * 1000L;
+            AndroidUtilities.runOnUIThread(this::searchMessages, delayMs);
+        } else {
+            log("Unknown search error: " + error.text);
+            finishDeletion();
+        }
     }
 
     private void onSearchResultAvailable(List<TLRPC.Message> messages) {
-        List<MessageObject> messageObjects = messages.stream()
-                .map(m -> new MessageObject(accountNum, m, null, null, null, null, null, true, true, 0, false, false, false))
-                .collect(Collectors.toList());
-        log("chatSearchResultsAvailableAll:  " + messageObjects.size());
+        List<MessageObject> messageObjects = initializeMessageObjects(messages);
+        log("onSearchResultAvailable:  " + messageObjects.size());
         if (processLoadedMessages(messageObjects, minMaxSearchedIds)) {
-            searchNewMessages(messageObjects);
+            searchOffsetId = messageObjects.stream().mapToInt(MessageObject::getId).min().orElse(0);
+            searchMessages();
         } else {
             finishDeletion();
         }
+    }
+
+    private List<MessageObject> initializeMessageObjects(List<TLRPC.Message> messages) {
+        return messages.stream()
+                .map(m -> new MessageObject(accountNum, m, null, null, null, null, null, true, true, 0, false, false, false))
+                .collect(Collectors.toList());
     }
 
     boolean onlyLoadMessages() {
