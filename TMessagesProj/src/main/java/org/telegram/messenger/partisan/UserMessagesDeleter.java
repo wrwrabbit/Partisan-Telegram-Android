@@ -14,14 +14,15 @@ import org.telegram.ui.ChatActivity;
 import org.telegram.ui.TesterSettingsActivity;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 public class UserMessagesDeleter implements NotificationCenter.NotificationCenterDelegate, AccountControllersProvider {
-    private final long userId;
     private final long dialogId;
     private final long topicId;
     @Nullable
@@ -33,6 +34,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     private int loadIndex = 1;
     private Long loadingTimeout = null;
     private int searchOffsetId;
+    private List<TLRPC.Peer> possibleSenderPeers;
 
     private static class MinMaxMessageIds {
         private int minMessageId = Integer.MAX_VALUE;
@@ -58,11 +60,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     public UserMessagesDeleter(int accountNum,
-                               long userId,
                                long dialogId,
                                long topicId,
                                @Nullable Predicate<MessageObject> condition) {
-        this.userId = userId;
         this.dialogId = dialogId;
         this.topicId = topicId;
         this.condition = condition;
@@ -74,6 +74,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         minMaxLoadedIds = new MinMaxMessageIds();
         minMaxSearchedIds = new MinMaxMessageIds();
         searchOffsetId = 0;
+        possibleSenderPeers = getPossibleSenderPeers();
 
         if (onlyLoadMessages()) {
             log("start only load chat messages deletion");
@@ -86,6 +87,22 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
                 startLoadingMessages();
             }
         }
+    }
+
+    private List<TLRPC.Peer> getPossibleSenderPeers() {
+        List<TLRPC.Peer> peers = new ArrayList<>();
+        TLRPC.Peer selfPeer = new TLRPC.TL_peerUser();
+        selfPeer.user_id = getUserConfig().clientUserId;
+        peers.add(selfPeer);
+        TLRPC.TL_channels_sendAsPeers sendAsPeers = getMessagesController().getSendAsPeers(dialogId);
+        if (sendAsPeers != null) {
+            for (TLRPC.TL_sendAsPeer peer : sendAsPeers.peers) {
+                if (peer.peer.channel_id != -dialogId && peer.peer.chat_id != -dialogId) {
+                    peers.add(peer.peer);
+                }
+            }
+        }
+        return peers;
     }
 
     private void startLoadingMessages() {
@@ -163,8 +180,8 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
             return false;
         }
 
-        TLRPC.Peer peer = messageObject.messageOwner.from_id;
-        needDeleteMessage = peer != null && peer.user_id == userId;
+        TLRPC.Peer senderPeer = messageObject.messageOwner.from_id;
+        needDeleteMessage = possibleSenderPeers.stream().anyMatch(currentPeer -> peersEqual(currentPeer, senderPeer));
         if (!needDeleteMessage) {
             log("isNeedDeleteMessage wrong user_id");
         }
@@ -177,6 +194,15 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         }
 
         return needDeleteMessage;
+    }
+
+    private static boolean peersEqual(TLRPC.Peer peer1, TLRPC.Peer peer2) {
+        if (peer1 == null || peer2 == null) {
+            return false;
+        }
+        return peer1.user_id == peer2.user_id
+                && peer1.chat_id == peer2.chat_id
+                && peer1.channel_id == peer2.channel_id;
     }
 
     private void deleteMessages(MessagesToDelete messagesToDelete) {
@@ -250,7 +276,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         req.limit = 100;
         req.q = "";
         req.offset_id = searchOffsetId;
-        TLRPC.User user = getMessagesController().getUser(userId);
+        TLRPC.User user = getMessagesController().getUser(getUserConfig().clientUserId);
         TLRPC.Chat chat = getMessagesController().getChat(dialogId);
         if (user != null) {
             req.from_id = MessagesController.getInputPeer(user);

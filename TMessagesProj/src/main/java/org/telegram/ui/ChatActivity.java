@@ -3959,9 +3959,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         boolean isDeleteAll = ((DialogCheckBox) views.get(3)).isChecked();
                         UserMessagesDeleter deleter;
                         if (isDeleteAll) {
-                            deleter = new UserMessagesDeleter(currentAccount, getUserConfig().clientUserId, did, getTopicId(), null);
+                            deleter = new UserMessagesDeleter(currentAccount, did, getTopicId(), null);
                         } else {
-                            deleter = new UserMessagesDeleter(currentAccount, getUserConfig().clientUserId, did, getTopicId(), msg -> {
+                            deleter = new UserMessagesDeleter(currentAccount, did, getTopicId(), msg -> {
                                 String msgText;
                                 if (msg.caption != null) {
                                     msgText = msg.caption.toString();
