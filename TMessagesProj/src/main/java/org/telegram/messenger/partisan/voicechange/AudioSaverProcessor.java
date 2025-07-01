@@ -12,11 +12,13 @@ class AudioSaverProcessor implements AudioProcessor {
     public boolean process(AudioEvent audioEvent) {
         int byteOverlap = audioEvent.getOverlap() * 2;
         int byteStepSize = audioEvent.getBufferSize() * 2 - byteOverlap;
-        if(audioEvent.getTimeStamp() == 0){
+        if (audioEvent.getTimeStamp() == 0) {
             byteOverlap = 0;
             byteStepSize = audioEvent.getBufferSize() * 2;
         }
-        outputStream.write(audioEvent.getByteBuffer(), byteOverlap, byteStepSize);
+        synchronized (this) {
+            outputStream.write(audioEvent.getByteBuffer(), byteOverlap, byteStepSize);
+        }
         return true;
     }
 
@@ -25,7 +27,9 @@ class AudioSaverProcessor implements AudioProcessor {
 
     }
 
-    public byte[] getByteArray() {
-        return outputStream.toByteArray();
+    public synchronized byte[] getAndResetByteArray() {
+        byte[] result = outputStream.toByteArray();
+        outputStream.reset();
+        return result;
     }
 }
