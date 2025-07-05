@@ -598,13 +598,13 @@ e            <intent-filter>
             android:name="org.telegram.messenger.voip.CallNotificationSoundProvider"
             android:exported="true"/>
 
-        <receiver android:name="org.telegram.messenger.ChatsWidgetProvider" android:exported="false">
+        <!--receiver android:name="org.telegram.messenger.ChatsWidgetProvider" android:exported="false">
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/chats_widget_info" />
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-        </receiver>
+        </receiver-->
 
         <service
             android:name="org.telegram.messenger.ChatsWidgetService"
@@ -613,13 +613,13 @@ e            <intent-filter>
             android:exported="false"
         />
 
-        <receiver android:name="org.telegram.messenger.ContactsWidgetProvider" android:exported="false">
+        <!--receiver android:name="org.telegram.messenger.ContactsWidgetProvider" android:exported="false">
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/contacts_widget_info" />
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-        </receiver>
+        </receiver-->
 
         <service
             android:name="org.telegram.messenger.ContactsWidgetService"
