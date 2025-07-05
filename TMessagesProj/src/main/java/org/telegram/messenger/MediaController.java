@@ -1044,16 +1044,15 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 }
                 buffer.rewind();
                 int len = audioRecorder.read(buffer, buffer.capacity());
+                if (voiceChanger != null && len > 0) {
+                    byte[] changedVoice = voiceChanger.changeVoice(java.util.Arrays.copyOf(buffer.array(), len));
+                    len = changedVoice.length;
+                    buffer = ByteBuffer.allocateDirect(len);
+                    buffer.order(ByteOrder.nativeOrder());
+                    buffer.put(changedVoice, 0, len);
+                    buffer.rewind();
+                }
                 if (len > 0) {
-                    if (voiceChanger != null) {
-                        byte[] changedVoice = voiceChanger.changeVoice(java.util.Arrays.copyOf(buffer.array(), len));
-                        len = changedVoice.length;
-                        buffer = ByteBuffer.allocateDirect(len);
-                        buffer.order(ByteOrder.nativeOrder());
-                        buffer.put(changedVoice, 0, len);
-                        buffer.rewind();
-                    }
-
                     double sum = 0;
                     try {
                         long newSamplesCount = samplesCount + len / 2;
