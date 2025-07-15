@@ -1046,6 +1046,11 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 int len = audioRecorder.read(buffer, buffer.capacity());
                 if (voiceChanger != null && len > 0) {
                     byte[] changedVoice = voiceChanger.changeVoice(java.util.Arrays.copyOf(buffer.array(), len));
+                    if (changedVoice.length == 0) {
+                        recordBuffers.add(buffer);
+                        recordQueue.postRunnable(recordRunnable);
+                        return;
+                    }
                     len = changedVoice.length;
                     buffer = ByteBuffer.allocateDirect(len);
                     buffer.order(ByteOrder.nativeOrder());
