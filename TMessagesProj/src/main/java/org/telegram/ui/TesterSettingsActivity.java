@@ -270,7 +270,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     result += name;
                     return result;
                 });
-                template.addEditTemplate(value, "Phone Override", false);
+                template.addEditTemplate(value, "Saved Channels", false);
                 template.positiveListener = views -> {
                     String text = ((EditTextCaption)views.get(0)).getText().toString();
                     getUserConfig().pinnedSavedChannels = new ArrayList<>();
