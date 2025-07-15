@@ -4665,11 +4665,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 fileBuffer.rewind();
 
                 if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
-                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(
-                            org.telegram.ui.TesterSettingsActivity.pitchFactor,
-                            org.telegram.ui.TesterSettingsActivity.timeStretchFactor,
-                            sampleRate
-                    );
+                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(sampleRate);
                 }
 
                 audioRecorder.startRecording();

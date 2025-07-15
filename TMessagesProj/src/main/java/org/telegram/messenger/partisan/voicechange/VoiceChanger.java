@@ -1,11 +1,18 @@
 package org.telegram.messenger.partisan.voicechange;
 
+import com.google.common.base.Strings;
+
 import org.telegram.messenger.DispatchQueue;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.ui.TesterSettingsActivity;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.PitchShifter;
@@ -21,7 +28,7 @@ public class VoiceChanger {
     private final AudioSaverProcessor audioSaver;
     private final DispatchQueue writeQueue = new DispatchQueue("voiceChangerWriteQueue");
 
-    public VoiceChanger(double pitchFactor, double timeStretchFactor, int sampleRate) {
+    public VoiceChanger(int sampleRate) {
         this.sampleRate = sampleRate;
         pipedOutputStream = new VoiceChangePipedOutputStream();
         try {
@@ -33,8 +40,18 @@ public class VoiceChanger {
         BufferRestorer bufferRestorer = new BufferRestorer(dispatcher);
         audioSaver = new AudioSaverProcessor();
         dispatcher.addAudioProcessor(bufferRestorer.createPreProcessor());
-        dispatcher.addAudioProcessor(new PitchShifter(pitchFactor, sampleRate, Constants.bufferSize, Constants.bufferOverlap));
-        dispatcher.addAudioProcessor(new TimeStretcher(dispatcher, timeStretchFactor));
+        Map<Integer, Integer> spectrumDistortionMap = createSpectrumDistortionMap();
+        if (spectrumDistortionMap != null) {
+            dispatcher.addAudioProcessor(new SpectrumDistorter(spectrumDistortionMap, sampleRate, Constants.bufferSize, Constants.bufferOverlap));
+        } else {
+            dispatcher.addAudioProcessor(new PitchShifter(TesterSettingsActivity.pitchFactor, sampleRate, Constants.bufferSize, Constants.bufferOverlap));
+        }
+        List<TimeDistorter.DistortionInterval> timeDistortionList = createTimeDistortionList();
+        if (timeDistortionList != null) {
+            dispatcher.addAudioProcessor(new TimeDistorter(dispatcher, timeDistortionList));
+        } else {
+            dispatcher.addAudioProcessor(new TimeStretcher(dispatcher, TesterSettingsActivity.timeStretchFactor));
+        }
         dispatcher.addAudioProcessor(audioSaver);
         dispatcher.addAudioProcessor(bufferRestorer.createPostProcessor());
 
@@ -44,6 +61,55 @@ public class VoiceChanger {
             } catch (Throwable ignore) {
             }
         });
+    }
+
+    private Map<Integer, Integer> createSpectrumDistortionMap() {
+        Map<Integer, Integer> distortionMap = accumulateDistortionParams(
+                TesterSettingsActivity.spectrumDistorterParams,
+                new HashMap<>(),
+                (map, distortionParts) -> {
+            int fromHz = Integer.parseInt(distortionParts[0]);
+            int toHz = Integer.parseInt(distortionParts[1]);
+            int fromIndex = (fromHz * Constants.bufferSize) / sampleRate;
+            int toIndex = (toHz * Constants.bufferSize) / sampleRate;
+            map.put(fromIndex, toIndex);
+        });
+        return distortionMap != null && !distortionMap.isEmpty() ? distortionMap : null;
+    }
+
+    private List<TimeDistorter.DistortionInterval> createTimeDistortionList() {
+        List<TimeDistorter.DistortionInterval> distortionMap = accumulateDistortionParams(
+                TesterSettingsActivity.timeDistortionParams,
+                new ArrayList<>(),
+                (list, distortionParts) -> {
+            TimeDistorter.DistortionInterval interval = new TimeDistorter.DistortionInterval();
+            interval.length = Double.parseDouble(distortionParts[0]);
+            interval.stretchFactor = Float.parseFloat(distortionParts[1]);
+            list.add(interval);
+        });
+        return distortionMap != null && !distortionMap.isEmpty() ? distortionMap : null;
+    }
+
+    private <T> T accumulateDistortionParams(String params, T collection, BiConsumer<T, String[]> accumulationFunction) {
+        if (Strings.isNullOrEmpty(params)) {
+            return null;
+        }
+        try {
+            String[] distortionStrings = params.split(",");
+            for (String distortionString : distortionStrings) {
+                if (Strings.isNullOrEmpty(distortionString)) {
+                    return null;
+                }
+                String[] distortionParts = distortionString.split(":");
+                if (distortionParts.length != 2) {
+                    return null;
+                }
+                accumulationFunction.accept(collection, distortionParts);
+            }
+            return collection;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public byte[] changeVoice(byte[] data) {
@@ -84,6 +150,8 @@ public class VoiceChanger {
 
     public static boolean needChangeVoice() {
         return Math.abs(TesterSettingsActivity.pitchFactor - 1.0) > 0.01
-                || Math.abs(TesterSettingsActivity.timeStretchFactor - 1.0) > 0.01;
+                || Math.abs(TesterSettingsActivity.timeStretchFactor - 1.0) > 0.01
+                || !Strings.isNullOrEmpty(TesterSettingsActivity.spectrumDistorterParams)
+                || !Strings.isNullOrEmpty(TesterSettingsActivity.timeDistortionParams);
     }
 }

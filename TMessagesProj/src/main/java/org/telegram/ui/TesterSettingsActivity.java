@@ -116,11 +116,15 @@ public class TesterSettingsActivity extends BaseFragment {
     private int pitchFactorRow;
     private int timeStretchFactorHeaderRow;
     private int timeStretchFactorRow;
+    private int spectrumDistionParamsRow;
+    private int timeDistortionParamsRow;
 
     public static boolean showPlainBackup;
     public static boolean forceSearchDuringDeletion;
     public static double pitchFactor = 1.0;
     public static double timeStretchFactor = 1.0;
+    public static String spectrumDistorterParams = "";
+    public static String timeDistortionParams = "";
 
     public TesterSettingsActivity() {
         super();
@@ -342,6 +346,42 @@ public class TesterSettingsActivity extends BaseFragment {
             } else if (position == forceSearchDuringDeletionRow) {
                 forceSearchDuringDeletion = !forceSearchDuringDeletion;
                 ((TextCheckCell) view).setChecked(forceSearchDuringDeletion);
+            } else if (position == spectrumDistionParamsRow) {
+                DialogTemplate template = new DialogTemplate();
+                template.type = DialogType.EDIT;
+                String title = "Spectrum Distortion Params";
+                template.title = title;
+                template.addEditTemplate(spectrumDistorterParams, title, true);
+                template.positiveListener = views -> {
+                    spectrumDistorterParams = ((EditTextCaption)views.get(0)).getText().toString();
+                    TextSettingsCell cell = (TextSettingsCell) view;
+                    cell.setTextAndValue(title, spectrumDistorterParams, true);
+                };
+                template.negativeListener = (dlg, whichButton) -> {
+                    spectrumDistorterParams = "";
+                    TextSettingsCell cell = (TextSettingsCell) view;
+                    cell.setTextAndValue(title, "", true);
+                };
+                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
+                showDialog(dialog);
+            } else if (position == timeDistortionParamsRow) {
+                DialogTemplate template = new DialogTemplate();
+                template.type = DialogType.EDIT;
+                String title = "Time Distortion Params";
+                template.title = title;
+                template.addEditTemplate(timeDistortionParams, title, true);
+                template.positiveListener = views -> {
+                    timeDistortionParams = ((EditTextCaption)views.get(0)).getText().toString();
+                    TextSettingsCell cell = (TextSettingsCell) view;
+                    cell.setTextAndValue(title, timeDistortionParams, true);
+                };
+                template.negativeListener = (dlg, whichButton) -> {
+                    timeDistortionParams = "";
+                    TextSettingsCell cell = (TextSettingsCell) view;
+                    cell.setTextAndValue(title, "", true);
+                };
+                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
+                showDialog(dialog);
             }
         });
 
@@ -397,6 +437,8 @@ public class TesterSettingsActivity extends BaseFragment {
         pitchFactorRow = rowCount++;
         timeStretchFactorHeaderRow = rowCount++;
         timeStretchFactorRow = rowCount++;
+        spectrumDistionParamsRow = rowCount++;
+        timeDistortionParamsRow = rowCount++;
     }
 
     @Override
@@ -609,6 +651,10 @@ public class TesterSettingsActivity extends BaseFragment {
                         textCell.setTextAndValue("Memory DB size", databaseSize != null ? AndroidUtilities.formatFileSize(databaseSize) : "error", true);
                     } else if (position == accountNumRow) {
                         textCell.setTextAndValue("Account num", Integer.toString(currentAccount), true);
+                    } else if (position == spectrumDistionParamsRow) {
+                        textCell.setTextAndValue("Spectrum Distortion Params", spectrumDistorterParams, true);
+                    } else if (position == timeDistortionParamsRow) {
+                        textCell.setTextAndValue("Time Distortion Params", timeDistortionParams, true);
                     }
                     break;
                 } case 2: {
@@ -665,7 +711,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == activateAllSecurityIssuesRow || position == editSavedChannelsRow
                     || position == resetUpdateRow || position == checkVerificationUpdatesRow
                     || position == resetVerificationLastCheckTimeRow || position == dbSizeRow
-                    || position == accountNumRow) {
+                    || position == accountNumRow || position == spectrumDistionParamsRow || position == timeDistortionParamsRow) {
                 return 1;
             } else if (position == pitchFactorHeaderRow || position == timeStretchFactorHeaderRow) {
                 return 2;
