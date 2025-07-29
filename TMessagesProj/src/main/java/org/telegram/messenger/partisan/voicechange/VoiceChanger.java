@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.PitchShifter;
 import be.tarsos.dsp.io.TarsosDSPAudioFormat;
 import be.tarsos.dsp.io.UniversalAudioInputStream;
@@ -28,6 +29,8 @@ public class VoiceChanger {
     private final AudioSaverProcessor audioSaver;
     private final DispatchQueue writeQueue = new DispatchQueue("voiceChangerWriteQueue");
 
+    private ChainedAudioProcessor lastAudioProcessorInChain;
+
     public VoiceChanger(int sampleRate) {
         this.sampleRate = sampleRate;
         pipedOutputStream = new VoiceChangePipedOutputStream();
@@ -37,23 +40,33 @@ public class VoiceChanger {
             throw new RuntimeException(e);
         }
         dispatcher = createAudioDispatcher(pipedInputStream);
-        BufferRestorer bufferRestorer = new BufferRestorer(dispatcher);
         audioSaver = new AudioSaverProcessor();
-        dispatcher.addAudioProcessor(bufferRestorer.createPreProcessor());
         Map<Integer, Integer> spectrumDistortionMap = createSpectrumDistortionMap();
-        if (spectrumDistortionMap != null) {
-            dispatcher.addAudioProcessor(new SpectrumDistorter(spectrumDistortionMap, sampleRate, Constants.bufferSize, Constants.bufferOverlap));
-        } else {
-            dispatcher.addAudioProcessor(new PitchShifter(TesterSettingsActivity.pitchFactor, sampleRate, Constants.bufferSize, Constants.bufferOverlap));
+        if (formantShiftingEnabled()) {
+            addAudioProcessorToChain(new FormantShifter(TesterSettingsActivity.f0Shift, TesterSettingsActivity.formantRatio, sampleRate));
+        } else if (spectrumDistortionMap != null) {
+            addAudioProcessorToChain(new SpectrumDistorter(spectrumDistortionMap, sampleRate, Constants.bufferSize, Constants.bufferOverlap));
+        } else if (pitchShiftingEnabled()) {
+            addAudioProcessorToChain(new ChainedAudioProcessor() {
+                private final PitchShifter shifter = new PitchShifter(TesterSettingsActivity.pitchFactor, sampleRate, Constants.bufferSize, Constants.bufferOverlap);
+                @Override
+                public void processingFinished() {
+                    shifter.processingFinished();
+                }
+
+                @Override
+                public boolean processInternal(AudioEvent audioEvent) {
+                    return shifter.process(audioEvent);
+                }
+            });
         }
         List<TimeDistorter.DistortionInterval> timeDistortionList = createTimeDistortionList();
         if (timeDistortionList != null) {
-            dispatcher.addAudioProcessor(new TimeDistorter(dispatcher, timeDistortionList));
-        } else {
-            dispatcher.addAudioProcessor(new TimeStretcher(dispatcher, TesterSettingsActivity.timeStretchFactor));
+            addAudioProcessorToChain(new TimeDistorter(timeDistortionList));
+        } else if (timeStretchEnabled()) {
+            addAudioProcessorToChain(new TimeStretcher(TesterSettingsActivity.timeStretchFactor));
         }
-        dispatcher.addAudioProcessor(audioSaver);
-        dispatcher.addAudioProcessor(bufferRestorer.createPostProcessor());
+        addAudioProcessorToChain(audioSaver);
 
         thread = new Thread(() -> {
             try {
@@ -61,6 +74,15 @@ public class VoiceChanger {
             } catch (Throwable ignore) {
             }
         });
+    }
+
+    private void addAudioProcessorToChain(ChainedAudioProcessor processor) {
+        if (lastAudioProcessorInChain != null) {
+            lastAudioProcessorInChain.setNextAudioProcessor(processor);
+        } else {
+            dispatcher.addAudioProcessor(processor);
+        }
+        lastAudioProcessorInChain = processor;
     }
 
     private Map<Integer, Integer> createSpectrumDistortionMap() {
@@ -149,9 +171,31 @@ public class VoiceChanger {
     }
 
     public static boolean needChangeVoice() {
-        return Math.abs(TesterSettingsActivity.pitchFactor - 1.0) > 0.01
-                || Math.abs(TesterSettingsActivity.timeStretchFactor - 1.0) > 0.01
-                || !Strings.isNullOrEmpty(TesterSettingsActivity.spectrumDistorterParams)
-                || !Strings.isNullOrEmpty(TesterSettingsActivity.timeDistortionParams);
+        return pitchShiftingEnabled()
+                || timeStretchEnabled()
+                || spectrumDistortionEnabled()
+                || timeDistortionEnabled()
+                || formantShiftingEnabled();
+    }
+
+    private static boolean pitchShiftingEnabled() {
+        return Math.abs(TesterSettingsActivity.pitchFactor - 1.0) > 0.01;
+    }
+
+    private static boolean timeStretchEnabled() {
+        return Math.abs(TesterSettingsActivity.timeStretchFactor - 1.0) > 0.01;
+    }
+
+    private static boolean spectrumDistortionEnabled() {
+        return !Strings.isNullOrEmpty(TesterSettingsActivity.spectrumDistorterParams);
+    }
+
+    private static boolean timeDistortionEnabled() {
+        return !Strings.isNullOrEmpty(TesterSettingsActivity.timeDistortionParams);
+    }
+
+    private static boolean formantShiftingEnabled() {
+        return Math.abs(TesterSettingsActivity.f0Shift - 1.0) > 0.01
+                || Math.abs(TesterSettingsActivity.formantRatio - 1.0) > 0.01;
     }
 }

@@ -1,13 +1,12 @@
 package org.telegram.messenger.partisan.voicechange;
 
 import be.tarsos.dsp.AudioEvent;
-import be.tarsos.dsp.AudioProcessor;
 import be.tarsos.dsp.util.fft.FFT;
 
 /**
  * This class is a copy of PitchShifter with an overridable method for processing the spectrum.
  */
-public abstract class AbstractSpectrumProcessor implements AudioProcessor {
+public abstract class AbstractSpectrumProcessor extends ChainedAudioProcessor {
     private final FFT fft;
     protected final int size;
     private final float[] currentMagnitudes;
@@ -45,7 +44,7 @@ public abstract class AbstractSpectrumProcessor implements AudioProcessor {
     }
 
     @Override
-    public boolean process(AudioEvent audioEvent) {
+    public boolean processInternal(AudioEvent audioEvent) {
         //see http://downloads.dspdimension.com/smbPitchShift.cpp
 
         /* ***************** ANALYSIS ******************* */

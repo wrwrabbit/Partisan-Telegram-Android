@@ -3,13 +3,12 @@ package org.telegram.messenger.partisan.voicechange;
 import java.io.ByteArrayOutputStream;
 
 import be.tarsos.dsp.AudioEvent;
-import be.tarsos.dsp.AudioProcessor;
 
-class AudioSaverProcessor implements AudioProcessor {
+class AudioSaverProcessor extends ChainedAudioProcessor {
     private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
     @Override
-    public boolean process(AudioEvent audioEvent) {
+    public boolean processInternal(AudioEvent audioEvent) {
         int byteOverlap = audioEvent.getOverlap() * 2;
         int byteStepSize = audioEvent.getBufferSize() * 2 - byteOverlap;
         if (audioEvent.getTimeStamp() == 0) {

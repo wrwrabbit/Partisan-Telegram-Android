@@ -6,22 +6,19 @@ import java.util.List;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
-import be.tarsos.dsp.AudioProcessor;
 import be.tarsos.dsp.resample.Resampler;
 
-public class TimeDistorter implements AudioProcessor {
+public class TimeDistorter extends ChainedAudioProcessor {
     public static class DistortionInterval {
         public double length;
         public float stretchFactor;
     }
 
-    private final AudioDispatcher dispatcher;
     private final Resampler resampler = new Resampler(false,0.1,4.0);
     private final List<DistortionInterval> distortionIntervalsList;
     private final double periodLength;
 
-    public TimeDistorter(AudioDispatcher dispatcher, List<DistortionInterval> distortionIntervalsList) {
-        this.dispatcher = dispatcher;
+    public TimeDistorter(List<DistortionInterval> distortionIntervalsList) {
         this.distortionIntervalsList = distortionIntervalsList;
         this.periodLength = distortionIntervalsList.stream().mapToDouble(i -> i.length).sum();
     }
@@ -32,7 +29,7 @@ public class TimeDistorter implements AudioProcessor {
     }
 
     @Override
-    public boolean process(AudioEvent audioEvent) {
+    public boolean processInternal(AudioEvent audioEvent) {
         float pitchFactor = 1.0f / getStretchFactor(audioEvent.getTimeStamp());
 
         float[] src = audioEvent.getFloatBuffer();
@@ -47,8 +44,6 @@ public class TimeDistorter implements AudioProcessor {
                 0,
                 out.length
         );
-
-        dispatcher.setStepSizeAndOverlap(out.length, 0);
 
         audioEvent.setFloatBuffer(out);
         audioEvent.setOverlap(0);

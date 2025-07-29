@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class TesterSettingsActivity extends BaseFragment {
@@ -118,6 +119,10 @@ public class TesterSettingsActivity extends BaseFragment {
     private int timeStretchFactorRow;
     private int spectrumDistionParamsRow;
     private int timeDistortionParamsRow;
+    private int f0ShiftHeaderRow;
+    private int f0ShiftRow;
+    private int formantRatioHeaderRow;
+    private int formantRatioRow;
 
     public static boolean showPlainBackup;
     public static boolean forceSearchDuringDeletion;
@@ -125,6 +130,8 @@ public class TesterSettingsActivity extends BaseFragment {
     public static double timeStretchFactor = 1.0;
     public static String spectrumDistorterParams = "";
     public static String timeDistortionParams = "";
+    public static double f0Shift = 1.0;
+    public static double formantRatio = 1.0;
 
     public TesterSettingsActivity() {
         super();
@@ -439,6 +446,10 @@ public class TesterSettingsActivity extends BaseFragment {
         timeStretchFactorRow = rowCount++;
         spectrumDistionParamsRow = rowCount++;
         timeDistortionParamsRow = rowCount++;
+        f0ShiftHeaderRow = rowCount++;
+        f0ShiftRow = rowCount++;
+        formantRatioHeaderRow = rowCount++;
+        formantRatioRow = rowCount++;
     }
 
     @Override
@@ -663,38 +674,40 @@ public class TesterSettingsActivity extends BaseFragment {
                         headerCell.setText("Pitch Factor");
                     } else if (position == timeStretchFactorHeaderRow) {
                         headerCell.setText("Time Stretch Factor");
+                    } else if (position == f0ShiftHeaderRow) {
+                        headerCell.setText("World F0 Shift");
+                    } else if (position == formantRatioHeaderRow) {
+                        headerCell.setText("World Formant Ratio");
                     }
                     break;
                 } case 3: {
                     SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
                     if (position == pitchFactorRow) {
-                        List<Object> values = new ArrayList<>();
-                        for (double value = 0.2; value <= 3.01; value += (value - 1.0 > -0.21 && value - 1.0 < 0.19) ? 0.05 : 0.2) {
-                            if (Math.abs(value - pitchFactor) < 0.01) {
-                                values.add(pitchFactor);
-                            } else {
-                                values.add(value);
-                            }
-                        }
-                        seekBarCell.setValues(values.toArray(), pitchFactor);
-                        seekBarCell.setDelegate(value -> pitchFactor = (double)value);
-                        seekBarCell.invalidate();
+                        bindSeekBarCell(seekBarCell, pitchFactor, value -> pitchFactor = value);
                     } else if (position == timeStretchFactorRow) {
-                        List<Object> values = new ArrayList<>();
-                        for (double value = 0.2; value <= 3.01; value += (value - 1.0 > -0.21 && value - 1.0 < 0.19) ? 0.05 : 0.2) {
-                            if (Math.abs(value - timeStretchFactor) < 0.01) {
-                                values.add(timeStretchFactor);
-                            } else {
-                                values.add(value);
-                            }
-                        }
-                        seekBarCell.setValues(values.toArray(), timeStretchFactor);
-                        seekBarCell.setDelegate(value -> timeStretchFactor = (double)value);
-                        seekBarCell.invalidate();
+                        bindSeekBarCell(seekBarCell, timeStretchFactor, value -> timeStretchFactor = value);
+                    } else if (position == f0ShiftRow) {
+                        bindSeekBarCell(seekBarCell, f0Shift, value -> f0Shift = value);
+                    } else if (position == formantRatioRow) {
+                        bindSeekBarCell(seekBarCell, formantRatio, value -> formantRatio = value);
                     }
                     break;
                 }
             }
+        }
+
+        private void bindSeekBarCell(SeekBarCell seekBarCell, double currentValue, Consumer<Double> onValueChanged) {
+            List<Object> values = new ArrayList<>();
+            for (double value = 0.2; value <= 2.01; value += 0.025) {
+                if (Math.abs(value - currentValue) < 0.01) {
+                    values.add(currentValue);
+                } else {
+                    values.add(value);
+                }
+            }
+            seekBarCell.setValues(values.toArray(), currentValue);
+            seekBarCell.setDelegate(obj -> onValueChanged.accept((double)obj));
+            seekBarCell.invalidate();
         }
 
         @Override
@@ -713,9 +726,11 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == resetVerificationLastCheckTimeRow || position == dbSizeRow
                     || position == accountNumRow || position == spectrumDistionParamsRow || position == timeDistortionParamsRow) {
                 return 1;
-            } else if (position == pitchFactorHeaderRow || position == timeStretchFactorHeaderRow) {
+            } else if (position == pitchFactorHeaderRow || position == timeStretchFactorHeaderRow
+                    || position == f0ShiftHeaderRow || position == formantRatioHeaderRow) {
                 return 2;
-            } else if (position == pitchFactorRow || position == timeStretchFactorRow) {
+            } else if (position == pitchFactorRow || position == timeStretchFactorRow
+                    || position == f0ShiftRow || position == formantRatioRow) {
                 return 3;
             }
             return 0;
