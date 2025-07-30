@@ -1,6 +1,7 @@
 package org.telegram.messenger.partisan.voicechange;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 
 import be.tarsos.dsp.AudioEvent;
 
@@ -29,6 +30,17 @@ class AudioSaverProcessor extends ChainedAudioProcessor {
     public synchronized byte[] getAndResetByteArray() {
         byte[] result = outputStream.toByteArray();
         outputStream.reset();
+        return result;
+    }
+
+    public synchronized byte[] getAndRemoveBytesExactCount(int count) {
+        byte[] bytes = outputStream.toByteArray();
+        if (bytes.length < count) {
+            return null;
+        }
+        byte[] result = Arrays.copyOfRange(bytes, 0 , count);
+        outputStream.reset();
+        outputStream.write(bytes, count, bytes.length - count);
         return result;
     }
 }

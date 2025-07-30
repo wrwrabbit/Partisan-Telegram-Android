@@ -2,16 +2,19 @@ package org.telegram.messenger.partisan.voicechange;
 
 import java.util.Map;
 
-public class SpectrumDistorter extends AbstractSpectrumProcessor {
-    private final Map<Integer, Integer> distortionMap;
+class SpectrumDistorter extends AbstractSpectrumProcessor {
+    private final int sampleRate;
+    private final ParametersProvider parametersProvider;
 
-    public SpectrumDistorter(Map<Integer, Integer> distortionMap, double sampleRate, int size, int overlap) {
-        super(sampleRate, size, overlap);
-        this.distortionMap = distortionMap;
+    public SpectrumDistorter(ParametersProvider parametersProvider, int sampleRate) {
+        super(sampleRate, Constants.bufferSize, Constants.bufferOverlap);
+        this.sampleRate = sampleRate;
+        this.parametersProvider = parametersProvider;
     }
 
     @Override
     protected void processSpectrum(float[] currentMagnitudes, float[] currentFrequencies, float[] newMagnitudes, float[] newFrequencies) {
+        Map<Integer, Integer> distortionMap = parametersProvider.getSpectrumDistortionMap(sampleRate);
         for (int i = 0 ; i < size/2; i++){
             int left = 0;
             int right = size/2 - 1;

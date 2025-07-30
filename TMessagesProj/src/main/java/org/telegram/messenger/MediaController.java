@@ -1045,7 +1045,8 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 buffer.rewind();
                 int len = audioRecorder.read(buffer, buffer.capacity());
                 if (voiceChanger != null && len > 0) {
-                    byte[] changedVoice = voiceChanger.changeVoice(java.util.Arrays.copyOf(buffer.array(), len));
+                    voiceChanger.write(java.util.Arrays.copyOf(buffer.array(), len));
+                    byte[] changedVoice = voiceChanger.readAll();
                     if (changedVoice.length == 0) {
                         recordBuffers.add(buffer);
                         recordQueue.postRunnable(recordRunnable);
@@ -4663,12 +4664,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 recordQuickReplyShortcut = quick_shortcut;
                 recordQuickReplyShortcutId = quick_shortcut_id;
                 fileBuffer.rewind();
-
-                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
-                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(sampleRate);
-                }
-
                 audioRecorder.startRecording();
+                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
+                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(audioRecorder.getSampleRate());
+                }
             } catch (Exception e) {
                 FileLog.e(e);
                 recordingAudio = null;

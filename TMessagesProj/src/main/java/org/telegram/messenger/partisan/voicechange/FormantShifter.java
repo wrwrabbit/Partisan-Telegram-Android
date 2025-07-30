@@ -11,9 +11,8 @@ import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.io.TarsosDSPAudioFormat;
 import be.tarsos.dsp.resample.Resampler;
 
-public class FormantShifter extends ChainedAudioProcessor {
-    private final double shift;
-    private final double ratio;
+class FormantShifter extends ChainedAudioProcessor {
+    private final ParametersProvider parametersProvider;
     private final int sampleRate;
     private final float[] outputAccumulator;
     private final long osamp;
@@ -22,9 +21,8 @@ public class FormantShifter extends ChainedAudioProcessor {
     private final DispatchQueue finalizingQueue = new DispatchQueue("FormantShifterFinalizing");
     private final BlockingQueue<AudioEvent> audioEventQueue = new LinkedBlockingQueue<>();
 
-    public FormantShifter(double shift, double ratio, int sampleRate) {
-        this.shift = shift;
-        this.ratio = ratio;
+    public FormantShifter(ParametersProvider parametersProvider, int sampleRate) {
+        this.parametersProvider = parametersProvider;
         this.sampleRate = sampleRate;
 
         outputAccumulator = new float[Constants.bufferSize * 2];
@@ -60,7 +58,7 @@ public class FormantShifter extends ChainedAudioProcessor {
     private float[] shiftFormants(float[] srcFloatBuffer) {
         float[] tempAudioBuffer = new float[srcFloatBuffer.length * 4];
 
-        int tempAudioBufferLength = WorldUtils.shiftFormants(shift, ratio, sampleRate, srcFloatBuffer, srcFloatBuffer.length, tempAudioBuffer);
+        int tempAudioBufferLength = WorldUtils.shiftFormants(parametersProvider.getF0Shift(), parametersProvider.getFormantRatio(), sampleRate, srcFloatBuffer, srcFloatBuffer.length, tempAudioBuffer);
 
         Resampler r = new Resampler(false,0.1,4.0);
         double factor = (double)srcFloatBuffer.length / tempAudioBufferLength;

@@ -2,9 +2,6 @@ package org.telegram.messenger.partisan.voicechange;
 
 import android.util.Pair;
 
-import java.util.List;
-
-import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.resample.Resampler;
 
@@ -15,12 +12,10 @@ public class TimeDistorter extends ChainedAudioProcessor {
     }
 
     private final Resampler resampler = new Resampler(false,0.1,4.0);
-    private final List<DistortionInterval> distortionIntervalsList;
-    private final double periodLength;
+    private final ParametersProvider parametersProvider;
 
-    public TimeDistorter(List<DistortionInterval> distortionIntervalsList) {
-        this.distortionIntervalsList = distortionIntervalsList;
-        this.periodLength = distortionIntervalsList.stream().mapToDouble(i -> i.length).sum();
+    public TimeDistorter(ParametersProvider parametersProvider) {
+        this.parametersProvider = parametersProvider;
     }
 
     @Override
@@ -56,21 +51,22 @@ public class TimeDistorter extends ChainedAudioProcessor {
         int currentIndex = currentIndexAndProgress.first;
         double progress = currentIndexAndProgress.second;
 
-        DistortionInterval currentInterval = distortionIntervalsList.get(currentIndex);
-        DistortionInterval nextInterval = distortionIntervalsList.get((currentIndex + 1) % distortionIntervalsList.size());
+        DistortionInterval currentInterval = parametersProvider.getTimeDistortionList().get(currentIndex);
+        DistortionInterval nextInterval = parametersProvider.getTimeDistortionList().get((currentIndex + 1) % parametersProvider.getTimeDistortionList().size());
 
         return (float) (currentInterval.stretchFactor * (1.0 - progress) + nextInterval.stretchFactor * progress);
     }
 
     private Pair<Integer, Double> getIntervalIndexAndProgress(double timeStamp) {
+        double periodLength = parametersProvider.getTimeDistortionList().stream().mapToDouble(i -> i.length).sum();
         double currentIntervalTime = timeStamp % periodLength;
-        for (int i = 0; i < distortionIntervalsList.size(); i++) {
-            DistortionInterval interval = distortionIntervalsList.get(i);
+        for (int i = 0; i < parametersProvider.getTimeDistortionList().size(); i++) {
+            DistortionInterval interval = parametersProvider.getTimeDistortionList().get(i);
             if (currentIntervalTime <= interval.length) {
                 return new Pair<>(i, currentIntervalTime / interval.length);
             }
             currentIntervalTime -= interval.length;
         }
-        return new Pair<>(distortionIntervalsList.size() - 1, 0.0);
+        return new Pair<>(parametersProvider.getTimeDistortionList().size() - 1, 0.0);
     }
 }

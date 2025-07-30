@@ -72,6 +72,8 @@ public class WebRtcAudioRecord {
 
   private int captureType;
 
+  private org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger;
+
   private int requestedSampleRate = 48000;
   private int requestedChannels = 1;
 
@@ -178,6 +180,17 @@ public class WebRtcAudioRecord {
           if (microphoneMute) {
             byteBuffer.clear();
             byteBuffer.put(emptyBytes);
+          } else {
+            if (voiceChanger != null) {
+              byteBuffer.clear();
+              voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), bytesRead));
+              byte[] changedVoice = voiceChanger.readBytesExactCount(bytesRead);
+              if (changedVoice == null || changedVoice.length == 0) {
+                byteBuffer.put(emptyBytes);
+              } else {
+                byteBuffer.put(changedVoice, 0, bytesRead);
+              }
+            }
           }
           if (bytesRead == deviceBytesRead) {
             deviceByteBuffer.position(0);
@@ -435,6 +448,9 @@ public class WebRtcAudioRecord {
       reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH, "AudioRecord.startRecording failed - incorrect state :" + audioRecord.getRecordingState());
       return false;
     }
+    if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
+      voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(requestedSampleRate);
+    }
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
     return true;
@@ -451,6 +467,10 @@ public class WebRtcAudioRecord {
     audioThread = null;
     if (effects != null) {
       effects.release();
+    }
+    if (voiceChanger != null) {
+      voiceChanger.stop();
+      voiceChanger = null;
     }
     try {
       audioRecord.stop();
