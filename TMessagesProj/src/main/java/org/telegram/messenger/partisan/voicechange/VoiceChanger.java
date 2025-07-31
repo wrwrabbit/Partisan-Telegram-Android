@@ -35,6 +35,8 @@ public class VoiceChanger {
         }
         dispatcher = createAudioDispatcher(pipedInputStream);
         audioSaver = new AudioSaverProcessor();
+        VolumeRestorer volumeRestorer = new VolumeRestorer();
+        addAudioProcessorToChain(volumeRestorer.createPreProcessor());
         if (parametersProvider.formantShiftingEnabled()) {
             addAudioProcessorToChain(new FormantShifter(parametersProvider, sampleRate));
         } else if (parametersProvider.spectrumDistortionEnabled()) {
@@ -59,6 +61,7 @@ public class VoiceChanger {
         } else if (parametersProvider.timeStretchEnabled()) {
             addAudioProcessorToChain(new TimeStretcher(parametersProvider));
         }
+        addAudioProcessorToChain(volumeRestorer.createPostProcessor());
         addAudioProcessorToChain(audioSaver);
 
         thread = new Thread(() -> {
