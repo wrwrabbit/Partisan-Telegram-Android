@@ -2335,9 +2335,9 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 }
             }
             if (call != null) {
-                for (int a = 0, N = call.sortedParticipants.size(); a < 3; a++) {
+                for (int a = 0, N = filterParticipants(call.sortedParticipants).size(); a < 3; a++) {
                     if (a < N) {
-                        avatars.setObject(a, currentAccount, call.sortedParticipants.get(a));
+                        avatars.setObject(a, currentAccount, filterParticipants(call.sortedParticipants).get(a));
                     } else {
                         avatars.setObject(a, currentAccount, null);
                     }
@@ -2355,7 +2355,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             avatars.commitTransition(animated);
 
             if (currentStyle == STYLE_INACTIVE_GROUP_CALL && call != null) {
-                int N = call.call.rtmp_stream ? 0 : Math.min(3, call.sortedParticipants.size());
+                int N = call.call.rtmp_stream ? 0 : Math.min(3, filterParticipants(call.sortedParticipants).size());
                 int x = N == 0 ? 10 : (10 + 24 * (N - 1) + 32 + 10);
                 if (animated) {
                     int leftMargin = ((LayoutParams) titleTextView.getLayoutParams()).leftMargin;
@@ -2378,6 +2378,10 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         } else {
             avatars.updateAfterTransitionEnd();
         }
+    }
+
+    private java.util.List<TLRPC.GroupCallParticipant> filterParticipants(java.util.List<TLRPC.GroupCallParticipant> participants) {
+        return FakePasscodeUtils.filterGroupCallParticipants(participants, account);
     }
 
 
@@ -2488,20 +2492,20 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             if (!service.isSwitchingStream() && (currentCallState == VoIPService.STATE_WAIT_INIT || currentCallState == VoIPService.STATE_WAIT_INIT_ACK || currentCallState == VoIPService.STATE_CREATING || currentCallState == VoIPService.STATE_RECONNECTING)) {
                 titleTextView.setText(getString(R.string.VoipGroupConnecting), false);
             } else if (service.isConference() && service.groupCall != null) {
-                if (service.groupCall.sortedParticipants.size() <= 1) {
+                if (filterParticipants(service.groupCall.sortedParticipants).size() <= 1) {
                     titleTextView.setText(getString(R.string.ConferenceChat), false);
                 } else {
                     StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < Math.min(3, service.groupCall.sortedParticipants.size()); i++) {
+                    for (int i = 0; i < Math.min(3, filterParticipants(service.groupCall.sortedParticipants).size()); i++) {
                         if (i > 0) {
                             sb.append(", ");
                         }
-                        final long did = DialogObject.getPeerDialogId(service.groupCall.sortedParticipants.get(i).peer);
+                        final long did = DialogObject.getPeerDialogId(filterParticipants(service.groupCall.sortedParticipants).get(i).peer);
                         sb.append(DialogObject.getShortName(service.getAccount(), did));
                     }
-                    if (service.groupCall.sortedParticipants.size() > 3) {
+                    if (filterParticipants(service.groupCall.sortedParticipants).size() > 3) {
                         sb.append(" ");
-                        sb.append(LocaleController.formatPluralString("AndOther", service.groupCall.sortedParticipants.size() - 3));
+                        sb.append(LocaleController.formatPluralString("AndOther", filterParticipants(service.groupCall.sortedParticipants).size() - 3));
                     }
                     titleTextView.setText(sb.toString(), false);
                 }
