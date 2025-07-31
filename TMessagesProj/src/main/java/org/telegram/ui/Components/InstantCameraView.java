@@ -2227,6 +2227,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         private InstantCameraVideoEncoderOverlayHelper overlayHelper;
 
         private AudioRecord audioRecorder;
+        private org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger;
 
         private ArrayBlockingQueue<AudioBufferInfo> buffers = new ArrayBlockingQueue<>(10);
         private ArrayList<Bitmap> keyframeThumbs = new ArrayList<>();
@@ -2279,6 +2280,17 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                         ByteBuffer byteBuffer = buffer.buffer[a];
                         byteBuffer.rewind();
                         readResult = audioRecorder.read(byteBuffer, 2048);
+                        if (voiceChanger != null && readResult > 0) {
+                            voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), readResult));
+                            byteBuffer.clear();
+                            byte[] changedVoice = voiceChanger.readBytesExactCount(readResult);
+                            if (changedVoice == null || changedVoice.length == 0) {
+                                byteBuffer.put(new byte[readResult]);
+                            } else {
+                                byteBuffer.put(changedVoice, 0, readResult);
+                            }
+                            byteBuffer.rewind();
+                        }
                         if (readResult > 0 && a % 2 == 0) {
                             byteBuffer.limit(readResult);
                             double s = 0;
@@ -2400,6 +2412,10 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         }
 
         public void stopRecording(int send, SendOptions options) {
+            if (voiceChanger != null) {
+                voiceChanger.stop();
+                voiceChanger = null;
+            }
             handler.sendMessage(handler.obtainMessage(MSG_STOP_RECORDING, send, 0, options));
             AndroidUtilities.runOnUIThread(() -> {
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.stopAllHeavyOperations, 512);
@@ -3236,6 +3252,9 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
 
                 audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, audioSampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
                 audioRecorder.startRecording();
+                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
+                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(audioRecorder.getSampleRate());
+                }
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("InstantCamera initied audio record with channels " + audioRecorder.getChannelCount() + " sample rate = " + audioRecorder.getSampleRate() + " bufferSize = " + bufferSize);
                 }

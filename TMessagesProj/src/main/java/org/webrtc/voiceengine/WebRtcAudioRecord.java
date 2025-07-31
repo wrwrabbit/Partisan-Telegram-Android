@@ -182,8 +182,8 @@ public class WebRtcAudioRecord {
             byteBuffer.put(emptyBytes);
           } else {
             if (voiceChanger != null) {
-              byteBuffer.clear();
               voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), bytesRead));
+              byteBuffer.clear();
               byte[] changedVoice = voiceChanger.readBytesExactCount(bytesRead);
               if (changedVoice == null || changedVoice.length == 0) {
                 byteBuffer.put(emptyBytes);
