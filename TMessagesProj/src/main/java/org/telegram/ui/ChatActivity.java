@@ -15090,6 +15090,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         showFieldPanel(show, messageObjectToReply, messageObjectToEdit, messageObjectsToForward, webPage, notify, scheduleDate, quote, cancel, payStars, null, animated);
     }
 
+    public void showFieldPanel(boolean show, MessageObject messageObjectToReply, MessageObject messageObjectToEdit, ArrayList<MessageObject> messageObjectsToForward, TLRPC.WebPage webPage, boolean notify, int scheduleDate, ReplyQuote quote, boolean cancel, long payStars, boolean animated, Integer autoDeleteDelay) {
+        showFieldPanel(show, messageObjectToReply, messageObjectToEdit, messageObjectsToForward, webPage, notify, scheduleDate, quote, cancel, payStars, null, animated, autoDeleteDelay);
+    }
+
     private int fieldPanelShown;
 
     public void showFieldPanel(boolean show, MessageObject messageObjectToReply, MessageObject messageObjectToEdit, ArrayList<MessageObject> messageObjectsToForward, TLRPC.WebPage webPage, boolean notify, int scheduleDate, ReplyQuote quote, boolean cancel, long payStars, MessageSuggestionParams suggestionParams, boolean animated) {
@@ -33449,7 +33453,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 } else if (fromId < 0) {
                     TLRPC.Chat chat = MessagesController.getInstance(messageObject.currentAccount).getChat(-fromId);
                     if (chat != null) {
-                        str.append(getUserConfig().getChatTitleOverride(chat)).append(":\n");
+                        str.append(UserConfig.getChatTitleOverride(messageObject.currentAccount, chat)).append(":\n");
                     }
                 }
             }
@@ -37353,7 +37357,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 updateBotHelpCellClick(helpView);
             } else if (position == userInfoRow) {
                 UserInfoCell infoView = (UserInfoCell) holder.itemView;
-                final long dialogId = currentEncryptedChat != null ? currentEncryptedChat.user_id : getDialogId();
+                final long dialogId = isEncryptedChat() ? currentEncryptedChatSingle.user_id : getDialogId();
                 infoView.set(dialogId, getMessagesController().getPeerSettings(dialogId));
             } else if (position == loadingDownRow || position == loadingUpRow) {
                 ChatLoadingCell loadingCell = (ChatLoadingCell) holder.itemView;
@@ -45239,7 +45243,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (message.isExpiredStory() || chatMode == MODE_SCHEDULED || threadMessageObjects != null && threadMessageObjects.contains(message) ||
             message.isSponsored() || type == 1 && message.getDialogId() == mergeDialogId ||
             message.messageOwner.action instanceof TLRPC.TL_messageActionSecureValuesSent ||
-            currentEncryptedChat == null && message.getId() < 0 ||
+            !isEncryptedChat() && message.getId() < 0 ||
             bottomOverlayChat != null && bottomOverlayChat.getVisibility() == View.VISIBLE && !(bottomOverlayChatWaitsReply && selectedObject != null && (MessageObject.getTopicId(currentAccount, selectedObject.messageOwner, ChatObject.isForum(currentChat)) != 0 || selectedObject.wasJustSent))) {
             allowChatActions = false;
         }
@@ -45385,7 +45389,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             options.add(OPTION_DELETE);
             icons.add(deleteIconRes);
         } else {
-            if (currentEncryptedChat == null) {
+            if (!isEncryptedChat()) {
                 if (!selectedObject.isPaidSuggestedPostProtected() && chatMode == MODE_SCHEDULED) {
                     items.add(LocaleController.getString(R.string.MessageScheduleSend));
                     options.add(OPTION_SEND_NOW);

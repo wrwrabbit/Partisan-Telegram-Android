@@ -5252,7 +5252,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 documentsEnabled = ChatObject.canSendDocument(chat);
             } else {
                 pollsEnabled = UserObject.isBot(user) || UserObject.isUserSelf(user);
-                todoEnabled = !(baseFragment instanceof ChatActivity) || ((ChatActivity) baseFragment).getCurrentEncryptedChat() == null;
+                todoEnabled = !(baseFragment instanceof ChatActivity) || !((ChatActivity) baseFragment).isEncryptedChat();
             }
         }
         if (!(baseFragment instanceof ChatActivity && avatarPicker != 2)) {
