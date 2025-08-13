@@ -93,6 +93,7 @@ public class PasscodeViewDialog extends Dialog {
 //        params.flags |= WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
         if (!BuildVars.DEBUG_PRIVATE_VERSION && !SharedConfig.forceAllowScreenshots) {
             params.flags |= WindowManager.LayoutParams.FLAG_SECURE;
+            AndroidUtilities.logFlagSecure();
         }
         if (Build.VERSION.SDK_INT >= 21) {
             params.flags |= WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
