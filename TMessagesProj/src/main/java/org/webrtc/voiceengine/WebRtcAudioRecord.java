@@ -181,6 +181,7 @@ public class WebRtcAudioRecord {
             byteBuffer.clear();
             byteBuffer.put(emptyBytes);
           } else {
+            org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger = WebRtcAudioRecord.this.voiceChanger;
             if (voiceChanger != null) {
               voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), bytesRead));
               byteBuffer.clear();
