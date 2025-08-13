@@ -2227,7 +2227,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         private InstantCameraVideoEncoderOverlayHelper overlayHelper;
 
         private AudioRecord audioRecorder;
-        private org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger;
+        private org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger;
 
         private ArrayBlockingQueue<AudioBufferInfo> buffers = new ArrayBlockingQueue<>(10);
         private ArrayList<Bitmap> keyframeThumbs = new ArrayList<>();
@@ -2280,6 +2280,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                         ByteBuffer byteBuffer = buffer.buffer[a];
                         byteBuffer.rewind();
                         readResult = audioRecorder.read(byteBuffer, 2048);
+                        org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger = VideoRecorder.this.voiceChanger;
                         if (voiceChanger != null && readResult > 0) {
                             voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), readResult));
                             byteBuffer.clear();
@@ -3253,7 +3254,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, audioSampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
                 audioRecorder.startRecording();
                 if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
-                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(audioRecorder.getSampleRate());
+                    voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(audioRecorder.getSampleRate());
                 }
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("InstantCamera initied audio record with channels " + audioRecorder.getChannelCount() + " sample rate = " + audioRecorder.getSampleRate() + " bufferSize = " + bufferSize);

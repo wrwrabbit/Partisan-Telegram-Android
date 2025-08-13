@@ -43,4 +43,8 @@ class AudioSaverProcessor extends ChainedAudioProcessor {
         outputStream.write(bytes, count, bytes.length - count);
         return result;
     }
+
+    public synchronized int getRemainingCount() {
+        return outputStream.size();
+    }
 }

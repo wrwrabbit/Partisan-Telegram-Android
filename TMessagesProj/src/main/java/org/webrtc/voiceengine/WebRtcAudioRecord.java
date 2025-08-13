@@ -72,7 +72,7 @@ public class WebRtcAudioRecord {
 
   private int captureType;
 
-  private org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger;
+  private org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger;
 
   private int requestedSampleRate = 48000;
   private int requestedChannels = 1;
@@ -449,7 +449,7 @@ public class WebRtcAudioRecord {
       return false;
     }
     if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
-      voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(requestedSampleRate);
+      voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(requestedSampleRate);
     }
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();

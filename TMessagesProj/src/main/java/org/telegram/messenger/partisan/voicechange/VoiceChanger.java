@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.AudioEvent;
-import be.tarsos.dsp.PitchShifter;
 import be.tarsos.dsp.io.TarsosDSPAudioFormat;
 import be.tarsos.dsp.io.UniversalAudioInputStream;
 
@@ -17,8 +15,8 @@ public class VoiceChanger {
     private final VoiceChangePipedInputStream pipedInputStream;
     private final VoiceChangePipedOutputStream pipedOutputStream;
     private final AudioDispatcher dispatcher;
-    private final Thread thread;
-    private final AudioSaverProcessor audioSaver;
+    private final Thread dispatcherThread;
+    protected final AudioSaverProcessor audioSaver;
     private final DispatchQueue writeQueue = new DispatchQueue("voiceChangerWriteQueue");
 
     private ChainedAudioProcessor lastAudioProcessorInChain;
@@ -28,51 +26,48 @@ public class VoiceChanger {
     public VoiceChanger(int sampleRate) {
         this.sampleRate = sampleRate;
         pipedOutputStream = new VoiceChangePipedOutputStream();
+        pipedInputStream = createInputStream(pipedOutputStream);
+        dispatcher = createAudioDispatcher(pipedInputStream);
+        audioSaver = new AudioSaverProcessor();
+        buildAudioProcessorChain();
+        dispatcherThread = createDispatcherThread();
+    }
+
+    private VoiceChangePipedInputStream createInputStream(VoiceChangePipedOutputStream pipedOutputStream) {
         try {
-            pipedInputStream = new VoiceChangePipedInputStream(pipedOutputStream);
+            return new VoiceChangePipedInputStream(pipedOutputStream);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        dispatcher = createAudioDispatcher(pipedInputStream);
-        audioSaver = new AudioSaverProcessor();
+    }
+
+    private void buildAudioProcessorChain() {
         VolumeRestorer volumeRestorer = new VolumeRestorer();
         addAudioProcessorToChain(volumeRestorer.createPreProcessor());
+
+        addVoiceChangingProcessorsToChain();
+
+        addAudioProcessorToChain(volumeRestorer.createPostProcessor());
+        addAudioProcessorToChain(audioSaver);
+    }
+
+    protected void addVoiceChangingProcessorsToChain() {
         if (parametersProvider.formantShiftingEnabled()) {
             addAudioProcessorToChain(new FormantShifter(parametersProvider, sampleRate));
         } else if (parametersProvider.spectrumDistortionEnabled()) {
             addAudioProcessorToChain(new SpectrumDistorter(parametersProvider, sampleRate));
         } else if (parametersProvider.pitchShiftingEnabled()) {
-            addAudioProcessorToChain(new ChainedAudioProcessor() {
-                private final PitchShifter shifter = new PitchShifter(parametersProvider.getPitchFactor(), sampleRate, Constants.bufferSize, Constants.bufferOverlap);
-                @Override
-                public void processingFinished() {
-                    shifter.processingFinished();
-                }
-
-                @Override
-                public boolean processInternal(AudioEvent audioEvent) {
-                    shifter.setPitchShiftFactor((float)parametersProvider.getPitchFactor());
-                    return shifter.process(audioEvent);
-                }
-            });
+            addAudioProcessorToChain(new ChainedPitchShifter(parametersProvider, sampleRate));
         }
+
         if (parametersProvider.timeDistortionEnabled()) {
             addAudioProcessorToChain(new TimeDistorter(parametersProvider));
         } else if (parametersProvider.timeStretchEnabled()) {
             addAudioProcessorToChain(new TimeStretcher(parametersProvider));
         }
-        addAudioProcessorToChain(volumeRestorer.createPostProcessor());
-        addAudioProcessorToChain(audioSaver);
-
-        thread = new Thread(() -> {
-            try {
-                dispatcher.run();
-            } catch (Throwable ignore) {
-            }
-        });
     }
 
-    private void addAudioProcessorToChain(ChainedAudioProcessor processor) {
+    protected void addAudioProcessorToChain(ChainedAudioProcessor processor) {
         if (lastAudioProcessorInChain != null) {
             lastAudioProcessorInChain.setNextAudioProcessor(processor);
         } else {
@@ -81,9 +76,18 @@ public class VoiceChanger {
         lastAudioProcessorInChain = processor;
     }
 
+    private Thread createDispatcherThread() {
+        return new Thread(() -> {
+            try {
+                dispatcher.run();
+            } catch (Throwable ignore) {
+            }
+        });
+    }
+
     public void write(byte[] data) {
-        if (thread.getState() == Thread.State.NEW) {
-            thread.start();
+        if (dispatcherThread.getState() == Thread.State.NEW) {
+            dispatcherThread.start();
         }
         writeQueue.postRunnable(() -> {
             try {
@@ -98,17 +102,13 @@ public class VoiceChanger {
         return audioSaver.getAndResetByteArray();
     }
 
-    public byte[] readBytesExactCount(int count) {
-        return audioSaver.getAndRemoveBytesExactCount(count);
-    }
-
     public void stop() {
         try {
             dispatcher.stop();
             pipedOutputStream.close();
             pipedInputStream.close();
             writeQueue.recycle();
-            thread.join();
+            dispatcherThread.join();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
