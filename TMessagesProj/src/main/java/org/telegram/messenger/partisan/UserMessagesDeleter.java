@@ -8,15 +8,13 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ChatActivity;
-import org.telegram.ui.TesterSettingsActivity;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -82,7 +80,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         } else {
             log("start load + search chat messages deletion");
             searchMessages();
-            if (!TesterSettingsActivity.forceSearchDuringDeletion) {
+            if (!TesterSettings.forceSearchDuringDeletion.get()) {
                 loadingTimeout = System.currentTimeMillis() + 10_000;
                 startLoadingMessages();
             }
@@ -119,7 +117,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         log("didReceivedNotification " + id);
         if (id == NotificationCenter.messagesDidLoad) {
             if ((int) args[10] == deleteAllMessagesGuid) {
-                if (!onlyLoadMessages() && TesterSettingsActivity.forceSearchDuringDeletion) {
+                if (!onlyLoadMessages() && TesterSettings.forceSearchDuringDeletion.get()) {
                     return;
                 }
                 ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[2];
@@ -239,7 +237,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private void loadMessages(int maxId, int minDate) {
-        if (!onlyLoadMessages() && TesterSettingsActivity.forceSearchDuringDeletion) {
+        if (!onlyLoadMessages() && TesterSettings.forceSearchDuringDeletion.get()) {
             return;
         }
         log("load messages. maxId = " + maxId + ", minDate = " + minDate);

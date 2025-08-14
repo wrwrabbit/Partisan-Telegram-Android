@@ -26,6 +26,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeSerializer;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -169,7 +170,7 @@ public class FakePasscodeBackupActivity extends BaseFragment {
                 case 0: {
                     try {
                         String encodedStr;
-                        if (TesterSettingsActivity.showPlainBackup) {
+                        if (TesterSettings.showPlainBackup.get()) {
                             encodedStr = FakePasscodeSerializer.serializePlain(passcode);
                         } else {
                             byte[] encryptedBytes = FakePasscodeSerializer.serializeEncrypted(passcode, passcodeString);

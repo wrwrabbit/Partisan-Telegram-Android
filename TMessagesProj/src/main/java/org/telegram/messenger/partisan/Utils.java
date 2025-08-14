@@ -37,6 +37,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.FilteredArrayList;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.CacheControlActivity;
@@ -170,7 +171,7 @@ public class Utils {
                     }
                 }
 
-                if (SharedConfig.clearLogsWithCache) {
+                if (TesterSettings.clearLogsWithCache.get()) {
                     logs = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "logs");
                     if (logs.exists()) {
                         CacheControlActivity.cleanDirJava(logs.getAbsolutePath(), 0, null, x -> {});
@@ -540,7 +541,7 @@ public class Utils {
 
     public static List<TLRPC.Dialog> filterDialogs(List<TLRPC.Dialog> dialogs, Optional<Integer> account) {
         List<TLRPC.Dialog> filteredDialogsByPasscode = FakePasscodeUtils.filterDialogs(dialogs, account);
-        if (!account.isPresent() || SharedConfig.showEncryptedChatsFromEncryptedGroups) {
+        if (!account.isPresent() || TesterSettings.showEncryptedChatsFromEncryptedGroups.get()) {
             return filteredDialogsByPasscode;
         }
         MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());

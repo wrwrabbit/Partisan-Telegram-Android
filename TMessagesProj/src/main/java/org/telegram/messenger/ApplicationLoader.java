@@ -266,7 +266,7 @@ public class ApplicationLoader extends Application {
         SharedConfig.loadConfig();
         SharedPrefsHelper.init(applicationContext);
         checkFiledCopiedFromOldTelegram();
-        if (SharedConfig.saveLogcatAfterRestart) {
+        if (org.telegram.messenger.partisan.settings.TesterSettings.saveLogcatAfterRestart.get()) {
             saveLogcatFile();
         }
         RemoveAfterReadingMessages.runChecker();

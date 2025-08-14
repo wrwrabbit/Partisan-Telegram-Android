@@ -11,6 +11,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.fakepasscode.results.TelegramMessageResult;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stories;
@@ -73,7 +74,7 @@ public class FakePasscodeUtils {
                 return number;
             }
         }
-        return SharedConfig.phoneOverride;
+        return TesterSettings.phoneOverride.get();
     }
 
     public static String getFakePhoneNumber(int accountNum, String fallback) {

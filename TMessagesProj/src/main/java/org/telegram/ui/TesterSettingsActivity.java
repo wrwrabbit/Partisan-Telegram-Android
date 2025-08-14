@@ -25,6 +25,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -124,15 +125,6 @@ public class TesterSettingsActivity extends BaseFragment {
     private int formantRatioHeaderRow;
     private int formantRatioRow;
 
-    public static boolean showPlainBackup;
-    public static boolean forceSearchDuringDeletion;
-    public static double pitchFactor = 1.0;
-    public static double timeStretchFactor = 1.0;
-    public static String spectrumDistorterParams = "";
-    public static String timeDistortionParams = "";
-    public static double f0Shift = 1.0;
-    public static double formantRatio = 1.0;
-
     public TesterSettingsActivity() {
         super();
     }
@@ -185,18 +177,16 @@ public class TesterSettingsActivity extends BaseFragment {
                 template.type = DialogType.EDIT;
                 String title = "Update Channel Id";
                 template.title = title;
-                long id = SharedConfig.updateChannelIdOverride;
+                long id = TesterSettings.updateChannelIdOverride.get();
                 template.addNumberEditTemplate(id != 0 ? Long.toString(id) : "", "Channel Id", true);
                 template.positiveListener = views -> {
                     long newId = Long.parseLong(((EditTextCaption)views.get(0)).getText().toString());
-                    SharedConfig.updateChannelIdOverride = newId;
-                    SharedConfig.saveConfig();
+                    TesterSettings.updateChannelIdOverride.set(newId);
                     TextSettingsCell cell = (TextSettingsCell) view;
                     cell.setTextAndValue(title, newId != 0 ? Long.toString(newId) : "", true);
                 };
                 template.negativeListener = (dlg, whichButton) -> {
-                    SharedConfig.updateChannelIdOverride = 0;
-                    SharedConfig.saveConfig();
+                    TesterSettings.updateChannelIdOverride.set(0L);
                     TextSettingsCell cell = (TextSettingsCell) view;
                     cell.setTextAndValue(title, "", true);
                 };
@@ -207,31 +197,28 @@ public class TesterSettingsActivity extends BaseFragment {
                 template.type = DialogType.EDIT;
                 String title = "Update Channel Username";
                 template.title = title;
-                String value = SharedConfig.updateChannelUsernameOverride;
+                String value = TesterSettings.updateChannelUsernameOverride.get();
                 template.addEditTemplate(value, "Channel Username", true);
                 template.positiveListener = views -> {
                     String username = ((EditTextCaption)views.get(0)).getText().toString();
                     username = Utils.removeUsernamePrefixed(username);
-                    SharedConfig.updateChannelUsernameOverride = username;
-                    SharedConfig.saveConfig();
+                    TesterSettings.updateChannelUsernameOverride.set(username);
                     TextSettingsCell cell = (TextSettingsCell) view;
                     cell.setTextAndValue(title, username, false);
                 };
                 template.negativeListener = (dlg, whichButton) -> {
-                    SharedConfig.updateChannelUsernameOverride = "";
-                    SharedConfig.saveConfig();
+                    TesterSettings.updateChannelUsernameOverride.set("");
                     TextSettingsCell cell = (TextSettingsCell) view;
                     cell.setTextAndValue(title, "", false);
                 };
                 AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
                 showDialog(dialog);
             } else if (position == showPlainBackupRow) {
-                showPlainBackup = !showPlainBackup;
-                ((TextCheckCell) view).setChecked(showPlainBackup);
+                TesterSettings.showPlainBackup.set(!TesterSettings.showPlainBackup.get());
+                ((TextCheckCell) view).setChecked(TesterSettings.showPlainBackup.get());
             } else if (position == disablePremiumRow) {
-                SharedConfig.premiumDisabled = !SharedConfig.premiumDisabled;
-                SharedConfig.saveConfig();
-                ((TextCheckCell) view).setChecked(SharedConfig.premiumDisabled);
+                TesterSettings.premiumDisabled.set(!TesterSettings.premiumDisabled.get());
+                ((TextCheckCell) view).setChecked(TesterSettings.premiumDisabled.get());
             } else if (position == hideDialogIsNotSafeWarningRow) {
                 SharedConfig.showHideDialogIsNotSafeWarning = !SharedConfig.showHideDialogIsNotSafeWarning;
                 SharedConfig.saveConfig();
@@ -241,18 +228,16 @@ public class TesterSettingsActivity extends BaseFragment {
                 template.type = DialogType.EDIT;
                 String title = "Phone Override";
                 template.title = title;
-                String value = SharedConfig.phoneOverride;
+                String value = TesterSettings.phoneOverride.get();
                 template.addEditTemplate(value, "Phone Override", true);
                 template.positiveListener = views -> {
-                    String phoneOverride = ((EditTextCaption)views.get(0)).getText().toString();
-                    SharedConfig.phoneOverride = phoneOverride;
-                    SharedConfig.saveConfig();
+                    String phoneOverrideVal = ((EditTextCaption)views.get(0)).getText().toString();
+                    TesterSettings.phoneOverride.set(phoneOverrideVal);
                     TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, phoneOverride, true);
+                    cell.setTextAndValue(title, phoneOverrideVal, true);
                 };
                 template.negativeListener = (dlg, whichButton) -> {
-                    SharedConfig.phoneOverride = "";
-                    SharedConfig.saveConfig();
+                    TesterSettings.phoneOverride.set("");
                     TextSettingsCell cell = (TextSettingsCell) view;
                     cell.setTextAndValue(title, "", true);
                 };
@@ -321,19 +306,17 @@ public class TesterSettingsActivity extends BaseFragment {
                 }
                 Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
             } else if (position == forceAllowScreenshotsRow) {
-                SharedConfig.forceAllowScreenshots = !SharedConfig.forceAllowScreenshots;
-                SharedConfig.saveConfig();
-                ((TextCheckCell) view).setChecked(SharedConfig.forceAllowScreenshots);
+                TesterSettings.forceAllowScreenshots.set(!TesterSettings.forceAllowScreenshots.get());
+                ((TextCheckCell) view).setChecked(TesterSettings.forceAllowScreenshots.get());
             } else if (position == saveLogcatAfterRestartRow) {
-                SharedConfig.saveLogcatAfterRestart = !SharedConfig.saveLogcatAfterRestart;
-                SharedConfig.saveConfig();
-                ((TextCheckCell) view).setChecked(SharedConfig.saveLogcatAfterRestart);
+                TesterSettings.saveLogcatAfterRestart.set(!TesterSettings.saveLogcatAfterRestart.get());
+                ((TextCheckCell) view).setChecked(TesterSettings.saveLogcatAfterRestart.get());
             } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
-                SharedConfig.toggleShowEncryptedChatsFromEncryptedGroups();
-                ((TextCheckCell) view).setChecked(SharedConfig.showEncryptedChatsFromEncryptedGroups);
+                TesterSettings.showEncryptedChatsFromEncryptedGroups.set(!TesterSettings.showEncryptedChatsFromEncryptedGroups.get());
+                ((TextCheckCell) view).setChecked(TesterSettings.showEncryptedChatsFromEncryptedGroups.get());
             } else if (position == detailedEncryptedGroupMemberStatusRow) {
-                SharedConfig.toggleDetailedEncryptedGroupMemberStatus();
-                ((TextCheckCell) view).setChecked(SharedConfig.detailedEncryptedGroupMemberStatus);
+                TesterSettings.detailedEncryptedGroupMemberStatus.set(!TesterSettings.detailedEncryptedGroupMemberStatus.get());
+                ((TextCheckCell) view).setChecked(TesterSettings.detailedEncryptedGroupMemberStatus.get());
             } else if (position == dbSizeRow) {
                 List<Pair<String, Long>> tableSizes = getTableSizes();
                 String message = tableSizes.stream()
@@ -348,24 +331,24 @@ public class TesterSettingsActivity extends BaseFragment {
                 AlertDialog alertDialog = builder.create();
                 showDialog(alertDialog);
             } else if (position == clearLogsWithCacheRow) {
-                SharedConfig.toggleClearLogsWithCache();
-                ((TextCheckCell) view).setChecked(SharedConfig.clearLogsWithCache);
+                TesterSettings.clearLogsWithCache.set(!TesterSettings.clearLogsWithCache.get());
+                ((TextCheckCell) view).setChecked(TesterSettings.clearLogsWithCache.get());
             } else if (position == forceSearchDuringDeletionRow) {
-                forceSearchDuringDeletion = !forceSearchDuringDeletion;
-                ((TextCheckCell) view).setChecked(forceSearchDuringDeletion);
+                TesterSettings.forceSearchDuringDeletion.set(!TesterSettings.forceSearchDuringDeletion.get());
+                ((TextCheckCell) view).setChecked(TesterSettings.forceSearchDuringDeletion.get());
             } else if (position == spectrumDistionParamsRow) {
                 DialogTemplate template = new DialogTemplate();
                 template.type = DialogType.EDIT;
                 String title = "Spectrum Distortion Params";
                 template.title = title;
-                template.addEditTemplate(spectrumDistorterParams, title, true);
+                template.addEditTemplate(TesterSettings.spectrumDistorterParams.get(), title, true);
                 template.positiveListener = views -> {
-                    spectrumDistorterParams = ((EditTextCaption)views.get(0)).getText().toString();
+                    TesterSettings.spectrumDistorterParams.set(((EditTextCaption)views.get(0)).getText().toString());
                     TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, spectrumDistorterParams, true);
+                    cell.setTextAndValue(title, TesterSettings.spectrumDistorterParams.get(), true);
                 };
                 template.negativeListener = (dlg, whichButton) -> {
-                    spectrumDistorterParams = "";
+                    TesterSettings.spectrumDistorterParams.set("");
                     TextSettingsCell cell = (TextSettingsCell) view;
                     cell.setTextAndValue(title, "", true);
                 };
@@ -376,14 +359,14 @@ public class TesterSettingsActivity extends BaseFragment {
                 template.type = DialogType.EDIT;
                 String title = "Time Distortion Params";
                 template.title = title;
-                template.addEditTemplate(timeDistortionParams, title, true);
+                template.addEditTemplate(TesterSettings.timeDistortionParams.get(), title, true);
                 template.positiveListener = views -> {
-                    timeDistortionParams = ((EditTextCaption)views.get(0)).getText().toString();
+                    TesterSettings.timeDistortionParams.set(((EditTextCaption)views.get(0)).getText().toString());
                     TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, timeDistortionParams, true);
+                    cell.setTextAndValue(title, TesterSettings.timeDistortionParams.get(), true);
                 };
                 template.negativeListener = (dlg, whichButton) -> {
-                    timeDistortionParams = "";
+                    TesterSettings.timeDistortionParams.set("");
                     TextSettingsCell cell = (TextSettingsCell) view;
                     cell.setTextAndValue(title, "", true);
                 };
@@ -604,47 +587,39 @@ public class TesterSettingsActivity extends BaseFragment {
                 case 0: {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
                     if (position == sessionTerminateActionWarningRow) {
-                        textCell.setTextAndCheck("Show terminate sessions warning",
-                                SharedConfig.showSessionsTerminateActionWarning, true);
+                        textCell.setTextAndCheck("Show terminate sessions warning", SharedConfig.showSessionsTerminateActionWarning, true);
                     } else if (position == showPlainBackupRow) {
-                        textCell.setTextAndCheck("Show plain backup", showPlainBackup, true);
+                        textCell.setTextAndCheck("Show plain backup", TesterSettings.showPlainBackup.get(), true);
                     } else if (position == disablePremiumRow) {
-                        textCell.setTextAndCheck("Disable Premium", SharedConfig.premiumDisabled, true);
+                        textCell.setTextAndCheck("Disable Premium", TesterSettings.premiumDisabled.get(), true);
                     } else if (position == hideDialogIsNotSafeWarningRow) {
-                        textCell.setTextAndCheck("Show hide dialog is not safe warning",
-                                SharedConfig.showHideDialogIsNotSafeWarning, true);
+                        textCell.setTextAndCheck("Show hide dialog is not safe warning", SharedConfig.showHideDialogIsNotSafeWarning, true);
                     } else if (position == forceAllowScreenshotsRow) {
-                        textCell.setTextAndCheck("Force allow screenshots",
-                                SharedConfig.forceAllowScreenshots, true);
+                        textCell.setTextAndCheck("Force allow screenshots", TesterSettings.forceAllowScreenshots.get(), true);
                     } else if (position == saveLogcatAfterRestartRow) {
-                        textCell.setTextAndCheck("Save logcat after restart",
-                                SharedConfig.saveLogcatAfterRestart, true);
+                        textCell.setTextAndCheck("Save logcat after restart", TesterSettings.saveLogcatAfterRestart.get(), true);
                     } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
-                        textCell.setTextAndCheck("Show sec. chats from sec. groups",
-                                SharedConfig.showEncryptedChatsFromEncryptedGroups, true);
+                        textCell.setTextAndCheck("Show sec. chats from sec. groups", TesterSettings.showEncryptedChatsFromEncryptedGroups.get(), true);
                     } else if (position == detailedEncryptedGroupMemberStatusRow) {
-                        textCell.setTextAndCheck("Detailed Secret Group Member Status",
-                                SharedConfig.detailedEncryptedGroupMemberStatus, true);
+                        textCell.setTextAndCheck("Detailed Secret Group Member Status", TesterSettings.detailedEncryptedGroupMemberStatus.get(), true);
                     } else if (position == clearLogsWithCacheRow) {
-                        textCell.setTextAndCheck("Clear logs with cache",
-                                SharedConfig.clearLogsWithCache, true);
+                        textCell.setTextAndCheck("Clear logs with cache", TesterSettings.clearLogsWithCache.get(), true);
                     } else if (position == forceSearchDuringDeletionRow) {
-                        textCell.setTextAndCheck("Force search during deletion",
-                                forceSearchDuringDeletion, true);
+                        textCell.setTextAndCheck("Force search during deletion", TesterSettings.forceSearchDuringDeletion.get(), true);
                     }
                     break;
                 } case 1: {
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
                     if (position == updateChannelIdRow) {
-                        long id = SharedConfig.updateChannelIdOverride;
+                        long id = TesterSettings.updateChannelIdOverride.get();
                         textCell.setTextAndValue("Update Channel Id", id != 0 ? Long.toString(id) : "", true);
                     } else if (position == updateChannelUsernameRow) {
-                        textCell.setTextAndValue("Update Channel Username", SharedConfig.updateChannelUsernameOverride, true);
+                        textCell.setTextAndValue("Update Channel Username", TesterSettings.updateChannelUsernameOverride.get(), true);
                     } else if (simpleDataStartRow <= position && position < simpleDataEndRow) {
                         SimpleData simpleData = simpleDataArray[position - simpleDataStartRow];
                         textCell.setTextAndValue(simpleData.name, simpleData.getValue.get(), true);
                     } else if (position == phoneOverrideRow) {
-                        textCell.setTextAndValue("Phone Override", SharedConfig.phoneOverride, true);
+                        textCell.setTextAndValue("Phone Override", TesterSettings.phoneOverride.get(), true);
                     } else if (position == resetSecurityIssuesRow) {
                         textCell.setText("Reset Security Issues", true);
                     } else if (position == activateAllSecurityIssuesRow) {
@@ -663,9 +638,9 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == accountNumRow) {
                         textCell.setTextAndValue("Account num", Integer.toString(currentAccount), true);
                     } else if (position == spectrumDistionParamsRow) {
-                        textCell.setTextAndValue("Spectrum Distortion Params", spectrumDistorterParams, true);
+                        textCell.setTextAndValue("Spectrum Distortion Params", TesterSettings.spectrumDistorterParams.get(), true);
                     } else if (position == timeDistortionParamsRow) {
-                        textCell.setTextAndValue("Time Distortion Params", timeDistortionParams, true);
+                        textCell.setTextAndValue("Time Distortion Params", TesterSettings.timeDistortionParams.get(), true);
                     }
                     break;
                 } case 2: {
@@ -683,30 +658,32 @@ public class TesterSettingsActivity extends BaseFragment {
                 } case 3: {
                     SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
                     if (position == pitchFactorRow) {
-                        bindSeekBarCell(seekBarCell, pitchFactor, value -> pitchFactor = value);
+                        bindSeekBarCell(seekBarCell, TesterSettings.pitchFactor.get(), TesterSettings.pitchFactor::set);
                     } else if (position == timeStretchFactorRow) {
-                        bindSeekBarCell(seekBarCell, timeStretchFactor, value -> timeStretchFactor = value);
+                        bindSeekBarCell(seekBarCell, TesterSettings.timeStretchFactor.get(), TesterSettings.timeStretchFactor::set);
                     } else if (position == f0ShiftRow) {
-                        bindSeekBarCell(seekBarCell, f0Shift, value -> f0Shift = value);
+                        bindSeekBarCell(seekBarCell, TesterSettings.f0Shift.get(), TesterSettings.f0Shift::set);
                     } else if (position == formantRatioRow) {
-                        bindSeekBarCell(seekBarCell, formantRatio, value -> formantRatio = value);
+                        bindSeekBarCell(seekBarCell, TesterSettings.formantRatio.get(), TesterSettings.formantRatio::set);
                     }
                     break;
                 }
             }
         }
 
-        private void bindSeekBarCell(SeekBarCell seekBarCell, double currentValue, Consumer<Double> onValueChanged) {
+        private void bindSeekBarCell(SeekBarCell seekBarCell, float currentValue, Consumer<Float> onValueChanged) {
             List<Object> values = new ArrayList<>();
-            for (double value = 0.2; value <= 2.01; value += 0.025) {
-                if (Math.abs(value - currentValue) < 0.01) {
+            for (float value = 0.2f; value <= 2.01f; value += 0.025f) {
+                if (Math.abs(value - currentValue) < 0.01f) {
                     values.add(currentValue);
+                } else if (Math.abs(value - 1.0f) < 0.01f) {
+                    values.add(1.0f);
                 } else {
                     values.add(value);
                 }
             }
             seekBarCell.setValues(values.toArray(), currentValue);
-            seekBarCell.setDelegate(obj -> onValueChanged.accept((double)obj));
+            seekBarCell.setDelegate(obj -> onValueChanged.accept((float)obj));
             seekBarCell.invalidate();
         }
 
