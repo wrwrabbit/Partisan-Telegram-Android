@@ -347,11 +347,14 @@ public class FakePasscode {
     }
 
     private void checkPasswordlessMode() {
+        boolean changed = passwordDisabled != passwordlessMode;
         passwordDisabled = passwordlessMode;
         if (passwordDisabled) {
             SharedConfig.setAppLocked(false);
             SharedConfig.isWaitingForPasscodeEnter = false;
             SharedConfig.saveConfig();
+        }
+        if (changed) {
             MediaDataController.getInstance(UserConfig.selectedAccount).buildShortcuts();
             AndroidUtilities.runOnUIThread(() -> {
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.didSetPasscode);

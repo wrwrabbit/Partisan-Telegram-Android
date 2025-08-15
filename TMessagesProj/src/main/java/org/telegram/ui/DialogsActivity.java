@@ -7163,6 +7163,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (getMessagesStorage().fileProtectionEnabled()) {
             getMessagesController().sortDialogs(null);
         }
+        if (SharedConfig.passcodeEnabled() != passcodeItemVisible) {
+            updatePasscodeButton();
+        }
     }
 
     private void checkOtherPtg() {

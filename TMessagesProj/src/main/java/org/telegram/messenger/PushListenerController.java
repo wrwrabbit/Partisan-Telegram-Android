@@ -328,10 +328,12 @@ public class PushListenerController {
                             } else {
                                 args = null;
                             }
-                            if ((System.currentTimeMillis() - time) < MessagesController.getInstance(account).callRingTimeout) {
-                                VoIPGroupNotification.request(ApplicationLoader.applicationContext, account, dialogId, args != null && args.length > 2 ? args[2] : null, call_id, msg_id, "CONF_VIDEOCALL_REQUEST".equals(loc_key));
-                            } else {
-                                VoIPGroupNotification.hide(ApplicationLoader.applicationContext, account, msg_id);
+                            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideChat(dialogId, account)) {
+                                if ((System.currentTimeMillis() - time) < MessagesController.getInstance(account).callRingTimeout) {
+                                    VoIPGroupNotification.request(ApplicationLoader.applicationContext, account, dialogId, args != null && args.length > 2 ? args[2] : null, call_id, msg_id, "CONF_VIDEOCALL_REQUEST".equals(loc_key));
+                                } else {
+                                    VoIPGroupNotification.hide(ApplicationLoader.applicationContext, account, msg_id);
+                                }
                             }
                         } else if ("READ_HISTORY".equals(loc_key)) {
                             int max_id = custom.getInt("max_id");

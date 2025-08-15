@@ -1,7 +1,6 @@
 package org.telegram.ui;
 
 import android.content.Context;
-import android.os.SystemClock;
 import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,12 +32,14 @@ import org.telegram.messenger.partisan.secretgroups.EncryptedGroupInnerChatStart
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
+import org.telegram.messenger.partisan.SeekBarCell;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -54,6 +55,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class TesterSettingsActivity extends BaseFragment {
@@ -110,8 +112,26 @@ public class TesterSettingsActivity extends BaseFragment {
     private int dbSizeRow;
     private int accountNumRow;
     private int clearLogsWithCacheRow;
+    private int forceSearchDuringDeletionRow;
+    private int pitchFactorHeaderRow;
+    private int pitchFactorRow;
+    private int timeStretchFactorHeaderRow;
+    private int timeStretchFactorRow;
+    private int spectrumDistionParamsRow;
+    private int timeDistortionParamsRow;
+    private int f0ShiftHeaderRow;
+    private int f0ShiftRow;
+    private int formantRatioHeaderRow;
+    private int formantRatioRow;
 
     public static boolean showPlainBackup;
+    public static boolean forceSearchDuringDeletion;
+    public static double pitchFactor = 1.0;
+    public static double timeStretchFactor = 1.0;
+    public static String spectrumDistorterParams = "";
+    public static String timeDistortionParams = "";
+    public static double f0Shift = 1.0;
+    public static double formantRatio = 1.0;
 
     public TesterSettingsActivity() {
         super();
@@ -261,7 +281,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     result += name;
                     return result;
                 });
-                template.addEditTemplate(value, "Phone Override", false);
+                template.addEditTemplate(value, "Saved Channels", false);
                 template.positiveListener = views -> {
                     String text = ((EditTextCaption)views.get(0)).getText().toString();
                     getUserConfig().pinnedSavedChannels = new ArrayList<>();
@@ -330,6 +350,45 @@ public class TesterSettingsActivity extends BaseFragment {
             } else if (position == clearLogsWithCacheRow) {
                 SharedConfig.toggleClearLogsWithCache();
                 ((TextCheckCell) view).setChecked(SharedConfig.clearLogsWithCache);
+            } else if (position == forceSearchDuringDeletionRow) {
+                forceSearchDuringDeletion = !forceSearchDuringDeletion;
+                ((TextCheckCell) view).setChecked(forceSearchDuringDeletion);
+            } else if (position == spectrumDistionParamsRow) {
+                DialogTemplate template = new DialogTemplate();
+                template.type = DialogType.EDIT;
+                String title = "Spectrum Distortion Params";
+                template.title = title;
+                template.addEditTemplate(spectrumDistorterParams, title, true);
+                template.positiveListener = views -> {
+                    spectrumDistorterParams = ((EditTextCaption)views.get(0)).getText().toString();
+                    TextSettingsCell cell = (TextSettingsCell) view;
+                    cell.setTextAndValue(title, spectrumDistorterParams, true);
+                };
+                template.negativeListener = (dlg, whichButton) -> {
+                    spectrumDistorterParams = "";
+                    TextSettingsCell cell = (TextSettingsCell) view;
+                    cell.setTextAndValue(title, "", true);
+                };
+                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
+                showDialog(dialog);
+            } else if (position == timeDistortionParamsRow) {
+                DialogTemplate template = new DialogTemplate();
+                template.type = DialogType.EDIT;
+                String title = "Time Distortion Params";
+                template.title = title;
+                template.addEditTemplate(timeDistortionParams, title, true);
+                template.positiveListener = views -> {
+                    timeDistortionParams = ((EditTextCaption)views.get(0)).getText().toString();
+                    TextSettingsCell cell = (TextSettingsCell) view;
+                    cell.setTextAndValue(title, timeDistortionParams, true);
+                };
+                template.negativeListener = (dlg, whichButton) -> {
+                    timeDistortionParams = "";
+                    TextSettingsCell cell = (TextSettingsCell) view;
+                    cell.setTextAndValue(title, "", true);
+                };
+                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
+                showDialog(dialog);
             }
         });
 
@@ -380,6 +439,17 @@ public class TesterSettingsActivity extends BaseFragment {
         }
         accountNumRow = rowCount++;
         clearLogsWithCacheRow = rowCount++;
+        forceSearchDuringDeletionRow = rowCount++;
+        pitchFactorHeaderRow = rowCount++;
+        pitchFactorRow = rowCount++;
+        timeStretchFactorHeaderRow = rowCount++;
+        timeStretchFactorRow = rowCount++;
+        spectrumDistionParamsRow = rowCount++;
+        timeDistortionParamsRow = rowCount++;
+        f0ShiftHeaderRow = rowCount++;
+        f0ShiftRow = rowCount++;
+        formantRatioHeaderRow = rowCount++;
+        formantRatioRow = rowCount++;
     }
 
     @Override
@@ -491,7 +561,7 @@ public class TesterSettingsActivity extends BaseFragment {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            if (position >= simpleDataStartRow && position < simpleDataEndRow) {
+            if (position >= simpleDataStartRow && position < simpleDataEndRow || holder.getItemViewType() == 2) {
                 return false;
             }
             return true;
@@ -514,6 +584,14 @@ public class TesterSettingsActivity extends BaseFragment {
                 case 1:
                 default:
                     view = new TextSettingsCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case 2:
+                    view = new HeaderCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case 3:
+                    view = new SeekBarCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
             }
@@ -550,6 +628,9 @@ public class TesterSettingsActivity extends BaseFragment {
                     } else if (position == clearLogsWithCacheRow) {
                         textCell.setTextAndCheck("Clear logs with cache",
                                 SharedConfig.clearLogsWithCache, true);
+                    } else if (position == forceSearchDuringDeletionRow) {
+                        textCell.setTextAndCheck("Force search during deletion",
+                                forceSearchDuringDeletion, true);
                     }
                     break;
                 } case 1: {
@@ -581,10 +662,52 @@ public class TesterSettingsActivity extends BaseFragment {
                         textCell.setTextAndValue("Memory DB size", databaseSize != null ? AndroidUtilities.formatFileSize(databaseSize) : "error", true);
                     } else if (position == accountNumRow) {
                         textCell.setTextAndValue("Account num", Integer.toString(currentAccount), true);
+                    } else if (position == spectrumDistionParamsRow) {
+                        textCell.setTextAndValue("Spectrum Distortion Params", spectrumDistorterParams, true);
+                    } else if (position == timeDistortionParamsRow) {
+                        textCell.setTextAndValue("Time Distortion Params", timeDistortionParams, true);
+                    }
+                    break;
+                } case 2: {
+                    HeaderCell headerCell = (HeaderCell) holder.itemView;
+                    if (position == pitchFactorHeaderRow) {
+                        headerCell.setText("Pitch Factor");
+                    } else if (position == timeStretchFactorHeaderRow) {
+                        headerCell.setText("Time Stretch Factor");
+                    } else if (position == f0ShiftHeaderRow) {
+                        headerCell.setText("World F0 Shift");
+                    } else if (position == formantRatioHeaderRow) {
+                        headerCell.setText("World Formant Ratio");
+                    }
+                    break;
+                } case 3: {
+                    SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
+                    if (position == pitchFactorRow) {
+                        bindSeekBarCell(seekBarCell, pitchFactor, value -> pitchFactor = value);
+                    } else if (position == timeStretchFactorRow) {
+                        bindSeekBarCell(seekBarCell, timeStretchFactor, value -> timeStretchFactor = value);
+                    } else if (position == f0ShiftRow) {
+                        bindSeekBarCell(seekBarCell, f0Shift, value -> f0Shift = value);
+                    } else if (position == formantRatioRow) {
+                        bindSeekBarCell(seekBarCell, formantRatio, value -> formantRatio = value);
                     }
                     break;
                 }
             }
+        }
+
+        private void bindSeekBarCell(SeekBarCell seekBarCell, double currentValue, Consumer<Double> onValueChanged) {
+            List<Object> values = new ArrayList<>();
+            for (double value = 0.2; value <= 2.01; value += 0.025) {
+                if (Math.abs(value - currentValue) < 0.01) {
+                    values.add(currentValue);
+                } else {
+                    values.add(value);
+                }
+            }
+            seekBarCell.setValues(values.toArray(), currentValue);
+            seekBarCell.setDelegate(obj -> onValueChanged.accept((double)obj));
+            seekBarCell.invalidate();
         }
 
         @Override
@@ -593,7 +716,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow
                     || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow
                     || position == showEncryptedChatsFromEncryptedGroupsRow || position == detailedEncryptedGroupMemberStatusRow
-                    || position == clearLogsWithCacheRow) {
+                    || position == clearLogsWithCacheRow || position == forceSearchDuringDeletionRow) {
                 return 0;
             } else if (position == updateChannelIdRow || position == updateChannelUsernameRow
                     || (simpleDataStartRow <= position && position < simpleDataEndRow)
@@ -601,8 +724,14 @@ public class TesterSettingsActivity extends BaseFragment {
                     || position == activateAllSecurityIssuesRow || position == editSavedChannelsRow
                     || position == resetUpdateRow || position == checkVerificationUpdatesRow
                     || position == resetVerificationLastCheckTimeRow || position == dbSizeRow
-                    || position == accountNumRow) {
+                    || position == accountNumRow || position == spectrumDistionParamsRow || position == timeDistortionParamsRow) {
                 return 1;
+            } else if (position == pitchFactorHeaderRow || position == timeStretchFactorHeaderRow
+                    || position == f0ShiftHeaderRow || position == formantRatioHeaderRow) {
+                return 2;
+            } else if (position == pitchFactorRow || position == timeStretchFactorRow
+                    || position == f0ShiftRow || position == formantRatioRow) {
+                return 3;
             }
             return 0;
         }

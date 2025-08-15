@@ -1025,6 +1025,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     private Runnable recordStartRunnable;
     private DispatchQueue recordQueue;
     private DispatchQueue fileEncodingQueue;
+    private org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger;
     private Runnable recordRunnable = new Runnable() {
         @Override
         public void run() {
@@ -1033,14 +1034,31 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 if (!recordBuffers.isEmpty()) {
                     buffer = recordBuffers.get(0);
                     recordBuffers.remove(0);
+                    if (voiceChanger != null) {
+                        buffer = ByteBuffer.allocateDirect(recordBufferSize);
+                        buffer.order(ByteOrder.nativeOrder());
+                    }
                 } else {
                     buffer = ByteBuffer.allocateDirect(recordBufferSize);
                     buffer.order(ByteOrder.nativeOrder());
                 }
                 buffer.rewind();
                 int len = audioRecorder.read(buffer, buffer.capacity());
+                if (voiceChanger != null && len > 0) {
+                    voiceChanger.write(java.util.Arrays.copyOf(buffer.array(), len));
+                    byte[] changedVoice = voiceChanger.readAll();
+                    if (changedVoice.length == 0) {
+                        recordBuffers.add(buffer);
+                        recordQueue.postRunnable(recordRunnable);
+                        return;
+                    }
+                    len = changedVoice.length;
+                    buffer = ByteBuffer.allocateDirect(len);
+                    buffer.order(ByteOrder.nativeOrder());
+                    buffer.put(changedVoice, 0, len);
+                    buffer.rewind();
+                }
                 if (len > 0) {
-                    buffer.limit(len);
                     double sum = 0;
                     try {
                         long newSamplesCount = samplesCount + len / 2;
@@ -4646,8 +4664,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 recordQuickReplyShortcut = quick_shortcut;
                 recordQuickReplyShortcutId = quick_shortcut_id;
                 fileBuffer.rewind();
-
                 audioRecorder.startRecording();
+                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
+                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(audioRecorder.getSampleRate());
+                }
             } catch (Exception e) {
                 FileLog.e(e);
                 recordingAudio = null;
@@ -4831,6 +4851,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         if (recordStartRunnable != null) {
             recordQueue.cancelRunnable(recordStartRunnable);
             recordStartRunnable = null;
+        }
+        if (voiceChanger != null) {
+            voiceChanger.stop();
+            voiceChanger = null;
         }
         recordQueue.postRunnable(() -> {
             if (sendAfterDone == 3) {

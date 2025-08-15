@@ -181,6 +181,15 @@ public class FakePasscodeUtils {
         return filterItems(stories, Optional.of(account), (s, filter) -> !filter.isHidePeer(s.peer));
     }
 
+    public static List<TLRPC.GroupCallParticipant> filterGroupCallParticipants(List<TLRPC.GroupCallParticipant> participants, int account) {
+        if (participants == null) {
+            return null;
+        }
+        return FakePasscodeUtils.filterItems(participants, Optional.of(account),
+                (participant, filter) -> !filter.isHidePeer(participant.peer)
+        );
+    }
+
     public static boolean isHideChat(long chatId, int account) {
         FakePasscode passcode = getActivatedFakePasscode();
         ActionsResult actionsResult = getActivatedActionsResult();

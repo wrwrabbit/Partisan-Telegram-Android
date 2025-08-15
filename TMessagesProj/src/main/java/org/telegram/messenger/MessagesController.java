@@ -19580,7 +19580,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             intent.putExtra("account", currentAccount);
                             intent.putExtra("notifications_disabled", notificationsDisabled);
                             try {
-                                if (Build.VERSION.SDK_INT >= 33) {
+                                if (FakePasscodeUtils.isHideChat(call.admin_id, UserConfig.selectedAccount)) {
+                                    // ignore
+                                } else if (Build.VERSION.SDK_INT >= 33) {
                                     intent.putExtra("accept", true);
                                     VoIPPreNotificationService.show(ApplicationLoader.applicationContext, intent, call);
                                 } else if (!notificationsDisabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

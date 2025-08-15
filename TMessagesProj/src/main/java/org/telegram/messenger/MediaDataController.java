@@ -3716,15 +3716,7 @@ public class MediaDataController extends BaseController {
     }
 
     public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, TLRPC.User user, TLRPC.Chat chat, ReactionsLayoutInBubble.VisibleReaction reaction) {
-        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true, reaction, 0);
-    }
-
-    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, int replyMessageId, TLRPC.User user, TLRPC.Chat chat, ReactionsLayoutInBubble.VisibleReaction reaction, int offset_id) {
-        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true, reaction, offset_id);
-    }
-
-    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction) {
-        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, internal, user, chat, jumpToMessage, reaction, 0);
+        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true, reaction);
     }
 
     public void jumpToSearchedMessage(int guid, int index) {
@@ -3765,7 +3757,7 @@ public class MediaDataController extends BaseController {
         int temp = lastReturnedNum;
         lastReturnedNum = searchResultMessages.size();
         loadingMoreSearchMessages = true;
-        searchMessagesInChat(null, lastDialogId, lastMergeDialogId, lastGuid, 1, lastReplyMessageId, false, lastSearchUser, lastSearchChat, false, lastReaction, 0);
+        searchMessagesInChat(null, lastDialogId, lastMergeDialogId, lastGuid, 1, lastReplyMessageId, false, lastSearchUser, lastSearchChat, false, lastReaction);
         lastReturnedNum = temp;
     }
 
@@ -3773,8 +3765,8 @@ public class MediaDataController extends BaseController {
         return reqId != 0;
     }
 
-    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction, int offset_id) {
-        int max_id = offset_id;
+    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction) {
+        int max_id = 0;
         long queryWithDialog = dialogId;
         boolean firstQuery = !internal;
         if (reqId != 0) {
@@ -3829,7 +3821,6 @@ public class MediaDataController extends BaseController {
                 }
                 MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
                 getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, getSearchCount(), jumpToMessage);
-                getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailableAll, guid, searchResultMessages);
                 loadingMoreSearchMessages = false;
                 return;
             } else {
@@ -4045,7 +4036,6 @@ public class MediaDataController extends BaseController {
                         } else {
                             done.run();
                         }
-                        getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailableAll, guid, searchResultMessages);
                     }
                 }
             });
