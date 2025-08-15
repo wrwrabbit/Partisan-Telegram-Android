@@ -1,7 +1,5 @@
 package org.telegram.messenger.partisan.settings;
 
-import androidx.annotation.NonNull;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -15,11 +13,9 @@ public class TesterSettings {
     public static final StringSetting phoneOverride = new StringSetting("phoneOverride", "");
     public static final BooleanSetting forceAllowScreenshots = new BooleanSetting("forceAllowScreenshots", false);
     public static final BooleanSetting saveLogcatAfterRestart = new BooleanSetting("saveLogcatAfterRestart", false);
-
     public static final BooleanSetting clearLogsWithCache = new BooleanSetting("clearLogsWithCache", true);
     public static final BooleanSetting showEncryptedChatsFromEncryptedGroups = new BooleanSetting("showEncryptedChatsFromEncryptedGroups", false);
     public static final BooleanSetting detailedEncryptedGroupMemberStatus = new BooleanSetting("detailedEncryptedGroupMemberStatus", false);
-
     public static final BooleanSetting showPlainBackup = new BooleanSetting("showPlainBackup", false);
     public static final BooleanSetting forceSearchDuringDeletion = new BooleanSetting("forceSearchDuringDeletion", false);
     public static final FloatSetting pitchFactor = new FloatSetting("pitchFactor", 1.0f);
