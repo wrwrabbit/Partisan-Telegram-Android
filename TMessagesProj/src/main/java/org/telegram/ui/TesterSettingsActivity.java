@@ -405,6 +405,7 @@ public class TesterSettingsActivity extends BaseFragment {
             new SeekBarItem(this, TesterSettings.f0Shift),
             new HeaderItem(this, "World Formant Ratio"),
             new SeekBarItem(this, TesterSettings.formantRatio),
+            new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
     };
 
     private Supplier<String> createDialogsCountFormatter(Predicate<Long> condition) {

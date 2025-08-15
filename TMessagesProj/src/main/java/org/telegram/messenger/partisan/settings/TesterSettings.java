@@ -24,6 +24,7 @@ public class TesterSettings {
     public static final StringSetting timeDistortionParams = new StringSetting("timeDistortionParams", "");
     public static final FloatSetting f0Shift = new FloatSetting("f0Shift", 1.0f);
     public static final FloatSetting formantRatio = new FloatSetting("formantRatio", 1.0f);
+    public static final BooleanSetting moreTimerValues = new BooleanSetting("moreTimerValues", false);
 
     public static void loadSettings() {
         for (Setting<?> setting : getAllSettings()) {
