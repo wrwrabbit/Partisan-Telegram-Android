@@ -2291,7 +2291,12 @@ public class SharedConfig {
             FakePasscodeUtils.tryActivateByTimer();
         } else {
             if (appLocked) {
-                SharedConfig.lastPauseFakePasscodeTime = 0;
+                boolean needResetFakePasscodePauseTime = LaunchActivity.isResumed
+                        || !FakePasscodeUtils.isFakePasscodeActivated()
+                        || !FakePasscodeUtils.getActivatedFakePasscode().passwordlessMode;
+                if (needResetFakePasscodePauseTime) {
+                    SharedConfig.lastPauseFakePasscodeTime = 0;
+                }
             }
         }
         appLocked = locked;
