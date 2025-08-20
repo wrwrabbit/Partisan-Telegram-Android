@@ -434,7 +434,6 @@ public class SharedConfig {
     public static boolean showMaskedUpdateWarning;
     public static int activatedTesterSettingType;
     public static boolean needShowMaskedPasscodeScreenTutorial;
-    public static boolean showPermissionDisabledDialog = true;
     public static boolean filesCopiedFromOldTelegram;
     public static boolean oldTelegramRemoved;
     public static int runNumber;
@@ -659,7 +658,6 @@ public class SharedConfig {
                 editor.putBoolean("showHideDialogIsNotSafeWarning", showHideDialogIsNotSafeWarning);
                 editor.putInt("activatedTesterSettingType", activatedTesterSettingType);
                 editor.putBoolean("needShowMaskedPasscodeScreenTutorial", needShowMaskedPasscodeScreenTutorial);
-                editor.putBoolean("showPermissionDisabledDialog", showPermissionDisabledDialog);
                 editor.putBoolean("filesCopiedFromOldTelegram", filesCopiedFromOldTelegram);
                 editor.putBoolean("oldTelegramRemoved", oldTelegramRemoved);
                 editor.putInt("runNumber", runNumber);
@@ -850,7 +848,6 @@ public class SharedConfig {
             showMaskedUpdateWarning = preferences.getBoolean("showMaskedUpdateWarning", true);
             activatedTesterSettingType = preferences.getInt("activatedTesterSettingType", BuildVars.DEBUG_PRIVATE_VERSION ? 1 : 0);
             needShowMaskedPasscodeScreenTutorial = preferences.getBoolean("needShowMaskedPasscodeScreenTutorial", false);
-            showPermissionDisabledDialog = preferences.getBoolean("showPermissionDisabledDialog", showPermissionDisabledDialog);
             filesCopiedFromOldTelegram = preferences.getBoolean("filesCopiedFromOldTelegram", false);
             oldTelegramRemoved = preferences.getBoolean("oldTelegramRemoved", false);
             runNumber = preferences.getInt("runNumber", 0);
@@ -1370,7 +1367,6 @@ public class SharedConfig {
             fakePasscodeActivatedIndex = -1;
         }
         needShowMaskedPasscodeScreenTutorial = false;
-        showPermissionDisabledDialog = true;
         filesCopiedFromOldTelegram = false;
         passcodeSalt = new byte[0];
         autoLockIn = 60 * 60;

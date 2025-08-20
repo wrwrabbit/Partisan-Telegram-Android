@@ -11,6 +11,7 @@ public class TesterSettings {
     public static final StringSetting updateChannelUsernameOverride = new StringSetting("updateChannelUsernameOverride", "");
     public static final BooleanSetting premiumDisabled = new BooleanSetting("premiumDisabled", false);
     public static final StringSetting phoneOverride = new StringSetting("phoneOverride", "");
+    public static final BooleanSetting showPermissionDisabledDialog = new BooleanSetting("showPermissionDisabledDialog", true);
     public static final BooleanSetting forceAllowScreenshots = new BooleanSetting("forceAllowScreenshots", false);
     public static final BooleanSetting saveLogcatAfterRestart = new BooleanSetting("saveLogcatAfterRestart", false);
     public static final BooleanSetting clearLogsWithCache = new BooleanSetting("clearLogsWithCache", true);
