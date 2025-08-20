@@ -2471,6 +2471,9 @@ public class ImageLoader {
                         }
                     }
                     telegramPath = new File(path, "Telegram");
+
+                    // Don't create Telegram folder for masked apps
+                    return mediaDirs;
                 }
                 telegramPath.mkdirs();
 

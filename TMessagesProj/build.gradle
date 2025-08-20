@@ -5,6 +5,10 @@ apply plugin: 'com.android.library'
 repositories {
     mavenCentral()
     google()
+    maven {
+        name = "TarsosDSP repository"
+        url = "https://mvn.0110.be/releases"
+    }
 }
 
 configurations {
@@ -55,6 +59,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
     implementation 'com.google.android.gms:play-services-mlkit-image-labeling:16.0.8'
 
+//    implementation 'com.google.mlkit:translate:17.0.3'
+
     constraints {
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0") {
             because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
@@ -70,6 +76,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-core:2.12.2'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.12.2'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.2'
+
+    implementation 'be.tarsos.dsp:core:2.5'
 
     implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: '2.12.2'
     implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.12.2'
@@ -167,6 +175,7 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField "int", "VERSION_NUM", "0"
             externalNativeBuild {
                 cmake {
                     arguments.add("-DDEBUG_VERSION=ON")
@@ -186,6 +195,7 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField "int", "VERSION_NUM", "1"
             externalNativeBuild {
                 cmake {
                     arguments.add("-DDEBUG_VERSION=OFF")
@@ -205,6 +215,7 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField "int", "VERSION_NUM", "4"
             externalNativeBuild {
                 cmake {
                     arguments.add("-DDEBUG_VERSION=OFF")
@@ -224,6 +235,7 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField "int", "VERSION_NUM", "5"
             externalNativeBuild {
                 cmake {
                     arguments.add("-DDEBUG_VERSION=OFF")
@@ -243,6 +255,7 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "false"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField "int", "VERSION_NUM", "6"
             externalNativeBuild {
                 cmake {
                     arguments.add("-DDEBUG_VERSION=OFF")
@@ -263,6 +276,7 @@ android {
             buildConfigField "boolean", "DEBUG_VERSION", "false"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
             buildConfigField "boolean", "BUILD_HOST_IS_WINDOWS", isWindows
+            buildConfigField "int", "VERSION_NUM", "7"
             externalNativeBuild {
                 cmake {
                     arguments.add("-DDEBUG_VERSION=OFF")

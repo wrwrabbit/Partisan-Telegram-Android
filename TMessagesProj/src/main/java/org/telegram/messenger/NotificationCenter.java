@@ -224,6 +224,7 @@ public class NotificationCenter {
     public static final int boostedChannelByUser = totalEvents++;
     public static final int boostByChannelCreated = totalEvents++;
     public static final int didUpdatePremiumGiftStickers = totalEvents++;
+    public static final int didUpdateTonGiftStickers = totalEvents++;
     public static final int didUpdatePremiumGiftFieldIcon = totalEvents++;
     public static final int storiesEnabledUpdate = totalEvents++;
     public static final int storiesBlocklistUpdate = totalEvents++;
@@ -235,6 +236,7 @@ public class NotificationCenter {
     public static final int savedMessagesDialogsUpdate = totalEvents++;
     public static final int savedReactionTagsUpdate = totalEvents++;
     public static final int userIsPremiumBlockedUpadted = totalEvents++;
+    public static final int storyAlbumsCollectionsUpdate = totalEvents++;
     public static final int savedMessagesForwarded = totalEvents++;
     public static final int emojiKeywordsLoaded = totalEvents++;
     public static final int smsJobStatusUpdate = totalEvents++;
@@ -261,6 +263,7 @@ public class NotificationCenter {
     public static final int updateAllMessages = totalEvents++;
     public static final int starGiftsLoaded = totalEvents++;
     public static final int starUserGiftsLoaded = totalEvents++;
+    public static final int starUserGiftCollectionsLoaded = totalEvents++;
     public static final int starGiftSoldOut = totalEvents++;
     public static final int updateStories = totalEvents++;
     public static final int botDownloadsUpdate = totalEvents++;
@@ -271,6 +274,7 @@ public class NotificationCenter {
     public static final int commonChatsLoaded = totalEvents++;
     public static final int appConfigUpdated = totalEvents++;
     public static final int conferenceEmojiUpdated = totalEvents++;
+    public static final int contentSettingsLoaded = totalEvents++;
 
     //partisan
     public static final int maskedUpdateReceived = totalEvents++;
@@ -284,6 +288,7 @@ public class NotificationCenter {
     public static final int searchCleared = totalEvents++;
     public static final int savedChannelsButtonStateChanged = totalEvents++;
     public static final int chatSearchResultsAvailableAll = totalEvents++;
+    public static final int telegramDataReceived = totalEvents++;
     public static final int telegramDataReceivingError = totalEvents++;
     public static final int cacheClearedByPtg = totalEvents++;
     public static final int securityIssuesChanged = totalEvents++;
@@ -378,6 +383,8 @@ public class NotificationCenter {
     public static final int onReceivedChannelDifference = totalEvents++;
     public static final int storiesReadUpdated = totalEvents++;
     public static final int nearEarEvent = totalEvents++;
+    public static final int translationModelDownloading = totalEvents++;
+    public static final int translationModelDownloaded = totalEvents++;
 
     public static boolean alreadyLogged;
 
