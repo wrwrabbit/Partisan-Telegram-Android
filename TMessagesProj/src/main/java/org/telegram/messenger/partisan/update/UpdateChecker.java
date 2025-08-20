@@ -2,21 +2,15 @@ package org.telegram.messenger.partisan.update;
 
 import android.text.TextUtils;
 
-import androidx.collection.LongSparseArray;
-
 import com.google.android.exoplayer2.util.Consumer;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
-import org.telegram.messenger.FileLoader;
-import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.AbstractChannelChecker;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.LaunchActivity;
 
 import java.util.List;
 import java.util.Objects;
@@ -150,8 +144,8 @@ public class UpdateChecker extends AbstractChannelChecker {
 
     @Override
     protected long getChannelId() {
-        if (SharedConfig.updateChannelIdOverride != 0) {
-            return SharedConfig.updateChannelIdOverride;
+        if (TesterSettings.updateChannelIdOverride.get() != 0) {
+            return TesterSettings.updateChannelIdOverride.get();
         } else {
             return CYBER_PARTISAN_SECURITY_TG_CHANNEL_ID;
         }
@@ -159,8 +153,8 @@ public class UpdateChecker extends AbstractChannelChecker {
 
     @Override
     protected String getChannelUsername() {
-        if (!Objects.equals(SharedConfig.updateChannelUsernameOverride, "")) {
-            return SharedConfig.updateChannelUsernameOverride;
+        if (!Objects.equals(TesterSettings.updateChannelUsernameOverride, "")) {
+            return TesterSettings.updateChannelUsernameOverride.get();
         } else {
             return CYBER_PARTISAN_SECURITY_TG_CHANNEL_USERNAME;
         }

@@ -14,7 +14,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -80,8 +79,8 @@ import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
 import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.Stars.BalanceCloud;
 import org.telegram.ui.Stars.StarsIntroActivity;
-import org.telegram.ui.Stars.StarsReactionsSheet;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -610,8 +609,17 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
         return this;
     }
 
+    public FrameLayout getFullscreenContainerView() {
+        return fullscreenContainerView;
+    }
+
     private FrameLayout fullscreenContainerView;
-    private StarsReactionsSheet.BalanceCloud starsBalanceCloud;
+
+    public BalanceCloud getStarsBalanceCloud() {
+        return starsBalanceCloud;
+    }
+
+    private BalanceCloud starsBalanceCloud;
 
     private AlertDialogView containerView;
     public AlertDialogView getContainerView() {
@@ -652,7 +660,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
 //                fullscreenContainerView.setFitsSystemWindows(Build.VERSION.SDK_INT >= 21);
             }
             if (starsBalanceCloud == null) {
-                starsBalanceCloud = new StarsReactionsSheet.BalanceCloud(getContext(), UserConfig.selectedAccount, resourcesProvider);
+                starsBalanceCloud = new BalanceCloud(getContext(), UserConfig.selectedAccount, resourcesProvider);
                 ScaleStateListAnimator.apply(starsBalanceCloud);
                 starsBalanceCloud.setOnClickListener(v -> {
                     new StarsIntroActivity.StarsOptionsSheet(getContext(), resourcesProvider).show();
@@ -1235,8 +1243,14 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
 
     @NonNull
     public Browser.Progress makeButtonLoading(int type) {
+        return makeButtonLoading(type, true, true);
+    }
+
+    public Browser.Progress makeButtonLoading(int type, boolean dismissWhenEnd, boolean clearDismissDialogByButtons) {
         final View button = getButton(type);
-        dismissDialogByButtons = false;
+        if (clearDismissDialogByButtons) {
+            dismissDialogByButtons = false;
+        }
         return new Browser.Progress(() -> {
             if (button instanceof TextViewWithLoading) {
                 ((TextViewWithLoading) button).setLoading(true, true);
@@ -1245,7 +1259,9 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
             if (button instanceof TextViewWithLoading) {
                 ((TextViewWithLoading) button).setLoading(false, true);
             }
-            dismiss();
+            if (dismissWhenEnd) {
+                dismiss();
+            }
         });
     }
 

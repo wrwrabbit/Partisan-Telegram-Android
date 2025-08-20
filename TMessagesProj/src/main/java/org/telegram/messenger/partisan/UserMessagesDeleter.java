@@ -1,12 +1,14 @@
 package org.telegram.messenger.partisan;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ChatActivity;
@@ -14,11 +16,11 @@ import org.telegram.ui.ChatActivity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 public class UserMessagesDeleter implements NotificationCenter.NotificationCenterDelegate, AccountControllersProvider {
-    private final long userId;
     private final long dialogId;
     private final long topicId;
     @Nullable
@@ -29,9 +31,26 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
 
     private int loadIndex = 1;
     private Long loadingTimeout = null;
+    private int searchOffsetId;
+    private List<TLRPC.Peer> possibleSenderPeers;
 
-    private int minMessageId = Integer.MAX_VALUE;
-    private int maxMessageId = Integer.MIN_VALUE;
+    private static class MinMaxMessageIds {
+        private int minMessageId = Integer.MAX_VALUE;
+        private int maxMessageId = Integer.MIN_VALUE;
+
+        public boolean compareAndUpdateValuesIfNeeded(int currentMinId, int currentMaxId) {
+            if (currentMinId >= minMessageId && currentMaxId <= maxMessageId) {
+                return false;
+            } else {
+                minMessageId = Math.min(minMessageId, currentMinId);
+                maxMessageId = Math.max(maxMessageId, currentMaxId);
+                return true;
+            }
+        }
+    }
+
+    private MinMaxMessageIds minMaxLoadedIds;
+    private MinMaxMessageIds minMaxSearchedIds;
 
     private static class MessagesToDelete {
         public ArrayList<Integer> messagesIds = new ArrayList<>();
@@ -39,11 +58,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     public UserMessagesDeleter(int accountNum,
-                               long userId,
                                long dialogId,
                                long topicId,
                                @Nullable Predicate<MessageObject> condition) {
-        this.userId = userId;
         this.dialogId = dialogId;
         this.topicId = topicId;
         this.condition = condition;
@@ -52,23 +69,38 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     public void start() {
-        minMessageId = Integer.MAX_VALUE;
-        maxMessageId = Integer.MIN_VALUE;
+        minMaxLoadedIds = new MinMaxMessageIds();
+        minMaxSearchedIds = new MinMaxMessageIds();
+        searchOffsetId = 0;
+        possibleSenderPeers = getPossibleSenderPeers();
 
         if (onlyLoadMessages()) {
             log("start only load chat messages deletion");
             startLoadingMessages();
         } else {
             log("start load + search chat messages deletion");
-            startSearchingMessages();
-            loadingTimeout = System.currentTimeMillis() + 10_000;
-            startLoadingMessages();
+            searchMessages();
+            if (!TesterSettings.forceSearchDuringDeletion.get()) {
+                loadingTimeout = System.currentTimeMillis() + 10_000;
+                startLoadingMessages();
+            }
         }
     }
 
-    private void startSearchingMessages() {
-        getNotificationCenter().addObserver(this, NotificationCenter.chatSearchResultsAvailableAll);
-        searchMessages(0);
+    private List<TLRPC.Peer> getPossibleSenderPeers() {
+        List<TLRPC.Peer> peers = new ArrayList<>();
+        TLRPC.Peer selfPeer = new TLRPC.TL_peerUser();
+        selfPeer.user_id = getUserConfig().clientUserId;
+        peers.add(selfPeer);
+        TLRPC.TL_channels_sendAsPeers sendAsPeers = getMessagesController().getSendAsPeers(dialogId);
+        if (sendAsPeers != null) {
+            for (TLRPC.TL_sendAsPeer peer : sendAsPeers.peers) {
+                if (peer.peer.channel_id != -dialogId && peer.peer.chat_id != -dialogId) {
+                    peers.add(peer.peer);
+                }
+            }
+        }
+        return peers;
     }
 
     private void startLoadingMessages() {
@@ -85,9 +117,12 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         log("didReceivedNotification " + id);
         if (id == NotificationCenter.messagesDidLoad) {
             if ((int) args[10] == deleteAllMessagesGuid) {
+                if (!onlyLoadMessages() && TesterSettings.forceSearchDuringDeletion.get()) {
+                    return;
+                }
                 ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[2];
                 log("messagesDidLoad:  " + messages.size());
-                if (processLoadedMessages(messages)) {
+                if (processLoadedMessages(messages, minMaxLoadedIds)) {
                     loadNewMessagesIfNeeded(messages);
                 } else if (onlyLoadMessages()) {
                     finishDeletion();
@@ -98,30 +133,18 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
                 log("loadingMessagesFailed");
                 finishDeletion();
             }
-        } else if (id == NotificationCenter.chatSearchResultsAvailableAll) {
-            if ((int)args[0] == deleteAllMessagesGuid) {
-                ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[1];
-                log("chatSearchResultsAvailableAll:  " + messages.size());
-                if (processLoadedMessages(messages)) {
-                    searchNewMessages(messages);
-                } else {
-                    finishDeletion();
-                }
-            }
         }
     }
 
-    private boolean processLoadedMessages(ArrayList<MessageObject> messages) {
+    private boolean processLoadedMessages(List<MessageObject> messages, MinMaxMessageIds minMaxMessageIds) {
         log("processLoadedMessages: " + messages.size());
         if (!messages.isEmpty()) {
-            int currentMinId = messages.stream().mapToInt(m -> m.messageOwner.id).min().orElse(Integer.MAX_VALUE);
-            int currentMaxId = messages.stream().mapToInt(m -> m.messageOwner.id).max().orElse(Integer.MIN_VALUE);
-            if (currentMinId >= minMessageId && currentMaxId <= maxMessageId) {
+            int currentMinId = messages.stream().mapToInt(MessageObject::getId).min().orElse(Integer.MAX_VALUE);
+            int currentMaxId = messages.stream().mapToInt(MessageObject::getId).max().orElse(Integer.MIN_VALUE);
+            if (!minMaxMessageIds.compareAndUpdateValuesIfNeeded(currentMinId, currentMaxId)) {
                 log("processLoadedMessages: no new messages loaded");
                 return false;
             } else {
-                minMessageId = Math.min(minMessageId, currentMinId);
-                maxMessageId = Math.max(maxMessageId, currentMaxId);
                 deleteMessages(getMessagesToDelete(messages));
                 getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
                 return true;
@@ -155,8 +178,8 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
             return false;
         }
 
-        TLRPC.Peer peer = messageObject.messageOwner.from_id;
-        needDeleteMessage = peer != null && peer.user_id == userId;
+        TLRPC.Peer senderPeer = messageObject.messageOwner.from_id;
+        needDeleteMessage = possibleSenderPeers.stream().anyMatch(currentPeer -> peersEqual(currentPeer, senderPeer));
         if (!needDeleteMessage) {
             log("isNeedDeleteMessage wrong user_id");
         }
@@ -169,6 +192,15 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         }
 
         return needDeleteMessage;
+    }
+
+    private static boolean peersEqual(TLRPC.Peer peer1, TLRPC.Peer peer2) {
+        if (peer1 == null || peer2 == null) {
+            return false;
+        }
+        return peer1.user_id == peer2.user_id
+                && peer1.chat_id == peer2.chat_id
+                && peer1.channel_id == peer2.channel_id;
     }
 
     private void deleteMessages(MessagesToDelete messagesToDelete) {
@@ -205,6 +237,9 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private void loadMessages(int maxId, int minDate) {
+        if (!onlyLoadMessages() && TesterSettings.forceSearchDuringDeletion.get()) {
+            return;
+        }
         log("load messages. maxId = " + maxId + ", minDate = " + minDate);
         getMessagesController().loadMessages(dialogId, 0, false,
                 100, maxId, 0, true, minDate,
@@ -212,17 +247,76 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
                 0, topicId, 0, loadIndex++, topicId != 0);
     }
 
-    private void searchNewMessages(List<MessageObject> messages) {
-        log("search new messages");
-        int maxId = messages.stream().mapToInt(MessageObject::getId).max().orElse(0);
-        searchMessages(maxId);
+    private void searchMessages() {
+        log("search messages. searchOffsetId = " + searchOffsetId);
+        TLRPC.TL_messages_search req = createSearchRequest();
+        if (req == null) {
+            return;
+        }
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+                    onSearchResultAvailable(res.messages);
+                });
+            } else {
+                handleSearchError(error);
+            }
+        });
     }
 
-    private void searchMessages(int maxId) {
-        log("search messages. maxId = " + maxId);
-        getMediaDataController().searchMessagesInChat("", dialogId, 0, deleteAllMessagesGuid,
-                0, 0, getMessagesController().getUser(userId),
-                getMessagesController().getChat(dialogId), null, maxId);
+    private TLRPC.TL_messages_search createSearchRequest() {
+        TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
+        req.peer = getMessagesController().getInputPeer(dialogId);
+        if (req.peer == null) {
+            return null;
+        }
+        req.limit = 100;
+        req.q = "";
+        req.offset_id = searchOffsetId;
+        TLRPC.User user = getMessagesController().getUser(getUserConfig().clientUserId);
+        TLRPC.Chat chat = getMessagesController().getChat(dialogId);
+        if (user != null) {
+            req.from_id = MessagesController.getInputPeer(user);
+            req.flags |= 1;
+        } else if (chat != null) {
+            req.from_id = MessagesController.getInputPeer(chat);
+            req.flags |= 1;
+        }
+        if (topicId != 0) {
+            req.top_msg_id = (int) topicId;
+            req.flags |= 2;
+        }
+        req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+        return req;
+    }
+
+    private void handleSearchError(TLRPC.TL_error error) {
+        if (error.text.startsWith("FLOOD_WAIT")) {
+            int floodWait = Utilities.parseInt(error.text);
+            long delayMs = (floodWait + 1) * 1000L;
+            AndroidUtilities.runOnUIThread(this::searchMessages, delayMs);
+        } else {
+            log("Unknown search error: " + error.text);
+            finishDeletion();
+        }
+    }
+
+    private void onSearchResultAvailable(List<TLRPC.Message> messages) {
+        List<MessageObject> messageObjects = initializeMessageObjects(messages);
+        log("onSearchResultAvailable:  " + messageObjects.size());
+        if (processLoadedMessages(messageObjects, minMaxSearchedIds)) {
+            searchOffsetId = messageObjects.stream().mapToInt(MessageObject::getId).min().orElse(0);
+            searchMessages();
+        } else {
+            finishDeletion();
+        }
+    }
+
+    private List<MessageObject> initializeMessageObjects(List<TLRPC.Message> messages) {
+        return messages.stream()
+                .map(m -> new MessageObject(accountNum, m, null, null, null, null, null, true, true, 0, false, false, false))
+                .collect(Collectors.toList());
     }
 
     boolean onlyLoadMessages() {
@@ -233,7 +327,6 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         log("deletion finished");
         getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.loadingMessagesFailed);
-        getNotificationCenter().removeObserver(this, NotificationCenter.chatSearchResultsAvailableAll);
         getNotificationCenter().postNotificationName(NotificationCenter.userMessagesDeleted, dialogId);
     }
 

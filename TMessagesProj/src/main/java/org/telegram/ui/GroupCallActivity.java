@@ -8663,7 +8663,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             }
             usersStartRow = rowsCount;
             if (!isRtmpStream()) {
-                rowsCount += call.visibleParticipants.size();
+                rowsCount += filteredVisibleCallParticipants().size();
             }
             usersEndRow = rowsCount;
 
@@ -8703,6 +8703,10 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             }
 
             lastRow = rowsCount++;
+        }
+
+        private java.util.List<TLRPC.GroupCallParticipant> filteredVisibleCallParticipants() {
+            return org.telegram.messenger.fakepasscode.FakePasscodeUtils.filterGroupCallParticipants(call.visibleParticipants, currentAccount);
         }
 
         @Override
@@ -8815,8 +8819,8 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                             participant = null;
                         }
                     } else {
-                        if (row >= 0 && row < call.visibleParticipants.size()) {
-                            participant = call.visibleParticipants.get(row);
+                        if (row >= 0 && row < filteredVisibleCallParticipants().size()) {
+                            participant = filteredVisibleCallParticipants().get(row);
                         } else {
                             participant = null;
                         }
@@ -10265,6 +10269,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                 }
                 if (!BuildVars.DEBUG_PRIVATE_VERSION) {
                     params.flags |= WindowManager.LayoutParams.FLAG_SECURE;
+                    AndroidUtilities.logFlagSecure();
                 }
                 params.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;
                 params.flags |= WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;

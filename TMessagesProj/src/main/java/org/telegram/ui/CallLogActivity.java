@@ -1024,7 +1024,7 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 								}
 							}
 						} else {
-							if (currentRow != null && !calls.contains(currentRow)) {
+							if (currentRow != null && !calls.contains(currentRow) && currentRow.users.stream().noneMatch(user -> FakePasscodeUtils.isHideChat(user.id, currentAccount))) {
 								calls.add(currentRow);
 							}
 							final CallLogRow row = new CallLogRow();

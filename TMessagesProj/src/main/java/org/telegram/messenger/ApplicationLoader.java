@@ -156,6 +156,10 @@ public class ApplicationLoader extends Application {
         return applicationLoaderInstance.isBeta();
     }
 
+    public static boolean isAndroidTestEnvironment() {
+        return applicationLoaderInstance.isAndroidTestEnv();
+    }
+
     protected boolean isHuaweiBuild() {
         return false;
     }
@@ -178,6 +182,10 @@ public class ApplicationLoader extends Application {
     }
 
     protected boolean isBeta() {
+        return false;
+    }
+
+    protected boolean isAndroidTestEnv() {
         return false;
     }
 
@@ -258,7 +266,7 @@ public class ApplicationLoader extends Application {
         SharedConfig.loadConfig();
         SharedPrefsHelper.init(applicationContext);
         checkFiledCopiedFromOldTelegram();
-        if (SharedConfig.saveLogcatAfterRestart) {
+        if (org.telegram.messenger.partisan.settings.TesterSettings.saveLogcatAfterRestart.get()) {
             saveLogcatFile();
         }
         RemoveAfterReadingMessages.runChecker();

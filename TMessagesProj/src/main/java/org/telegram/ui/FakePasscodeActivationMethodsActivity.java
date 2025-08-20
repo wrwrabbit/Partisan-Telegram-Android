@@ -21,6 +21,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -245,8 +246,13 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
         builder.setTitle(LocaleController.getString(R.string.TimerActivationDialogTitle));
         final NumberPicker numberPicker = new NumberPicker(getParentActivity());
-        final List<Integer> durations = Arrays.asList(null, 1, 60, 5 * 60, 15 * 60, 30 * 60, 60 * 60,
-                2 * 60 * 60, 4 * 60 * 60, 6 * 60 * 60, 8 * 60 * 60, 10 * 60 * 60, 12 * 60 * 60, 16 * 60 * 60, 24 * 60 * 60);
+        final List<Integer> durations = new ArrayList<>(Arrays.asList(null, 1, 60, 5 * 60, 15 * 60, 30 * 60, 60 * 60,
+                2 * 60 * 60, 4 * 60 * 60, 6 * 60 * 60, 8 * 60 * 60, 10 * 60 * 60, 12 * 60 * 60, 16 * 60 * 60, 24 * 60 * 60));
+        if (TesterSettings.moreTimerValues.get()) {
+            for (int seconds = 50; seconds > 0; seconds -= 10) {
+                durations.add(2, seconds);
+            }
+        }
         numberPicker.setMinValue(0);
         numberPicker.setMaxValue(durations.size() - 1);
         int index = durations.indexOf(fakePasscode.activateByTimerTime);
