@@ -982,6 +982,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         }
         if (!SharedConfig.forceAllowScreenshots) {
             windowLayoutParams.flags |= WindowManager.LayoutParams.FLAG_SECURE;
+            AndroidUtilities.logFlagSecure();
         }
         centerImage.setParentView(containerView);
         centerImage.setForceCrossfade(true);
