@@ -18,8 +18,8 @@ import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupInnerChatStarter;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
@@ -113,7 +113,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
                 statusTextView.setText(LocaleController.formatUserStatus(currentAccount, user));
             }
         } else {
-            if (SharedConfig.detailedEncryptedGroupMemberStatus) {
+            if (TesterSettings.detailedEncryptedGroupMemberStatus.get()) {
                 statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
                 statusTextView.setText(innerChat.getState().toString());
             } else {

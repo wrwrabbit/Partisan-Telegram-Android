@@ -25,6 +25,10 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.settings.BooleanSetting;
+import org.telegram.messenger.partisan.settings.FloatSetting;
+import org.telegram.messenger.partisan.settings.StringSetting;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -56,82 +60,500 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class TesterSettingsActivity extends BaseFragment {
 
-    private static class SimpleData {
-        public String name;
-        public Supplier<String> getValue;
+    private enum ViewTypes {
+        TOGGLE,
+        BUTTON,
+        HEADER,
+        SEEK_BAR,
+    };
 
-        public SimpleData(String name, Supplier<String> getValue) {
-            this.name = name;
+    private static abstract class Item {
+        private int position = -1;
+        private final int viewType;
+        protected final BaseFragment fragment;
+        private Supplier<Boolean> condition = null;
+
+        protected Item(BaseFragment fragment, int viewType) {
+            this.fragment = fragment;
+            this.viewType = viewType;
+        }
+
+        public void setPosition(int position) {
+            this.position = position;
+        }
+
+        public boolean positionMatch(int targetPosition) {
+            return position == targetPosition;
+        }
+
+        public int getViewType() {
+            return viewType;
+        }
+
+        public Item addCondition(Supplier<Boolean> condition) {
+            this.condition = condition;
+            return this;
+        }
+
+        public boolean needAddRow() {
+            if (condition != null) {
+                return condition.get();
+            }
+            return true;
+        }
+
+        public abstract void onBindViewHolder(RecyclerView.ViewHolder holder, int position);
+        public abstract void onClick(View view);
+        public abstract boolean enabled();
+    }
+
+    private static class ToggleItem extends Item {
+        private final String text;
+        private final Supplier<Boolean> getValue;
+        private final Consumer<Boolean> setValue;
+
+        public ToggleItem(BaseFragment fragment, String text, BooleanSetting booleanSetting) {
+            this(fragment, text, booleanSetting::get, booleanSetting::set);
+        }
+
+        public ToggleItem(BaseFragment fragment, String text, Supplier<Boolean> getValue, Consumer<Boolean> setValue) {
+            super(fragment, ViewTypes.TOGGLE.ordinal());
+            this.text = text;
             this.getValue = getValue;
+            this.setValue = setValue;
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            ((TextCheckCell) holder.itemView).setTextAndCheck(text, getValue.get(), true);
+        }
+
+        @Override
+        public void onClick(View view) {
+            setValue.accept(!getValue.get());
+            ((TextCheckCell) view).setChecked(getValue.get());
+        }
+
+        @Override
+        public boolean enabled() {
+            return true;
         }
     }
 
-    SimpleData[] simpleDataArray = {
-            new SimpleData("Dialogs Count (all type)", () ->
-                    getAllDialogs().size() + (!isDialogEndReached() ? " (not all)" : "")),
-            new SimpleData("Channel Count", () ->
-                    getAllDialogs().stream().filter(d -> ChatObject.isChannelAndNotMegaGroup(-d.id, currentAccount)).count()
-                            + (!isDialogEndReached() ? " (not all)" : "")),
-            new SimpleData("Chat (Groups) Count", () ->
-                    getAllDialogs().stream().filter(d -> d.id < 0 && !ChatObject.isChannelAndNotMegaGroup(-d.id, currentAccount)).count()
-                            + (!isDialogEndReached() ? " (not all)" : "")),
-            new SimpleData("User Chat Count", () ->
-                    getAllDialogs().stream().filter(d -> d.id > 0).count()
-                            + (!isDialogEndReached() ? " (not all)" : "")),
-            new SimpleData("Sec Group Flood Wait", () -> "" + EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining()),
+    private static class ButtonItem extends Item {
+        private final String text;
+        private final Runnable onClick;
+
+        public ButtonItem(BaseFragment fragment, String text, Runnable onClick) {
+            super(fragment, ViewTypes.BUTTON.ordinal());
+            this.text = text;
+            this.onClick = onClick;
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            ((TextSettingsCell) holder.itemView).setText(text, true);
+        }
+
+        @Override
+        public void onClick(View view) {
+            onClick.run();
+        }
+
+        @Override
+        public boolean enabled() {
+            return true;
+        }
+    }
+
+    private static class DataItem extends Item {
+        private final String text;
+        private final Supplier<String> getValue;
+        private final Runnable onClick;
+
+        public DataItem(BaseFragment fragment, String text, Supplier<String> getValue) {
+            this(fragment, text, getValue, null);
+        }
+
+        public DataItem(BaseFragment fragment, String text, Supplier<String> getValue, Runnable onClick) {
+            super(fragment, ViewTypes.BUTTON.ordinal());
+            this.text = text;
+            this.getValue = getValue;
+            this.onClick = onClick;
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            ((TextSettingsCell) holder.itemView).setTextAndValue(text, getValue.get(), true);
+        }
+
+        @Override
+        public void onClick(View view) {
+            if (onClick != null) {
+                onClick.run();
+            }
+        }
+
+        @Override
+        public boolean enabled() {
+            return onClick != null;
+        }
+    }
+
+    private static class EditableDataItem extends Item {
+        private final String text;
+        private final Supplier<String> getValue;
+        private final Consumer<String> setValue;
+        private final Supplier<String> getCellValue;
+        private boolean multiline = false;
+
+        public EditableDataItem(BaseFragment fragment, String text, StringSetting setting) {
+            this(fragment, text, setting::get, setting::set);
+        }
+
+        public EditableDataItem(BaseFragment fragment, String text, Supplier<String> getValue, Consumer<String> setValue) {
+            this(fragment, text, getValue, setValue, getValue);
+        }
+
+        public EditableDataItem(BaseFragment fragment, String text, Supplier<String> getValue, Consumer<String> setValue, Supplier<String> getCellValue) {
+            super(fragment, ViewTypes.BUTTON.ordinal());
+            this.text = text;
+            this.getValue = getValue;
+            this.setValue = setValue;
+            this.getCellValue = getCellValue;
+        }
+
+        public EditableDataItem setMultiline() {
+            this.multiline = true;
+            return this;
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            ((TextSettingsCell) holder.itemView).setTextAndValue(text, getCellValue.get(), true);
+        }
+
+        @Override
+        public void onClick(View view) {
+            DialogTemplate template = new DialogTemplate();
+            template.type = DialogType.EDIT;
+            template.title = text;
+            String value = getValue.get();
+            template.addEditTemplate(value, text, !multiline);
+            TextSettingsCell cell = (TextSettingsCell) view;
+            template.positiveListener = views -> {
+                setValue.accept(((EditTextCaption)views.get(0)).getText().toString());
+                cell.setTextAndValue(text, getCellValue.get(), true);
+            };
+            template.negativeListener = (dlg, whichButton) -> {
+                setValue.accept("");
+                cell.setTextAndValue(text, getCellValue.get(), true);
+            };
+            AlertDialog dialog = FakePasscodeDialogBuilder.build(fragment.getParentActivity(), template);
+            fragment.showDialog(dialog);
+        }
+
+        @Override
+        public boolean enabled() {
+            return true;
+        }
+    }
+
+    private static class HeaderItem extends Item {
+        private final String text;
+
+        public HeaderItem(BaseFragment fragment, String text) {
+            super(fragment, ViewTypes.HEADER.ordinal());
+            this.text = text;
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            ((HeaderCell) holder.itemView).setText(text);
+        }
+
+        @Override
+        public void onClick(View view) {}
+
+        @Override
+        public boolean enabled() {
+            return false;
+        }
+    }
+
+    private static class SeekBarItem extends Item {
+        private final Supplier<Float> getValue;
+        private final Consumer<Float> setValue;
+
+        public SeekBarItem(BaseFragment fragment, FloatSetting setting) {
+            this(fragment, setting::get, setting::set);
+        }
+
+        public SeekBarItem(BaseFragment fragment, Supplier<Float> getValue, Consumer<Float> setValue) {
+            super(fragment, ViewTypes.SEEK_BAR.ordinal());
+            this.getValue = getValue;
+            this.setValue = setValue;
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
+            seekBarCell.setValues(generateValues().toArray(), getValue.get());
+            seekBarCell.setDelegate(obj -> setValue.accept((float)obj));
+            seekBarCell.invalidate();
+        }
+
+        private List<Object> generateValues() {
+            List<Object> values = new ArrayList<>();
+            for (float value = 0.2f; value <= 2.01f; value += 0.025f) {
+                if (Math.abs(value - getValue.get()) < 0.01f) {
+                    values.add(getValue.get());
+                } else if (Math.abs(value - 1.0f) < 0.01f) {
+                    values.add(1.0f);
+                } else {
+                    values.add(value);
+                }
+            }
+            return values;
+        }
+
+        @Override
+        public void onClick(View view) {}
+
+        @Override
+        public boolean enabled() {
+            return true;
+        }
+    }
+
+
+
+    Item[] items = {
+            new ToggleItem(this, "Show terminate sessions warning",
+                    () -> SharedConfig.showSessionsTerminateActionWarning,
+                    value -> SharedConfig.showSessionsTerminateActionWarning = value
+            ),
+            new EditableDataItem(this, "Update Channel Id",
+                    () -> TesterSettings.updateChannelIdOverride.get() != 0 ? Long.toString(TesterSettings.updateChannelIdOverride.get()) : "",
+                    value -> TesterSettings.updateChannelIdOverride.set(Long.parseLong(value))
+            ),
+            new EditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
+            new ToggleItem(this, "Show plain backup", TesterSettings.showPlainBackup),
+            new ToggleItem(this, "Disable Premium", TesterSettings.premiumDisabled),
+            new DataItem(this, "Dialogs Count (all type)",
+                    createDialogsCountFormatter(did -> true)
+            ),
+            new DataItem(this, "Channel Count",
+                    createDialogsCountFormatter(did -> ChatObject.isChannelAndNotMegaGroup(-did, currentAccount))
+            ),
+            new DataItem(this, "Chat (Groups) Count",
+                    createDialogsCountFormatter(did -> did < 0 && !ChatObject.isChannelAndNotMegaGroup(-did, currentAccount))
+            ),
+            new DataItem(this, "User Chat Count",
+                    createDialogsCountFormatter(did -> did > 0)
+            ),
+            new DataItem(this, "Sec Group Flood Wait",
+                    () -> "" + EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining()
+            ),
+            new ToggleItem(this, "Show hide dialog is not safe warning",
+                    () -> SharedConfig.showHideDialogIsNotSafeWarning,
+                    value -> SharedConfig.showHideDialogIsNotSafeWarning = value
+            ),
+            new EditableDataItem(this, "Phone Override", TesterSettings.phoneOverride)
+                    .addCondition(() -> SharedConfig.activatedTesterSettingType >= 2),
+            new ButtonItem(this, "Reset Security Issues", () -> {
+                setSecurityIssues(new HashSet<>());
+                SecurityChecker.checkSecurityIssuesAndSave(getParentActivity(), getCurrentAccount(), true);
+                Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
+            }),
+            new ButtonItem(this, "Activate All Security Issues", () -> {
+                setSecurityIssues(new HashSet<>(Arrays.asList(SecurityIssue.values())));
+                Toast.makeText(getParentActivity(), "Activated", Toast.LENGTH_SHORT).show();
+            }),
+            new EditableDataItem(this, "Saved Channels",
+                    this::getSavedChannelsValue,
+                    this::setSavedChannels,
+                    ()  -> Integer.toString(getUserConfig().savedChannels.size())
+            ).setMultiline(),
+            new ButtonItem(this, "Reset Update", this::resetUpdate),
+            new ButtonItem(this, "Check Verification Updates", this::checkVerificationUpdates),
+            new ButtonItem(this, "Reset Verification Last Check Time", this::resetVerificationLastCheckTime),
+            new ToggleItem(this, "Force allow screenshots", TesterSettings.forceAllowScreenshots)
+                    .addCondition(() -> SharedConfig.activatedTesterSettingType >= 2),
+            new ToggleItem(this, "Save logcat after restart", TesterSettings.saveLogcatAfterRestart),
+            new ToggleItem(this, "Show sec. chats from sec. groups", TesterSettings.showEncryptedChatsFromEncryptedGroups),
+            new ToggleItem(this, "Detailed Secret Group Member Status", TesterSettings.detailedEncryptedGroupMemberStatus),
+            new DataItem(this, "Memory DB size",
+                    () -> getMemoryDbSize() != null ? AndroidUtilities.formatFileSize(getMemoryDbSize()) : "error",
+                    this::showMemoryDialog
+            ).addCondition(() -> getMessagesStorage().fileProtectionEnabled()),
+            new DataItem(this, "Account num", () -> Integer.toString(currentAccount)),
+            new ToggleItem(this, "Clear logs with cache", TesterSettings.clearLogsWithCache),
+            new ToggleItem(this, "Force search during deletion", TesterSettings.forceSearchDuringDeletion),
+            new HeaderItem(this, "Pitch Factor"),
+            new SeekBarItem(this, TesterSettings.pitchFactor),
+            new HeaderItem(this, "Time Stretch Factor"),
+            new SeekBarItem(this, TesterSettings.timeStretchFactor),
+            new EditableDataItem(this, "Spectrum Distortion Params", TesterSettings.spectrumDistorterParams),
+            new EditableDataItem(this, "Time Distortion Params", TesterSettings.timeDistortionParams),
+            new HeaderItem(this, "World F0 Shift"),
+            new SeekBarItem(this, TesterSettings.f0Shift),
+            new HeaderItem(this, "World Formant Ratio"),
+            new SeekBarItem(this, TesterSettings.formantRatio),
+            new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
     };
+
+    private Supplier<String> createDialogsCountFormatter(Predicate<Long> condition) {
+        return () -> {
+            long count = getAllDialogs().stream().filter(d -> condition.test(d.id)).count();
+            if (isDialogEndReached()) {
+                return Long.toString(count);
+            } else {
+                return count + "(not all)";
+            }
+        };
+    }
+
+    private boolean isDialogEndReached() {
+        MessagesController controller = getMessagesController();
+        return controller.isDialogsEndReached(0) && controller.isServerDialogsEndReached(0)
+                && (!hasArchive() || controller.isDialogsEndReached(1) && controller.isServerDialogsEndReached(1));
+    }
+
+    private boolean hasArchive() {
+        MessagesController controller = MessagesController.getInstance(currentAccount);
+        if (controller.dialogs_dict.get(DialogObject.makeFolderDialogId(1)) == null) {
+            return false;
+        }
+        List<TLRPC.Dialog> dialogs = controller.getDialogs(1);
+        return dialogs != null && !dialogs.isEmpty();
+    }
+
+    private void setSecurityIssues(Set<SecurityIssue> issues) {
+        SharedConfig.ignoredSecurityIssues = new HashSet<>();
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            UserConfig config = UserConfig.getInstance(a);
+            if (!config.isClientActivated()) {
+                continue;
+            }
+            config.currentSecurityIssues = issues;
+            config.ignoredSecurityIssues = new HashSet<>();
+            config.lastSecuritySuggestionsShow = 0;
+            config.showSecuritySuggestions = !issues.isEmpty();
+            config.saveConfig(false);
+        }
+    }
+
+    private String getSavedChannelsValue() {
+        return getUserConfig().savedChannels.stream().reduce("", (acc, name) -> {
+            String result = acc;
+            if (!acc.isEmpty()) {
+                result += "\n";
+            }
+            if (getUserConfig().pinnedSavedChannels.contains(name)) {
+                result += "*";
+            }
+            result += name;
+            return result;
+        });
+    }
+
+    private void setSavedChannels(String text) {
+        getUserConfig().pinnedSavedChannels = new ArrayList<>();
+        getUserConfig().savedChannels = new HashSet<>();
+        for (String line : text.split("\n")) {
+            String name = line.replace("*", "");
+            if (line.startsWith("*")) {
+                getUserConfig().pinnedSavedChannels.add(name);
+            }
+            getUserConfig().savedChannels.add(name);
+        }
+        getUserConfig().saveConfig(false);
+    }
+
+    private void resetUpdate() {
+        PartisanLog.d("pendingPtgAppUpdate: reset 4");
+        SharedConfig.pendingPtgAppUpdate = null;
+        SharedConfig.saveConfig();
+        Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
+        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
+    }
+
+    private void checkVerificationUpdates() {
+        VerificationUpdatesChecker.checkUpdate(currentAccount, true);
+        Toast.makeText(getParentActivity(), "Check started", Toast.LENGTH_SHORT).show();
+    }
+
+    private void resetVerificationLastCheckTime() {
+        for (VerificationStorage storage : VerificationRepository.getInstance().getStorages()) {
+            VerificationRepository.getInstance().saveNextCheckTime(storage.chatId, 0);
+        }
+        Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
+    }
+
+    private Long getMemoryDbSize() {
+        Long dbSize = null;
+        SQLiteDatabase database = getMessagesStorage().getDatabase();
+        if (database instanceof SQLiteDatabaseWrapper) {
+            SQLiteDatabaseWrapper wrapper = (SQLiteDatabaseWrapper)database;
+            SQLiteDatabase memoryDatabase = wrapper.getMemoryDatabase();
+            try {
+                SQLiteCursor cursor = memoryDatabase.queryFinalized("select page_count * page_size from pragma_page_count(), pragma_page_size()");
+                if (cursor.next()) {
+                    dbSize = cursor.longValue(0);
+                }
+                cursor.dispose();
+            } catch (Exception ignore) {
+            }
+        }
+        return dbSize;
+    }
+
+    private void showMemoryDialog() {
+        List<Pair<String, Long>> tableSizes = getTableSizes();
+        String message = tableSizes.stream()
+                .map(pair -> pair.first + " = " + AndroidUtilities.formatFileSize(pair.second) + "\n")
+                .reduce(String::concat)
+                .orElse("");
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setMessage(message);
+        builder.setTitle(LocaleController.getString(R.string.AppName));
+        builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+        AlertDialog alertDialog = builder.create();
+        showDialog(alertDialog);
+    }
+
+    private List<Pair<String, Long>> getTableSizes() {
+        List<Pair<String, Long>> tableSizes = new ArrayList<>();
+        SQLiteDatabase database = getMessagesStorage().getDatabase();
+        if (database instanceof SQLiteDatabaseWrapper) {
+            SQLiteDatabaseWrapper wrapper = (SQLiteDatabaseWrapper)database;
+            SQLiteDatabase memoryDatabase = wrapper.getMemoryDatabase();
+            try {
+                SQLiteCursor cursor = memoryDatabase.queryFinalized("SELECT name, SUM(pgsize) size FROM \"dbstat\" GROUP BY name ORDER BY size DESC LIMIT 20");
+                while (cursor.next()) {
+                    String name = cursor.stringValue(0);
+                    long size = cursor.longValue(1);
+                    tableSizes.add(new Pair<>(name, size));
+                }
+                cursor.dispose();
+            } catch (Exception e) {
+                PartisanLog.e("Error", e);
+            }
+        }
+        return tableSizes;
+    }
 
     private ListAdapter listAdapter;
     private RecyclerListView listView;
 
     private int rowCount;
-
-    private int sessionTerminateActionWarningRow;
-    private int updateChannelIdRow;
-    private int updateChannelUsernameRow;
-    private int showPlainBackupRow;
-    private int disablePremiumRow;
-    private int simpleDataStartRow;
-    private int simpleDataEndRow;
-    private int hideDialogIsNotSafeWarningRow;
-    private int phoneOverrideRow;
-    private int resetSecurityIssuesRow;
-    private int activateAllSecurityIssuesRow;
-    private int editSavedChannelsRow;
-    private int resetUpdateRow;
-    private int checkVerificationUpdatesRow;
-    private int resetVerificationLastCheckTimeRow;
-    private int forceAllowScreenshotsRow;
-    private int saveLogcatAfterRestartRow;
-    private int showEncryptedChatsFromEncryptedGroupsRow;
-    private int detailedEncryptedGroupMemberStatusRow;
-    private int dbSizeRow;
-    private int accountNumRow;
-    private int clearLogsWithCacheRow;
-    private int forceSearchDuringDeletionRow;
-    private int pitchFactorHeaderRow;
-    private int pitchFactorRow;
-    private int timeStretchFactorHeaderRow;
-    private int timeStretchFactorRow;
-    private int spectrumDistionParamsRow;
-    private int timeDistortionParamsRow;
-    private int f0ShiftHeaderRow;
-    private int f0ShiftRow;
-    private int formantRatioHeaderRow;
-    private int formantRatioRow;
-
-    public static boolean showPlainBackup;
-    public static boolean forceSearchDuringDeletion;
-    public static double pitchFactor = 1.0;
-    public static double timeStretchFactor = 1.0;
-    public static String spectrumDistorterParams = "";
-    public static String timeDistortionParams = "";
-    public static double f0Shift = 1.0;
-    public static double formantRatio = 1.0;
 
     public TesterSettingsActivity() {
         super();
@@ -176,219 +598,11 @@ public class TesterSettingsActivity extends BaseFragment {
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listView.setAdapter(listAdapter = new ListAdapter(context));
         listView.setOnItemClickListener((view, position) -> {
-            if (position == sessionTerminateActionWarningRow) {
-                SharedConfig.showSessionsTerminateActionWarning = !SharedConfig.showSessionsTerminateActionWarning;
-                SharedConfig.saveConfig();
-                ((TextCheckCell) view).setChecked(SharedConfig.showSessionsTerminateActionWarning);
-            } else if (position == updateChannelIdRow) {
-                DialogTemplate template = new DialogTemplate();
-                template.type = DialogType.EDIT;
-                String title = "Update Channel Id";
-                template.title = title;
-                long id = SharedConfig.updateChannelIdOverride;
-                template.addNumberEditTemplate(id != 0 ? Long.toString(id) : "", "Channel Id", true);
-                template.positiveListener = views -> {
-                    long newId = Long.parseLong(((EditTextCaption)views.get(0)).getText().toString());
-                    SharedConfig.updateChannelIdOverride = newId;
-                    SharedConfig.saveConfig();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, newId != 0 ? Long.toString(newId) : "", true);
-                };
-                template.negativeListener = (dlg, whichButton) -> {
-                    SharedConfig.updateChannelIdOverride = 0;
-                    SharedConfig.saveConfig();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, "", true);
-                };
-                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
-                showDialog(dialog);
-            } else if (position == updateChannelUsernameRow) {
-                DialogTemplate template = new DialogTemplate();
-                template.type = DialogType.EDIT;
-                String title = "Update Channel Username";
-                template.title = title;
-                String value = SharedConfig.updateChannelUsernameOverride;
-                template.addEditTemplate(value, "Channel Username", true);
-                template.positiveListener = views -> {
-                    String username = ((EditTextCaption)views.get(0)).getText().toString();
-                    username = Utils.removeUsernamePrefixed(username);
-                    SharedConfig.updateChannelUsernameOverride = username;
-                    SharedConfig.saveConfig();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, username, false);
-                };
-                template.negativeListener = (dlg, whichButton) -> {
-                    SharedConfig.updateChannelUsernameOverride = "";
-                    SharedConfig.saveConfig();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, "", false);
-                };
-                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
-                showDialog(dialog);
-            } else if (position == showPlainBackupRow) {
-                showPlainBackup = !showPlainBackup;
-                ((TextCheckCell) view).setChecked(showPlainBackup);
-            } else if (position == disablePremiumRow) {
-                SharedConfig.premiumDisabled = !SharedConfig.premiumDisabled;
-                SharedConfig.saveConfig();
-                ((TextCheckCell) view).setChecked(SharedConfig.premiumDisabled);
-            } else if (position == hideDialogIsNotSafeWarningRow) {
-                SharedConfig.showHideDialogIsNotSafeWarning = !SharedConfig.showHideDialogIsNotSafeWarning;
-                SharedConfig.saveConfig();
-                ((TextCheckCell) view).setChecked(SharedConfig.showHideDialogIsNotSafeWarning);
-            } else if (position == phoneOverrideRow) {
-                DialogTemplate template = new DialogTemplate();
-                template.type = DialogType.EDIT;
-                String title = "Phone Override";
-                template.title = title;
-                String value = SharedConfig.phoneOverride;
-                template.addEditTemplate(value, "Phone Override", true);
-                template.positiveListener = views -> {
-                    String phoneOverride = ((EditTextCaption)views.get(0)).getText().toString();
-                    SharedConfig.phoneOverride = phoneOverride;
-                    SharedConfig.saveConfig();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, phoneOverride, true);
-                };
-                template.negativeListener = (dlg, whichButton) -> {
-                    SharedConfig.phoneOverride = "";
-                    SharedConfig.saveConfig();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, "", true);
-                };
-                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
-                showDialog(dialog);
-            } else if (position == resetSecurityIssuesRow) {
-                setSecurityIssues(new HashSet<>());
-                SecurityChecker.checkSecurityIssuesAndSave(getParentActivity(), getCurrentAccount(), true);
-                Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
-            } else if (position == activateAllSecurityIssuesRow) {
-                setSecurityIssues(new HashSet<>(Arrays.asList(SecurityIssue.values())));
-                Toast.makeText(getParentActivity(), "Activated", Toast.LENGTH_SHORT).show();
-            } else if (position == editSavedChannelsRow) {
-                DialogTemplate template = new DialogTemplate();
-                template.type = DialogType.EDIT;
-                String title = "Saved Channels";
-                template.title = title;
-                String value = getUserConfig().savedChannels.stream().reduce("", (acc, name) -> {
-                    String result = acc;
-                    if (!acc.isEmpty()) {
-                        result += "\n";
-                    }
-                    if (getUserConfig().pinnedSavedChannels.contains(name)) {
-                        result += "*";
-                    }
-                    result += name;
-                    return result;
-                });
-                template.addEditTemplate(value, "Saved Channels", false);
-                template.positiveListener = views -> {
-                    String text = ((EditTextCaption)views.get(0)).getText().toString();
-                    getUserConfig().pinnedSavedChannels = new ArrayList<>();
-                    getUserConfig().savedChannels = new HashSet<>();
-                    for (String line : text.split("\n")) {
-                        String name = line.replace("*", "");
-                        if (line.startsWith("*")) {
-                            getUserConfig().pinnedSavedChannels.add(name);
-                        }
-                        getUserConfig().savedChannels.add(name);
-                    }
-                    getUserConfig().saveConfig(false);
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, Integer.toString(getUserConfig().savedChannels.size()), true);
-                };
-                template.negativeListener = (dlg, whichButton) -> {
-                    getUserConfig().pinnedSavedChannels = new ArrayList<>();
-                    getUserConfig().savedChannels = new HashSet<>();
-                    getUserConfig().saveConfig(false);
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, "0", true);
-                };
-                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
-                showDialog(dialog);
-            } else if (position == resetUpdateRow) {
-                PartisanLog.d("pendingPtgAppUpdate: reset 4");
-                SharedConfig.pendingPtgAppUpdate = null;
-                SharedConfig.saveConfig();
-                Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
-                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
-            } else if (position == checkVerificationUpdatesRow) {
-                VerificationUpdatesChecker.checkUpdate(currentAccount, true);
-                Toast.makeText(getParentActivity(), "Check started", Toast.LENGTH_SHORT).show();
-            } else if (position == resetVerificationLastCheckTimeRow) {
-                for (VerificationStorage storage : VerificationRepository.getInstance().getStorages()) {
-                    VerificationRepository.getInstance().saveNextCheckTime(storage.chatId, 0);
+            for (Item item : items) {
+                if (item.positionMatch(position)) {
+                    item.onClick(view);
+                    break;
                 }
-                Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
-            } else if (position == forceAllowScreenshotsRow) {
-                SharedConfig.forceAllowScreenshots = !SharedConfig.forceAllowScreenshots;
-                SharedConfig.saveConfig();
-                ((TextCheckCell) view).setChecked(SharedConfig.forceAllowScreenshots);
-            } else if (position == saveLogcatAfterRestartRow) {
-                SharedConfig.saveLogcatAfterRestart = !SharedConfig.saveLogcatAfterRestart;
-                SharedConfig.saveConfig();
-                ((TextCheckCell) view).setChecked(SharedConfig.saveLogcatAfterRestart);
-            } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
-                SharedConfig.toggleShowEncryptedChatsFromEncryptedGroups();
-                ((TextCheckCell) view).setChecked(SharedConfig.showEncryptedChatsFromEncryptedGroups);
-            } else if (position == detailedEncryptedGroupMemberStatusRow) {
-                SharedConfig.toggleDetailedEncryptedGroupMemberStatus();
-                ((TextCheckCell) view).setChecked(SharedConfig.detailedEncryptedGroupMemberStatus);
-            } else if (position == dbSizeRow) {
-                List<Pair<String, Long>> tableSizes = getTableSizes();
-                String message = tableSizes.stream()
-                        .map(pair -> pair.first + " = " + AndroidUtilities.formatFileSize(pair.second) + "\n")
-                        .reduce(String::concat)
-                        .orElse("");
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setMessage(message);
-                builder.setTitle(LocaleController.getString(R.string.AppName));
-                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
-                AlertDialog alertDialog = builder.create();
-                showDialog(alertDialog);
-            } else if (position == clearLogsWithCacheRow) {
-                SharedConfig.toggleClearLogsWithCache();
-                ((TextCheckCell) view).setChecked(SharedConfig.clearLogsWithCache);
-            } else if (position == forceSearchDuringDeletionRow) {
-                forceSearchDuringDeletion = !forceSearchDuringDeletion;
-                ((TextCheckCell) view).setChecked(forceSearchDuringDeletion);
-            } else if (position == spectrumDistionParamsRow) {
-                DialogTemplate template = new DialogTemplate();
-                template.type = DialogType.EDIT;
-                String title = "Spectrum Distortion Params";
-                template.title = title;
-                template.addEditTemplate(spectrumDistorterParams, title, true);
-                template.positiveListener = views -> {
-                    spectrumDistorterParams = ((EditTextCaption)views.get(0)).getText().toString();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, spectrumDistorterParams, true);
-                };
-                template.negativeListener = (dlg, whichButton) -> {
-                    spectrumDistorterParams = "";
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, "", true);
-                };
-                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
-                showDialog(dialog);
-            } else if (position == timeDistortionParamsRow) {
-                DialogTemplate template = new DialogTemplate();
-                template.type = DialogType.EDIT;
-                String title = "Time Distortion Params";
-                template.title = title;
-                template.addEditTemplate(timeDistortionParams, title, true);
-                template.positiveListener = views -> {
-                    timeDistortionParams = ((EditTextCaption)views.get(0)).getText().toString();
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, timeDistortionParams, true);
-                };
-                template.negativeListener = (dlg, whichButton) -> {
-                    timeDistortionParams = "";
-                    TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(title, "", true);
-                };
-                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
-                showDialog(dialog);
             }
         });
 
@@ -405,51 +619,11 @@ public class TesterSettingsActivity extends BaseFragment {
 
     private void updateRows() {
         rowCount = 0;
-
-        phoneOverrideRow = -1;
-        forceAllowScreenshotsRow = -1;
-        dbSizeRow = -1;
-
-        sessionTerminateActionWarningRow = rowCount++;
-        updateChannelIdRow = rowCount++;
-        updateChannelUsernameRow = rowCount++;
-        showPlainBackupRow = rowCount++;
-        disablePremiumRow = rowCount++;
-        simpleDataStartRow = rowCount;
-        rowCount += simpleDataArray.length;
-        simpleDataEndRow = rowCount;
-        hideDialogIsNotSafeWarningRow = rowCount++;
-        if (SharedConfig.activatedTesterSettingType >= 2) {
-            phoneOverrideRow = rowCount++;
+        for (Item item : items) {
+            if (item.needAddRow()) {
+                item.setPosition(rowCount++);
+            }
         }
-        resetSecurityIssuesRow = rowCount++;
-        activateAllSecurityIssuesRow = rowCount++;
-        editSavedChannelsRow = rowCount++;
-        resetUpdateRow = rowCount++;
-        checkVerificationUpdatesRow = rowCount++;
-        resetVerificationLastCheckTimeRow = rowCount++;
-        if (SharedConfig.activatedTesterSettingType >= 2) {
-            forceAllowScreenshotsRow = rowCount++;
-        }
-        saveLogcatAfterRestartRow = rowCount++;
-        showEncryptedChatsFromEncryptedGroupsRow = rowCount++;
-        detailedEncryptedGroupMemberStatusRow = rowCount++;
-        if (getMessagesStorage().fileProtectionEnabled()) {
-            dbSizeRow = rowCount++;
-        }
-        accountNumRow = rowCount++;
-        clearLogsWithCacheRow = rowCount++;
-        forceSearchDuringDeletionRow = rowCount++;
-        pitchFactorHeaderRow = rowCount++;
-        pitchFactorRow = rowCount++;
-        timeStretchFactorHeaderRow = rowCount++;
-        timeStretchFactorRow = rowCount++;
-        spectrumDistionParamsRow = rowCount++;
-        timeDistortionParamsRow = rowCount++;
-        f0ShiftHeaderRow = rowCount++;
-        f0ShiftRow = rowCount++;
-        formantRatioHeaderRow = rowCount++;
-        formantRatioRow = rowCount++;
     }
 
     @Override
@@ -467,92 +641,13 @@ public class TesterSettingsActivity extends BaseFragment {
         }
     }
 
-    private void makeAndSendZip() {
-        AlertDialog[] progressDialog = new AlertDialog[1];
-        AndroidUtilities.runOnUIThread(() -> {
-            progressDialog[0] = new AlertDialog(getParentActivity(), 3);
-            progressDialog[0].setCanCancel(false);
-            progressDialog[0].showDelayed(300);
-        });
-        progressDialog[0].dismiss();
-    }
-
-    private boolean isDialogEndReached() {
-        MessagesController controller = getMessagesController();
-        return controller.isDialogsEndReached(0) && controller.isServerDialogsEndReached(0)
-                && (!hasArchive() || controller.isDialogsEndReached(1) && controller.isServerDialogsEndReached(1));
-    }
-
-    private boolean hasArchive() {
-        MessagesController controller = MessagesController.getInstance(currentAccount);
-        if (controller.dialogs_dict.get(DialogObject.makeFolderDialogId(1)) == null) {
-            return false;
-        }
-        List<TLRPC.Dialog> dialogs = controller.getDialogs(1);
-        return dialogs != null && !dialogs.isEmpty();
-    }
-
     private List<TLRPC.Dialog> getAllDialogs() {
         return Utils.getAllDialogs(currentAccount);
     }
 
-    private void setSecurityIssues(Set<SecurityIssue> issues) {
-        SharedConfig.ignoredSecurityIssues = new HashSet<>();
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            UserConfig config = UserConfig.getInstance(a);
-            if (!config.isClientActivated()) {
-                continue;
-            }
-            config.currentSecurityIssues = issues;
-            config.ignoredSecurityIssues = new HashSet<>();
-            config.lastSecuritySuggestionsShow = 0;
-            config.showSecuritySuggestions = !issues.isEmpty();
-            config.saveConfig(false);
-        }
-    }
-
-    private Long getMemoryDbSize() {
-        Long dbSize = null;
-        SQLiteDatabase database = getMessagesStorage().getDatabase();
-        if (database instanceof SQLiteDatabaseWrapper) {
-            SQLiteDatabaseWrapper wrapper = (SQLiteDatabaseWrapper)database;
-            SQLiteDatabase memoryDatabase = wrapper.getMemoryDatabase();
-            try {
-                SQLiteCursor cursor = memoryDatabase.queryFinalized("select page_count * page_size from pragma_page_count(), pragma_page_size()");
-                if (cursor.next()) {
-                    dbSize = cursor.longValue(0);
-                }
-                cursor.dispose();
-            } catch (Exception ignore) {
-            }
-        }
-        return dbSize;
-    }
-
-    private List<Pair<String, Long>> getTableSizes() {
-        List<Pair<String, Long>> tableSizes = new ArrayList<>();
-        SQLiteDatabase database = getMessagesStorage().getDatabase();
-        if (database instanceof SQLiteDatabaseWrapper) {
-            SQLiteDatabaseWrapper wrapper = (SQLiteDatabaseWrapper)database;
-            SQLiteDatabase memoryDatabase = wrapper.getMemoryDatabase();
-            try {
-                SQLiteCursor cursor = memoryDatabase.queryFinalized("SELECT name, SUM(pgsize) size FROM \"dbstat\" GROUP BY name ORDER BY size DESC LIMIT 20");
-                while (cursor.next()) {
-                    String name = cursor.stringValue(0);
-                    long size = cursor.longValue(1);
-                    tableSizes.add(new Pair<>(name, size));
-                }
-                cursor.dispose();
-            } catch (Exception e) {
-                PartisanLog.e("Error", e);
-            }
-        }
-        return tableSizes;
-    }
-
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
 
-        private Context mContext;
+        private final Context mContext;
 
         public ListAdapter(Context context) {
             mContext = context;
@@ -560,9 +655,10 @@ public class TesterSettingsActivity extends BaseFragment {
 
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
-            int position = holder.getAdapterPosition();
-            if (position >= simpleDataStartRow && position < simpleDataEndRow || holder.getItemViewType() == 2) {
-                return false;
+            for (Item item : items) {
+                if (item.positionMatch(holder.getAdapterPosition())) {
+                    return item.enabled();
+                }
             }
             return true;
         }
@@ -576,162 +672,37 @@ public class TesterSettingsActivity extends BaseFragment {
         @NonNull
         public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view;
-            switch (viewType) {
-                case 0:
-                    view = new TextCheckCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-                    break;
-                case 1:
-                default:
-                    view = new TextSettingsCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-                    break;
-                case 2:
-                    view = new HeaderCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-                    break;
-                case 3:
-                    view = new SeekBarCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-                    break;
+            if (viewType == ViewTypes.TOGGLE.ordinal()) {
+                view = new TextCheckCell(mContext);
+            } else if (viewType == ViewTypes.BUTTON.ordinal()) {
+                view = new TextSettingsCell(mContext);
+            } else if (viewType == ViewTypes.HEADER.ordinal()) {
+                view = new HeaderCell(mContext);
+            } else if (viewType == ViewTypes.SEEK_BAR.ordinal()) {
+                view = new SeekBarCell(mContext);
+            } else {
+                throw new RuntimeException("Unknown view type");
             }
+            view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
             return new RecyclerListView.Holder(view);
         }
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            switch (holder.getItemViewType()) {
-                case 0: {
-                    TextCheckCell textCell = (TextCheckCell) holder.itemView;
-                    if (position == sessionTerminateActionWarningRow) {
-                        textCell.setTextAndCheck("Show terminate sessions warning",
-                                SharedConfig.showSessionsTerminateActionWarning, true);
-                    } else if (position == showPlainBackupRow) {
-                        textCell.setTextAndCheck("Show plain backup", showPlainBackup, true);
-                    } else if (position == disablePremiumRow) {
-                        textCell.setTextAndCheck("Disable Premium", SharedConfig.premiumDisabled, true);
-                    } else if (position == hideDialogIsNotSafeWarningRow) {
-                        textCell.setTextAndCheck("Show hide dialog is not safe warning",
-                                SharedConfig.showHideDialogIsNotSafeWarning, true);
-                    } else if (position == forceAllowScreenshotsRow) {
-                        textCell.setTextAndCheck("Force allow screenshots",
-                                SharedConfig.forceAllowScreenshots, true);
-                    } else if (position == saveLogcatAfterRestartRow) {
-                        textCell.setTextAndCheck("Save logcat after restart",
-                                SharedConfig.saveLogcatAfterRestart, true);
-                    } else if (position == showEncryptedChatsFromEncryptedGroupsRow) {
-                        textCell.setTextAndCheck("Show sec. chats from sec. groups",
-                                SharedConfig.showEncryptedChatsFromEncryptedGroups, true);
-                    } else if (position == detailedEncryptedGroupMemberStatusRow) {
-                        textCell.setTextAndCheck("Detailed Secret Group Member Status",
-                                SharedConfig.detailedEncryptedGroupMemberStatus, true);
-                    } else if (position == clearLogsWithCacheRow) {
-                        textCell.setTextAndCheck("Clear logs with cache",
-                                SharedConfig.clearLogsWithCache, true);
-                    } else if (position == forceSearchDuringDeletionRow) {
-                        textCell.setTextAndCheck("Force search during deletion",
-                                forceSearchDuringDeletion, true);
-                    }
-                    break;
-                } case 1: {
-                    TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
-                    if (position == updateChannelIdRow) {
-                        long id = SharedConfig.updateChannelIdOverride;
-                        textCell.setTextAndValue("Update Channel Id", id != 0 ? Long.toString(id) : "", true);
-                    } else if (position == updateChannelUsernameRow) {
-                        textCell.setTextAndValue("Update Channel Username", SharedConfig.updateChannelUsernameOverride, true);
-                    } else if (simpleDataStartRow <= position && position < simpleDataEndRow) {
-                        SimpleData simpleData = simpleDataArray[position - simpleDataStartRow];
-                        textCell.setTextAndValue(simpleData.name, simpleData.getValue.get(), true);
-                    } else if (position == phoneOverrideRow) {
-                        textCell.setTextAndValue("Phone Override", SharedConfig.phoneOverride, true);
-                    } else if (position == resetSecurityIssuesRow) {
-                        textCell.setText("Reset Security Issues", true);
-                    } else if (position == activateAllSecurityIssuesRow) {
-                        textCell.setText("Activate All Security Issues", true);
-                    } else if (position == editSavedChannelsRow) {
-                        textCell.setTextAndValue("Saved Channels", Integer.toString(getUserConfig().savedChannels.size()), true);
-                    } else if (position == resetUpdateRow) {
-                        textCell.setText("Reset Update", true);
-                    } else if (position == checkVerificationUpdatesRow) {
-                        textCell.setText("Check Verification Updates", true);
-                    } else if (position == resetVerificationLastCheckTimeRow) {
-                        textCell.setText("Reset Verification Last Check Time", true);
-                    } else if (position == dbSizeRow) {
-                        Long databaseSize = getMemoryDbSize();
-                        textCell.setTextAndValue("Memory DB size", databaseSize != null ? AndroidUtilities.formatFileSize(databaseSize) : "error", true);
-                    } else if (position == accountNumRow) {
-                        textCell.setTextAndValue("Account num", Integer.toString(currentAccount), true);
-                    } else if (position == spectrumDistionParamsRow) {
-                        textCell.setTextAndValue("Spectrum Distortion Params", spectrumDistorterParams, true);
-                    } else if (position == timeDistortionParamsRow) {
-                        textCell.setTextAndValue("Time Distortion Params", timeDistortionParams, true);
-                    }
-                    break;
-                } case 2: {
-                    HeaderCell headerCell = (HeaderCell) holder.itemView;
-                    if (position == pitchFactorHeaderRow) {
-                        headerCell.setText("Pitch Factor");
-                    } else if (position == timeStretchFactorHeaderRow) {
-                        headerCell.setText("Time Stretch Factor");
-                    } else if (position == f0ShiftHeaderRow) {
-                        headerCell.setText("World F0 Shift");
-                    } else if (position == formantRatioHeaderRow) {
-                        headerCell.setText("World Formant Ratio");
-                    }
-                    break;
-                } case 3: {
-                    SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
-                    if (position == pitchFactorRow) {
-                        bindSeekBarCell(seekBarCell, pitchFactor, value -> pitchFactor = value);
-                    } else if (position == timeStretchFactorRow) {
-                        bindSeekBarCell(seekBarCell, timeStretchFactor, value -> timeStretchFactor = value);
-                    } else if (position == f0ShiftRow) {
-                        bindSeekBarCell(seekBarCell, f0Shift, value -> f0Shift = value);
-                    } else if (position == formantRatioRow) {
-                        bindSeekBarCell(seekBarCell, formantRatio, value -> formantRatio = value);
-                    }
+            for (Item item : items) {
+                if (item.positionMatch(position)) {
+                    item.onBindViewHolder(holder, position);
                     break;
                 }
             }
-        }
-
-        private void bindSeekBarCell(SeekBarCell seekBarCell, double currentValue, Consumer<Double> onValueChanged) {
-            List<Object> values = new ArrayList<>();
-            for (double value = 0.2; value <= 2.01; value += 0.025) {
-                if (Math.abs(value - currentValue) < 0.01) {
-                    values.add(currentValue);
-                } else {
-                    values.add(value);
-                }
-            }
-            seekBarCell.setValues(values.toArray(), currentValue);
-            seekBarCell.setDelegate(obj -> onValueChanged.accept((double)obj));
-            seekBarCell.invalidate();
         }
 
         @Override
         public int getItemViewType(int position) {
-            if (position == sessionTerminateActionWarningRow || position == showPlainBackupRow
-                    || position == disablePremiumRow || position == hideDialogIsNotSafeWarningRow
-                    || position == forceAllowScreenshotsRow || position == saveLogcatAfterRestartRow
-                    || position == showEncryptedChatsFromEncryptedGroupsRow || position == detailedEncryptedGroupMemberStatusRow
-                    || position == clearLogsWithCacheRow || position == forceSearchDuringDeletionRow) {
-                return 0;
-            } else if (position == updateChannelIdRow || position == updateChannelUsernameRow
-                    || (simpleDataStartRow <= position && position < simpleDataEndRow)
-                    || position == phoneOverrideRow || position == resetSecurityIssuesRow
-                    || position == activateAllSecurityIssuesRow || position == editSavedChannelsRow
-                    || position == resetUpdateRow || position == checkVerificationUpdatesRow
-                    || position == resetVerificationLastCheckTimeRow || position == dbSizeRow
-                    || position == accountNumRow || position == spectrumDistionParamsRow || position == timeDistortionParamsRow) {
-                return 1;
-            } else if (position == pitchFactorHeaderRow || position == timeStretchFactorHeaderRow
-                    || position == f0ShiftHeaderRow || position == formantRatioHeaderRow) {
-                return 2;
-            } else if (position == pitchFactorRow || position == timeStretchFactorRow
-                    || position == f0ShiftRow || position == formantRatioRow) {
-                return 3;
+            for (Item item : items) {
+                if (item.positionMatch(position)) {
+                    return item.getViewType();
+                }
             }
             return 0;
         }

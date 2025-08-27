@@ -2,7 +2,7 @@ package org.telegram.messenger.partisan.voicechange;
 
 import com.google.common.base.Strings;
 
-import org.telegram.ui.TesterSettingsActivity;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,18 +13,18 @@ import java.util.function.BiConsumer;
 public class TesterSettingsParametersProvider implements ParametersProvider {
     @Override
     public double getPitchFactor() {
-        return TesterSettingsActivity.pitchFactor;
+        return TesterSettings.pitchFactor.get();
     }
 
     @Override
     public double getTimeStretchFactor() {
-        return TesterSettingsActivity.timeStretchFactor;
+        return TesterSettings.timeStretchFactor.get();
     }
 
     @Override
     public Map<Integer, Integer> getSpectrumDistortionMap(int sampleRate) {
         Map<Integer, Integer> distortionMap = accumulateDistortionParams(
-                TesterSettingsActivity.spectrumDistorterParams,
+                TesterSettings.spectrumDistorterParams.get(),
                 new HashMap<>(),
                 (map, distortionParts) -> {
                     int fromHz = Integer.parseInt(distortionParts[0]);
@@ -39,7 +39,7 @@ public class TesterSettingsParametersProvider implements ParametersProvider {
     @Override
     public List<TimeDistorter.DistortionInterval> getTimeDistortionList() {
         List<TimeDistorter.DistortionInterval> distortionMap = accumulateDistortionParams(
-                TesterSettingsActivity.timeDistortionParams,
+                TesterSettings.timeDistortionParams.get(),
                 new ArrayList<>(),
                 (list, distortionParts) -> {
                     TimeDistorter.DistortionInterval interval = new TimeDistorter.DistortionInterval();
@@ -74,11 +74,11 @@ public class TesterSettingsParametersProvider implements ParametersProvider {
 
     @Override
     public double getF0Shift() {
-        return TesterSettingsActivity.f0Shift;
+        return TesterSettings.f0Shift.get();
     }
 
     @Override
     public double getFormantRatio() {
-        return TesterSettingsActivity.formantRatio;
+        return TesterSettings.formantRatio.get();
     }
 }

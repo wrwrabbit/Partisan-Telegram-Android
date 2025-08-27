@@ -257,7 +257,7 @@ public class SecretVoicePlayer extends Dialog {
                 WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
         }
-        if (!BuildVars.DEBUG_PRIVATE_VERSION && !SharedConfig.forceAllowScreenshots) {
+        if (!BuildVars.DEBUG_PRIVATE_VERSION && !org.telegram.messenger.partisan.settings.TesterSettings.forceAllowScreenshots.get()) {
             params.flags |= WindowManager.LayoutParams.FLAG_SECURE;
             AndroidUtilities.logFlagSecure();
         }

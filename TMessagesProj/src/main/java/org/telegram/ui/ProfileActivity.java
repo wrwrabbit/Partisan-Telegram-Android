@@ -167,7 +167,6 @@ import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanVersion;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
@@ -6286,7 +6285,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     }
                     Bundle args = new Bundle();
                     EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(currentEncryptedChat);
-                    if (encryptedGroup != null && !SharedConfig.showEncryptedChatsFromEncryptedGroups) {
+                    if (encryptedGroup != null && !org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get()) {
                         args.putInt("enc_group_id", encryptedGroup.getInternalId());
                     } else {
                         args.putLong("user_id", userId);

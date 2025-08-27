@@ -1305,7 +1305,10 @@ public class MessagesStorage extends BaseController {
         }
         mainUnreadCount = pendingMainUnreadCount;
         archiveUnreadCount = pendingArchiveUnreadCount;
-        getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_READ_DIALOG_MESSAGE);
+
+        AndroidUtilities.runOnUIThread(() -> {
+            getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_READ_DIALOG_MESSAGE);
+        });
     }
 
     public void setDialogFlags(long did, long flags) {

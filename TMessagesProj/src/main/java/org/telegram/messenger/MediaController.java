@@ -1032,6 +1032,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         public void run() {
             if (audioRecorder != null) {
                 ByteBuffer buffer;
+                org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger = MediaController.this.voiceChanger;
                 if (!recordBuffers.isEmpty()) {
                     buffer = recordBuffers.get(0);
                     recordBuffers.remove(0);

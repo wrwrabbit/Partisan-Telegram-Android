@@ -43562,7 +43562,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         } else {
             boolean isEncryptedChatFromEncryptedGroup = enc_id != 0 &&
                     getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(enc_id) != null;
-            if (!SharedConfig.showEncryptedChatsFromEncryptedGroups && isEncryptedChatFromEncryptedGroup) {
+            if (!org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get() && isEncryptedChatFromEncryptedGroup) {
                 return false;
             }
         }
