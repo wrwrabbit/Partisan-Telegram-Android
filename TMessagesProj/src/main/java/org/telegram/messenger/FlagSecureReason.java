@@ -3,8 +3,6 @@ package org.telegram.messenger;
 import android.view.Window;
 import android.view.WindowManager;
 
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
-
 import java.util.HashMap;
 
 public class FlagSecureReason {
@@ -67,13 +65,15 @@ public class FlagSecureReason {
         }
 
         if (isSecuredNow(window)) {
-            if (!SharedConfig.forceAllowScreenshots) {
+            if (!org.telegram.messenger.partisan.settings.TesterSettings.forceAllowScreenshots.get()) {
                 window.addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                AndroidUtilities.logFlagSecure();
             } else {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
             }
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+            AndroidUtilities.logFlagSecure();
         }
     }
 

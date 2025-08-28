@@ -42,9 +42,9 @@ import org.json.JSONObject;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
-import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
 import org.telegram.messenger.partisan.update.AppVersion;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -433,25 +433,15 @@ public class SharedConfig {
     public static boolean showHideDialogIsNotSafeWarning;
     public static boolean showMaskedUpdateWarning;
     public static int activatedTesterSettingType;
-    public static long updateChannelIdOverride;
-    public static String updateChannelUsernameOverride;
     public static boolean needShowMaskedPasscodeScreenTutorial;
-    public static boolean showPermissionDisabledDialog = true;
     public static boolean filesCopiedFromOldTelegram;
     public static boolean oldTelegramRemoved;
     public static int runNumber;
-    public static boolean premiumDisabled;
-    public static String phoneOverride;
     public static Set<SecurityIssue> ignoredSecurityIssues = new HashSet<>();
-    public static boolean forceAllowScreenshots = false;
-    public static boolean saveLogcatAfterRestart = false;
     public static boolean confirmDangerousActions;
-    public static boolean showEncryptedChatsFromEncryptedGroups = false;
     public static boolean fileProtectionForAllAccountsEnabled = true;
     public static boolean disableFileProtectionAfterRestart = false;
     public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
-    public static boolean detailedEncryptedGroupMemberStatus = false;
-    public static boolean clearLogsWithCache = true;
 
     private static final int[] LOW_SOC = {
             -1775228513, // EXYNOS 850
@@ -667,17 +657,10 @@ public class SharedConfig {
                 editor.putBoolean("showSessionsTerminateActionWarning", showSessionsTerminateActionWarning);
                 editor.putBoolean("showHideDialogIsNotSafeWarning", showHideDialogIsNotSafeWarning);
                 editor.putInt("activatedTesterSettingType", activatedTesterSettingType);
-                editor.putLong("updateChannelIdOverride", updateChannelIdOverride);
-                editor.putString("updateChannelUsernameOverride", updateChannelUsernameOverride);
                 editor.putBoolean("needShowMaskedPasscodeScreenTutorial", needShowMaskedPasscodeScreenTutorial);
-                editor.putBoolean("showPermissionDisabledDialog", showPermissionDisabledDialog);
                 editor.putBoolean("filesCopiedFromOldTelegram", filesCopiedFromOldTelegram);
                 editor.putBoolean("oldTelegramRemoved", oldTelegramRemoved);
                 editor.putInt("runNumber", runNumber);
-                editor.putBoolean("premiumDisabled", premiumDisabled);
-                editor.putString("phoneOverride", phoneOverride);
-                editor.putBoolean("forceAllowScreenshots", forceAllowScreenshots);
-                editor.putBoolean("saveLogcatAfterRestart", saveLogcatAfterRestart);
                 String ignoredSecurityIssuesStr = ignoredSecurityIssues.stream().map(Enum::toString).reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
                 editor.putString("ignoredSecurityIssues", ignoredSecurityIssuesStr);
 
@@ -864,19 +847,14 @@ public class SharedConfig {
             showHideDialogIsNotSafeWarning = preferences.getBoolean("showHideDialogIsNotSafeWarning", true);
             showMaskedUpdateWarning = preferences.getBoolean("showMaskedUpdateWarning", true);
             activatedTesterSettingType = preferences.getInt("activatedTesterSettingType", BuildVars.DEBUG_PRIVATE_VERSION ? 1 : 0);
-            updateChannelIdOverride = preferences.getLong("updateChannelIdOverride", 0);
-            updateChannelUsernameOverride = preferences.getString("updateChannelUsernameOverride", "");
             needShowMaskedPasscodeScreenTutorial = preferences.getBoolean("needShowMaskedPasscodeScreenTutorial", false);
-            showPermissionDisabledDialog = preferences.getBoolean("showPermissionDisabledDialog", showPermissionDisabledDialog);
             filesCopiedFromOldTelegram = preferences.getBoolean("filesCopiedFromOldTelegram", false);
             oldTelegramRemoved = preferences.getBoolean("oldTelegramRemoved", false);
             runNumber = preferences.getInt("runNumber", 0);
-            premiumDisabled = preferences.getBoolean("premiumDisabled", false);
-            phoneOverride = preferences.getString("phoneOverride", "");
-            forceAllowScreenshots = preferences.getBoolean("forceAllowScreenshots", false);
-            saveLogcatAfterRestart = preferences.getBoolean("saveLogcatAfterRestart", false);
             String ignoredSecurityIssuesStr = preferences.getString("ignoredSecurityIssues", "");
             ignoredSecurityIssues = Arrays.stream(ignoredSecurityIssuesStr.split(",")).filter(s -> !s.isEmpty()).map(SecurityIssue::valueOf).collect(Collectors.toSet());
+
+            TesterSettings.loadSettings();
 
             String authKeyString = preferences.getString("pushAuthKey", null);
             if (!TextUtils.isEmpty(authKeyString)) {
@@ -998,9 +976,6 @@ public class SharedConfig {
             clearAllDraftsOnScreenLock = preferences.getBoolean("clearAllDraftsOnScreenLock", false);
             deleteMessagesForAllByDefault = preferences.getBoolean("deleteMessagesForAllByDefault", false);
             confirmDangerousActions = preferences.getBoolean("confirmDangerousActions", false);
-            showEncryptedChatsFromEncryptedGroups = preferences.getBoolean("showEncryptedChatsFromEncryptedGroups", false);
-            detailedEncryptedGroupMemberStatus = preferences.getBoolean("detailedEncryptedGroupMemberStatus", false);
-            clearLogsWithCache = preferences.getBoolean("clearLogsWithCache", true);
             fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
             fileProtectionWorksWhenFakePasscodeActivated = preferences.getBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
@@ -1100,30 +1075,6 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("confirmDangerousActions", confirmDangerousActions);
-        editor.commit();
-    }
-
-    public static void toggleShowEncryptedChatsFromEncryptedGroups() {
-        showEncryptedChatsFromEncryptedGroups = !showEncryptedChatsFromEncryptedGroups;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("showEncryptedChatsFromEncryptedGroups", showEncryptedChatsFromEncryptedGroups);
-        editor.commit();
-    }
-
-    public static void toggleDetailedEncryptedGroupMemberStatus() {
-        detailedEncryptedGroupMemberStatus = !detailedEncryptedGroupMemberStatus;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("detailedEncryptedGroupMemberStatus", detailedEncryptedGroupMemberStatus);
-        editor.commit();
-    }
-
-    public static void toggleClearLogsWithCache() {
-        clearLogsWithCache = !clearLogsWithCache;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("clearLogsWithCache", clearLogsWithCache);
         editor.commit();
     }
 
@@ -1416,7 +1367,6 @@ public class SharedConfig {
             fakePasscodeActivatedIndex = -1;
         }
         needShowMaskedPasscodeScreenTutorial = false;
-        showPermissionDisabledDialog = true;
         filesCopiedFromOldTelegram = false;
         passcodeSalt = new byte[0];
         autoLockIn = 60 * 60;
@@ -2372,7 +2322,12 @@ public class SharedConfig {
             FakePasscodeUtils.tryActivateByTimer();
         } else {
             if (appLocked) {
-                SharedConfig.lastPauseFakePasscodeTime = 0;
+                boolean needResetFakePasscodePauseTime = LaunchActivity.isResumed
+                        || !FakePasscodeUtils.isFakePasscodeActivated()
+                        || !FakePasscodeUtils.getActivatedFakePasscode().passwordlessMode;
+                if (needResetFakePasscodePauseTime) {
+                    SharedConfig.lastPauseFakePasscodeTime = 0;
+                }
             }
         }
         appLocked = locked;

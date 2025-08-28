@@ -85,9 +85,11 @@ public class UserConfig extends BaseController {
     public long autoDownloadConfigLoadTime;
 
     public String premiumGiftsStickerPack;
+    public String premiumTonStickerPack;
     public String genericAnimationsStickerPack;
     public String defaultTopicIcons;
     public long lastUpdatedPremiumGiftsStickerPack;
+    public long lastUpdatedTonGiftsStickerPack;
     public long lastUpdatedGenericAnimations;
     public long lastUpdatedDefaultTopicIcons;
 
@@ -783,7 +785,7 @@ public class UserConfig extends BaseController {
         if (user == null) {
             return false;
         }
-        if (SharedConfig.premiumDisabled) {
+        if (org.telegram.messenger.partisan.settings.TesterSettings.premiumDisabled.get()) {
             return false;
         }
         return user.premium;

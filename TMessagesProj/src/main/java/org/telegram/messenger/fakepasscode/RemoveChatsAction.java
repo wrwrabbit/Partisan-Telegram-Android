@@ -230,7 +230,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
                         pendingRemovalChats.add(entry.chatId);
                     }
                 }
-                new UserMessagesDeleter(accountNum, getUserConfig().clientUserId, entry.chatId, 0, null)
+                new UserMessagesDeleter(accountNum, entry.chatId, 0, null)
                         .start();
             } else if (entry.isExitFromChat) {
                 Utils.deleteDialog(accountNum, entry.chatId, entry.isDeleteFromCompanion);

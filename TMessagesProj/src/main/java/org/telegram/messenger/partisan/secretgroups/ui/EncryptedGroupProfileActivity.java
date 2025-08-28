@@ -15,8 +15,8 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.tgnet.TLRPC;
@@ -162,7 +162,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     private void updateRows() {
         rowCount = 0;
 
-        if (SharedConfig.detailedEncryptedGroupMemberStatus) {
+        if (TesterSettings.detailedEncryptedGroupMemberStatus.get()) {
             statusRow = rowCount++;
             idRow = rowCount++;
         } else {

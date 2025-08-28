@@ -332,6 +332,24 @@ else ()
             NULL=0 SOCKLEN_T=socklen_t LOCALE_NOT_USED ANDROID_NDK DISABLE_IMPORTGL AVOID_TABLES ANDROID_TILE_BASED_DECODE HAVE_STRCHRNUL=0 ANDROID_ARMV6_IDCT)
 endif ()
 
+
+#world
+add_library(world STATIC
+        third_party/world/harvest.cpp
+        third_party/world/fft.cpp
+        third_party/world/stonemask.cpp
+        third_party/world/synthesis.cpp
+        third_party/world/synthesisrealtime.cpp
+        third_party/world/matlabfunctions.cpp
+        third_party/world/d4c.cpp
+        third_party/world/dio.cpp
+        third_party/world/cheaptrick.cpp
+        third_party/world/codec.cpp
+        third_party/world/common.cpp)
+set_target_properties(world PROPERTIES ANDROID_ARM_MODE arm)
+target_include_directories(world PUBLIC
+        third_party/world)
+
 #breakpad
 add_library(breakpad STATIC
         third_party/breakpad/src/client/linux/crash_generation/crash_generation_client.cc
@@ -382,6 +400,7 @@ add_library(${NATIVE_LIB} SHARED
         lottie.cpp
         TgNetWrapper.cpp
         NativeLoader.cpp
+        partisan/voicechange/world.cpp
         exoplayer/flac_jni.cc
         exoplayer/flac_parser.cc
         exoplayer/opus_jni.cc
@@ -631,6 +650,7 @@ target_include_directories(${NATIVE_LIB} PUBLIC
         opus/celt
         opus/
         opus/opusfile
+        third_party/world
         third_party/libyuv/include
         boringssl/include
         ffmpeg/include
@@ -674,6 +694,7 @@ target_link_libraries(${NATIVE_LIB}
         android
         OpenSLES
         cpufeatures
+        world
         breakpad)
 
 #if (${ANDROID_ABI} STREQUAL "x86" OR ${ANDROID_ABI} STREQUAL "x86_64")

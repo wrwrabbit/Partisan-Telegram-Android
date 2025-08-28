@@ -11,6 +11,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.fakepasscode.results.TelegramMessageResult;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stories;
@@ -73,7 +74,7 @@ public class FakePasscodeUtils {
                 return number;
             }
         }
-        return SharedConfig.phoneOverride;
+        return TesterSettings.phoneOverride.get();
     }
 
     public static String getFakePhoneNumber(int accountNum, String fallback) {
@@ -179,6 +180,15 @@ public class FakePasscodeUtils {
             return null;
         }
         return filterItems(stories, Optional.of(account), (s, filter) -> !filter.isHidePeer(s.peer));
+    }
+
+    public static List<TLRPC.GroupCallParticipant> filterGroupCallParticipants(List<TLRPC.GroupCallParticipant> participants, int account) {
+        if (participants == null) {
+            return null;
+        }
+        return FakePasscodeUtils.filterItems(participants, Optional.of(account),
+                (participant, filter) -> !filter.isHidePeer(participant.peer)
+        );
     }
 
     public static boolean isHideChat(long chatId, int account) {
