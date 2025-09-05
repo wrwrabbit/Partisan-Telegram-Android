@@ -6,12 +6,12 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 
-public class PartisanListSerializer<T> extends JsonSerializer<List<T>> {
+public class PartisanCollectionSerializer<T> extends JsonSerializer<Collection<T>> {
 
     @Override
-    public void serialize(List<T> values, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    public void serialize(Collection<T> values, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeStartArray();
         for (T value : values) {
             serializers.defaultSerializeValue(value, gen);
@@ -20,7 +20,7 @@ public class PartisanListSerializer<T> extends JsonSerializer<List<T>> {
     }
 
     @Override
-    public void serializeWithType(List<T> values, JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
+    public void serializeWithType(Collection<T> values, JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
         serialize(values, gen, serializers);
     }
 }

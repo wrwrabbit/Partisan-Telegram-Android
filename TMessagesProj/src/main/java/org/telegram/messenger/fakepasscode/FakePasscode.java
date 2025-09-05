@@ -23,7 +23,7 @@ import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.serialization.PartisanListDeserializer;
-import org.telegram.messenger.partisan.serialization.PartisanListSerializer;
+import org.telegram.messenger.partisan.serialization.PartisanCollectionSerializer;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 
@@ -76,7 +76,7 @@ public class FakePasscode {
     private Integer activationDate = null;
     boolean activated = false;
 
-    @JsonSerialize(using = PartisanListSerializer.class)
+    @JsonSerialize(using = PartisanCollectionSerializer.class)
     @JsonDeserialize(using = PartisanListDeserializer.class, contentAs = AccountActions.class)
     public List<AccountActions> accountActions = Collections.synchronizedList(new ArrayList<>());
 
