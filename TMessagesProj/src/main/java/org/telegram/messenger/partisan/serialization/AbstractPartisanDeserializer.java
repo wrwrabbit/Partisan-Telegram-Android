@@ -65,11 +65,6 @@ public abstract class AbstractPartisanDeserializer<COLLECTION extends Collection
         this.valueClass = valueClass;
     }
 
-    public JsonDeserializer<?> createContextual(DeserializationContext ctxt,
-                                                BeanProperty property) {
-        return new PartisanListDeserializer<>(property.getType().getContentType().getRawClass());
-    }
-
     @Override
     public COLLECTION deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         COLLECTION valueCollection = createCollection();
