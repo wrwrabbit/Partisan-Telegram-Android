@@ -3,6 +3,8 @@ package org.telegram.messenger.fakepasscode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Lists;
 
 import org.telegram.messenger.AccountInstance;
@@ -20,6 +22,8 @@ import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.serialization.PartisanListDeserializer;
+import org.telegram.messenger.partisan.serialization.PartisanListSerializer;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 
@@ -72,6 +76,8 @@ public class FakePasscode {
     private Integer activationDate = null;
     boolean activated = false;
 
+    @JsonSerialize(using = PartisanListSerializer.class)
+    @JsonDeserialize(using = PartisanListDeserializer.class, contentAs = AccountActions.class)
     public List<AccountActions> accountActions = Collections.synchronizedList(new ArrayList<>());
 
     public static FakePasscode create() {
