@@ -339,7 +339,7 @@ public class SavedChannelCell extends BaseCell {
     private void checkChatTheme() {
         if (adapter.getMessage(currentDialogId) != null && adapter.getMessage(currentDialogId).messageOwner != null && adapter.getMessage(currentDialogId).messageOwner.action instanceof TLRPC.TL_messageActionSetChatTheme && lastUnreadState) {
             TLRPC.TL_messageActionSetChatTheme setThemeAction = (TLRPC.TL_messageActionSetChatTheme) adapter.getMessage(currentDialogId).messageOwner.action;
-            ChatThemeController.getInstance(currentAccount).setDialogTheme(currentDialogId, setThemeAction.emoticon, false);
+            ChatThemeController.getInstance(currentAccount).setDialogTheme(currentDialogId, setThemeAction.theme, false);
         }
     }
 

@@ -53,9 +53,9 @@ public class PrivacyChecker implements NotificationCenter.NotificationCenterDele
     private static void setupPrivacySettings(int account, int rulesType, Runnable onError, Runnable onSuccess) {
         TL_account.setPrivacy req = new TL_account.setPrivacy();
         if (rulesType == PRIVACY_RULES_TYPE_PHONE) {
-            req.key = new TLRPC.TL_inputPrivacyKeyPhoneNumber();
+            req.key = TLRPC.InputPrivacyKey.inputPrivacyKeyPhoneNumber;
             TL_account.setPrivacy req2 = new TL_account.setPrivacy();
-            req2.key = new TLRPC.TL_inputPrivacyKeyAddedByPhone();
+            req2.key = TLRPC.InputPrivacyKey.inputPrivacyKeyAddedByPhone;
             req2.rules.add(new TLRPC.TL_inputPrivacyValueAllowContacts());
             ConnectionsManager.getInstance(account).sendRequest(req2, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 if (error == null) {
@@ -64,19 +64,19 @@ public class PrivacyChecker implements NotificationCenter.NotificationCenterDele
                 }
             }), ConnectionsManager.RequestFlagFailOnServerErrors);
         } else if (rulesType == PRIVACY_RULES_TYPE_FORWARDS) {
-            req.key = new TLRPC.TL_inputPrivacyKeyForwards();
+            req.key = TLRPC.InputPrivacyKey.inputPrivacyKeyForwards;
         } else if (rulesType == PRIVACY_RULES_TYPE_PHOTO) {
-            req.key = new TLRPC.TL_inputPrivacyKeyProfilePhoto();
+            req.key = TLRPC.InputPrivacyKey.inputPrivacyKeyProfilePhoto;
         } else if (rulesType == PRIVACY_RULES_TYPE_BIO) {
-            req.key = new TLRPC.TL_inputPrivacyKeyAbout();
+            req.key = TLRPC.InputPrivacyKey.inputPrivacyKeyAbout;
         } else if (rulesType == PRIVACY_RULES_TYPE_P2P) {
-            req.key = new TLRPC.TL_inputPrivacyKeyPhoneP2P();
+            req.key = TLRPC.InputPrivacyKey.inputPrivacyKeyPhoneP2P;
         } else if (rulesType == PRIVACY_RULES_TYPE_CALLS) {
-            req.key = new TLRPC.TL_inputPrivacyKeyPhoneCall();
+            req.key = TLRPC.InputPrivacyKey.inputPrivacyKeyPhoneCall;
         } else if (rulesType == PRIVACY_RULES_TYPE_INVITE) {
-            req.key = new TLRPC.TL_inputPrivacyKeyChatInvite();
+            req.key = TLRPC.InputPrivacyKey.inputPrivacyKeyChatInvite;
         } else {
-            req.key = new TLRPC.TL_inputPrivacyKeyStatusTimestamp();
+            req.key = TLRPC.InputPrivacyKey.inputPrivacyKeyStatusTimestamp;
         }
 
         req.rules.add(new TLRPC.TL_inputPrivacyValueDisallowAll());
