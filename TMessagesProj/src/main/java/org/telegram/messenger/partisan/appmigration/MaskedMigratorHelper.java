@@ -95,6 +95,7 @@ public class MaskedMigratorHelper {
         AlertDialog dialog = builder.create();
         dialog.setCanCancel(false);
         dialog.setCancelable(false);
+        dialog.setCanDismissDialogOnPause(false);
         fragment.showDialog(dialog);
     }
 }
