@@ -1288,6 +1288,16 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
         this.onDismissListener = onDismissListener;
     }
 
+    private boolean canDismissDialogOnPause = true;
+
+    public void setCanDismissDialogOnPause(boolean canDismissDialogOnPause) {
+        this.canDismissDialogOnPause = canDismissDialogOnPause;
+    }
+
+    public boolean getCanDismissDialogOnPause() {
+        return canDismissDialogOnPause;
+    }
+
     public void setFocusable(boolean value) {
         if (focusable == value) {
             return;
