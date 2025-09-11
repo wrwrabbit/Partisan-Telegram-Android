@@ -113,6 +113,10 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
     private int customViewOffset = 12;
     private boolean withCancelDialog;
 
+    public TextView getMessageTextView() {
+        return messageTextView;
+    }
+
     private int dialogButtonColorKey = Theme.key_dialogButton;
 
     private OnCancelListener onCancelListener;
@@ -649,7 +653,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                 drawBackground = false;
             }
         }
-        containerView.setFitsSystemWindows(Build.VERSION.SDK_INT >= 21);
+        containerView.setFitsSystemWindows(21 <= Build.VERSION.SDK_INT && Build.VERSION.SDK_INT < 35);
         View rootView = containerView;
         if (needStarsBalance) {
             if (fullscreenContainerView == null) {
@@ -1282,6 +1286,16 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
 
     public void setOnPreDismissListener(OnDismissListener onDismissListener) {
         this.onDismissListener = onDismissListener;
+    }
+
+    private boolean canDismissDialogOnPause = true;
+
+    public void setCanDismissDialogOnPause(boolean canDismissDialogOnPause) {
+        this.canDismissDialogOnPause = canDismissDialogOnPause;
+    }
+
+    public boolean getCanDismissDialogOnPause() {
+        return canDismissDialogOnPause;
     }
 
     public void setFocusable(boolean value) {

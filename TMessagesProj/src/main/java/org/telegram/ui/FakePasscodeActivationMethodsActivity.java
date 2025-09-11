@@ -21,6 +21,8 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.appmigration.MaskedMigrationIssue;
+import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -221,6 +223,9 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
                 updateRows();
                 if (listAdapter != null) {
                     listAdapter.notifyDataSetChanged();
+                }
+                if (!SharedConfig.useFingerprintLock) {
+                    MaskedMigratorHelper.removeMigrationIssueAndShowDialogIfNeeded(this, MaskedMigrationIssue.ACTIVATE_BY_FINGERPRINT);
                 }
             }
         });

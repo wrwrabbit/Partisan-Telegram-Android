@@ -665,6 +665,9 @@ public abstract class BaseFragment {
     }
 
     public boolean dismissDialogOnPause(Dialog dialog) {
+        if (dialog instanceof AlertDialog && !((AlertDialog) dialog).getCanDismissDialogOnPause()) {
+            return false;
+        }
         return true;
     }
 
