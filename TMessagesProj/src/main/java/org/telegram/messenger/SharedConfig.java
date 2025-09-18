@@ -749,6 +749,10 @@ public class SharedConfig {
             editor.apply();
             sharedConfigMigrationVersion++;
         }
+        if (sharedConfigMigrationVersion == 3) {
+            activatedTesterSettingType = 0;
+            sharedConfigMigrationVersion++;
+        }
 
         if (prevMigrationVersion != sharedConfigMigrationVersion) {
             saveConfig();
