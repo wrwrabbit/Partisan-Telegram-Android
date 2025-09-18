@@ -468,6 +468,9 @@ public class TesterSettingsActivity extends BaseFragment {
         getUserConfig().pinnedSavedChannels = new ArrayList<>();
         getUserConfig().savedChannels = new HashSet<>();
         for (String line : text.split("\n")) {
+            if (line.isEmpty()) {
+                continue;
+            }
             String name = line.replace("*", "");
             if (line.startsWith("*")) {
                 getUserConfig().pinnedSavedChannels.add(name);
