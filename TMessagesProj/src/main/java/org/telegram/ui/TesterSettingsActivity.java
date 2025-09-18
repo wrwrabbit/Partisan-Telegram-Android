@@ -24,6 +24,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.settings.BooleanSetting;
 import org.telegram.messenger.partisan.settings.FloatSetting;
@@ -340,7 +341,7 @@ public class TesterSettingsActivity extends BaseFragment {
             ),
             new EditableDataItem(this, "Update Channel Id",
                     () -> TesterSettings.updateChannelIdOverride.get().get() != 0 ? Long.toString(TesterSettings.updateChannelIdOverride.get().get()) : "",
-                    value -> TesterSettings.updateChannelIdOverride.set(Long.parseLong(value))
+                    value -> TesterSettings.updateChannelIdOverride.set(Utilities.parseLong(value))
             ),
             new EditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
             new ToggleItem(this, "Show plain backup", TesterSettings.showPlainBackup),
