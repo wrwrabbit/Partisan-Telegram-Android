@@ -4600,7 +4600,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (!isTopic && getUserConfig().isChannelSavingAllowed(chat)) {
                 saveItem = headerItem.lazilyAddSubItem(save, R.drawable.msg_fave, LocaleController.getString("Save", R.string.Save));
             }
-            if (SharedConfig.isTesterSettingsActivated()) {
+            if (org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
                 headerItem.lazilyAddSubItem(send_test_messages, R.drawable.msg_send, "Send Test Messages");
             }
         } else if (chatMode == MODE_EDIT_BUSINESS_LINK) {
@@ -43629,7 +43629,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         } else {
             boolean isEncryptedChatFromEncryptedGroup = enc_id != 0 &&
                     getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(enc_id) != null;
-            if (!org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get() && isEncryptedChatFromEncryptedGroup) {
+            if (!org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false) && isEncryptedChatFromEncryptedGroup) {
                 return false;
             }
         }

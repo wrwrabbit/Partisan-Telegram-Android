@@ -3,6 +3,7 @@ package org.telegram.messenger.partisan.update;
 import android.text.TextUtils;
 
 import com.google.android.exoplayer2.util.Consumer;
+import com.google.common.base.Strings;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
@@ -144,19 +145,15 @@ public class UpdateChecker extends AbstractChannelChecker {
 
     @Override
     protected long getChannelId() {
-        if (TesterSettings.updateChannelIdOverride.get() != 0) {
-            return TesterSettings.updateChannelIdOverride.get();
-        } else {
-            return CYBER_PARTISAN_SECURITY_TG_CHANNEL_ID;
-        }
+        return TesterSettings.updateChannelIdOverride.get()
+                .filter(value -> value != 0)
+                .orElse(CYBER_PARTISAN_SECURITY_TG_CHANNEL_ID);
     }
 
     @Override
     protected String getChannelUsername() {
-        if (!Objects.equals(TesterSettings.updateChannelUsernameOverride, "")) {
-            return TesterSettings.updateChannelUsernameOverride.get();
-        } else {
-            return CYBER_PARTISAN_SECURITY_TG_CHANNEL_USERNAME;
-        }
+        return TesterSettings.updateChannelUsernameOverride.get()
+                .filter(value -> !Strings.isNullOrEmpty(value))
+                .orElse(CYBER_PARTISAN_SECURITY_TG_CHANNEL_USERNAME);
     }
 }

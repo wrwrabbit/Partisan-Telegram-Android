@@ -6965,7 +6965,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 Bundle args = new Bundle();
                 EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(currentEncryptedChat);
-                if (encryptedGroup != null && !org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get()) {
+                if (encryptedGroup != null && !org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false)) {
                     args.putInt("enc_group_id", encryptedGroup.getInternalId());
                 } else {
                     args.putLong("user_id", userId);
@@ -10673,7 +10673,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 questionRow = rowCount++;
                 faqRow = rowCount++;
                 policyRow = rowCount++;
-                if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION || SharedConfig.isTesterSettingsActivated()) {
+                if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION || org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
                     helpSectionCell = rowCount++;
                     debugHeaderRow = rowCount++;
                 }
@@ -10688,7 +10688,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (BuildVars.DEBUG_VERSION) {
                     switchBackendRow = rowCount++;
                 }
-                if (SharedConfig.isTesterSettingsActivated()) {
+                if (org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
                     testerSettingsRow = rowCount++;
                 }
                 versionRow = rowCount++;

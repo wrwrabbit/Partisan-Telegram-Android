@@ -6,11 +6,14 @@ import android.content.SharedPreferences;
 import org.telegram.messenger.ApplicationLoader;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public abstract class Setting<T> {
     public T value;
     protected final String key;
     protected final T defaultValue;
+    private Supplier<Boolean> conditionForGet;
 
     Setting(String key, T defaultValue) {
         this.key = key;
@@ -18,8 +21,12 @@ public abstract class Setting<T> {
         this.value = defaultValue;
     }
 
-    public T get() {
-        return value;
+    public Optional<T> get() {
+        if (conditionForGet != null && conditionForGet.get() == false) {
+            return Optional.empty();
+        } else {
+            return Optional.of(value);
+        }
     }
 
     public void set(T newValue) {
@@ -37,6 +44,10 @@ public abstract class Setting<T> {
     protected abstract void putValue(SharedPreferences.Editor editor, T newValue);
 
     public abstract void load();
+
+    public void setConditionForGet(Supplier<Boolean> conditionForGet) {
+        this.conditionForGet = conditionForGet;
+    }
 
     protected static SharedPreferences getLocalPreferences() {
         return ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);

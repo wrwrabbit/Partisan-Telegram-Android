@@ -2303,14 +2303,6 @@ public class SharedConfig {
         appLocked = locked;
     }
 
-    public static boolean isTesterSettingsActivated() {
-        if (FakePasscodeUtils.isFakePasscodeActivated()) {
-            return false;
-        } else {
-            return activatedTesterSettingType != 0;
-        }
-    }
-
     public static boolean isConfigLoaded() {
         return configLoaded;
     }

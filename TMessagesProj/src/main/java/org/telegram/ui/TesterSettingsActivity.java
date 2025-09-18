@@ -118,7 +118,7 @@ public class TesterSettingsActivity extends BaseFragment {
         private final Consumer<Boolean> setValue;
 
         public ToggleItem(BaseFragment fragment, String text, BooleanSetting booleanSetting) {
-            this(fragment, text, booleanSetting::get, booleanSetting::set);
+            this(fragment, text, () -> booleanSetting.get().get(), booleanSetting::set);
         }
 
         public ToggleItem(BaseFragment fragment, String text, Supplier<Boolean> getValue, Consumer<Boolean> setValue) {
@@ -213,7 +213,7 @@ public class TesterSettingsActivity extends BaseFragment {
         private boolean multiline = false;
 
         public EditableDataItem(BaseFragment fragment, String text, StringSetting setting) {
-            this(fragment, text, setting::get, setting::set);
+            this(fragment, text, () -> setting.get().get(), setting::set);
         }
 
         public EditableDataItem(BaseFragment fragment, String text, Supplier<String> getValue, Consumer<String> setValue) {
@@ -291,7 +291,7 @@ public class TesterSettingsActivity extends BaseFragment {
         private final Consumer<Float> setValue;
 
         public SeekBarItem(BaseFragment fragment, FloatSetting setting) {
-            this(fragment, setting::get, setting::set);
+            this(fragment, () -> setting.get().get(), setting::set);
         }
 
         public SeekBarItem(BaseFragment fragment, Supplier<Float> getValue, Consumer<Float> setValue) {
@@ -339,7 +339,7 @@ public class TesterSettingsActivity extends BaseFragment {
                     value -> SharedConfig.showSessionsTerminateActionWarning = value
             ),
             new EditableDataItem(this, "Update Channel Id",
-                    () -> TesterSettings.updateChannelIdOverride.get() != 0 ? Long.toString(TesterSettings.updateChannelIdOverride.get()) : "",
+                    () -> TesterSettings.updateChannelIdOverride.get().get() != 0 ? Long.toString(TesterSettings.updateChannelIdOverride.get().get()) : "",
                     value -> TesterSettings.updateChannelIdOverride.set(Long.parseLong(value))
             ),
             new EditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
