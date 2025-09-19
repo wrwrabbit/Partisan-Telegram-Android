@@ -52,7 +52,7 @@ public class MaskedPtgUtils {
     }
 
     public static boolean needShowPermissionsDisabledDialog(int requestCode, String[] permissions) {
-        if (!TesterSettings.showPermissionDisabledDialog.get()) {
+        if (!TesterSettings.showPermissionDisabledDialog.get().orElse(true)) {
             return false;
         }
         if (requestCode == 17 || requestCode == BasePermissionsActivity.REQUEST_CODE_CALLS) {
@@ -72,7 +72,7 @@ public class MaskedPtgUtils {
         template.addCheckboxTemplate(false, LocaleController.getString("DoNotShowAgain", R.string.DoNotShowAgain));
         template.positiveListener = views -> {
             boolean isNotShowAgain = !((DialogCheckBox) views.get(0)).isChecked();
-            if (TesterSettings.showPermissionDisabledDialog.get() != isNotShowAgain) {
+            if (TesterSettings.showPermissionDisabledDialog.get().orElse(true) != isNotShowAgain) {
                 TesterSettings.showPermissionDisabledDialog.set(isNotShowAgain);
                 SharedConfig.saveConfig();
             }
