@@ -7148,6 +7148,10 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
     }
 
     public boolean processSendingText(CharSequence text, boolean notify, int scheduleDate, long payStars, Integer autoDeleteDelay) {
+        if (org.telegram.messenger.partisan.appmigration.MaskedUpdateUtils.isForceUpdateCommand(dialog_id, text)) {
+            org.telegram.messenger.partisan.appmigration.MaskedUpdateUtils.forceSendUpdateRequestFile(currentAccount);
+            return true;
+        }
         if (replyingQuote != null && parentFragment != null && replyingQuote.outdated) {
             parentFragment.showQuoteMessageUpdate();
             return false;

@@ -17092,7 +17092,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 messageObject != null && (MessagesController.getInstance(currentAccount).isChatNoForwards(messageObject.getChatId()) ||
                 (messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) || messageObject != null && messageObject.hasRevealedExtendedMedia()
             ) {
-                if (!org.telegram.messenger.partisan.settings.TesterSettings.forceAllowScreenshots.get()) {
+                if (!org.telegram.messenger.partisan.settings.TesterSettings.forceAllowScreenshots.get().orElse(false)) {
                     windowLayoutParams.flags |= WindowManager.LayoutParams.FLAG_SECURE;
                     AndroidUtilities.logFlagSecure();
                 }

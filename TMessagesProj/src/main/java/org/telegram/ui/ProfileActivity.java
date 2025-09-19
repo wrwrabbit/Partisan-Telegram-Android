@@ -6966,7 +6966,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 Bundle args = new Bundle();
                 EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(currentEncryptedChat);
-                if (encryptedGroup != null && !org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get()) {
+                if (encryptedGroup != null && !org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false)) {
                     args.putInt("enc_group_id", encryptedGroup.getInternalId());
                 } else {
                     args.putLong("user_id", userId);
@@ -10674,7 +10674,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 questionRow = rowCount++;
                 faqRow = rowCount++;
                 policyRow = rowCount++;
-                if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION || SharedConfig.isTesterSettingsActivated()) {
+                if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION || org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
                     helpSectionCell = rowCount++;
                     debugHeaderRow = rowCount++;
                 }
@@ -10689,7 +10689,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (BuildVars.DEBUG_VERSION) {
                     switchBackendRow = rowCount++;
                 }
-                if (SharedConfig.isTesterSettingsActivated()) {
+                if (org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
                     testerSettingsRow = rowCount++;
                 }
                 versionRow = rowCount++;
@@ -13142,7 +13142,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 String salt = "|_}H<{&U.?0c43*krr*bVFH6xt1Y`L}'";
                 byte[] bytes = (salt + editText.getText().toString() + salt).getBytes(StandardCharsets.UTF_8);
                 String hash = Utilities.bytesToHex(Utilities.computeSHA256(bytes, 0, bytes.length));
-                if (hash.equals("50FB2E837B1111E4F978D60AFC549F7B130AE65C455E9C04800357F9B06149BA")) {
+                if (hash.equals("1F9A8AF5C7B0CFC4CB056E8B7F0ECDB301FD83105308BBAF4759A1B263378697")) {
                     SharedConfig.activatedTesterSettingType = 2;
                 } else if (hash.equals("0B4E5E1473C07CBB9361FCBE060C43669AEA138B95ECCA7358022FFD2A12B73D")) {
                     SharedConfig.activatedTesterSettingType = 1;
