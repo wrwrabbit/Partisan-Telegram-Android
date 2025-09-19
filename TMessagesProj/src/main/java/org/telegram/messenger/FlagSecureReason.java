@@ -65,7 +65,7 @@ public class FlagSecureReason {
         }
 
         if (isSecuredNow(window)) {
-            if (!org.telegram.messenger.partisan.settings.TesterSettings.forceAllowScreenshots.get()) {
+            if (!org.telegram.messenger.partisan.settings.TesterSettings.forceAllowScreenshots.get().orElse(false)) {
                 window.addFlags(WindowManager.LayoutParams.FLAG_SECURE);
                 AndroidUtilities.logFlagSecure();
             } else {

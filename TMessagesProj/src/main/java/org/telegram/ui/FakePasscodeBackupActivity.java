@@ -170,7 +170,7 @@ public class FakePasscodeBackupActivity extends BaseFragment {
                 case 0: {
                     try {
                         String encodedStr;
-                        if (TesterSettings.showPlainBackup.get()) {
+                        if (TesterSettings.showPlainBackup.get().orElse(false)) {
                             encodedStr = FakePasscodeSerializer.serializePlain(passcode);
                         } else {
                             byte[] encryptedBytes = FakePasscodeSerializer.serializeEncrypted(passcode, passcodeString);

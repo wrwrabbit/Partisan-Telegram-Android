@@ -208,7 +208,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
 
     private void tryConfirmJoining(EncryptedGroup encryptedGroup) {
         if (encryptedGroup.isNotInState(EncryptedGroupState.JOINING_NOT_CONFIRMED, EncryptedGroupState.NEW_MEMBER_JOINING_NOT_CONFIRMED)) {
-            throw new RuntimeException("Invalid encrypted group state");
+            throw new RuntimeException("Invalid encrypted group state: " + encryptedGroup.getState());
         }
         if (canJoinToGroup(encryptedGroup)) {
             confirmJoining(encryptedGroup);
