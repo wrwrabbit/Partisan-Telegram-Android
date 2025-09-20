@@ -749,6 +749,10 @@ public class SharedConfig {
             editor.apply();
             sharedConfigMigrationVersion++;
         }
+        if (sharedConfigMigrationVersion == 3) {
+            activatedTesterSettingType = 0;
+            sharedConfigMigrationVersion++;
+        }
 
         if (prevMigrationVersion != sharedConfigMigrationVersion) {
             saveConfig();
@@ -2301,14 +2305,6 @@ public class SharedConfig {
             }
         }
         appLocked = locked;
-    }
-
-    public static boolean isTesterSettingsActivated() {
-        if (FakePasscodeUtils.isFakePasscodeActivated()) {
-            return false;
-        } else {
-            return activatedTesterSettingType != 0;
-        }
     }
 
     public static boolean isConfigLoaded() {

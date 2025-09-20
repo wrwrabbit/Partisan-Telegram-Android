@@ -24,6 +24,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.settings.BooleanSetting;
 import org.telegram.messenger.partisan.settings.FloatSetting;
@@ -44,6 +45,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -69,6 +71,7 @@ public class TesterSettingsActivity extends BaseFragment {
         TOGGLE,
         BUTTON,
         HEADER,
+        DELIMITER,
         SEEK_BAR,
     };
 
@@ -118,7 +121,7 @@ public class TesterSettingsActivity extends BaseFragment {
         private final Consumer<Boolean> setValue;
 
         public ToggleItem(BaseFragment fragment, String text, BooleanSetting booleanSetting) {
-            this(fragment, text, booleanSetting::get, booleanSetting::set);
+            this(fragment, text, () -> booleanSetting.get().get(), booleanSetting::set);
         }
 
         public ToggleItem(BaseFragment fragment, String text, Supplier<Boolean> getValue, Consumer<Boolean> setValue) {
@@ -213,7 +216,7 @@ public class TesterSettingsActivity extends BaseFragment {
         private boolean multiline = false;
 
         public EditableDataItem(BaseFragment fragment, String text, StringSetting setting) {
-            this(fragment, text, setting::get, setting::set);
+            this(fragment, text, () -> setting.get().get(), setting::set);
         }
 
         public EditableDataItem(BaseFragment fragment, String text, Supplier<String> getValue, Consumer<String> setValue) {
@@ -286,12 +289,31 @@ public class TesterSettingsActivity extends BaseFragment {
         }
     }
 
+    private static class DelimiterItem extends Item {
+        public DelimiterItem(BaseFragment fragment) {
+            super(fragment, ViewTypes.DELIMITER.ordinal());
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            holder.itemView.setBackgroundDrawable(Theme.getThemedDrawable(fragment.getContext(), R.drawable.greydivider, fragment.getThemedColor(Theme.key_windowBackgroundGrayShadow)));
+        }
+
+        @Override
+        public void onClick(View view) {}
+
+        @Override
+        public boolean enabled() {
+            return false;
+        }
+    }
+
     private static class SeekBarItem extends Item {
         private final Supplier<Float> getValue;
         private final Consumer<Float> setValue;
 
         public SeekBarItem(BaseFragment fragment, FloatSetting setting) {
-            this(fragment, setting::get, setting::set);
+            this(fragment, () -> setting.get().get(), setting::set);
         }
 
         public SeekBarItem(BaseFragment fragment, Supplier<Float> getValue, Consumer<Float> setValue) {
@@ -334,33 +356,55 @@ public class TesterSettingsActivity extends BaseFragment {
 
 
     Item[] items = {
-            new ToggleItem(this, "Show terminate sessions warning",
+            new HeaderItem(this, "Update"),
+            new EditableDataItem(this, "Update Channel Id",
+                    () -> TesterSettings.updateChannelIdOverride.get().get() != 0 ? Long.toString(TesterSettings.updateChannelIdOverride.get().get()) : "",
+                    value -> TesterSettings.updateChannelIdOverride.set(Utilities.parseLong(value))
+            ),
+            new EditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
+            new ButtonItem(this, "Reset Update", this::resetUpdate),
+            new DelimiterItem(this),
+
+
+            new HeaderItem(this, "Verification"),
+            new ButtonItem(this, "Check Verification Updates", this::checkVerificationUpdates),
+            new ButtonItem(this, "Reset Verification Last Check Time", this::resetVerificationLastCheckTime),
+            new DelimiterItem(this),
+
+
+            new HeaderItem(this, "Secret Groups"),
+            new ToggleItem(this, "Show Sec. Chats From Groups", TesterSettings.showEncryptedChatsFromEncryptedGroups),
+            new ToggleItem(this, "Detailed Secret Group Member Status", TesterSettings.detailedEncryptedGroupMemberStatus),
+            new DataItem(this, "Flood Wait",
+                    () -> "" + EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining()
+            ),
+            new DelimiterItem(this),
+
+
+            new HeaderItem(this, "Voice Changing"),
+            new HeaderItem(this, "Pitch Factor"),
+            new SeekBarItem(this, TesterSettings.pitchFactor),
+            new HeaderItem(this, "Time Stretch Factor"),
+            new SeekBarItem(this, TesterSettings.timeStretchFactor),
+            new EditableDataItem(this, "Spectrum Distortion Params", TesterSettings.spectrumDistorterParams),
+            new EditableDataItem(this, "Time Distortion Params", TesterSettings.timeDistortionParams),
+            new HeaderItem(this, "World F0 Shift"),
+            new SeekBarItem(this, TesterSettings.f0Shift),
+            new HeaderItem(this, "World Formant Ratio"),
+            new SeekBarItem(this, TesterSettings.formantRatio),
+            new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
+            new DelimiterItem(this),
+
+
+            new HeaderItem(this, "Other Settings"),
+            new ToggleItem(this, "Show Terminate Sessions Warning",
                     () -> SharedConfig.showSessionsTerminateActionWarning,
                     value -> SharedConfig.showSessionsTerminateActionWarning = value
             ),
-            new EditableDataItem(this, "Update Channel Id",
-                    () -> TesterSettings.updateChannelIdOverride.get() != 0 ? Long.toString(TesterSettings.updateChannelIdOverride.get()) : "",
-                    value -> TesterSettings.updateChannelIdOverride.set(Long.parseLong(value))
-            ),
-            new EditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
-            new ToggleItem(this, "Show plain backup", TesterSettings.showPlainBackup),
+            new ToggleItem(this, "Show Plain Backup", TesterSettings.showPlainBackup),
             new ToggleItem(this, "Disable Premium", TesterSettings.premiumDisabled),
-            new DataItem(this, "Dialogs Count (all type)",
-                    createDialogsCountFormatter(did -> true)
-            ),
-            new DataItem(this, "Channel Count",
-                    createDialogsCountFormatter(did -> ChatObject.isChannelAndNotMegaGroup(-did, currentAccount))
-            ),
-            new DataItem(this, "Chat (Groups) Count",
-                    createDialogsCountFormatter(did -> did < 0 && !ChatObject.isChannelAndNotMegaGroup(-did, currentAccount))
-            ),
-            new DataItem(this, "User Chat Count",
-                    createDialogsCountFormatter(did -> did > 0)
-            ),
-            new DataItem(this, "Sec Group Flood Wait",
-                    () -> "" + EncryptedGroupInnerChatStarter.getInstance(currentAccount).getFloodWaitRemaining()
-            ),
-            new ToggleItem(this, "Show hide dialog is not safe warning",
+
+            new ToggleItem(this, "Show Hide Dialog Is Not Safe Warning",
                     () -> SharedConfig.showHideDialogIsNotSafeWarning,
                     value -> SharedConfig.showHideDialogIsNotSafeWarning = value
             ),
@@ -380,32 +424,33 @@ public class TesterSettingsActivity extends BaseFragment {
                     this::setSavedChannels,
                     ()  -> Integer.toString(getUserConfig().savedChannels.size())
             ).setMultiline(),
-            new ButtonItem(this, "Reset Update", this::resetUpdate),
-            new ButtonItem(this, "Check Verification Updates", this::checkVerificationUpdates),
-            new ButtonItem(this, "Reset Verification Last Check Time", this::resetVerificationLastCheckTime),
-            new ToggleItem(this, "Force allow screenshots", TesterSettings.forceAllowScreenshots)
+            new ToggleItem(this, "Force Allow Screenshots", TesterSettings.forceAllowScreenshots)
                     .addCondition(() -> SharedConfig.activatedTesterSettingType >= 2),
-            new ToggleItem(this, "Save logcat after restart", TesterSettings.saveLogcatAfterRestart),
-            new ToggleItem(this, "Show sec. chats from sec. groups", TesterSettings.showEncryptedChatsFromEncryptedGroups),
-            new ToggleItem(this, "Detailed Secret Group Member Status", TesterSettings.detailedEncryptedGroupMemberStatus),
+            new ToggleItem(this, "Save Logcat After Restart", TesterSettings.saveLogcatAfterRestart),
+            new ToggleItem(this, "Clear Logs With Cache", TesterSettings.clearLogsWithCache),
+            new ToggleItem(this, "Force Search During Deletion", TesterSettings.forceSearchDuringDeletion),
+            new DelimiterItem(this),
+
+
+            new HeaderItem(this, "Stats"),
+            new DataItem(this, "Dialogs Count (all type)",
+                    createDialogsCountFormatter(did -> true)
+            ),
+            new DataItem(this, "Channel Count",
+                    createDialogsCountFormatter(did -> ChatObject.isChannelAndNotMegaGroup(-did, currentAccount))
+            ),
+            new DataItem(this, "Chat (Groups) Count",
+                    createDialogsCountFormatter(did -> did < 0 && !ChatObject.isChannelAndNotMegaGroup(-did, currentAccount))
+            ),
+            new DataItem(this, "User Chat Count",
+                    createDialogsCountFormatter(did -> did > 0)
+            ),
             new DataItem(this, "Memory DB size",
                     () -> getMemoryDbSize() != null ? AndroidUtilities.formatFileSize(getMemoryDbSize()) : "error",
                     this::showMemoryDialog
             ).addCondition(() -> getMessagesStorage().fileProtectionEnabled()),
             new DataItem(this, "Account num", () -> Integer.toString(currentAccount)),
-            new ToggleItem(this, "Clear logs with cache", TesterSettings.clearLogsWithCache),
-            new ToggleItem(this, "Force search during deletion", TesterSettings.forceSearchDuringDeletion),
-            new HeaderItem(this, "Pitch Factor"),
-            new SeekBarItem(this, TesterSettings.pitchFactor),
-            new HeaderItem(this, "Time Stretch Factor"),
-            new SeekBarItem(this, TesterSettings.timeStretchFactor),
-            new EditableDataItem(this, "Spectrum Distortion Params", TesterSettings.spectrumDistorterParams),
-            new EditableDataItem(this, "Time Distortion Params", TesterSettings.timeDistortionParams),
-            new HeaderItem(this, "World F0 Shift"),
-            new SeekBarItem(this, TesterSettings.f0Shift),
-            new HeaderItem(this, "World Formant Ratio"),
-            new SeekBarItem(this, TesterSettings.formantRatio),
-            new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
+            new DelimiterItem(this),
     };
 
     private Supplier<String> createDialogsCountFormatter(Predicate<Long> condition) {
@@ -467,6 +512,9 @@ public class TesterSettingsActivity extends BaseFragment {
         getUserConfig().pinnedSavedChannels = new ArrayList<>();
         getUserConfig().savedChannels = new HashSet<>();
         for (String line : text.split("\n")) {
+            if (line.isEmpty()) {
+                continue;
+            }
             String name = line.replace("*", "");
             if (line.startsWith("*")) {
                 getUserConfig().pinnedSavedChannels.add(name);
@@ -678,6 +726,8 @@ public class TesterSettingsActivity extends BaseFragment {
                 view = new TextSettingsCell(mContext);
             } else if (viewType == ViewTypes.HEADER.ordinal()) {
                 view = new HeaderCell(mContext);
+            } else if (viewType == ViewTypes.DELIMITER.ordinal()) {
+                view = new ShadowSectionCell(mContext);
             } else if (viewType == ViewTypes.SEEK_BAR.ordinal()) {
                 view = new SeekBarCell(mContext);
             } else {

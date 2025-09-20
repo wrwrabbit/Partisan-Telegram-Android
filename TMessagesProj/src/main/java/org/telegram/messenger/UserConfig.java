@@ -785,7 +785,7 @@ public class UserConfig extends BaseController {
         if (user == null) {
             return false;
         }
-        if (org.telegram.messenger.partisan.settings.TesterSettings.premiumDisabled.get()) {
+        if (org.telegram.messenger.partisan.settings.TesterSettings.premiumDisabled.get().orElse(false)) {
             return false;
         }
         return user.premium;

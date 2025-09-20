@@ -3,6 +3,7 @@ package org.telegram.messenger.partisan.update;
 import android.text.TextUtils;
 
 import com.google.android.exoplayer2.util.Consumer;
+import com.google.common.base.Strings;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
@@ -34,9 +35,9 @@ public class UpdateChecker extends AbstractChannelChecker {
         UpdateChecker checker = new UpdateChecker(currentAccount);
         checker.delegate = (data) -> {
             if (data != null) {
-                PartisanLog.d("UpdateChecker: update found: " + data.version.toString());
+                PartisanLog.d(checker.getLoggingTag() + ": update found: " + data.version.toString());
             } else {
-                PartisanLog.d("UpdateChecker: update not found");
+                PartisanLog.d(checker.getLoggingTag() + ": update not found");
             }
             checker.removeObservers();
             delegate.onUpdateResult(data);
@@ -45,13 +46,18 @@ public class UpdateChecker extends AbstractChannelChecker {
     }
 
     @Override
+    protected String getLoggingTag() {
+        return "UpdateChecker";
+    }
+
+    @Override
     protected void processChannelMessages(List<MessageObject> messages) {
-        PartisanLog.d("UpdateChecker: processChannelMessages " + messages.size());
+        PartisanLog.d(getLoggingTag() + ": processChannelMessages " + messages.size());
         UpdateData update = getMaxUpdateDataFromMessages(messages);
         if (update != null && update.stickerPackName != null && update.stickerEmoji != null) {
-            PartisanLog.d("UpdateChecker: load sticker");
+            PartisanLog.d(getLoggingTag() + ": load sticker");
             loadStickerByEmoji(update.stickerPackName, update.stickerEmoji, sticker -> {
-                PartisanLog.d("UpdateChecker: sticker loaded");
+                PartisanLog.d(getLoggingTag() + ": sticker loaded");
                 update.sticker = sticker;
                 AndroidUtilities.runOnUIThread(() -> delegate.onUpdateResult(update));
             });
@@ -65,15 +71,15 @@ public class UpdateChecker extends AbstractChannelChecker {
         UpdateMessageParser parser = new UpdateMessageParser(currentAccount);
         for (MessageObject message : sortMessageById(messages)) {
             CharSequence messageText = message.messageText != null ? message.messageText : "<empty>";
-            PartisanLog.d("UpdateChecker: process message, messageText.length() - " + messageText.length());
+            PartisanLog.d(getLoggingTag() + ": process message, messageText.length() - " + messageText.length());
             UpdateData currentUpdate = parser.processMessage(message);
             if (currentUpdate != null) {
-                PartisanLog.d("UpdateChecker: current update version is " + currentUpdate.version + ", app version is " + AppVersion.getCurrentVersion());
+                PartisanLog.d(getLoggingTag() + ": current update version is " + currentUpdate.version + ", app version is " + AppVersion.getCurrentVersion());
             } else {
-                PartisanLog.d("UpdateChecker: current update is null");
+                PartisanLog.d(getLoggingTag() + ": current update is null");
             }
             if (isCurrentUpdateBetterThenPrevious(currentUpdate, update)) {
-                PartisanLog.d("UpdateChecker: current update is greater than previous");
+                PartisanLog.d(getLoggingTag() + ": current update is greater than previous");
                 update = currentUpdate;
             }
         }
@@ -144,19 +150,15 @@ public class UpdateChecker extends AbstractChannelChecker {
 
     @Override
     protected long getChannelId() {
-        if (TesterSettings.updateChannelIdOverride.get() != 0) {
-            return TesterSettings.updateChannelIdOverride.get();
-        } else {
-            return CYBER_PARTISAN_SECURITY_TG_CHANNEL_ID;
-        }
+        return TesterSettings.updateChannelIdOverride.get()
+                .filter(value -> value != 0)
+                .orElse(CYBER_PARTISAN_SECURITY_TG_CHANNEL_ID);
     }
 
     @Override
     protected String getChannelUsername() {
-        if (!Objects.equals(TesterSettings.updateChannelUsernameOverride, "")) {
-            return TesterSettings.updateChannelUsernameOverride.get();
-        } else {
-            return CYBER_PARTISAN_SECURITY_TG_CHANNEL_USERNAME;
-        }
+        return TesterSettings.updateChannelUsernameOverride.get()
+                .filter(value -> !Strings.isNullOrEmpty(value))
+                .orElse(CYBER_PARTISAN_SECURITY_TG_CHANNEL_USERNAME);
     }
 }
