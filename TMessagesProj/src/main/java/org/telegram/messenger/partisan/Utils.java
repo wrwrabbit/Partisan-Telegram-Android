@@ -176,7 +176,7 @@ public class Utils {
                     }
                 }
 
-                if (TesterSettings.clearLogsWithCache.get()) {
+                if (TesterSettings.clearLogsWithCache.get().orElse(false)) {
                     logs = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "logs");
                     if (logs.exists()) {
                         CacheControlActivity.cleanDirJava(logs.getAbsolutePath(), 0, null, x -> {});
@@ -619,7 +619,7 @@ public class Utils {
 
     public static List<TLRPC.Dialog> filterDialogs(List<TLRPC.Dialog> dialogs, Optional<Integer> account) {
         List<TLRPC.Dialog> filteredDialogsByPasscode = FakePasscodeUtils.filterDialogs(dialogs, account);
-        if (!account.isPresent() || TesterSettings.showEncryptedChatsFromEncryptedGroups.get()) {
+        if (!account.isPresent() || TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false)) {
             return filteredDialogsByPasscode;
         }
         MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());

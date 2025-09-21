@@ -80,7 +80,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         } else {
             log("start load + search chat messages deletion");
             searchMessages();
-            if (!TesterSettings.forceSearchDuringDeletion.get()) {
+            if (!TesterSettings.forceSearchDuringDeletion.get().orElse(false)) {
                 loadingTimeout = System.currentTimeMillis() + 10_000;
                 startLoadingMessages();
             }
@@ -117,7 +117,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
         log("didReceivedNotification " + id);
         if (id == NotificationCenter.messagesDidLoad) {
             if ((int) args[10] == deleteAllMessagesGuid) {
-                if (!onlyLoadMessages() && TesterSettings.forceSearchDuringDeletion.get()) {
+                if (!onlyLoadMessages() && TesterSettings.forceSearchDuringDeletion.get().orElse(false)) {
                     return;
                 }
                 ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[2];
@@ -237,7 +237,7 @@ public class UserMessagesDeleter implements NotificationCenter.NotificationCente
     }
 
     private void loadMessages(int maxId, int minDate) {
-        if (!onlyLoadMessages() && TesterSettings.forceSearchDuringDeletion.get()) {
+        if (!onlyLoadMessages() && TesterSettings.forceSearchDuringDeletion.get().orElse(false)) {
             return;
         }
         log("load messages. maxId = " + maxId + ", minDate = " + minDate);

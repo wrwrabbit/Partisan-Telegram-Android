@@ -113,7 +113,7 @@ public class EncryptedGroupMemberCell extends FrameLayout {
                 statusTextView.setText(LocaleController.formatUserStatus(currentAccount, user));
             }
         } else {
-            if (TesterSettings.detailedEncryptedGroupMemberStatus.get()) {
+            if (TesterSettings.detailedEncryptedGroupMemberStatus.get().orElse(false)) {
                 statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
                 statusTextView.setText(innerChat.getState().toString());
             } else {

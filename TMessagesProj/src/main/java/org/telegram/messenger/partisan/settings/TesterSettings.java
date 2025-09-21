@@ -1,5 +1,8 @@
 package org.telegram.messenger.partisan.settings;
 
+import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -30,6 +33,15 @@ public class TesterSettings {
     public static void loadSettings() {
         for (Setting<?> setting : getAllSettings()) {
             setting.load();
+            setting.setConditionForGet(TesterSettings::areTesterSettingsActivated);
+        }
+    }
+
+    public static boolean areTesterSettingsActivated() {
+        if (FakePasscodeUtils.isFakePasscodeActivated()) {
+            return false;
+        } else {
+            return SharedConfig.activatedTesterSettingType != 0;
         }
     }
 

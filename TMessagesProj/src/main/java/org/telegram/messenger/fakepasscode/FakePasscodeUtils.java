@@ -74,7 +74,7 @@ public class FakePasscodeUtils {
                 return number;
             }
         }
-        return TesterSettings.phoneOverride.get();
+        return TesterSettings.phoneOverride.get().orElse("");
     }
 
     public static String getFakePhoneNumber(int accountNum, String fallback) {

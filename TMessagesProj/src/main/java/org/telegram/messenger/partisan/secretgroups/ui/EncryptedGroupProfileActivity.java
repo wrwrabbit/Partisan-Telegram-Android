@@ -162,7 +162,7 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     private void updateRows() {
         rowCount = 0;
 
-        if (TesterSettings.detailedEncryptedGroupMemberStatus.get()) {
+        if (TesterSettings.detailedEncryptedGroupMemberStatus.get().orElse(false)) {
             statusRow = rowCount++;
             idRow = rowCount++;
         } else {
