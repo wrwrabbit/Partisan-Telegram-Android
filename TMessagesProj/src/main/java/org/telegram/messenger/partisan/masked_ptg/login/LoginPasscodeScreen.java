@@ -1,12 +1,12 @@
 package org.telegram.messenger.partisan.masked_ptg.login;
 
-import static org.telegram.messenger.AndroidUtilities.dp;
+import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import android.os.Handler;
 
+
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.content.Context;
-import android.content.res.Configuration;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -18,8 +18,6 @@ import android.widget.TextView;
 import android.widget.EditText;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-
-import androidx.viewpager.widget.ViewPager;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
@@ -37,12 +35,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
-    private final int BUTTON_X_MARGIN = 28;
-    private final int BUTTON_Y_MARGIN = 16;
-    private final int BUTTON_SIZE = 80;
-
     private RelativeLayout backgroundFrameLayout;
-    private String inputString = "";
     private TextView inputTextView;
     private EditText loginTextView;
     private EditText passwordTextView;
@@ -83,6 +76,7 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
         loginTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         loginTextView.setTextColor(0xff000000);
         loginTextView.setEllipsize(TextUtils.TruncateAt.START);
+        loginTextView.setHint("Enter username");
         loginTextView.setSingleLine();
         loginTextView.setWidth(300);
         loginTextView.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
@@ -107,6 +101,7 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
         passwordTextView = new EditText(context);
         passwordTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         passwordTextView.setTextColor(0xff000000);
+        passwordTextView.setHint("Enter password");
         passwordTextView.setEllipsize(TextUtils.TruncateAt.START);
         passwordTextView.setSingleLine();
         passwordTextView.setWidth(300);
@@ -131,7 +126,7 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
         loginButton = new Button(context);
         loginButton.setText("Login");
         loginButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
-        loginButton.setBackgroundColor(Color.parseColor("#4CAF50")); // Example: green button
+        loginButton.setBackgroundColor(MaskedPtgConfig.getPrimaryColor(context)); // Example: green button
         loginButton.setTextColor(Color.WHITE);
         loginButton.setGravity(Gravity.CENTER);
 
@@ -146,12 +141,16 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
         backgroundFrameLayout.addView(loginButton);
 
         // Set OnClickListener for the button
-        final int originalColor = Color.parseColor("#4CAF50");  // Green button color
+        final int originalColor = MaskedPtgConfig.getPrimaryColor(context);
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Change the button color to dark green
-                v.setBackgroundColor(Color.parseColor("#388E3C"));  // Dark green color
+                float[] hsv = new float[3];
+                Color.colorToHSV(originalColor, hsv);
+                hsv[2] *= 0.8; // value/brightness, 1 = original, <1 = darker
+                int newColor = Color.HSVToColor(hsv);
+                v.setBackgroundColor(newColor);
 
                 // Use a Handler to reset the button color back after a short delay (e.g., 200ms)
                 new Handler().postDelayed(new Runnable() {
@@ -161,41 +160,14 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
                     }
                 }, 200);  // 200ms delay (adjust the time as needed)
 
-                // Your existing login logic here, if any
-                // For example, validating input or performing a login action
+                delegate.passcodeEntered(getPasswordString());
             }
         });
 
         return backgroundFrameLayout;
     }
-
-    private void onButtonClicked(View view) {
-
-//        String tag = (String) view.getTag();
-//        if (tag.equals("=")) {
-//            doEquals();
-//        } else if (tag.equals("⌫")) {
-//            deleteLastInputChar();
-//        } else if (tag.equals("AC")) {
-//            clearInput();
-//        } else {
-//            addCharToInput(tag.charAt(0));
-//        }
-//        if (inputTextView.length() == 4) {
-//            delegate.passcodeEntered(getPasswordString());
-//        }
-    }
-
-    private void doEquals() {
-        try {
-            int k = 0;
-        } catch (Exception ignore) {
-            clearInput();
-        }
-    }
-
     private String getPasswordString() {
-        return (String) inputTextView.getText();
+        return passwordTextView.getText().toString();
     }
 
     @Override
@@ -211,14 +183,12 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
         backgroundFrameLayout.setBackgroundColor(0xffffffff);
 
         if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN) {
-//            buttonsFrameLayout.setVisibility(View.VISIBLE);
             inputTextView.setVisibility(View.VISIBLE);
             loginTextView.setVisibility(View.VISIBLE);
             passwordTextView.setVisibility(View.VISIBLE);
             loginButton.setVisibility(View.VISIBLE);
         }
-        inputTextView.setText("Enter username and password");
-        inputString = "";
+        inputTextView.setText("Login using username and password");
         this.tutorialType = tutorialType;
         if (tutorialType == TutorialType.FULL) {
             createInstructionDialog().show();
@@ -226,139 +196,8 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
     }
 
     private AlertDialog createInstructionDialog() {
-        String message = LocaleController.getString(R.string.CalculatorPasscodeScreen_Instruction);
+        String message = LocaleController.getString(R.string.LoginPasscodeScreen_Instruction);
         return createMaskedPasscodeScreenInstructionDialog(message, 0);
-    }
-
-//    @Override
-//    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-//        RelativeLayout.LayoutParams layoutParams;
-//
-//        // Input TextView: Positioned first with a bottom margin
-//        layoutParams = new RelativeLayout.LayoutParams(
-//                LayoutHelper.WRAP_CONTENT,
-//                LayoutHelper.WRAP_CONTENT
-//        );
-//        layoutParams.topMargin = AndroidUtilities.dp(100); // Adjust top margin to position it vertically
-//        inputTextView.setLayoutParams(layoutParams);
-//
-//        // Output TextView: Positioned below the Input TextView
-//        layoutParams = new RelativeLayout.LayoutParams(
-//                LayoutHelper.WRAP_CONTENT,
-//                LayoutHelper.WRAP_CONTENT
-//        );
-//        layoutParams.topMargin = AndroidUtilities.dp(300); // Adjust top margin to create space from the previous view
-//        outputTextView.setLayoutParams(layoutParams);
-//
-//        // Login TextView: Positioned below the Output TextView
-//        layoutParams = new RelativeLayout.LayoutParams(
-//                LayoutHelper.WRAP_CONTENT,
-//                LayoutHelper.WRAP_CONTENT
-//        );
-//        layoutParams.topMargin = AndroidUtilities.dp(500); // Adjust top margin to create space from the previous view
-//        loginTextView.setLayoutParams(layoutParams);
-//    }
-
-    private void deleteLastInputChar() {
-        if (inputString.isEmpty()) {
-            return;
-        }
-        inputString = inputString.substring(0, inputString.length() - 1);
-        inputTextView.setText(inputString);
-        updateOutput();
-    }
-
-    private void clearInput() {
-        inputString = "";
-        inputTextView.setText(inputString);
-        updateOutput();
-    }
-
-    private void setInput(String input) {
-        inputString = input;
-        inputTextView.setText(inputString);
-        updateOutput();
-    }
-
-    private void addCharToInput(char c) {
-        if (inputString.isEmpty()) {
-            if ("+×/%.".contains(String.valueOf(c))) {
-                return;
-            }
-        } else {
-            char lastChar = inputString.charAt(inputString.length() - 1);
-            if (c == '.') {
-                if (!"0123456789".contains(String.valueOf(lastChar))) {
-                    return;
-                }
-                for (int i = inputString.length() - 1; i >= 0; i--) {
-                    char currentChar = inputString.charAt(i);
-                    if (currentChar == getDecimalSeparator()) {
-                        return;
-                    } else if (!"0123456789".contains(String.valueOf(currentChar))) {
-                        break;
-                    }
-                }
-                c = getDecimalSeparator();
-            } else if ("+-×/".contains(String.valueOf(c))) {
-                if ("+-×/".contains(String.valueOf(lastChar))) {
-                    inputString = inputString.substring(0, inputString.length() - 1);
-                }
-            } else if (c == '%') {
-                if (!"0123456789".contains(String.valueOf(lastChar))) {
-                    return;
-                }
-            }
-        }
-        inputString += c;
-        inputTextView.setText(inputString);
-        updateOutput();
-    }
-
-    private void updateOutput() {
-
-    }
-
-    private static String formatBigDecimal(BigDecimal value, Locale locale) {
-        if (value == null) {
-            return "";
-        } else if (value.compareTo(BigDecimal.ZERO) == 0) {
-            return "0";
-        } else {
-            String plainOutput = value.toPlainString();
-            if (plainOutput.length() <= 10) {
-                return removeFractionZeroesFromString(plainOutput, locale)
-                        .replace('.', getDecimalSeparator(locale));
-            } else {
-                String output = String.format(locale, "%." + Math.min(value.precision(), 7) + "g", value);
-                return removeFractionZeroesFromString(output, locale);
-            }
-        }
-    }
-
-    private static String removeFractionZeroesFromString(String output, Locale locale) {
-        char decimalSeparator = getDecimalSeparator(locale);
-        if (output.contains(String.valueOf(decimalSeparator))) {
-            while (output.endsWith("0")) {
-                output = output.substring(0, output.length() - 1);
-            }
-        }
-        if (output.endsWith(String.valueOf(decimalSeparator))) {
-            output = output.substring(0, output.length() - 1);
-        }
-        return output;
-    }
-
-    private char getDecimalSeparator() {
-        return getDecimalSeparator(getLocale());
-    }
-
-    private static char getDecimalSeparator(Locale locale) {
-        return DecimalFormatSymbols.getInstance(locale).getDecimalSeparator();
-    }
-
-    private Locale getLocale() {
-        return context.getResources().getConfiguration().locale;
     }
 
     @Override

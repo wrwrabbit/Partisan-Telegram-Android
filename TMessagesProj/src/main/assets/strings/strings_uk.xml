@@ -305,6 +305,7 @@
     <string name="NotePasscodeScreen_NoteTitle">Назва</string>
     <string name="NotePasscodeScreen_NoteDescription">Опис</string>
     <string name="CalculatorPasscodeScreen_Instruction">Введіть код блокування за допомогою цифр калькулятора.</string>
+    <string name="LoginPasscodeScreen_Instruction">Введіть код блокування за допомогою цифр калькулятора.</string>
     <string name="MaskedPasscodeScreenInstructionShownOnlyOnce">Ця інструкція відображається лише при першому запуску програми або при першому створенні коду блокування. Під час цього розблокування програми вона не відображатиметься.</string>
     <string name="MaskedPasscodeScreen_Tutorial">Навчання</string>
     <string name="MaskedPasscodeScreen_WrongPasscode">Ви ввели неправильний пароль. Спробуйте ще раз.</string>

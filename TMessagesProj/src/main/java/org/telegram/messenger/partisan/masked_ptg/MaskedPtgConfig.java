@@ -5,11 +5,11 @@ import android.os.Build;
 import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
 
-import org.telegram.messenger.partisan.masked_ptg.login.LoginScreenFactory;
+import org.telegram.messenger.partisan.masked_ptg.original.OriginalScreenFactory;
 
 public class MaskedPtgConfig {
     private static final Integer PRIMARY_COLOR = null;
-    private static final IMaskedPasscodeScreenFactory FACTORY = new LoginScreenFactory();
+    private static final IMaskedPasscodeScreenFactory FACTORY = new OriginalScreenFactory();
 
     public static AbstractMaskedPasscodeScreen createScreen(Context context, PasscodeEnteredDelegate delegate, boolean unlockingApp) {
         return FACTORY.createScreen(context, delegate, unlockingApp);

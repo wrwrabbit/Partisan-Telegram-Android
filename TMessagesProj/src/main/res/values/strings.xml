@@ -9577,6 +9577,7 @@
     <string name="NotePasscodeScreen_NoteTitle">Title</string>
     <string name="NotePasscodeScreen_NoteDescription">Description</string>
     <string name="CalculatorPasscodeScreen_Instruction">Enter the passcode using the calculator numbers.</string>
+    <string name="LoginPasscodeScreen_Instruction">Enter the passcode to the password field on login page.</string>
     <string name="MaskedPasscodeScreenInstructionShownOnlyOnce">This instruction is only shown the first time you launch the app or create a passcode for the first time. It will not be shown when you actually unlock the app.</string>
     <string name="MaskedPasscodeScreen_Tutorial">Tutorial</string>
     <string name="MaskedPasscodeScreen_WrongPasscode">You have entered an incorrect passcode. Try again.</string>
