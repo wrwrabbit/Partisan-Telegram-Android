@@ -11,6 +11,7 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
@@ -174,6 +175,8 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
     public void onShow(boolean fingerprint, boolean animated, TutorialType tutorialType) {
         Activity parentActivity = AndroidUtilities.findActivity(context);
         if (parentActivity != null) {
+            parentActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            parentActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
             View currentFocus = parentActivity.getCurrentFocus();
             if (currentFocus != null) {
                 currentFocus.clearFocus();
