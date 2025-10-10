@@ -306,4 +306,17 @@
     <string name="EncryptedGroupAvatarChangeForbidden">Не можна змінити аватар до ініціалізації групи.</string>
     <string name="CantAddNewMemberToEncryptedGroupMessage">Перед додаванням нового необхідно дочекатися підтвердження від попередніх членів.</string>
     <string name="SlowSecretGroupCreationWarning">Секретна група на 7 і більше учасників буде створюватися довше, ніж зазвичай.</string>
+    <string name="VoiceChange">Зміна голосу</string>
+    <string name="VoiceChangeDescription">Зміна голосу дозволяє уникнути деанонімізації при надсиланні голосових повідомлень, кружечків та дзвінків.</string>
+    <string name="VoiceChangeLevel">Рівень зміни голосу</string>
+    <string name="AggressiveVoiceChange">Агресивна зміна голосу</string>
+    <string name="AggressiveVoiceChangeDescription">Голос сильно змінюватиметься для зниження ймовірності деанонімізації. Можливе значне погіршення звучання голосу.</string>
+    <string name="ModerateVoiceChange">Помірна зміна голосу</string>
+    <string name="ModerateVoiceChangeDescription">Голос буде змінюватися менш сильно для покращення якості звучання. Ризик деанонімізації буде низьким, але вищим, ніж при агресивній зміні.</string>
+    <string name="GenerateNewVoiceChangeParameters">Згенерувати нові параметри</string>
+    <string name="GenerateNewVoiceChangeParametersDescription">Згенерувати нові параметри голосу, змінивши цим його звучання.</string>
+    <string name="CheckVoiceChanging">Праверыць змену голасу</string>
+    <string name="RecordVoiceChangeExample">Записати</string>
+    <string name="PlayChangedVoice">Відтворити змінений голос</string>
+    <string name="PlayNormalVoice">Відтворити звичайний голос</string>
 </resources>

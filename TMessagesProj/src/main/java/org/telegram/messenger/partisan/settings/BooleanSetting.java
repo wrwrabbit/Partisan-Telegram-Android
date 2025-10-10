@@ -4,7 +4,7 @@ import android.content.SharedPreferences;
 
 public class BooleanSetting extends Setting<Boolean> {
 
-    BooleanSetting(String key, Boolean defaultValue) {
+    public BooleanSetting(String key, Boolean defaultValue) {
         super(key, defaultValue);
     }
 

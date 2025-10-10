@@ -10049,4 +10049,17 @@
     <string name="EncryptedGroupAvatarChangeForbidden">You can\'t change avatar until the group is initialized.</string>
     <string name="CantAddNewMemberToEncryptedGroupMessage">You must wait for confirmation from previous members before adding a new one.</string>
     <string name="SlowSecretGroupCreationWarning">A secret group of 7 or more participants will be created longer than usual.</string>
+    <string name="VoiceChange">Voice Change</string>
+    <string name="VoiceChangeDescription">Changing your voice allows you to avoid deanonymization when sending voice messages, circles, and making calls.</string>
+    <string name="VoiceChangeLevel">Voice Change Level</string>
+    <string name="AggressiveVoiceChange">Aggressive Voice Change</string>
+    <string name="AggressiveVoiceChangeDescription">The voice will be heavily modified to reduce the risk of deanonymization. Significant deterioration in voice quality is possible.</string>
+    <string name="ModerateVoiceChange">Moderate Voice Change</string>
+    <string name="ModerateVoiceChangeDescription">The voice will be changed less to improve voice quality. The risk of deanonymization will be low, but higher than with aggressive change.</string>
+    <string name="GenerateNewVoiceChangeParameters">Generate New Parameters</string>
+    <string name="GenerateNewVoiceChangeParametersDescription">Generate new voice parameters, thereby changing its sound.</string>
+    <string name="CheckVoiceChanging">Check Voice Changing</string>
+    <string name="RecordVoiceChangeExample">Record</string>
+    <string name="PlayChangedVoice">Play Changed Voice</string>
+    <string name="PlayNormalVoice">Play Normal Voice</string>
 </resources>

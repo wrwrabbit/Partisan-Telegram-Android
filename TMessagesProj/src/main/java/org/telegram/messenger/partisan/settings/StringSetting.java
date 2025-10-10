@@ -3,7 +3,7 @@ package org.telegram.messenger.partisan.settings;
 import android.content.SharedPreferences;
 
 public class StringSetting extends Setting<String> {
-    StringSetting(String key, String defaultValue) {
+    public StringSetting(String key, String defaultValue) {
         super(key, defaultValue);
     }
 

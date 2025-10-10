@@ -4,7 +4,7 @@ import android.content.SharedPreferences;
 
 public class FloatSetting extends Setting<Float> {
 
-    FloatSetting(String key, Float defaultValue) {
+    public FloatSetting(String key, Float defaultValue) {
         super(key, defaultValue);
     }
 

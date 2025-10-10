@@ -51,6 +51,7 @@ import org.telegram.messenger.partisan.SecurityIssue;
 import org.telegram.messenger.partisan.TlrpcJsonDeserializer;
 import org.telegram.messenger.partisan.TlrpcJsonSerializer;
 import org.telegram.messenger.partisan.update.UpdateData;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
@@ -851,6 +852,7 @@ public class SharedConfig {
             ignoredSecurityIssues = Arrays.stream(ignoredSecurityIssuesStr.split(",")).filter(s -> !s.isEmpty()).map(SecurityIssue::valueOf).collect(Collectors.toSet());
 
             TesterSettings.loadSettings();
+            VoiceChangeSettings.loadSettings();
 
             String authKeyString = preferences.getString("pushAuthKey", null);
             if (!TextUtils.isEmpty(authKeyString)) {

@@ -3,9 +3,6 @@ package org.telegram.messenger.partisan.settings;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.List;
 
 public class TesterSettings {
@@ -21,12 +18,6 @@ public class TesterSettings {
     public static final BooleanSetting detailedEncryptedGroupMemberStatus = new BooleanSetting("detailedEncryptedGroupMemberStatus", false);
     public static final BooleanSetting showPlainBackup = new BooleanSetting("showPlainBackup", false);
     public static final BooleanSetting forceSearchDuringDeletion = new BooleanSetting("forceSearchDuringDeletion", false);
-    public static final FloatSetting pitchFactor = new FloatSetting("pitchFactor", 1.0f);
-    public static final FloatSetting timeStretchFactor = new FloatSetting("timeStretchFactor", 1.0f);
-    public static final StringSetting spectrumDistorterParams = new StringSetting("spectrumDistorterParams", "");
-    public static final StringSetting timeDistortionParams = new StringSetting("timeDistortionParams", "");
-    public static final FloatSetting f0Shift = new FloatSetting("f0Shift", 1.0f);
-    public static final FloatSetting formantRatio = new FloatSetting("formantRatio", 1.0f);
     public static final BooleanSetting moreTimerValues = new BooleanSetting("moreTimerValues", false);
 
     public static void loadSettings() {
@@ -45,16 +36,6 @@ public class TesterSettings {
     }
 
     private static List<Setting<?>> getAllSettings() {
-        List<Setting<?>> settings = new ArrayList<>();
-        for (Field field : TesterSettings.class.getDeclaredFields()) {
-            if (Modifier.isStatic(field.getModifiers()) && Setting.class.isAssignableFrom(field.getType())) {
-                try {
-                    settings.add((Setting<?>) field.get(TesterSettings.class));
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        return settings;
+        return SettingUtils.getAllSettings(TesterSettings.class);
     }
 }

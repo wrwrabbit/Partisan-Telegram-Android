@@ -38,6 +38,7 @@ import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.messenger.partisan.SeekBarCell;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -383,15 +384,15 @@ public class TesterSettingsActivity extends BaseFragment {
 
             new HeaderItem(this, "Voice Changing"),
             new HeaderItem(this, "Pitch Factor"),
-            new SeekBarItem(this, TesterSettings.pitchFactor),
+            new SeekBarItem(this, VoiceChangeSettings.pitchFactor),
             new HeaderItem(this, "Time Stretch Factor"),
-            new SeekBarItem(this, TesterSettings.timeStretchFactor),
-            new EditableDataItem(this, "Spectrum Distortion Params", TesterSettings.spectrumDistorterParams),
-            new EditableDataItem(this, "Time Distortion Params", TesterSettings.timeDistortionParams),
+            new SeekBarItem(this, VoiceChangeSettings.timeStretchFactor),
+            new EditableDataItem(this, "Spectrum Distortion Params", VoiceChangeSettings.spectrumDistorterParams),
+            new EditableDataItem(this, "Time Distortion Params", VoiceChangeSettings.timeDistortionParams),
             new HeaderItem(this, "World F0 Shift"),
-            new SeekBarItem(this, TesterSettings.f0Shift),
+            new SeekBarItem(this, VoiceChangeSettings.f0Shift),
             new HeaderItem(this, "World Formant Ratio"),
-            new SeekBarItem(this, TesterSettings.formantRatio),
+            new SeekBarItem(this, VoiceChangeSettings.formantRatio),
             new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
             new DelimiterItem(this),
 

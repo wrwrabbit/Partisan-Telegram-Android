@@ -1,0 +1,545 @@
+package org.telegram.messenger.partisan.voicechange;
+
+import static org.telegram.messenger.LocaleController.getString;
+
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
+import android.os.Build;
+import android.view.HapticFeedbackConstants;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.widget.FrameLayout;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.DispatchQueue;
+import org.telegram.messenger.FileLog;
+import org.telegram.messenger.R;
+import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.SimpleRadioButtonCell;
+import org.telegram.ui.Cells.TextCheckCell;
+import org.telegram.ui.Cells.TextInfoPrivacyCell;
+import org.telegram.ui.Cells.TextSettingsCell;
+import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RecyclerListView;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+
+public class VoiceChangeSettingsFragment extends BaseFragment {
+
+    private ListAdapter listAdapter;
+    private RecyclerListView listView;
+
+    private AudioRecord audioRecorder = null;
+    private VoiceChanger voiceChanger = null;
+    private final DispatchQueue recordQueue = new DispatchQueue("recordQueue");
+    private ByteArrayOutputStream changedOutputAudioBuffer = null;
+    private ByteArrayOutputStream originalOutputAudioBuffer = null;
+
+    private final VoiceChangeExamplePlayer changedPlayer = new VoiceChangeExamplePlayer();
+    private final VoiceChangeExamplePlayer originalPlayer = new VoiceChangeExamplePlayer();
+
+    private static final int sampleRate = 48000;
+    private static final int recordBufferSize = 1280;
+
+    private int rowCount;
+
+    private int enableRow = -1;
+    private int enableDescriptionRow = -1;
+    private int changeLevelHeaderRow = -1;
+    private int aggressiveChangeLevelRow = -1;
+    private int aggressiveChangeLevelDescriptionRow = -1;
+    private int moderateChangeLevelRow = -1;
+    private int moderateChangeLevelDescriptionRow = -1;
+    private int generateNewParametersRow = -1;
+    private int generateNewParametersDescriptionRow = -1;
+    private int checkVoiceChangingHeaderRow = -1;
+    private int recordRow = -1;
+    private int playChangedRow = -1;
+    private int playOriginalRow = -1;
+
+    TextSettingsCell recordCell;
+
+    private final Runnable recordRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (audioRecorder != null) {
+                VoiceChanger voiceChanger = VoiceChangeSettingsFragment.this.voiceChanger;
+                ByteBuffer buffer = allocateByteBuffer(recordBufferSize);
+                int len = audioRecorder.read(buffer, buffer.capacity());
+
+                if (len > 0) {
+                    writeToOutputBuffer(originalOutputAudioBuffer, buffer, len);
+                }
+
+                ByteBuffer changedBuffer = null;
+                if (voiceChanger != null && len > 0) {
+                    byte[] byteArray = java.util.Arrays.copyOf(buffer.array(), len);
+                    voiceChanger.write(byteArray);
+                    byte[] changedVoice = voiceChanger.readAll();
+                    if (changedVoice.length == 0) {
+                        recordQueue.postRunnable(recordRunnable);
+                        return;
+                    }
+                    len = changedVoice.length;
+                    changedBuffer = allocateByteBuffer(len);
+                    changedBuffer.put(changedVoice, 0, len);
+                    changedBuffer.rewind();
+                }
+                if (changedBuffer != null && originalOutputAudioBuffer.size() < 60 * sampleRate) {
+                    writeToOutputBuffer(changedOutputAudioBuffer, changedBuffer, len);
+                    recordQueue.postRunnable(recordRunnable);
+                } else {
+                    stopRecordingInternal();
+                }
+            }
+        }
+
+        private ByteBuffer allocateByteBuffer(int length) {
+            ByteBuffer buffer = ByteBuffer.allocateDirect(length);
+            buffer.order(ByteOrder.nativeOrder());
+            buffer.rewind();
+            return buffer;
+        }
+
+        private void writeToOutputBuffer(ByteArrayOutputStream outputBuffer, ByteBuffer buffer, int len) {
+            try {
+                byte[] byteArray = java.util.Arrays.copyOf(buffer.array(), len);
+                outputBuffer.write(byteArray);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
+    public VoiceChangeSettingsFragment() {
+        super();
+    }
+
+    @Override
+    public boolean onFragmentCreate() {
+        super.onFragmentCreate();
+        updateRows();
+        return true;
+    }
+
+    @Override
+    public View createView(Context context) {
+        actionBar.setBackButtonImage(R.drawable.ic_ab_back);
+        actionBar.setAllowOverlayTitle(false);
+        actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
+            @Override
+            public void onItemClick(int id) {
+                if (id == -1) {
+                    finishFragment();
+                }
+            }
+        });
+
+        fragmentView = new FrameLayout(context);
+        FrameLayout frameLayout = (FrameLayout) fragmentView;
+
+        actionBar.setTitle(getString(R.string.VoiceChange));
+        frameLayout.setTag(Theme.key_windowBackgroundGray);
+        frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+        listView = new RecyclerListView(context);
+        listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false) {
+            @Override
+            public boolean supportsPredictiveItemAnimations() {
+                return false;
+            }
+        });
+        listView.setVerticalScrollBarEnabled(false);
+        listView.setItemAnimator(null);
+        listView.setLayoutAnimation(null);
+        frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        listView.setAdapter(listAdapter = new ListAdapter(context));
+        listView.setOnItemClickListener((view, position, x, y) -> {
+            if (!view.isEnabled()) {
+                return;
+            }
+            if (position == enableRow) {
+                boolean newValue = !VoiceChangeSettings.voiceChangeEnabled.get().orElse(false);
+                VoiceChangeSettings.voiceChangeEnabled.set(newValue);
+                if (VoiceChangeSettings.areSettingsEmpty()) {
+                    VoiceChangeSettings.generateNewParameters();
+                }
+                ((TextCheckCell)view).setChecked(newValue);
+                listAdapter.notifyDataSetChanged();
+            } else if (position == aggressiveChangeLevelRow) {
+                if (!VoiceChangeSettings.aggressiveChangeLevel.get().orElse(true)) {
+                    VoiceChangeSettings.aggressiveChangeLevel.set(true);
+                    VoiceChangeSettings.generateNewParameters();
+                    listAdapter.notifyItemChanged(aggressiveChangeLevelRow);
+                    listAdapter.notifyItemChanged(moderateChangeLevelRow);
+                }
+            } else if (position == moderateChangeLevelRow) {
+                if (VoiceChangeSettings.aggressiveChangeLevel.get().orElse(true)) {
+                    VoiceChangeSettings.aggressiveChangeLevel.set(false);
+                    VoiceChangeSettings.generateNewParameters();
+                    listAdapter.notifyItemChanged(aggressiveChangeLevelRow);
+                    listAdapter.notifyItemChanged(moderateChangeLevelRow);
+                }
+            } else if (position == generateNewParametersRow) {
+                VoiceChangeSettings.generateNewParameters();
+                Toast.makeText(getContext(), getString(R.string.Set), Toast.LENGTH_SHORT).show();
+            } else if (position == recordRow) {
+                if (audioRecorder == null) {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                    changedPlayer.stopPlaying();
+                    originalPlayer.stopPlaying();
+                    if (Build.VERSION.SDK_INT >= 23 && getParentActivity().checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                        getParentActivity().requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 3);
+                        return;
+                    }
+
+                    startRecording();
+                    ((TextSettingsCell)view).setText(getString(R.string.Stop), true);
+                } else {
+                    stopRecording();
+                    ((TextSettingsCell)view).setText(getString(R.string.RecordVoiceChangeExample), true);
+                }
+            } else if (position == playChangedRow) {
+                onPlayerButtonClicked(view, true);
+            } else if (position == playOriginalRow) {
+                onPlayerButtonClicked(view, false);
+            }
+        });
+
+        return fragmentView;
+    }
+
+    private void onPlayerButtonClicked(View view, boolean changed) {
+        if (audioRecorder != null) {
+            stopRecording();
+            AndroidUtilities.runOnUIThread(() -> onPlayerButtonClicked(view, changed), 100);
+        }
+        VoiceChangeExamplePlayer player = changed ? changedPlayer : originalPlayer;
+        ByteArrayOutputStream buffer = changed ? changedOutputAudioBuffer : originalOutputAudioBuffer;
+        if (!player.isPlaying()) {
+            if (changed) {
+                originalPlayer.stopPlaying();
+            } else {
+                changedPlayer.stopPlaying();
+            }
+
+            if (buffer != null) {
+                byte[] audioBytes = buffer.toByteArray();
+                player.startPlaying(audioBytes, () -> onPlayingFinished(changed ? playChangedRow : playOriginalRow));
+                ((TextSettingsCell)view).setText(getString(R.string.Stop), true);
+            }
+        } else {
+            player.stopPlaying();
+        }
+    }
+
+    private void onPlayingFinished(int row) {
+        AndroidUtilities.runOnUIThread(() -> listAdapter.notifyItemChanged(row));
+    }
+
+    private void startRecording() {
+        try {
+            changedOutputAudioBuffer = new ByteArrayOutputStream();
+            originalOutputAudioBuffer = new ByteArrayOutputStream();
+            audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, recordBufferSize);
+            audioRecorder.startRecording();
+            voiceChanger = new VoiceChanger(audioRecorder.getSampleRate());
+            recordQueue.postRunnable(recordRunnable);
+        } catch (Exception e) {
+            PartisanLog.e(e);
+            try {
+                audioRecorder.release();
+                audioRecorder = null;
+            } catch (Exception e2) {
+                PartisanLog.e(e2);
+            }
+        }
+    }
+
+    public void stopRecording() {
+        if (voiceChanger != null) {
+            voiceChanger.stop();
+            voiceChanger = null;
+        }
+        recordQueue.postRunnable(() -> {
+            try {
+                if (audioRecorder != null) {
+                    audioRecorder.stop();
+                }
+            } catch (Exception e) {
+                PartisanLog.e(e);
+            }
+        });
+    }
+
+    private void stopRecordingInternal() {
+        try {
+            if (audioRecorder != null) {
+                audioRecorder.release();
+                audioRecorder = null;
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (recordCell != null) {
+                        recordCell.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                    }
+                    listAdapter.notifyDataSetChanged();
+                });
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (listAdapter != null) {
+            listAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void updateRows() {
+        rowCount = 0;
+
+        enableRow = rowCount++;
+        enableDescriptionRow = rowCount++;
+        changeLevelHeaderRow = rowCount++;
+        aggressiveChangeLevelRow = rowCount++;
+        aggressiveChangeLevelDescriptionRow = rowCount++;
+        moderateChangeLevelRow = rowCount++;
+        moderateChangeLevelDescriptionRow = rowCount++;
+        generateNewParametersRow = rowCount++;
+        generateNewParametersDescriptionRow = rowCount++;
+        checkVoiceChangingHeaderRow = rowCount++;
+        recordRow = rowCount++;
+        playChangedRow = rowCount++;
+        playOriginalRow = rowCount++;
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (listView != null) {
+            ViewTreeObserver obs = listView.getViewTreeObserver();
+            obs.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    listView.getViewTreeObserver().removeOnPreDrawListener(this);
+                    return true;
+                }
+            });
+        }
+    }
+
+    private enum ViewType {
+        CHECK,
+        RADIO_BUTTON,
+        SETTING,
+        DESCRIPTION,
+        HEADER
+    }
+
+    private class ListAdapter extends RecyclerListView.SelectionAdapter {
+        private Context mContext;
+
+        public ListAdapter(Context context) {
+            mContext = context;
+        }
+
+        @Override
+        public boolean isEnabled(RecyclerView.ViewHolder holder) {
+            int position = holder.getAdapterPosition();
+            if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow
+                    || position == generateNewParametersRow || position == recordRow
+                    || position == playChangedRow || position == playOriginalRow) {
+                boolean voiceChangeEnabled = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false);
+                if (position == playChangedRow) {
+                    return voiceChangeEnabled && changedOutputAudioBuffer != null;
+                } else if (position == playOriginalRow) {
+                    return voiceChangeEnabled && originalOutputAudioBuffer != null;
+                } else {
+                    return voiceChangeEnabled;
+                }
+            }
+            return holder.getItemViewType() != ViewType.DESCRIPTION.ordinal()
+                    && holder.getItemViewType() != ViewType.HEADER.ordinal();
+        }
+
+        @Override
+        public int getItemCount() {
+            return rowCount;
+        }
+
+        @Override
+        @NonNull
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view;
+            switch (ViewType.values()[viewType]) {
+                case CHECK:
+                    view = new TextCheckCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case RADIO_BUTTON:
+                    view = new SimpleRadioButtonCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case SETTING:
+                    view = new TextSettingsCell(mContext);
+                    ((TextSettingsCell)view).setCanDisable(true);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case DESCRIPTION:
+                    view = new TextInfoPrivacyCell(mContext);
+                    view.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                    break;
+                case HEADER:
+                default:
+                    view = new HeaderCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+            }
+            return new RecyclerListView.Holder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            switch (ViewType.values()[holder.getItemViewType()]) {
+                case CHECK: {
+                    TextCheckCell textCell = (TextCheckCell) holder.itemView;
+                    if (position == enableRow) {
+                        textCell.setTextAndCheck(getString(R.string.Enable), VoiceChangeSettings.voiceChangeEnabled.get().orElse(false), true);
+                    }
+                    break;
+                }
+                case RADIO_BUTTON: {
+                    SimpleRadioButtonCell textCell = (SimpleRadioButtonCell) holder.itemView;
+                    if (position == aggressiveChangeLevelRow) {
+                        textCell.setTextAndValue(getString(R.string.AggressiveVoiceChange), false, VoiceChangeSettings.aggressiveChangeLevel.get().orElse(true));
+                    } else if (position == moderateChangeLevelRow) {
+                        textCell.setTextAndValue(getString(R.string.ModerateVoiceChange), false, !VoiceChangeSettings.aggressiveChangeLevel.get().orElse(true));
+                    }
+                    break;
+                }
+                case SETTING: {
+                    TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
+                    if (position == generateNewParametersRow) {
+                        textCell.setText(getString(R.string.GenerateNewVoiceChangeParameters), false);
+                    } else if (position == recordRow) {
+                        recordCell = textCell;
+                        textCell.setText(getString(R.string.RecordVoiceChangeExample), true);
+                    } else if (position == playChangedRow) {
+                        textCell.setText(getString(R.string.PlayChangedVoice), true);
+                    } else if (position == playOriginalRow) {
+                        textCell.setText(getString(R.string.PlayNormalVoice), false);
+                    }
+                    break;
+                }
+                case DESCRIPTION: {
+                    TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
+                    if (position == enableDescriptionRow) {
+                        cell.setText(getString(R.string.VoiceChangeDescription));
+                    } else if (position == aggressiveChangeLevelDescriptionRow) {
+                        cell.setText(getString(R.string.AggressiveVoiceChangeDescription));
+                    } else if (position == moderateChangeLevelDescriptionRow) {
+                        cell.setText(getString(R.string.ModerateVoiceChangeDescription));
+                    } else if (position == generateNewParametersDescriptionRow) {
+                        cell.setText(getString(R.string.GenerateNewVoiceChangeParametersDescription));
+                    }
+                    break;
+                }
+                case HEADER: {
+                    HeaderCell cell = (HeaderCell) holder.itemView;
+                    cell.setHeight(46);
+                    if (position == changeLevelHeaderRow) {
+                        cell.setText(getString(R.string.VoiceChangeLevel));
+                    } else if (position == checkVoiceChangingHeaderRow) {
+                        cell.setText(getString(R.string.CheckVoiceChanging));
+                    }
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
+            if (holder.getItemViewType() == 2) {
+                TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
+                textCell.setEnabled(isEnabled(holder));
+            }
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            return getItemViewTypeInternal(position).ordinal();
+        }
+
+        private ViewType getItemViewTypeInternal(int position) {
+            if (position == enableRow) {
+                return ViewType.CHECK;
+            } else if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow) {
+                return ViewType.RADIO_BUTTON;
+            } else if (position == generateNewParametersRow || position == recordRow
+                    || position == playChangedRow || position == playOriginalRow) {
+                return ViewType.SETTING;
+            } else if (position == enableDescriptionRow || position == aggressiveChangeLevelDescriptionRow
+                    || position == moderateChangeLevelDescriptionRow|| position == generateNewParametersDescriptionRow) {
+                return ViewType.DESCRIPTION;
+            } else if (position == changeLevelHeaderRow || position == checkVoiceChangingHeaderRow) {
+                return ViewType.HEADER;
+            }
+            throw new RuntimeException("Unknown row: " + position);
+        }
+    }
+
+    @Override
+    public ArrayList<ThemeDescription> getThemeDescriptions() {
+        ArrayList<ThemeDescription> themeDescriptions = new ArrayList<>();
+
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{TextCheckCell.class, TextSettingsCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
+        themeDescriptions.add(new ThemeDescription(fragmentView, ThemeDescription.FLAG_BACKGROUND | ThemeDescription.FLAG_CHECKTAG, null, null, null, null, Theme.key_windowBackgroundWhite));
+        themeDescriptions.add(new ThemeDescription(fragmentView, ThemeDescription.FLAG_BACKGROUND | ThemeDescription.FLAG_CHECKTAG, null, null, null, null, Theme.key_windowBackgroundGray));
+
+        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault));
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_LISTGLOWCOLOR, null, null, null, null, Theme.key_actionBarDefault));
+        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_actionBarDefaultIcon));
+        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_TITLECOLOR, null, null, null, null, Theme.key_actionBarDefaultTitle));
+        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_actionBarDefaultSelector));
+        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_SUBMENUBACKGROUND, null, null, null, null, Theme.key_actionBarDefaultSubmenuBackground));
+        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_SUBMENUITEM, null, null, null, null, Theme.key_actionBarDefaultSubmenuItem));
+        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_SUBMENUITEM | ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_actionBarDefaultSubmenuItemIcon));
+
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_SELECTOR, null, null, null, null, Theme.key_listSelector));
+
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{View.class}, Theme.dividerPaint, null, null, Theme.key_divider));
+
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextCheckCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextCheckCell.class}, new String[]{"checkBox"}, null, null, null, Theme.key_switchTrack));
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextCheckCell.class}, new String[]{"checkBox"}, null, null, null, Theme.key_switchTrackChecked));
+
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{TextSettingsCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{TextSettingsCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText7));
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextSettingsCell.class}, new String[]{"valueTextView"}, null, null, null, Theme.key_windowBackgroundWhiteValueText));
+
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow));
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText4));
+
+        return themeDescriptions;
+    }
+}
