@@ -10062,4 +10062,6 @@
     <string name="RecordVoiceChangeExample">Record</string>
     <string name="PlayChangedVoice">Play Changed Voice</string>
     <string name="PlayNormalVoice">Play Normal Voice</string>
+    <string name="ShowVoiceChangedNotification">Show Voice Changed Notification</string>
+    <string name="VoiceChanged">Voice Changed</string>
 </resources>

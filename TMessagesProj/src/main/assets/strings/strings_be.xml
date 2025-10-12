@@ -319,4 +319,6 @@
     <string name="RecordVoiceChangeExample">Запісаць</string>
     <string name="PlayChangedVoice">Прайграць зменены голас</string>
     <string name="PlayNormalVoice">Прайграць звычайны голас</string>
+    <string name="ShowVoiceChangedNotification">Паказваць апавяшчэнне аб змене голасу</string>
+    <string name="VoiceChanged">Голас зменены</string>
 </resources>

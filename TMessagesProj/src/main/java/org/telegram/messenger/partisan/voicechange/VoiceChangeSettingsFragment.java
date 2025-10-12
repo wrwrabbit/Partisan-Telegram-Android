@@ -30,6 +30,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.SimpleRadioButtonCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
@@ -75,6 +76,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private int recordRow = -1;
     private int playChangedRow = -1;
     private int playOriginalRow = -1;
+    private int checkVoiceChangingDelimiterRow = -1;
+    private int showVoiceChangedNotificationRow = -1;
 
     TextSettingsCell recordCell;
 
@@ -221,6 +224,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 onPlayerButtonClicked(view, true);
             } else if (position == playOriginalRow) {
                 onPlayerButtonClicked(view, false);
+            } else if (position == showVoiceChangedNotificationRow) {
+                boolean newValue = !VoiceChangeSettings.showVoiceChangedNotification.get().orElse(false);
+                VoiceChangeSettings.showVoiceChangedNotification.set(newValue);
+                ((TextCheckCell)view).setChecked(newValue);
             }
         });
 
@@ -331,6 +338,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         recordRow = rowCount++;
         playChangedRow = rowCount++;
         playOriginalRow = rowCount++;
+        checkVoiceChangingDelimiterRow = rowCount++;
+        showVoiceChangedNotificationRow = rowCount++;
     }
 
     @Override
@@ -353,7 +362,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         RADIO_BUTTON,
         SETTING,
         DESCRIPTION,
-        HEADER
+        HEADER,
+        DELIMITER
     }
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
@@ -368,7 +378,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             int position = holder.getAdapterPosition();
             if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow
                     || position == generateNewParametersRow || position == recordRow
-                    || position == playChangedRow || position == playOriginalRow) {
+                    || position == playChangedRow || position == playOriginalRow
+                    || position == showVoiceChangedNotificationRow) {
                 boolean voiceChangeEnabled = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false);
                 if (position == playChangedRow) {
                     return voiceChangeEnabled && changedOutputAudioBuffer != null;
@@ -379,7 +390,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 }
             }
             return holder.getItemViewType() != ViewType.DESCRIPTION.ordinal()
-                    && holder.getItemViewType() != ViewType.HEADER.ordinal();
+                    && holder.getItemViewType() != ViewType.HEADER.ordinal()
+                    && holder.getItemViewType() != ViewType.DELIMITER.ordinal();
         }
 
         @Override
@@ -410,9 +422,12 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     view.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     break;
                 case HEADER:
-                default:
                     view = new HeaderCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case DELIMITER:
+                default:
+                    view = new ShadowSectionCell(mContext);
                     break;
             }
             return new RecyclerListView.Holder(view);
@@ -425,7 +440,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
                     if (position == enableRow) {
                         textCell.setTextAndCheck(getString(R.string.Enable), VoiceChangeSettings.voiceChangeEnabled.get().orElse(false), true);
+                    } else if (position == showVoiceChangedNotificationRow) {
+                        textCell.setTextAndCheck(getString(R.string.ShowVoiceChangedNotification), VoiceChangeSettings.showVoiceChangedNotification.get().orElse(false), true);
                     }
+                    textCell.setEnabled(isEnabled(holder), null);
                     break;
                 }
                 case RADIO_BUTTON: {
@@ -491,7 +509,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         }
 
         private ViewType getItemViewTypeInternal(int position) {
-            if (position == enableRow) {
+            if (position == enableRow || position == showVoiceChangedNotificationRow) {
                 return ViewType.CHECK;
             } else if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow) {
                 return ViewType.RADIO_BUTTON;
@@ -503,6 +521,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 return ViewType.DESCRIPTION;
             } else if (position == changeLevelHeaderRow || position == checkVoiceChangingHeaderRow) {
                 return ViewType.HEADER;
+            } else if (position == checkVoiceChangingDelimiterRow) {
+                return ViewType.DELIMITER;
             }
             throw new RuntimeException("Unknown row: " + position);
         }

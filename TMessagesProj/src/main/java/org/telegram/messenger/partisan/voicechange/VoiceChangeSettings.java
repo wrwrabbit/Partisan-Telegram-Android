@@ -22,6 +22,7 @@ public class VoiceChangeSettings {
     public static final StringSetting timeDistortionParams = new StringSetting("timeDistortionParams", "");
     public static final FloatSetting f0Shift = new FloatSetting("f0Shift", 1.0f);
     public static final FloatSetting formantRatio = new FloatSetting("formantRatio", 1.0f);
+    public static final BooleanSetting showVoiceChangedNotification = new BooleanSetting("showVoiceChangedNotification", true);
 
     public static void loadSettings() {
         for (Setting<?> setting : getAllSettings()) {
@@ -62,5 +63,9 @@ public class VoiceChangeSettings {
                 && Strings.isNullOrEmpty(timeDistortionParams.get().orElse(""))
                 && Math.abs(f0Shift.get().orElse(1.0f) - 1.0f) < 0.01f
                 && Math.abs(formantRatio.get().orElse(1.0f) - 1.0f) < 0.01f;
+    }
+
+    public static boolean needShowVoiceChangeNotification() {
+        return voiceChangeEnabled.get().orElse(false) && showVoiceChangedNotification.get().orElse(true);
     }
 }

@@ -319,4 +319,6 @@
     <string name="RecordVoiceChangeExample">Записати</string>
     <string name="PlayChangedVoice">Відтворити змінений голос</string>
     <string name="PlayNormalVoice">Відтворити звичайний голос</string>
+    <string name="ShowVoiceChangedNotification">Показувати повідомлення про зміну голосу</string>
+    <string name="VoiceChanged">Голос змінено</string>
 </resources>
