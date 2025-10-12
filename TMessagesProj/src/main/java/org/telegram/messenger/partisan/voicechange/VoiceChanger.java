@@ -124,6 +124,10 @@ public class VoiceChanger {
     }
 
     public static boolean needChangeVoice() {
+        return VoiceChangeSettings.voiceChangeEnabled.get().orElse(false) && anyParameterSet();
+    }
+
+    private static boolean anyParameterSet() {
         return parametersProvider.pitchShiftingEnabled()
                 || parametersProvider.timeStretchEnabled()
                 || parametersProvider.spectrumDistortionEnabled()
