@@ -181,6 +181,7 @@ public class VoIPFragment implements
     private TextView callingUserTitle;
 
     private VoIPStatusTextView statusTextView;
+    private TextView voiceChangedLayout;
     private ConferenceParticipantsView participantsView;
     private ImageView backIcon;
     private ImageView addIcon;
@@ -1059,6 +1060,15 @@ public class VoIPFragment implements
         statusTextView = new VoIPStatusTextView(context, backgroundProvider);
         ViewCompat.setImportantForAccessibility(statusTextView, ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         statusLayout.addView(statusTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 6));
+
+        if (org.telegram.messenger.partisan.voicechange.VoiceChangeSettings.needShowVoiceChangeNotification()) {
+            voiceChangedLayout = new TextView(context);
+            voiceChangedLayout.setText(LocaleController.getString(R.string.VoiceChanged));
+            voiceChangedLayout.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+            voiceChangedLayout.setTextColor(Color.WHITE);
+            ViewCompat.setImportantForAccessibility(voiceChangedLayout, ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+            statusLayout.addView(voiceChangedLayout, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 6));
+        }
 
         if (state != null && state.getUser() != null && state.isConference() && state.getGroupCall() != null) {
             participantsView = new ConferenceParticipantsView(context);
@@ -2312,6 +2322,7 @@ public class VoIPFragment implements
             emojiLayout.animate().alpha(0).translationY(-AndroidUtilities.dp(10)).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             callingUserTitle.animate().alpha(0).setDuration(150).translationY(-AndroidUtilities.dp(10)).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             statusTextView.animate().alpha(0).setDuration(150).translationY(-AndroidUtilities.dp(10)).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+            voiceChangedLayout.animate().alpha(0).setDuration(150).translationY(-AndroidUtilities.dp(10)).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             buttonsLayout.animate().alpha(0).translationY(AndroidUtilities.dp(10)).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             bottomShadow.animate().alpha(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             topShadow.animate().alpha(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
@@ -2328,6 +2339,7 @@ public class VoIPFragment implements
             encryptionTooltip.hide();
             callingUserTitle.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             statusTextView.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+            voiceChangedLayout.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             speakerPhoneIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             backIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             addIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();

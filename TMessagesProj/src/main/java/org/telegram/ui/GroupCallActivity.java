@@ -264,6 +264,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
     private VoIPToggleButton leaveButton;
     private RLottieImageView muteButton;
     private TextView[] muteLabel = new TextView[2];
+    private TextView voiceChangedLabel;
     private FrameLayout buttonsContainer;
     private RadialProgressView radialProgressView;
     private Drawable shadowDrawable;
@@ -4001,6 +4002,13 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                         muteLabel[a].layout(x, y, x + muteLabel[a].getMeasuredWidth(), y + muteLabel[a].getMeasuredHeight());
                         muteLabel[a].setScaleX(0.687f);
                         muteLabel[a].setScaleY(0.687f);
+
+                        if (voiceChangedLabel != null) {
+                            x = (getMeasuredWidth() - voiceChangedLabel.getMeasuredWidth()) >> 1;
+                            voiceChangedLabel.layout(x, y - voiceChangedLabel.getMeasuredHeight(), x + voiceChangedLabel.getMeasuredWidth(), y);
+                            voiceChangedLabel.setScaleX(0.687f);
+                            voiceChangedLabel.setScaleY(0.687f);
+                        }
                     }
                 } else if (renderersContainer.inFullscreenMode && !isTabletMode || isRtmpStream()) {
                     int part = getMeasuredWidth() / buttonsCount;
@@ -4060,6 +4068,12 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                         }
                         muteLabel[a].layout(x, y, x + muteLabel[a].getMeasuredWidth(), y + muteLabel[a].getMeasuredHeight());
                         muteLabel[a].animate().scaleX(0.687f).scaleY(0.687f).setDuration(TRANSITION_DURATION).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+
+                        if (voiceChangedLabel != null) {
+                            x = partOffset + (part - voiceChangedLabel.getMeasuredWidth()) / 2;
+                            voiceChangedLabel.layout(x, y - voiceChangedLabel.getMeasuredHeight(), x + voiceChangedLabel.getMeasuredWidth(), y);
+                            voiceChangedLabel.animate().scaleX(0.687f).scaleY(0.687f).setDuration(TRANSITION_DURATION).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+                        }
                     }
                 } else {
                     int x, y;
@@ -4111,6 +4125,12 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                         y = h - dp(12) - muteLabel[a].getMeasuredHeight();
                         muteLabel[a].layout(x, y, x + muteLabel[a].getMeasuredWidth(), y + muteLabel[a].getMeasuredHeight());
                         muteLabel[a].animate().scaleX(1f).scaleY(1f).setDuration(TRANSITION_DURATION).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+
+                        if (voiceChangedLabel != null) {
+                            x = (getMeasuredWidth() - voiceChangedLabel.getMeasuredWidth()) / 2;
+                            voiceChangedLabel.layout(x, y - voiceChangedLabel.getMeasuredHeight(), x + voiceChangedLabel.getMeasuredWidth(), y);
+                            voiceChangedLabel.animate().scaleX(1f).scaleY(1f).setDuration(TRANSITION_DURATION).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+                        }
                     }
                 }
 
@@ -4902,6 +4922,13 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             buttonsContainer.addView(muteLabel[a], LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM, 0, 0, 0, 26));
         }
 
+        if (org.telegram.messenger.partisan.voicechange.VoiceChangeSettings.needShowVoiceChangeNotification()) {
+            voiceChangedLabel = new TextView(context);
+            voiceChangedLabel.setText(LocaleController.getString(R.string.VoiceChanged));
+            voiceChangedLabel.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 11);
+            voiceChangedLabel.setTextColor(Color.WHITE);
+            buttonsContainer.addView(voiceChangedLabel, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM, 0, 0, 0, 6));
+        }
        // buttonsContainer.addView(muteLabelContainer, LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT);
 
         actionBar.setAlpha(0.0f);
@@ -6125,6 +6152,9 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         scheduleStartAtTextView.setAlpha(alpha);
         scheduleTimeTextView.setAlpha(alpha);
         muteLabel[0].setAlpha(alpha);
+        if (voiceChangedLabel != null) {
+            voiceChangedLabel.setAlpha(alpha);
+        }
         scheduleTimeTextView.setScaleX(scheduleButtonsScale2);
         scheduleTimeTextView.setScaleY(scheduleButtonsScale2);
         leaveButton.setScaleX(scheduleButtonsScale2);
