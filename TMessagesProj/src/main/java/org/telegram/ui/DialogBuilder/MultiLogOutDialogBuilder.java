@@ -50,37 +50,17 @@ public class MultiLogOutDialogBuilder {
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
-        final AlertDialog[] alertDialog = new AlertDialog[1];
-        final Set<Integer> selectedAccounts = new HashSet<>();
-        final LinearLayout linearLayout = new LinearLayout(fragment.getContext());
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        List<Integer> accounts = new ArrayList<>();
-        for (int account : Utils.getActivatedAccountsSortedByLoginTime()) {
-            accounts.add(account);
-            selectedAccounts.add(account);
-        }
-        for (Integer a : accounts) {
-            TLRPC.User u = UserConfig.getInstance(a).getCurrentUser();
-            if (u != null) {
-                int currentAccount = a;
-                CheckBoxUserCell cell = new CheckBoxUserCell(fragment.getContext(), false);
-                cell.setUser(u, selectedAccounts.contains(a), true);
-                cell.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
-                cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-                linearLayout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 50));
-                cell.setOnClickListener(v -> {
-                    cell.setChecked(!cell.isChecked(), true);
-                    if (cell.isChecked()) {
-                        selectedAccounts.add(currentAccount);
-                    } else {
-                        selectedAccounts.remove(currentAccount);
-                    }
-                });
+        final Set<Integer> selectedAccounts = new HashSet<>(Utils.getActivatedAccountsSortedByLoginTime());
+        LinearLayout accountsLayout = Utils.createAccountsCheckboxLayout(fragment.getContext(), selectedAccounts::contains, (acc, enabled) -> {
+            if (enabled) {
+                selectedAccounts.add(acc);
+            } else {
+                selectedAccounts.remove(acc);
             }
-        }
+        });
 
         builder.setTitle(LocaleController.getString("SelectAccount", R.string.SelectAccount));
-        builder.setView(linearLayout);
+        builder.setView(accountsLayout);
         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
         builder.setPositiveButton(LocaleController.getString("LogOut", R.string.LogOut), (dialogInterface, i) -> {
             if (selectedAccounts.isEmpty()) {
@@ -93,6 +73,6 @@ public class MultiLogOutDialogBuilder {
             }
             fragment.showDialog(makeLogOutDialog(fragment.getContext(), accountsToLogout));
         });
-        return alertDialog[0] = builder.create();
+        return builder.create();
     }
 }
