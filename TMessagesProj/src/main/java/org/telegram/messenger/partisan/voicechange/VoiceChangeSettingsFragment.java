@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -23,9 +24,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DispatchQueue;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
@@ -43,6 +48,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class VoiceChangeSettingsFragment extends BaseFragment {
 
@@ -78,6 +87,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private int playOriginalRow = -1;
     private int checkVoiceChangingDelimiterRow = -1;
     private int showVoiceChangedNotificationRow = -1;
+    private int showVoiceChangedNotificationDelimiterRow = -1;
+    private int enableForIndividualAccountsRow = -1;
 
     TextSettingsCell recordCell;
 
@@ -228,6 +239,28 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 boolean newValue = !VoiceChangeSettings.showVoiceChangedNotification.get().orElse(false);
                 VoiceChangeSettings.showVoiceChangedNotification.set(newValue);
                 ((TextCheckCell)view).setChecked(newValue);
+            } else if (position == enableForIndividualAccountsRow) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                final Set<Integer> selectedAccounts = new HashSet<>(getVoiceChangeEnabledAccounts());
+                LinearLayout accountsLayout = Utils.createAccountsCheckboxLayout(getContext(), selectedAccounts::contains, (acc, enabled) -> {
+                    if (enabled) {
+                        selectedAccounts.add(acc);
+                    } else {
+                        selectedAccounts.remove(acc);
+                    }
+                });
+
+                builder.setTitle(LocaleController.getString(R.string.EnableForIndividualAccounts));
+                builder.setView(accountsLayout);
+                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialogInterface, i) -> {
+                    for (int accountNum : Utils.getActivatedAccountsSortedByLoginTime()) {
+                        UserConfig.getInstance(accountNum).voiceChangeEnabled = selectedAccounts.contains(accountNum);
+                        UserConfig.getInstance(accountNum).saveConfig(false);
+                    }
+                    listAdapter.notifyItemChanged(enableForIndividualAccountsRow);
+                });
+                showDialog(builder.create());
             }
         });
 
@@ -314,6 +347,12 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         }
     }
 
+    private List<Integer> getVoiceChangeEnabledAccounts() {
+        return Utils.getActivatedAccountsSortedByLoginTime().stream()
+                .filter(a -> UserConfig.getInstance(a).voiceChangeEnabled)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -340,6 +379,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         playOriginalRow = rowCount++;
         checkVoiceChangingDelimiterRow = rowCount++;
         showVoiceChangedNotificationRow = rowCount++;
+        showVoiceChangedNotificationDelimiterRow = rowCount++;
+        enableForIndividualAccountsRow = rowCount++;
     }
 
     @Override
@@ -379,7 +420,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow
                     || position == generateNewParametersRow || position == recordRow
                     || position == playChangedRow || position == playOriginalRow
-                    || position == showVoiceChangedNotificationRow) {
+                    || position == showVoiceChangedNotificationRow || position == enableForIndividualAccountsRow) {
                 boolean voiceChangeEnabled = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false);
                 if (position == playChangedRow) {
                     return voiceChangeEnabled && changedOutputAudioBuffer != null;
@@ -466,6 +507,12 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                         textCell.setText(getString(R.string.PlayChangedVoice), true);
                     } else if (position == playOriginalRow) {
                         textCell.setText(getString(R.string.PlayNormalVoice), false);
+                    } else if (position == enableForIndividualAccountsRow) {
+                        int enabledCount = getVoiceChangeEnabledAccounts().size();
+                        String value = enabledCount == UserConfig.getActivatedAccountsCount()
+                                ? getString(R.string.FilterAllChatsShort)
+                                : enabledCount + "/" + UserConfig.getActivatedAccountsCount();
+                        textCell.setTextAndValue(getString(R.string.EnableForIndividualAccounts), value, false);
                     }
                     break;
                 }
@@ -513,15 +560,15 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 return ViewType.CHECK;
             } else if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow) {
                 return ViewType.RADIO_BUTTON;
-            } else if (position == generateNewParametersRow || position == recordRow
-                    || position == playChangedRow || position == playOriginalRow) {
+            } else if (position == generateNewParametersRow || position == recordRow || position == playChangedRow
+                    || position == playOriginalRow|| position == enableForIndividualAccountsRow) {
                 return ViewType.SETTING;
             } else if (position == enableDescriptionRow || position == aggressiveChangeLevelDescriptionRow
                     || position == moderateChangeLevelDescriptionRow|| position == generateNewParametersDescriptionRow) {
                 return ViewType.DESCRIPTION;
             } else if (position == changeLevelHeaderRow || position == checkVoiceChangingHeaderRow) {
                 return ViewType.HEADER;
-            } else if (position == checkVoiceChangingDelimiterRow) {
+            } else if (position == checkVoiceChangingDelimiterRow || position == showVoiceChangedNotificationDelimiterRow) {
                 return ViewType.DELIMITER;
             }
             throw new RuntimeException("Unknown row: " + position);

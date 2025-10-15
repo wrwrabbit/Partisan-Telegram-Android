@@ -1,6 +1,7 @@
 package org.telegram.messenger.partisan.voicechange;
 
 import org.telegram.messenger.DispatchQueue;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
 
 import java.io.IOException;
@@ -123,8 +124,15 @@ public class VoiceChanger {
         );
     }
 
-    public static boolean needChangeVoice() {
-        return VoiceChangeSettings.voiceChangeEnabled.get().orElse(false) && anyParameterSet();
+    public static boolean needChangeVoice(int accountNum) {
+        return voiceChangeEnabled(accountNum) && anyParameterSet();
+    }
+
+    private static boolean voiceChangeEnabled(int accountNum) {
+        if (!VoiceChangeSettings.voiceChangeEnabled.get().orElse(false)) {
+            return false;
+        }
+        return UserConfig.getInstance(accountNum).voiceChangeEnabled;
     }
 
     private static boolean anyParameterSet() {

@@ -125,6 +125,7 @@ public class UserConfig extends BaseController {
     public boolean disableFileProtectionAfterRestart = false;
     public boolean disableFileProtectionAfterRestartByFakePasscode = false;
     private final Map<Integer, Boolean> temporarilyLoadedPinnedDialogs = new ConcurrentHashMap<>();
+    public boolean voiceChangeEnabled = true;
 
     private static ObjectMapper jsonMapper = null;
 
@@ -304,6 +305,7 @@ public class UserConfig extends BaseController {
                     editor.putBoolean("fileProtectionEnabled", fileProtectionEnabled);
                     editor.putBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
                     editor.putBoolean("disableFileProtectionAfterRestartByFakePasscode", disableFileProtectionAfterRestartByFakePasscode);
+                    editor.putBoolean("voiceChangeEnabled", voiceChangeEnabled);
                     String savedChannelsStr = savedChannels.stream().reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
                     editor.putString("savedChannels", savedChannelsStr);
                     String pinnedSavedChannelsStr = pinnedSavedChannels.stream().reduce("", (acc, s) -> acc.isEmpty() ? s : acc + "," + s);
@@ -481,6 +483,7 @@ public class UserConfig extends BaseController {
             if (disableFileProtectionAfterRestart || disableFileProtectionAfterRestartByFakePasscode || SharedConfig.disableFileProtectionAfterRestart) {
                 preferences.edit().remove("2dialogsLoadOffsetId").apply();
             }
+            voiceChangeEnabled = preferences.getBoolean("voiceChangeEnabled", voiceChangeEnabled);
             String savedChannelsStr = preferences.getString("savedChannels", defaultChannels);
             savedChannels = new HashSet<>(Arrays.asList(savedChannelsStr.split(",")));
             savedChannels.remove("");
@@ -668,6 +671,7 @@ public class UserConfig extends BaseController {
         fileProtectionEnabled = false;
         disableFileProtectionAfterRestart = false;
         disableFileProtectionAfterRestartByFakePasscode = false;
+        voiceChangeEnabled = true;
         registeredForPush = false;
         contactsSavedCount = 0;
         lastSendMessageId = -210000;

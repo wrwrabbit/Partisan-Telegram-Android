@@ -65,7 +65,7 @@ public class VoiceChangeSettings {
                 && Math.abs(formantRatio.get().orElse(1.0f) - 1.0f) < 0.01f;
     }
 
-    public static boolean needShowVoiceChangeNotification() {
-        return voiceChangeEnabled.get().orElse(false) && showVoiceChangedNotification.get().orElse(true);
+    public static boolean needShowVoiceChangeNotification(int accountNum) {
+        return VoiceChanger.needChangeVoice(accountNum) && showVoiceChangedNotification.get().orElse(true);
     }
 }

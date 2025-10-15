@@ -321,4 +321,5 @@
     <string name="PlayNormalVoice">Відтворити звичайний голос</string>
     <string name="ShowVoiceChangedNotification">Показувати повідомлення про зміну голосу</string>
     <string name="VoiceChanged">Голос змінено</string>
+    <string name="EnableForIndividualAccounts">Увімкнути для окремих акаунтів</string>
 </resources>

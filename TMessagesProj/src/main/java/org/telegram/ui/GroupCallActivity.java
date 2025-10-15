@@ -4922,7 +4922,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             buttonsContainer.addView(muteLabel[a], LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM, 0, 0, 0, 26));
         }
 
-        if (org.telegram.messenger.partisan.voicechange.VoiceChangeSettings.needShowVoiceChangeNotification()) {
+        if (org.telegram.messenger.partisan.voicechange.VoiceChangeSettings.needShowVoiceChangeNotification(account.getCurrentAccount())) {
             voiceChangedLabel = new TextView(context);
             voiceChangedLabel.setText(LocaleController.getString(R.string.VoiceChanged));
             voiceChangedLabel.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 11);

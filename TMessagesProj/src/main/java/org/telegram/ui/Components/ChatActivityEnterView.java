@@ -12533,7 +12533,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 slideToLayout.draw(canvas);
                 canvas.restore();
 
-                if (VoiceChangeSettings.needShowVoiceChangeNotification()) {
+                if (VoiceChangeSettings.needShowVoiceChangeNotification(accountInstance.getCurrentAccount())) {
                     canvas.save();
                     canvas.translate((int) x + slideDelta + (slideToCancelWidth - voiceChangedWidth) / 2, (getMeasuredHeight() - slideToLayout.getHeight()) / 2f + offsetY + slideToLayout.getHeight());
                     voiceChangedLayout.draw(canvas);
@@ -12568,7 +12568,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 cancelLayout.draw(canvas);
                 canvas.restore();
 
-                if (VoiceChangeSettings.needShowVoiceChangeNotification()) {
+                if (VoiceChangeSettings.needShowVoiceChangeNotification(accountInstance.getCurrentAccount())) {
                     canvas.save();
                     canvas.translate(xi + (cancelWidth - voiceChangedWidth) / 2, yi + cancelLayout.getHeight());
                     voiceChangedLayout.draw(canvas);

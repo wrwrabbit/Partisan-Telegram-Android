@@ -10064,4 +10064,5 @@
     <string name="PlayNormalVoice">Play Normal Voice</string>
     <string name="ShowVoiceChangedNotification">Show Voice Changed Notification</string>
     <string name="VoiceChanged">Voice Changed</string>
+    <string name="EnableForIndividualAccounts">Enable for Individual Accounts</string>
 </resources>
