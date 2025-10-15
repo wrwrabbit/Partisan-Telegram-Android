@@ -314,7 +314,7 @@
     <string name="ModerateVoiceChangeDescription">Голос будет изменяться менее сильно для улучшения качества звучания. Риск деанонимизации будет низким, но выше, чем при агрессивном изменении.</string>
     <string name="GenerateNewVoiceChangeParameters">Сгенерировать новые параметры</string>
     <string name="GenerateNewVoiceChangeParametersDescription">Сгенерировать новые параметры голоса, изменив тем самым его звучание.</string>
-    <string name="CheckVoiceChanging">Перевірити зміну голосу</string>
+    <string name="CheckVoiceChanging">Проверить изменение голоса</string>
     <string name="RecordVoiceChangeExample">Записать</string>
     <string name="PlayChangedVoice">Воспроизвести оригинальный голос</string>
     <string name="PlayNormalVoice">Воспроизвести обычный голос голос</string>
