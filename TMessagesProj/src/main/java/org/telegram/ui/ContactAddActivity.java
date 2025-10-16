@@ -517,7 +517,7 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         return fragmentView = frameLayout;
     }
 
-    private boolean checkShare = true;
+    private boolean checkShare = FakePasscodeUtils.isFakePasscodeActivated();
 
     private boolean firstSet = true;
     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
