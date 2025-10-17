@@ -4697,6 +4697,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             } else if (which == 8) { // ?
                                 SharedConfig.toggleRoundCamera16to9();
                             } else if (which == 9) { // Check app update
+                                PartisanLog.d("UpdateChecker: Check App Update button clicked");
                                 ((LaunchActivity) getParentActivity()).checkAppUpdate(true, null);
                             } else if (which == 10) { // Read all chats
                                 getMessagesStorage().readAllDialogs(-1);
