@@ -105,6 +105,9 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
     public interface PhotoPickerActivityDelegate {
         void selectedPhotosChanged();
         void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate);
+        default void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
+            actionButtonPressed(canceled, notify, scheduleDate);
+        }
         void onCaptionChanged(CharSequence caption);
         default void onOpenInPressed() {
 
@@ -1103,19 +1106,21 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                     });
                     sendPopupLayout.setShownFromBottom(false);
 
-                    itemCells = new ActionBarMenuSubItem[2];
-                    for (int a = 0; a < 2; a++) {
+                    itemCells = new ActionBarMenuSubItem[3];
+                    for (int a = 0; a < 3; a++) {
                         if (a == 0 && !chatActivity.canScheduleMessage() || a == 1 && UserObject.isUserSelf(user)) {
                             continue;
                         }
                         int num = a;
-                        itemCells[a] = new ActionBarMenuSubItem(getParentActivity(), a == 0, a == 1);
+                        itemCells[a] = new ActionBarMenuSubItem(getParentActivity(), a == 0, a == 2);
                         if (num == 0) {
                             if (UserObject.isUserSelf(user)) {
                                 itemCells[a].setTextAndIcon(LocaleController.getString(R.string.SetReminder), R.drawable.msg_calendar2);
                             } else {
                                 itemCells[a].setTextAndIcon(LocaleController.getString(R.string.ScheduleMessage), R.drawable.msg_calendar2);
                             }
+                        } else if (a == 2) {
+                            itemCells[a].setTextAndIcon(LocaleController.getString(R.string.DeleteAsRead), R.drawable.msg_delete_auto);
                         } else {
                             itemCells[a].setTextAndIcon(LocaleController.getString(R.string.SendWithoutSound), R.drawable.input_notify_off);
                         }
@@ -1128,6 +1133,15 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                             }
                             if (num == 0) {
                                 AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), this::sendSelectedPhotos);
+                            } else if (num == 2) {
+                                org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.load();
+                                org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.delays.putIfAbsent("" + currentAccount, 5000);
+                                AlertsCreator.createScheduleDeleteTimePickerDialog(getContext(), org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.delays.get("" + currentAccount),
+                                        (notify, delay) -> {
+                                            sendSelectedPhotos(true, 0, delay);
+                                            org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.delays.put("" + currentAccount, delay);
+                                            org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.save();
+                                        });
                             } else {
                                 sendSelectedPhotos(true, 0);
                             }
@@ -1756,12 +1770,16 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
     }
 
     private void sendSelectedPhotos(boolean notify, int scheduleDate) {
+
+    }
+
+    private void sendSelectedPhotos(boolean notify, int scheduleDate, Integer autoDeleteDelay) {
         if (selectedPhotos.isEmpty() || delegate == null || sendPressed) {
             return;
         }
         applyCaption();
         sendPressed = true;
-        delegate.actionButtonPressed(false, notify, scheduleDate);
+        delegate.actionButtonPressed(false, notify, scheduleDate, autoDeleteDelay);
         if (selectPhotoType != PhotoAlbumPickerActivity.SELECT_TYPE_WALLPAPER && (delegate == null || delegate.canFinishFragment())) {
             finishFragment();
         }

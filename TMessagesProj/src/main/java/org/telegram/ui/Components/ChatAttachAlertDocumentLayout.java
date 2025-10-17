@@ -99,7 +99,8 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         default void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars, Integer autoDeleteDelay) {
             didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, effectId, invertMedia, payStars);
         }
-        default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars) {
+
+        default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars, Integer autoDeleteDelay) {
 
         }
 
@@ -447,8 +448,13 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
 
                             @Override
                             public void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate) {
+                                actionButtonPressed(canceled, notify, scheduleDate, null);
+                            }
+
+                            @Override
+                            public void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
                                 if (!canceled) {
-                                    sendSelectedPhotos(selectedPhotos, selectedPhotosOrder, notify, scheduleDate);
+                                    sendSelectedPhotos(selectedPhotos, selectedPhotosOrder, notify, scheduleDate, autoDeleteDelay);
                                 }
                             }
 
@@ -889,7 +895,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         canSelectOnlyImageFiles = value;
     }
 
-    private void sendSelectedPhotos(HashMap<Object, Object> photos, ArrayList<Object> order, boolean notify, int scheduleDate) {
+    private void sendSelectedPhotos(HashMap<Object, Object> photos, ArrayList<Object> order, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
         if (photos.isEmpty() || delegate == null || sendPressed) {
             return;
         }
@@ -917,7 +923,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
             }
         }
         AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), media.size() + parentAlert.getAdditionalMessagesCount(), payStars -> {
-            delegate.didSelectPhotos(media, notify, scheduleDate, payStars);
+            delegate.didSelectPhotos(media, notify, scheduleDate, payStars, autoDeleteDelay);
         });
     }
 
