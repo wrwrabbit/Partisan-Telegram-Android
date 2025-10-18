@@ -440,6 +440,7 @@ public class SharedConfig {
     public static boolean fileProtectionForAllAccountsEnabled = true;
     public static boolean disableFileProtectionAfterRestart = false;
     public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
+    public static String previousMessageActivatorId = "";
 
     private static final int[] LOW_SOC = {
             -1775228513, // EXYNOS 850
@@ -975,6 +976,7 @@ public class SharedConfig {
             fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
             fileProtectionWorksWhenFakePasscodeActivated = preferences.getBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
+            previousMessageActivatorId = preferences.getString("previousMessageActivatorId", previousMessageActivatorId);
             dayNightWallpaperSwitchHint = preferences.getInt("dayNightWallpaperSwitchHint", 0);
             bigCameraForRound = preferences.getBoolean("bigCameraForRound", false);
             useNewBlur = preferences.getBoolean("useNewBlur", true);
@@ -1084,6 +1086,14 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
+        editor.commit();
+    }
+
+    public static void savePreviousMessageActivatorId(String previousMessageActivatorId) {
+        SharedConfig.previousMessageActivatorId = previousMessageActivatorId;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("previousMessageActivatorId", previousMessageActivatorId);
         editor.commit();
     }
 
