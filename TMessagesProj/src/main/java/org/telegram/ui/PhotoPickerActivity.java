@@ -1770,7 +1770,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
     }
 
     private void sendSelectedPhotos(boolean notify, int scheduleDate) {
-
+        sendSelectedPhotos(notify, scheduleDate, null);
     }
 
     private void sendSelectedPhotos(boolean notify, int scheduleDate, Integer autoDeleteDelay) {
