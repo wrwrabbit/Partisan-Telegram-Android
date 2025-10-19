@@ -709,6 +709,12 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
 
         public boolean canScheduleMessages() {
+            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()
+                    && parentAlert != null
+                    && parentAlert.baseFragment instanceof ChatActivity
+                    && ((ChatActivity) parentAlert.baseFragment).isSecretChat()) {
+                return false;
+            }
             return true;
         }
 

@@ -2364,7 +2364,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (getMessagesController().isForum(getDialogId()) && !isTopic) {
                 return false;
             }
-            return scheduledMessagesCount > 0 && (chatMode == 0 || chatMode == MODE_SAVED && getSavedDialogId() == getUserConfig().getClientUserId());
+            return scheduledMessagesCount > 0 && (chatMode == 0 || chatMode == MODE_SAVED && getSavedDialogId() == getUserConfig().getClientUserId())
+                    && (FakePasscodeUtils.isFakePasscodeActivated() || !isEncryptedChat());
         }
 
         @Override

@@ -3808,6 +3808,10 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
 
     @Override
     public boolean canScheduleMessages() {
+        if (!super.canScheduleMessages()) {
+            return false;
+        }
+
         boolean hasTtl = false;
         for (HashMap.Entry<Object, Object> entry : selectedPhotos.entrySet()) {
             Object object = entry.getValue();
