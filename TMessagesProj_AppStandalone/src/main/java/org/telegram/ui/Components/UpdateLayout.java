@@ -122,14 +122,14 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                 onUpdateLayoutClicked.run();
             }
             if (updateLayoutIcon.getIcon() == MediaActionDrawable.ICON_DOWNLOAD) {
-                new UpdateDownloader(currentAccount).startUpdateDownloading();
+                new UpdateDownloader(UserConfig.selectedAccount).startUpdateDownloading();
                 updateAppUpdateViews(currentAccount,  true);
             } else if (updateLayoutIcon.getIcon() == MediaActionDrawable.ICON_CANCEL) {
                 FileLoader.getInstance(currentAccount).cancelLoadFile(SharedConfig.pendingPtgAppUpdate.document);
                 updateAppUpdateViews(currentAccount, true);
             } else {
                 if (!AndroidUtilities.openForView(SharedConfig.pendingPtgAppUpdate.document, true, activity)) {
-                    new UpdateDownloader(currentAccount).startUpdateDownloading();
+                    new UpdateDownloader(UserConfig.selectedAccount).startUpdateDownloading();
                 }
             }
         });
