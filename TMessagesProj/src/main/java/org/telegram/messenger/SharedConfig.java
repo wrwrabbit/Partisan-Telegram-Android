@@ -751,7 +751,9 @@ public class SharedConfig {
             sharedConfigMigrationVersion++;
         }
         if (sharedConfigMigrationVersion == 3) {
-            activatedTesterSettingType = 0;
+            if (!BuildVars.DEBUG_PRIVATE_VERSION) {
+                activatedTesterSettingType = 0;
+            }
             sharedConfigMigrationVersion++;
         }
 
