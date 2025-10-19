@@ -317,6 +317,8 @@ public class ApplicationLoader extends Application {
         if (filesCopiedFromUpdater) {
             PartisanLog.d("Remove migration preferences from config");
             SharedConfig.filesCopiedFromOldTelegram = true;
+            SharedConfig.oldTelegramRemoved = false;
+            SharedConfig.runNumber = 0;
             if (SharedConfig.getPasscodeHash() != null && !SharedConfig.getPasscodeHash().isEmpty()) {
                 SharedConfig.needShowMaskedPasscodeScreenTutorial = true;
                 SharedConfig.setAppLocked(true); // Force passcode tutorial after migration
