@@ -13,18 +13,18 @@ import java.util.function.BiConsumer;
 public class TesterSettingsParametersProvider implements ParametersProvider {
     @Override
     public double getPitchFactor() {
-        return TesterSettings.pitchFactor.get().get();
+        return TesterSettings.pitchFactor.get().orElse(1.0f);
     }
 
     @Override
     public double getTimeStretchFactor() {
-        return TesterSettings.timeStretchFactor.get().get();
+        return TesterSettings.timeStretchFactor.get().orElse(1.0f);
     }
 
     @Override
     public Map<Integer, Integer> getSpectrumDistortionMap(int sampleRate) {
         Map<Integer, Integer> distortionMap = accumulateDistortionParams(
-                TesterSettings.spectrumDistorterParams.get().get(),
+                TesterSettings.spectrumDistorterParams.get().orElse(""),
                 new HashMap<>(),
                 (map, distortionParts) -> {
                     int fromHz = Integer.parseInt(distortionParts[0]);
@@ -39,7 +39,7 @@ public class TesterSettingsParametersProvider implements ParametersProvider {
     @Override
     public List<TimeDistorter.DistortionInterval> getTimeDistortionList() {
         List<TimeDistorter.DistortionInterval> distortionMap = accumulateDistortionParams(
-                TesterSettings.timeDistortionParams.get().get(),
+                TesterSettings.timeDistortionParams.get().orElse(""),
                 new ArrayList<>(),
                 (list, distortionParts) -> {
                     TimeDistorter.DistortionInterval interval = new TimeDistorter.DistortionInterval();
@@ -74,11 +74,11 @@ public class TesterSettingsParametersProvider implements ParametersProvider {
 
     @Override
     public double getF0Shift() {
-        return TesterSettings.f0Shift.get().get();
+        return TesterSettings.f0Shift.get().orElse(1.0f);
     }
 
     @Override
     public double getFormantRatio() {
-        return TesterSettings.formantRatio.get().get();
+        return TesterSettings.formantRatio.get().orElse(1.0f);
     }
 }
