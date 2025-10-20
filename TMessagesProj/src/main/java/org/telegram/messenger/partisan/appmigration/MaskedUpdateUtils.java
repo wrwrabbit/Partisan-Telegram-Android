@@ -13,6 +13,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.BlackListLoader;
 import org.telegram.messenger.partisan.KnownChatUsernameResolver;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.TLRPC;
@@ -87,6 +88,7 @@ public class MaskedUpdateUtils {
         SharedConfig.saveConfig();
 
         if (!sendUpdateRequestFile(accountNum, SharedConfig.pendingPtgAppUpdate.botRequestTag)) {
+            PartisanLog.d("UpdateChecker: failed send request file");
             SharedConfig.pendingPtgAppUpdate.botRequestTag = null;
             SharedConfig.saveConfig();
             return;

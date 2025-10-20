@@ -351,6 +351,7 @@ public class TesterSettingsActivity extends BaseFragment {
             new EditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
             new ButtonItem(this, "Reset Update", this::resetUpdate),
             new ButtonItem(this, "Reset Masked Update Tag", () -> {
+                PartisanLog.d("UpdateChecker: update tag force reset");
                 SharedConfig.pendingPtgAppUpdate.botRequestTag = null;
                 SharedConfig.saveConfig();
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived);

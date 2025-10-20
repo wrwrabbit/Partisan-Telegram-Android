@@ -3,6 +3,7 @@ package org.telegram.messenger.partisan.appmigration;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.messageinterception.InterceptionResult;
 import org.telegram.messenger.partisan.messageinterception.MessageInterceptor;
 import org.telegram.messenger.partisan.update.UpdateData;
@@ -17,6 +18,7 @@ public class MaskedAppUpdateMessageInterceptor implements MessageInterceptor {
 
     private synchronized void trySaveMaskedUpdateDocument(TLRPC.Message message) {
         if (isMaskedUpdateDocument(message)) {
+            PartisanLog.d("UpdateChecker: masked document received");
             SharedConfig.pendingPtgAppUpdate.document = message.media.document;
             SharedConfig.saveConfig();
             AndroidUtilities.runOnUIThread(() ->
@@ -24,6 +26,7 @@ public class MaskedAppUpdateMessageInterceptor implements MessageInterceptor {
             );
         } else if (isUpdateRequestFailedMessage(message)) {
             SharedConfig.pendingPtgAppUpdate.botRequestTag = null;
+            PartisanLog.d("UpdateChecker: update request failed");
             SharedConfig.saveConfig();
             AndroidUtilities.runOnUIThread(() ->
                     NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived)
