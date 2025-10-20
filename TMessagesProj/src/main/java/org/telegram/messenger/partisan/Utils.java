@@ -640,6 +640,21 @@ public class Utils {
         return accounts;
     }
 
+    public static long getMessageDialogId(TLRPC.Message message) {
+        if (message.dialog_id != 0) {
+            return message.dialog_id;
+        } else if (message.from_id != null) {
+            if (message.from_id instanceof TLRPC.TL_peerUser) {
+                return message.from_id.user_id;
+            } else if (message.from_id instanceof TLRPC.TL_peerChannel) {
+                return -message.from_id.channel_id;
+            } else if (message.from_id instanceof TLRPC.TL_peerChat) {
+                return -message.from_id.chat_id;
+            }
+        }
+        return 0;
+    }
+
     public static LinearLayout createAccountsCheckboxLayout(Context context, Predicate<Integer> isEnabled, BiConsumer<Integer, Boolean> onValueChanged) {
         final LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setOrientation(LinearLayout.VERTICAL);

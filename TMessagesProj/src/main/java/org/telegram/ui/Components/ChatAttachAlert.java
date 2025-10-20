@@ -709,6 +709,12 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
 
         public boolean canScheduleMessages() {
+            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()
+                    && parentAlert != null
+                    && parentAlert.baseFragment instanceof ChatActivity
+                    && ((ChatActivity) parentAlert.baseFragment).isSecretChat()) {
+                return false;
+            }
             return true;
         }
 
@@ -4285,27 +4291,27 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             layouts[4] = documentLayout = new ChatAttachAlertDocumentLayout(this, getContext(), type, resourcesProvider);
             documentLayout.setDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
                 @Override
-                public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars) {
-                    didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, null);
+                public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars) {
+                    didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, null);
                 }
 
                 @Override
-                public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars, Integer autoDeleteDelay) {
+                public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars, Integer autoDeleteDelay) {
                     if (documentsDelegate != null) {
-                        documentsDelegate.didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, autoDeleteDelay);
+                        documentsDelegate.didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, autoDeleteDelay);
                     } else if (baseFragment instanceof ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) {
-                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, autoDeleteDelay);
+                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, autoDeleteDelay);
                     } else if (baseFragment instanceof PassportActivity) {
                         ((PassportActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate, effectId, invertMedia);
                     }
                 }
 
                 @Override
-                public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars) {
+                public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars, Integer autoDeleteDelay) {
                     if (documentsDelegate != null) {
-                        documentsDelegate.didSelectPhotos(photos, notify, scheduleDate, payStars);
+                        documentsDelegate.didSelectPhotos(photos, notify, scheduleDate, payStars, autoDeleteDelay);
                     } else if (baseFragment instanceof ChatActivity) {
-                        ((ChatActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate, payStars);
+                        ((ChatActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate, payStars, autoDeleteDelay);
                     } else if (baseFragment instanceof PassportActivity) {
                         ((PassportActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate);
                     }

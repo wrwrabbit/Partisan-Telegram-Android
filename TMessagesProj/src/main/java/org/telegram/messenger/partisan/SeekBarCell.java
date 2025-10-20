@@ -15,15 +15,16 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SeekBarView;
 
-import java.util.Arrays;
+import java.text.DecimalFormat;
 import java.util.function.Consumer;
 
 public class SeekBarCell extends FrameLayout {
-    private int startValue = -1;
-    private int endValue = -1;
-    private Object[] values;
-    private int currentValue;
-    private Consumer<Object> delegate;
+    private double startValue = -1;
+    private double endValue = -1;
+    private double step = -1;
+    private double currentValue;
+    private Consumer<Double> delegate;
+    private static final DecimalFormat decimalFormat = new DecimalFormat("0.000");
 
     private final SeekBarView seekBar;
     private final TextPaint textPaint;
@@ -43,7 +44,8 @@ public class SeekBarCell extends FrameLayout {
         seekBar.setDelegate(new SeekBarView.SeekBarViewDelegate() {
             @Override
             public void onSeekBarDrag(boolean stop, float progress) {
-                onValueChanged(Math.round(startValue + (endValue - startValue) * progress));
+                int index = Math.round(getStepsCount() * progress);
+                onValueChanged(startValue + index * step);
             }
 
             @Override
@@ -57,53 +59,44 @@ public class SeekBarCell extends FrameLayout {
 
             @Override
             public int getStepsCount() {
-                return endValue - startValue;
+                return SeekBarCell.this.getStepsCount();
             }
         });
         seekBar.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
         addView(seekBar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 38, Gravity.LEFT | Gravity.TOP, 5, 5, 39, 0));
     }
 
-    public void setValues(int startValue, int endValue, int currentValue) {
+    public void setValues(double startValue, double endValue, double step, double currentValue) {
         this.startValue = startValue;
         this.endValue = endValue;
+        this.step = step;
         this.currentValue = currentValue;
-        this.values = null;
-        seekBar.setSeparatorsCount(endValue - startValue + 1);
+        seekBar.setSeparatorsCount(getStepsCount() + 1);
     }
 
-    public void setValues(Object[] values, Object currentValue) {
-        this.values = values;
-        this.currentValue = Arrays.asList(values).indexOf(currentValue);
-        this.startValue = 0;
-        this.endValue = values.length - 1;
-        seekBar.setSeparatorsCount(endValue - startValue + 1);
+    private int getStepsCount() {
+        return (int)Math.round((endValue - startValue) / step);
     }
 
-    public void setDelegate(Consumer<Object> delegate) {
+    public void setDelegate(Consumer<Double> delegate) {
         this.delegate = delegate;
     }
 
-    private void onValueChanged(int value) {
-        currentValue = value;
-        if (delegate != null) {
-            delegate.accept(getCurrentValueObject());
-        }
-        invalidate();
-    }
-
-    private Object getCurrentValueObject() {
-        if (values != null && currentValue < values.length) {
-            return values[currentValue];
-        } else {
-            return currentValue;
+    private void onValueChanged(double value) {
+        if (value != currentValue) {
+            currentValue = value;
+            if (delegate != null) {
+                delegate.accept(currentValue);
+            }
+            invalidate();
         }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         textPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteValueText));
-        canvas.drawText(getCurrentValueObject().toString(), getMeasuredWidth() - dp(39), dp(28), textPaint);
+        String valueStr = decimalFormat.format(currentValue);
+        canvas.drawText(valueStr, getMeasuredWidth() - dp(39), dp(28), textPaint);
     }
 
     @Override
@@ -111,7 +104,8 @@ public class SeekBarCell extends FrameLayout {
         super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
         int width = MeasureSpec.getSize(widthMeasureSpec);
         if (lastWidth != width) {
-            seekBar.setProgress((currentValue - startValue) / (float) (endValue - startValue));
+            double progress = (currentValue - startValue) / (endValue - startValue);
+            seekBar.setProgress((float) progress);
             lastWidth = width;
         }
     }

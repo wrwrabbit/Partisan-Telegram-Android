@@ -317,6 +317,8 @@ public class ApplicationLoader extends Application {
         if (filesCopiedFromUpdater) {
             PartisanLog.d("Remove migration preferences from config");
             SharedConfig.filesCopiedFromOldTelegram = true;
+            SharedConfig.oldTelegramRemoved = false;
+            SharedConfig.runNumber = 0;
             applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE).edit()
                     .remove("ptgMigrationStep")
                     .remove("ptgMigrationMaxCancelledInstallationDate")
