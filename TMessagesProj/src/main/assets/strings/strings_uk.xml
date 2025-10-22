@@ -89,7 +89,7 @@
     <string name="RemoveDialogCantSaveTitle">Неможливо зберегти</string>
     <string name="RemoveDialogCantSaveDetails">Позбавтеся неоднозначностей у налаштуваннях</string>
     <string name="ClearAfterActivation">Очищати налаштування коду блокування</string>
-    <string name="ClearAfterActivationDetails">Усі налаштування фальшивого коду блокування будуть видалені після активації та зловмисник не зможе отримати доступ до них.</string>
+    <string name="ClearAfterActivationDetails">Усі налаштування фальшивого коду блокування будуть видалені після активації, та зловмисник не зможе отримати доступ до них.</string>
     <string name="DeleteOtherPasscodesAfterActivation">Видаляти інші коди блокування</string>
     <string name="DeleteOtherPasscodesAfterActivationDetails">Усі інші фальшиві коди блокування після активації будуть видалені й зловмисник не зможе отримати доступ до них.</string>
     <string name="MuteAudioWhenTakingPhoto">Вимикати звук під час фотографування</string>

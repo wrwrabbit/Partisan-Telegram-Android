@@ -88,7 +88,7 @@
     <string name="RemoveDialogCantSaveTitle">Немагчыма захаваць</string>
     <string name="RemoveDialogCantSaveDetails">Пазбаўцеся ад неадназначнасцей ў наладах</string>
     <string name="ClearAfterActivation">Чысціць налады код-пароля</string>
-    <string name="ClearAfterActivationDetails">Усе налады несапраўднага код-пароля пасля актывацыі будуць выдаляцца і зламыснік не зможа атрымаць да іх доступ.</string>
+    <string name="ClearAfterActivationDetails">Усе налады несапраўднага код-пароля пасля актывацыі будуць выдаляцца, і зламыснік не зможа атрымаць да іх доступ.</string>
     <string name="DeleteOtherPasscodesAfterActivation">Выдаляць іншыя код-паролі</string>
     <string name="DeleteOtherPasscodesAfterActivationDetails">Усе астатнія несапраўдныя код-паролі пасля актывацыі будуць выдалены і зламыснік не зможа атрымаць да іх доступ.</string>
     <string name="MuteAudioWhenTakingPhoto">Адключаць гук пры фатаграфаванні</string>
