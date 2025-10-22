@@ -195,8 +195,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 return;
             }
             if (position == enableRow) {
-                boolean newValue = !VoiceChangeSettings.voiceChangeEnabled.get().orElse(false);
-                VoiceChangeSettings.voiceChangeEnabled.set(newValue);
+                boolean newValue = VoiceChangeSettings.voiceChangeEnabled.toggle();
                 if (VoiceChangeSettings.areSettingsEmpty()) {
                     VoiceChangeSettings.generateNewParameters();
                 }
@@ -228,7 +227,6 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                         getParentActivity().requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 3);
                         return;
                     }
-
                     startRecording();
                     ((TextSettingsCell)view).setText(getString(R.string.Stop), true);
                 } else {
@@ -240,8 +238,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             } else if (position == playOriginalRow) {
                 onPlayerButtonClicked(view, false);
             } else if (position == showVoiceChangedNotificationRow) {
-                boolean newValue = !VoiceChangeSettings.showVoiceChangedNotification.get().orElse(false);
-                VoiceChangeSettings.showVoiceChangedNotification.set(newValue);
+                boolean newValue = VoiceChangeSettings.showVoiceChangedNotification.toggle();
                 ((TextCheckCell)view).setChecked(newValue);
             } else if (position == enableForIndividualAccountsRow) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());

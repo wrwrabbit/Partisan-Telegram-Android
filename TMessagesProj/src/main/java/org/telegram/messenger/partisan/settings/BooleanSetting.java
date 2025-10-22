@@ -17,4 +17,10 @@ public class BooleanSetting extends Setting<Boolean> {
     public void load() {
         this.value = getLocalPreferences().getBoolean(key, defaultValue);
     }
+
+    public boolean toggle() {
+        boolean newValue = !getOrDefault();
+        set(newValue);
+        return newValue;
+    }
 }
