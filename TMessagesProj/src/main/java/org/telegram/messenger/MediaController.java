@@ -4715,7 +4715,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 recordQuickReplyShortcutId = quick_shortcut_id;
                 fileBuffer.rewind();
                 audioRecorder.startRecording();
-                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(currentAccount)) {
+                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(currentAccount, org.telegram.messenger.partisan.voicechange.VoiceChangeType.VOICE_MESSAGE)) {
                     voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(audioRecorder.getSampleRate());
                 }
             } catch (Exception e) {

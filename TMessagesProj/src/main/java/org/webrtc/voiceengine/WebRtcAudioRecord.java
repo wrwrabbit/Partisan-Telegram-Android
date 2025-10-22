@@ -451,7 +451,7 @@ public class WebRtcAudioRecord {
       reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH, "AudioRecord.startRecording failed - incorrect state :" + audioRecord.getRecordingState());
       return false;
     }
-    if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(accountNum)) {
+    if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(accountNum, org.telegram.messenger.partisan.voicechange.VoiceChangeType.CALL)) {
       voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(requestedSampleRate);
     }
     audioThread = new AudioRecordThread("AudioRecordJavaThread");

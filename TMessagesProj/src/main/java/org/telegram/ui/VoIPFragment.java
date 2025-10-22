@@ -1061,7 +1061,7 @@ public class VoIPFragment implements
         ViewCompat.setImportantForAccessibility(statusTextView, ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         statusLayout.addView(statusTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 6));
 
-        if (org.telegram.messenger.partisan.voicechange.VoiceChangeSettings.needShowVoiceChangeNotification(currentAccount)) {
+        if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needShowVoiceChangeNotification()) {
             voiceChangedLayout = new TextView(context);
             voiceChangedLayout.setText(LocaleController.getString(R.string.VoiceChanged));
             voiceChangedLayout.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);

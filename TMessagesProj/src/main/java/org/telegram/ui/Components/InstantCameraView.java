@@ -3253,7 +3253,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
 
                 audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, audioSampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
                 audioRecorder.startRecording();
-                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(currentAccount)) {
+                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(currentAccount, org.telegram.messenger.partisan.voicechange.VoiceChangeType.VIDEO_MESSAGE)) {
                     voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(audioRecorder.getSampleRate());
                 }
                 if (BuildVars.LOGS_ENABLED) {

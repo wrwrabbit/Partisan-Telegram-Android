@@ -321,4 +321,7 @@
     <string name="ShowVoiceChangedNotification">Показывать уведомление об изменении голоса</string>
     <string name="VoiceChanged">Голос изменён</string>
     <string name="EnableForIndividualAccounts">Включить для отдельных аккаунтов</string>
+    <string name="EnableForVoiceMessages">Включить для голосовых сообщений</string>
+    <string name="EnableForVideoMessages">Включить для видеосообщений</string>
+    <string name="EnableForVideoCalls">Включить для звонков</string>
 </resources>

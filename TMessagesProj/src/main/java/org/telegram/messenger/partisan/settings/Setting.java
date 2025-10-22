@@ -29,6 +29,14 @@ public abstract class Setting<T> {
         }
     }
 
+    public T getOrDefault() {
+        if (conditionForGet != null && conditionForGet.get() == false) {
+            return defaultValue;
+        } else {
+            return value;
+        }
+    }
+
     public void set(T newValue) {
         this.value = newValue;
         SharedPreferences.Editor editor;

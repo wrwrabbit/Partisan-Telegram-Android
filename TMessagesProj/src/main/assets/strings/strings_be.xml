@@ -322,4 +322,7 @@
     <string name="ShowVoiceChangedNotification">Паказваць апавяшчэнне аб змене голасу</string>
     <string name="VoiceChanged">Голас зменены</string>
     <string name="EnableForIndividualAccounts">Уключыць для асобных акаўнтаў</string>
+    <string name="EnableForVoiceMessages">Уключыць для галасавых паведамленняў</string>
+    <string name="EnableForVideoMessages">Уключыць для відэапаведамленняў</string>
+    <string name="EnableForVideoCalls">Уключыць для званкоў</string>
 </resources>

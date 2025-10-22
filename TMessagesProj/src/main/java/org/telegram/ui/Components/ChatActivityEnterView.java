@@ -146,7 +146,7 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.camera.CameraController;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
-import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
+import org.telegram.messenger.partisan.voicechange.VoiceChanger;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
@@ -12533,7 +12533,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 slideToLayout.draw(canvas);
                 canvas.restore();
 
-                if (VoiceChangeSettings.needShowVoiceChangeNotification(accountInstance.getCurrentAccount())) {
+                if (VoiceChanger.needShowVoiceChangeNotification()) {
                     canvas.save();
                     canvas.translate((int) x + slideDelta + (slideToCancelWidth - voiceChangedWidth) / 2, (getMeasuredHeight() - slideToLayout.getHeight()) / 2f + offsetY + slideToLayout.getHeight());
                     voiceChangedLayout.draw(canvas);
@@ -12568,7 +12568,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 cancelLayout.draw(canvas);
                 canvas.restore();
 
-                if (VoiceChangeSettings.needShowVoiceChangeNotification(accountInstance.getCurrentAccount())) {
+                if (VoiceChanger.needShowVoiceChangeNotification()) {
                     canvas.save();
                     canvas.translate(xi + (cancelWidth - voiceChangedWidth) / 2, yi + cancelLayout.getHeight());
                     voiceChangedLayout.draw(canvas);

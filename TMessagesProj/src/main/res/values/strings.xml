@@ -10144,4 +10144,7 @@
     <string name="ShowVoiceChangedNotification">Show Voice Changed Notification</string>
     <string name="VoiceChanged">Voice Changed</string>
     <string name="EnableForIndividualAccounts">Enable for Individual Accounts</string>
+    <string name="EnableForVoiceMessages">Enable for Voice Messages</string>
+    <string name="EnableForVideoMessages">Enable for Video Messages</string>
+    <string name="EnableForVideoCalls">Enable for Calls</string>
 </resources>

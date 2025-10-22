@@ -6,12 +6,16 @@ import org.telegram.messenger.partisan.PartisanLog;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.io.TarsosDSPAudioFormat;
 import be.tarsos.dsp.io.UniversalAudioInputStream;
 
 public class VoiceChanger {
+    private static final Set<VoiceChanger> runningVoiceChangers = new HashSet<>();
+
     private final int sampleRate;
     private final VoiceChangePipedInputStream pipedInputStream;
     private final VoiceChangePipedOutputStream pipedOutputStream;
@@ -32,6 +36,7 @@ public class VoiceChanger {
         audioSaver = new AudioSaverProcessor();
         buildAudioProcessorChain();
         dispatcherThread = createDispatcherThread();
+        runningVoiceChangers.add(this);
     }
 
     private VoiceChangePipedInputStream createInputStream(VoiceChangePipedOutputStream pipedOutputStream) {
@@ -110,6 +115,7 @@ public class VoiceChanger {
             pipedInputStream.close();
             writeQueue.recycle();
             dispatcherThread.join();
+            runningVoiceChangers.remove(this);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -124,12 +130,15 @@ public class VoiceChanger {
         );
     }
 
-    public static boolean needChangeVoice(int accountNum) {
-        return voiceChangeEnabled(accountNum) && anyParameterSet();
+    public static boolean needChangeVoice(int accountNum, VoiceChangeType type) {
+        return voiceChangeEnabled(accountNum, type) && anyParameterSet();
     }
 
-    private static boolean voiceChangeEnabled(int accountNum) {
+    private static boolean voiceChangeEnabled(int accountNum, VoiceChangeType type) {
         if (!VoiceChangeSettings.voiceChangeEnabled.get().orElse(false)) {
+            return false;
+        }
+        if (type != null && !VoiceChangeSettings.isVoiceChangeTypeEnabled(type)) {
             return false;
         }
         return UserConfig.getInstance(accountNum).voiceChangeEnabled;
@@ -141,5 +150,13 @@ public class VoiceChanger {
                 || parametersProvider.spectrumDistortionEnabled()
                 || parametersProvider.timeDistortionEnabled()
                 || parametersProvider.formantShiftingEnabled();
+    }
+
+    public static boolean needShowVoiceChangeNotification() {
+        return isAnyVoiceChangerRunning() && VoiceChangeSettings.showVoiceChangedNotification.get().orElse(true);
+    }
+
+    private static boolean isAnyVoiceChangerRunning() {
+        return !runningVoiceChangers.isEmpty();
     }
 }
