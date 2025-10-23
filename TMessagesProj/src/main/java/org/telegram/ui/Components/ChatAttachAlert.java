@@ -709,6 +709,12 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
 
         public boolean canScheduleMessages() {
+            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()
+                    && parentAlert != null
+                    && parentAlert.baseFragment instanceof ChatActivity
+                    && ((ChatActivity) parentAlert.baseFragment).isSecretChat()) {
+                return false;
+            }
             return true;
         }
 
@@ -4301,11 +4307,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 }
 
                 @Override
-                public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars) {
+                public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars, Integer autoDeleteDelay) {
                     if (documentsDelegate != null) {
-                        documentsDelegate.didSelectPhotos(photos, notify, scheduleDate, payStars);
+                        documentsDelegate.didSelectPhotos(photos, notify, scheduleDate, payStars, autoDeleteDelay);
                     } else if (baseFragment instanceof ChatActivity) {
-                        ((ChatActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate, payStars);
+                        ((ChatActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate, payStars, autoDeleteDelay);
                     } else if (baseFragment instanceof PassportActivity) {
                         ((PassportActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate);
                     }

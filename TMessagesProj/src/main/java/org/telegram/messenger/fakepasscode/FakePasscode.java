@@ -230,6 +230,12 @@ public class FakePasscode {
         if (activationDate != null && message.date < activationDate) {
             return false;
         }
+        String messageIdStr = message.id + ":" + Utils.getMessageDialogId(message);
+        if (messageIdStr.equals(SharedConfig.previousMessageActivatorId)) {
+            return false;
+        } else {
+            SharedConfig.savePreviousMessageActivatorId(messageIdStr);
+        }
         if (activationMessage.equals(message.message)) {
             executeActions();
             SharedConfig.fakePasscodeActivated(SharedConfig.fakePasscodes.indexOf(this));
