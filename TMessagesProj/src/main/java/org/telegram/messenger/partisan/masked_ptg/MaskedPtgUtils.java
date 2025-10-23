@@ -10,6 +10,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.ui.BasePermissionsActivity;
+import org.telegram.ui.Components.PermissionRequest;
 import org.telegram.ui.DialogBuilder.DialogCheckBox;
 import org.telegram.ui.DialogBuilder.DialogTemplate;
 import org.telegram.ui.DialogBuilder.DialogType;
@@ -59,6 +60,9 @@ public class MaskedPtgUtils {
             return false;
         }
         if (requestCode == 1 && Arrays.asList(permissions).contains(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            return false;
+        }
+        if (requestCode == (PermissionRequest.lastId - 1) && Arrays.asList(permissions).contains(Manifest.permission.POST_NOTIFICATIONS)) {
             return false;
         }
         return true;

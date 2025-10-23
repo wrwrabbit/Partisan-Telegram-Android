@@ -326,23 +326,9 @@ public class TesterSettingsActivity extends BaseFragment {
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
-            seekBarCell.setValues(generateValues().toArray(), getValue.get());
-            seekBarCell.setDelegate(obj -> setValue.accept((float)obj));
+            seekBarCell.setValues(0.2, 2.01, 0.025, getValue.get());
+            seekBarCell.setDelegate(value -> setValue.accept((float)(double)value));
             seekBarCell.invalidate();
-        }
-
-        private List<Object> generateValues() {
-            List<Object> values = new ArrayList<>();
-            for (float value = 0.2f; value <= 2.01f; value += 0.025f) {
-                if (Math.abs(value - getValue.get()) < 0.01f) {
-                    values.add(getValue.get());
-                } else if (Math.abs(value - 1.0f) < 0.01f) {
-                    values.add(1.0f);
-                } else {
-                    values.add(value);
-                }
-            }
-            return values;
         }
 
         @Override

@@ -53,6 +53,7 @@ import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
+import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
@@ -93,12 +94,13 @@ import java.util.StringTokenizer;
 public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLayout {
 
     public interface DocumentSelectActivityDelegate {
-        void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars);
+        void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars);
 
-        default void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars, Integer autoDeleteDelay) {
-            didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia, payStars);
+        default void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars, Integer autoDeleteDelay) {
+            didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, effectId, invertMedia, payStars);
         }
-        default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars) {
+
+        default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars, Integer autoDeleteDelay) {
 
         }
 
@@ -446,8 +448,13 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
 
                             @Override
                             public void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate) {
+                                actionButtonPressed(canceled, notify, scheduleDate, null);
+                            }
+
+                            @Override
+                            public void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
                                 if (!canceled) {
-                                    sendSelectedPhotos(selectedPhotos, selectedPhotosOrder, notify, scheduleDate);
+                                    sendSelectedPhotos(selectedPhotos, selectedPhotosOrder, notify, scheduleDate, autoDeleteDelay);
                                 }
                             }
 
@@ -760,18 +767,21 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         if (selectedFiles.size() == 0 && selectedMessages.size() == 0 || delegate == null || sendPressed) {
             return false;
         }
-        ArrayList<MessageObject> fmessages = new ArrayList<>();
-        Iterator<FilteredSearchView.MessageHashId> idIterator = selectedMessages.keySet().iterator();
+        final ArrayList<MessageObject> fmessages = new ArrayList<>();
+        final Iterator<FilteredSearchView.MessageHashId> idIterator = selectedMessages.keySet().iterator();
         while (idIterator.hasNext()) {
             FilteredSearchView.MessageHashId hashId = idIterator.next();
             fmessages.add(selectedMessages.get(hashId));
         }
-        ArrayList<String> files = new ArrayList<>(selectedFilesOrder);
-        String caption = parentAlert.getCommentView().getText().toString();
+        final ArrayList<String> files = new ArrayList<>(selectedFilesOrder);
+
+        final CharSequence[] message = new CharSequence[]{ parentAlert.getCommentView().getText() };
+        final ArrayList<TLRPC.MessageEntity> captionEntities = MediaDataController.getInstance(parentAlert.currentAccount).getEntities(message, true);
+        final String caption = message[0].toString();
 
         return AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), (!TextUtils.isEmpty(caption) ? 1 : 0) + files.size() + parentAlert.getAdditionalMessagesCount(), payStars -> {
             sendPressed = true;
-            delegate.didSelectFiles(files, caption, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, autoDeleteDelay);
+            delegate.didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, autoDeleteDelay);
             parentAlert.dismiss(true);
         });
     }
@@ -885,7 +895,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         canSelectOnlyImageFiles = value;
     }
 
-    private void sendSelectedPhotos(HashMap<Object, Object> photos, ArrayList<Object> order, boolean notify, int scheduleDate) {
+    private void sendSelectedPhotos(HashMap<Object, Object> photos, ArrayList<Object> order, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
         if (photos.isEmpty() || delegate == null || sendPressed) {
             return;
         }
@@ -913,7 +923,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
             }
         }
         AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), media.size() + parentAlert.getAdditionalMessagesCount(), payStars -> {
-            delegate.didSelectPhotos(media, notify, scheduleDate, payStars);
+            delegate.didSelectPhotos(media, notify, scheduleDate, payStars, autoDeleteDelay);
         });
     }
 

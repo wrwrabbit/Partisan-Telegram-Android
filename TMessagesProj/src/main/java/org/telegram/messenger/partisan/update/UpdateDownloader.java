@@ -5,13 +5,18 @@ import androidx.collection.LongSparseArray;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.LaunchActivity;
 
 public class UpdateDownloader implements NotificationCenter.NotificationCenterDelegate {
+    private final int classGuid = ConnectionsManager.generateClassGuid();
+
     private final int accountNum;
     private int loadAttempt = 0;
     public static volatile boolean isUpdateChecking = false;
@@ -72,10 +77,37 @@ public class UpdateDownloader implements NotificationCenter.NotificationCenterDe
                 log("update load failed");
                 if (loadAttempt == 0) {
                     loadAttempt++;
+                    loadUpdateDocumentAndStartDownloadAgain();
+                } else if (loadAttempt == 1) {
+                    loadAttempt++;
                     recheckUpdateAndStartDownloadAgain();
                 }
             }
+        } else if (id == NotificationCenter.messagesDidLoad) {
+            if ((Integer) args[10] != classGuid) {
+                return;
+            }
+            getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
+            getNotificationCenter().removeObserver(this, NotificationCenter.loadingMessagesFailed);
+            startUpdateDownloading();
+        } else if (id == NotificationCenter.loadingMessagesFailed) {
+            if ((Integer) args[0] != classGuid) {
+                return;
+            }
+            getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
+            getNotificationCenter().removeObserver(this, NotificationCenter.loadingMessagesFailed);
+            recheckUpdateAndStartDownloadAgain();
         }
+    }
+
+    private void loadUpdateDocumentAndStartDownloadAgain() {
+        getNotificationCenter().addObserver(this, NotificationCenter.messagesDidLoad);
+        getNotificationCenter().addObserver(this, NotificationCenter.loadingMessagesFailed);
+        getMessagesController().loadMessages(MaskedMigratorHelper.MASKING_BOT_ID, 0,
+                false, 1, SharedConfig.pendingPtgAppUpdate.message.id, 0, false,
+                0, classGuid, MessagesController.LOAD_AROUND_MESSAGE, 0, 0, 0,
+                0, 0, false
+        );
     }
 
     private boolean isUpdatePath(String path) {
@@ -96,5 +128,9 @@ public class UpdateDownloader implements NotificationCenter.NotificationCenterDe
 
     private NotificationCenter getNotificationCenter() {
         return NotificationCenter.getInstance(accountNum);
+    }
+
+    private MessagesController getMessagesController() {
+        return MessagesController.getInstance(accountNum);
     }
 }

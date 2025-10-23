@@ -126,9 +126,9 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
             if (updateLayoutIcon.getIcon() == MediaActionDrawable.ICON_DOWNLOAD) {
                 String botRequestTag = SharedConfig.pendingPtgAppUpdate.botRequestTag;
                 if (botRequestTag == null) {
-                    MaskedUpdateUtils.requestMaskedUpdateBuildWithWarning(currentAccount, activity);
+                    MaskedUpdateUtils.requestMaskedUpdateBuildWithWarning(UserConfig.selectedAccount, activity);
                 } else if (SharedConfig.pendingPtgAppUpdate.isMaskedUpdateDocument()) {
-                    new UpdateDownloader(currentAccount).startUpdateDownloading();
+                    new UpdateDownloader(UserConfig.selectedAccount).startUpdateDownloading();
                 }
                 updateAppUpdateViews(currentAccount,  true);
             } else if (updateLayoutIcon.getIcon() == MediaActionDrawable.ICON_CANCEL) {
@@ -136,7 +136,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                 updateAppUpdateViews(currentAccount, true);
             } else if (SharedConfig.pendingPtgAppUpdate.isMaskedUpdateDocument()) {
                 if (!AndroidUtilities.openForView(SharedConfig.pendingPtgAppUpdate.document, true, activity)) {
-                    new UpdateDownloader(currentAccount).startUpdateDownloading();
+                    new UpdateDownloader(UserConfig.selectedAccount).startUpdateDownloading();
                 }
             }
         });

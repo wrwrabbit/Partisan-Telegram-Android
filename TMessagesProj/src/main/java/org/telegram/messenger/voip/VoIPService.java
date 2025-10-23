@@ -117,7 +117,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.XiaomiUtilities;
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.utils.tlutils.TlUtils;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils;
 import org.telegram.tgnet.ConnectionsManager;
@@ -830,7 +830,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		} catch (Exception e) {
 			FileLog.e(e);
 		}
-		if (FakePasscodeUtils.isHideAccount(currentAccount) || FakePasscodeUtils.isHideChat(userID, currentAccount)) {
+		if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideAccount(currentAccount) || org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideChat(userID, currentAccount)) {
 			callIShouldHavePutIntoIntent = null;
 			stopSelf();
 			return START_NOT_STICKY;
@@ -1609,6 +1609,10 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				FileLog.e(e);
 			}
 		}
+		if (conference != null) {
+			groupCall.processGroupCallUpdate(call);
+		}
+
 		if ((currentState == STATE_WAIT_INIT || newModeStreaming != currentGroupModeStreaming) && myParams != null) {
 			if (tgVoip[CAPTURE_DEVICE_CAMERA] == null) {
 				lastGroupCallUpdate = call;
@@ -2161,7 +2165,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 					conference.inputGroupCall = new TLRPC.TL_inputGroupCall();
 					conference.inputGroupCall.id = groupCall1.id;
 					conference.inputGroupCall.access_hash = groupCall1.access_hash;
-					conference.groupCall = groupCall1;
+					conference.groupCall = TlUtils.applyGroupCallUpdate(conference.groupCall, groupCall1);
 					startConferenceGroupCall(false, 0, null, false);
 					if (inviteUsersToConference != null) {
 						for (long userId : inviteUsersToConference) {
@@ -2336,7 +2340,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 								groupCall.setCall(AccountInstance.getInstance(currentAccount), 0, groupCall1);
 							}
 							if (conference != null) {
-								conference.groupCall = groupCall1;
+								conference.groupCall = TlUtils.applyGroupCallUpdate(conference.groupCall, groupCall1);
 							}
 						}
 
@@ -5646,11 +5650,11 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (id == NotificationCenter.appDidLogout) {
 			callEnded();
 		} else if (id == NotificationCenter.dialogsHidingChanged) {
-			if (FakePasscodeUtils.isHideChat(getCallerId(), currentAccount)) {
+			if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideChat(getCallerId(), currentAccount)) {
 				callEnded();
 			}
 		} else if (id == NotificationCenter.accountHidingChanged) {
-			if (FakePasscodeUtils.isHideAccount(currentAccount)) {
+			if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideAccount(currentAccount)) {
 				callEnded();
 			}
 		}
