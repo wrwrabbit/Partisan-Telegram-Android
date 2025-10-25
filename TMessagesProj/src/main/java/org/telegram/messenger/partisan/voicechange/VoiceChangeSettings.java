@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 
 import org.telegram.messenger.partisan.settings.BooleanSetting;
 import org.telegram.messenger.partisan.settings.FloatSetting;
+import org.telegram.messenger.partisan.settings.IntSetting;
 import org.telegram.messenger.partisan.settings.Setting;
 import org.telegram.messenger.partisan.settings.SettingUtils;
 import org.telegram.messenger.partisan.settings.StringSetSetting;
@@ -28,6 +29,8 @@ public class VoiceChangeSettings {
     public static final StringSetting timeDistortionParams = new StringSetting("timeDistortionParams", "");
     public static final FloatSetting f0Shift = new FloatSetting("f0Shift", 1.0f);
     public static final FloatSetting formantRatio = new FloatSetting("formantRatio", 1.0f);
+    public static final IntSetting badSCutoff = new IntSetting("badSCutoff", 0);
+    public static final IntSetting badShCutoff = new IntSetting("badShCutoff", 0);
     public static final BooleanSetting showVoiceChangedNotification = new BooleanSetting("showVoiceChangedNotification", true);
     public static final StringSetSetting enabledVoiceChangeTypes = new StringSetSetting("enabledVoiceChangeTypes",
             Arrays.stream(VoiceChangeType.values()).map(Object::toString).collect(Collectors.toSet()));

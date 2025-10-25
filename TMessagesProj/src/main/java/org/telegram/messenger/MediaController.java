@@ -4904,8 +4904,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             recordStartRunnable = null;
         }
         if (voiceChanger != null) {
-            voiceChanger.stop();
+            voiceChanger.setCallback(() -> stopRecording(send, notify, scheduleDate, once, payStars));
+            voiceChanger.writingFinished();
             voiceChanger = null;
+            return;
         }
         recordQueue.postRunnable(() -> {
             if (sendAfterDone == 3) {

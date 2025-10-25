@@ -11,28 +11,40 @@ import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.io.TarsosDSPAudioFormat;
 import be.tarsos.dsp.resample.Resampler;
 
-class FormantShifter extends ChainedAudioProcessor {
+public class FormantShifter extends ChainedAudioProcessor {
+
+    public static final int bufferSize = 16 * 1024;
+    public static  final int bufferOverlap = bufferSize / 4 * 3;
+
     private final ParametersProvider parametersProvider;
     private final int sampleRate;
     private final float[] outputAccumulator;
     private final long osamp;
 
-    private final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    private final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     private final DispatchQueue finalizingQueue = new DispatchQueue("FormantShifterFinalizing");
     private final BlockingQueue<AudioEvent> audioEventQueue = new LinkedBlockingQueue<>();
+
+    private boolean needFinishProcessing = false;
+    private boolean forceFinishProcessing = false;
 
     public FormantShifter(ParametersProvider parametersProvider, int sampleRate) {
         this.parametersProvider = parametersProvider;
         this.sampleRate = sampleRate;
 
-        outputAccumulator = new float[Constants.bufferSize * 2];
-        osamp = Constants.bufferSize / (Constants.bufferSize - Constants.bufferOverlap);
+        outputAccumulator = new float[bufferSize * 2];
+        osamp = bufferSize / (bufferSize - bufferOverlap);
     }
 
     @Override
     public void processingFinished() {
-        threadPoolExecutor.shutdown();
-        finalizingQueue.recycle();
+        synchronized (this) {
+            if (!needFinishProcessing) {
+                needFinishProcessing = true;
+            } else {
+                forceFinishProcessing = true;
+            }
+        }
     }
 
     @Override
@@ -72,14 +84,21 @@ class FormantShifter extends ChainedAudioProcessor {
     }
 
     private void shiftingFinished(AudioEvent audioEvent, float[] shiftedAudioBuffer) {
-        if (!checkHeadAudioEventInQueueAndRemoveIfNeeded(audioEvent)) {
+        boolean currentEventIsFirstInQueue = checkHeadAudioEventInQueueAndRemoveIfNeeded(audioEvent);
+        if (!currentEventIsFirstInQueue) {
             finalizingQueue.postRunnable(() -> shiftingFinished(audioEvent, shiftedAudioBuffer));
             return;
         }
+
         overlapAdd(outputAccumulator, shiftedAudioBuffer);
         updateAudioEventBuffer(audioEvent);
         if (nextAudioProcessor != null) {
             nextAudioProcessor.process(audioEvent);
+        }
+        synchronized (this) {
+            if (needFinishProcessing && audioEventQueue.isEmpty() || forceFinishProcessing) {
+                actualFinishProcessing();
+            }
         }
     }
 
@@ -96,7 +115,7 @@ class FormantShifter extends ChainedAudioProcessor {
 
     private void overlapAdd(float[] outputAccumulator, float[] audioBuffer) {
         for(int i = 0; i < audioBuffer.length ; i ++){
-            float window = (float) (-0.5 * Math.cos(2.0 * Math.PI * (double)i / (double)Constants.bufferSize) + 0.5);
+            float window = (float) (-0.5 * Math.cos(2.0 * Math.PI * (double)i / (double)bufferSize) + 0.5);
             float currentValue = window * audioBuffer[i]/(float) osamp;
             if (osamp == 1) {
                 outputAccumulator[i] = currentValue;
@@ -105,16 +124,24 @@ class FormantShifter extends ChainedAudioProcessor {
             }
             outputAccumulator[i] = clipAudioSample(outputAccumulator[i]);
         }
-        int stepSize = (int) (Constants.bufferSize/osamp);
+        int stepSize = (int) (bufferSize/osamp);
         if (osamp != 1) {
-            System.arraycopy(outputAccumulator, stepSize, outputAccumulator, 0, Constants.bufferSize);
+            System.arraycopy(outputAccumulator, stepSize, outputAccumulator, 0, bufferSize);
         }
     }
 
     private void updateAudioEventBuffer(AudioEvent audioEvent) {
-        int stepSize = (int) (Constants.bufferSize/osamp);
+        int stepSize = (int) (bufferSize/osamp);
         float[] audioBuffer = new float[audioEvent.getFloatBuffer().length];
         audioEvent.setFloatBuffer(audioBuffer);
-        System.arraycopy(outputAccumulator, 0, audioBuffer,Constants.bufferSize-stepSize, stepSize);
+        System.arraycopy(outputAccumulator, 0, audioBuffer, bufferSize-stepSize, stepSize);
+    }
+
+    private void actualFinishProcessing() {
+        threadPoolExecutor.shutdown();
+        finalizingQueue.recycle();
+        if (nextAudioProcessor != null) {
+            nextAudioProcessor.processingFinished();
+        }
     }
 }

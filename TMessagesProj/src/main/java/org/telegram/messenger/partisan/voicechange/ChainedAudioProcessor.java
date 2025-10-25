@@ -22,4 +22,14 @@ public abstract class ChainedAudioProcessor implements AudioProcessor {
     protected boolean processInternal(AudioEvent audioEvent) {
         return true;
     }
+
+    @Override
+    public void processingFinished() {
+        processingFinishedInternal();
+        if (nextAudioProcessor != null) {
+            nextAudioProcessor.processingFinished();
+        }
+    }
+
+    protected void processingFinishedInternal() {}
 }

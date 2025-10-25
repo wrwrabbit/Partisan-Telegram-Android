@@ -9,11 +9,11 @@ class ChainedPitchShifter extends ChainedAudioProcessor {
 
     public ChainedPitchShifter(ParametersProvider parametersProvider, int sampleRate) {
         this.parametersProvider = parametersProvider;
-        this.shifter = new PitchShifter(parametersProvider.getPitchFactor(), sampleRate, Constants.bufferSize, Constants.bufferOverlap);
+        this.shifter = new PitchShifter(parametersProvider.getPitchFactor(), sampleRate, Constants.defaultBufferSize, Constants.defaultBufferOverlap);
     }
 
     @Override
-    public void processingFinished() {
+    public void processingFinishedInternal() {
         shifter.processingFinished();
     }
 

@@ -45,6 +45,10 @@ public abstract class AbstractSpectrumProcessor extends ChainedAudioProcessor {
 
     @Override
     public boolean processInternal(AudioEvent audioEvent) {
+        if (!needProcess()) {
+            return true;
+        }
+
         //see http://downloads.dspdimension.com/smbPitchShift.cpp
 
         /* ***************** ANALYSIS ******************* */
@@ -92,10 +96,10 @@ public abstract class AbstractSpectrumProcessor extends ChainedAudioProcessor {
 
         /* ***************** PROCESSING ******************* */
         /* this does the actual pitch shifting */
-        float[] newMagnitudes = new float[size/2];
-        float[] newFrequencies = new float[size/2];
+        float[] newMagnitudes = currentMagnitudes.clone();
+        float[] newFrequencies = currentFrequencies.clone();
 
-        processSpectrum(currentMagnitudes, currentFrequencies, newMagnitudes, newFrequencies);
+        processSpectrum(newMagnitudes, newFrequencies);
 
         ///Synthesis****
         float[] newFFTData = new float[size];
@@ -135,9 +139,18 @@ public abstract class AbstractSpectrumProcessor extends ChainedAudioProcessor {
         for(int i = 0 ; i < newFFTData.length ; i ++){
             float window = (float) (-.5*Math.cos(2.*Math.PI*(double)i/(double)size)+.5);
             //outputAccumulator[i] += 2000*window*newFFTData[i]/(float) (size*osamp);
-            outputAccumulator[i] += window*newFFTData[i]/(float) osamp;
+            if (useOldWindowRestore()) {
+                outputAccumulator[i] += window*newFFTData[i]/(float) osamp;
+            } else {
+                outputAccumulator[i] += newFFTData[i]/(float) osamp * 2;
+            }
             if(outputAccumulator[i] > 1.0 ||  outputAccumulator[i] < -1.0 ){
                 System.err.println("Clipping!");
+                if (outputAccumulator[i] > 1.0f) {
+                    outputAccumulator[i] = 1.0f;
+                } else if (outputAccumulator[i] < -1.0f) {
+                    outputAccumulator[i] = -1.0f;
+                }
             }
         }
 
@@ -146,19 +159,23 @@ public abstract class AbstractSpectrumProcessor extends ChainedAudioProcessor {
 
 
         //Arrays.fill(audioBuffer, 0);
-        System.arraycopy(outputAccumulator, stepSize, outputAccumulator, 0, size);
 
         float[] audioBuffer = new float[audioEvent.getFloatBuffer().length];
         audioEvent.setFloatBuffer(audioBuffer);
         System.arraycopy(outputAccumulator, 0, audioBuffer,size-stepSize, stepSize);
 
+        System.arraycopy(outputAccumulator, stepSize, outputAccumulator, 0, size);
+
         return true;
     }
 
-    protected abstract void processSpectrum(float[] currentMagnitudes, float[] currentFrequencies, float[] newMagnitudes, float[] newFrequencies);
-
-    @Override
-    public void processingFinished() {
-
+    protected boolean useOldWindowRestore() {
+        return false;
     }
+
+    protected boolean needProcess() {
+        return true;
+    }
+
+    protected abstract void processSpectrum(float[] magnitudes, float[] frequencies);
 }

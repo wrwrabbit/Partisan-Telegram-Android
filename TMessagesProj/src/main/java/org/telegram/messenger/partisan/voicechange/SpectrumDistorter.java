@@ -7,13 +7,16 @@ class SpectrumDistorter extends AbstractSpectrumProcessor {
     private final ParametersProvider parametersProvider;
 
     public SpectrumDistorter(ParametersProvider parametersProvider, int sampleRate) {
-        super(sampleRate, Constants.bufferSize, Constants.bufferOverlap);
+        super(sampleRate, Constants.defaultBufferSize, Constants.defaultBufferOverlap);
         this.sampleRate = sampleRate;
         this.parametersProvider = parametersProvider;
     }
 
     @Override
-    protected void processSpectrum(float[] currentMagnitudes, float[] currentFrequencies, float[] newMagnitudes, float[] newFrequencies) {
+    protected void processSpectrum(float[] magnitudes, float[] frequencies) {
+        float[] newMagnitudes = new float[size/2];
+        float[] newFrequencies = new float[size/2];
+
         Map<Integer, Integer> distortionMap = parametersProvider.getSpectrumDistortionMap(sampleRate);
         for (int i = 0 ; i < size/2; i++){
             int left = 0;
@@ -32,9 +35,11 @@ class SpectrumDistorter extends AbstractSpectrumProcessor {
             int index = (int)((right_dest - left_dest) * percentage + left_dest);
 
             if (index < size/2) {
-                newMagnitudes[index] += currentMagnitudes[i];
-                newFrequencies[index] = currentFrequencies[index];
+                newMagnitudes[index] += magnitudes[i];
+                newFrequencies[index] = frequencies[index];
             }
         }
+        System.arraycopy(newMagnitudes, 0, magnitudes, 0, magnitudes.length);
+        System.arraycopy(newFrequencies, 0, frequencies, 0, frequencies.length);
     }
 }

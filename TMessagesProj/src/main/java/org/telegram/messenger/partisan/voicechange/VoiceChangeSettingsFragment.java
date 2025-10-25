@@ -326,8 +326,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
 
     public void stopRecording() {
         if (voiceChanger != null) {
-            voiceChanger.stop();
+            voiceChanger.setCallback(this::stopRecording);
+            voiceChanger.writingFinished();
             voiceChanger = null;
+            return;
         }
         recordQueue.postRunnable(() -> {
             try {

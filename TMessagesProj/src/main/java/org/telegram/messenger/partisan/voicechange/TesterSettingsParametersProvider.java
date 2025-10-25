@@ -27,8 +27,8 @@ public class TesterSettingsParametersProvider implements ParametersProvider {
                 (map, distortionParts) -> {
                     int fromHz = Integer.parseInt(distortionParts[0]);
                     int toHz = Integer.parseInt(distortionParts[1]);
-                    int fromIndex = (fromHz * Constants.bufferSize) / sampleRate;
-                    int toIndex = (toHz * Constants.bufferSize) / sampleRate;
+                    int fromIndex = (fromHz * Constants.defaultBufferSize) / sampleRate;
+                    int toIndex = (toHz * Constants.defaultBufferSize) / sampleRate;
                     map.put(fromIndex, toIndex);
                 });
         return distortionMap != null && !distortionMap.isEmpty() ? distortionMap : null;
@@ -78,5 +78,25 @@ public class TesterSettingsParametersProvider implements ParametersProvider {
     @Override
     public double getFormantRatio() {
         return VoiceChangeSettings.formantRatio.get().orElse(1.0f);
+    }
+
+    public int getBadSThreshold() {
+        return 4500;
+    }
+
+    public int getBadShMinThreshold() {
+        return 2000;
+    }
+
+    public int getBadShMaxThreshold() {
+        return 4500;
+    }
+
+    public int getBadSCutoff() {
+        return VoiceChangeSettings.badSCutoff.get().orElse(0);
+    }
+
+    public int getBadShCutoff() {
+        return VoiceChangeSettings.badShCutoff.get().orElse(0);
     }
 }

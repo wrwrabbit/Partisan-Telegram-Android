@@ -460,6 +460,12 @@ public class WebRtcAudioRecord {
   }
 
   private boolean stopRecording() {
+    if (voiceChanger != null) {
+      voiceChanger.setCallback(this::stopRecording);
+      voiceChanger.writingFinished();
+      voiceChanger = null;
+      return true;
+    }
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     audioThread.stopThread();
@@ -470,10 +476,6 @@ public class WebRtcAudioRecord {
     audioThread = null;
     if (effects != null) {
       effects.release();
-    }
-    if (voiceChanger != null) {
-      voiceChanger.stop();
-      voiceChanger = null;
     }
     try {
       audioRecord.stop();
