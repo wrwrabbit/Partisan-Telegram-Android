@@ -54,6 +54,24 @@ static void F0EstimationDio(double *x, int x_length,
     delete[] refined_f0;
 }
 
+static void F0EstimationHarvest(double *x, int x_length,
+                         WorldParameters *world_parameters) {
+    HarvestOption option = { 0 };
+    InitializeHarvestOption(&option);
+
+    option.frame_period = world_parameters->frame_period;
+
+    option.f0_floor = 40.0;
+
+    world_parameters->f0_length = GetSamplesForHarvest(world_parameters->fs,
+                                                       x_length, world_parameters->frame_period);
+    world_parameters->f0 = new double[world_parameters->f0_length];
+    world_parameters->time_axis = new double[world_parameters->f0_length];
+
+    Harvest(x, x_length, world_parameters->fs, &option,
+            world_parameters->time_axis, world_parameters->f0);
+}
+
 static void SpectralEnvelopeEstimation(double *x, int x_length,
                                 WorldParameters *world_parameters) {
     CheapTrickOption option = {0};
@@ -173,7 +191,7 @@ static void ClipAudioData(double *y, int y_length) {
     }
 }
 
-static void ShiftFormants(double shift, double ratio, int fs, const float* x_float, int x_length, float* y_float, int* y_length) {
+static void ShiftFormants(double shift, double ratio, int fs, const float* x_float, int x_length, float* y_float, int* y_length, int harvest) {
     double* x = new double[x_length];
     FloatArrayToDoubleArray(x_float, x, x_length);
 
@@ -181,7 +199,11 @@ static void ShiftFormants(double shift, double ratio, int fs, const float* x_flo
     world_parameters.fs = fs;
     world_parameters.frame_period = 5.0;
 
-    F0EstimationDio(x, x_length, &world_parameters);
+    if (harvest) {
+        F0EstimationHarvest(x, x_length, &world_parameters);
+    } else {
+        F0EstimationDio(x, x_length, &world_parameters);
+    }
     SpectralEnvelopeEstimation(x, x_length, &world_parameters);
     AperiodicityEstimation(x, x_length, &world_parameters);
 
@@ -204,10 +226,10 @@ static void ShiftFormants(double shift, double ratio, int fs, const float* x_flo
     delete[] y;
 }
 
-extern "C" JNIEXPORT jint Java_org_telegram_messenger_partisan_voicechange_WorldUtils_shiftFormants(JNIEnv *env, jclass clazz, jdouble shift, jdouble ratio, jint fs, jfloatArray x, jint x_length, jfloatArray y) {
+extern "C" JNIEXPORT jint Java_org_telegram_messenger_partisan_voicechange_WorldUtils_shiftFormants(JNIEnv *env, jclass clazz, jdouble shift, jdouble ratio, jint fs, jfloatArray x, jint x_length, jfloatArray y, jint harvest) {
     jfloat* xTmp = env->GetFloatArrayElements(x, nullptr);
     jfloat* yTmp = env->GetFloatArrayElements(y, nullptr);
     int yLength;
-    ShiftFormants(shift, ratio, fs, xTmp, x_length, yTmp, &yLength);
+    ShiftFormants(shift, ratio, fs, xTmp, x_length, yTmp, &yLength, harvest);
     return yLength;
 }

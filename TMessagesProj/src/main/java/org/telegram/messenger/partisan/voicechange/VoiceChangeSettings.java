@@ -34,6 +34,7 @@ public class VoiceChangeSettings {
     public static final BooleanSetting showVoiceChangedNotification = new BooleanSetting("showVoiceChangedNotification", true);
     public static final StringSetSetting enabledVoiceChangeTypes = new StringSetSetting("enabledVoiceChangeTypes",
             Arrays.stream(VoiceChangeType.values()).map(Object::toString).collect(Collectors.toSet()));
+    public static final BooleanSetting formantShiftingHarvest = new BooleanSetting("formantShiftingHarvest", false);
 
     public static void loadSettings() {
         for (Setting<?> setting : getAllSettings()) {

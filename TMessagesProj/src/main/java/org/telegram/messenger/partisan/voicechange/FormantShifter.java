@@ -70,7 +70,15 @@ public class FormantShifter extends ChainedAudioProcessor {
     private float[] shiftFormants(float[] srcFloatBuffer) {
         float[] tempAudioBuffer = new float[srcFloatBuffer.length * 4];
 
-        int tempAudioBufferLength = WorldUtils.shiftFormants(parametersProvider.getF0Shift(), parametersProvider.getFormantRatio(), sampleRate, srcFloatBuffer, srcFloatBuffer.length, tempAudioBuffer);
+        int tempAudioBufferLength = WorldUtils.shiftFormants(
+                parametersProvider.getF0Shift(),
+                parametersProvider.getFormantRatio(),
+                sampleRate,
+                srcFloatBuffer,
+                srcFloatBuffer.length,
+                tempAudioBuffer,
+                VoiceChangeSettings.formantShiftingHarvest.get().orElse(false) ? 1 : 0
+        );
 
         Resampler r = new Resampler(false,0.1,4.0);
         double factor = (double)srcFloatBuffer.length / tempAudioBufferLength;

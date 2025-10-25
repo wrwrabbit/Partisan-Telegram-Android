@@ -379,7 +379,7 @@ public class TesterSettingsActivity extends BaseFragment {
             new SeekBarItem(this, VoiceChangeSettings.f0Shift),
             new HeaderItem(this, "World Formant Ratio"),
             new SeekBarItem(this, VoiceChangeSettings.formantRatio),
-            new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
+            new ToggleItem(this, "Harvest", VoiceChangeSettings.formantShiftingHarvest),
             new DelimiterItem(this),
 
 
@@ -390,7 +390,6 @@ public class TesterSettingsActivity extends BaseFragment {
             ),
             new ToggleItem(this, "Show Plain Backup", TesterSettings.showPlainBackup),
             new ToggleItem(this, "Disable Premium", TesterSettings.premiumDisabled),
-
             new ToggleItem(this, "Show Hide Dialog Is Not Safe Warning",
                     () -> SharedConfig.showHideDialogIsNotSafeWarning,
                     value -> SharedConfig.showHideDialogIsNotSafeWarning = value
@@ -416,6 +415,7 @@ public class TesterSettingsActivity extends BaseFragment {
             new ToggleItem(this, "Save Logcat After Restart", TesterSettings.saveLogcatAfterRestart),
             new ToggleItem(this, "Clear Logs With Cache", TesterSettings.clearLogsWithCache),
             new ToggleItem(this, "Force Search During Deletion", TesterSettings.forceSearchDuringDeletion),
+            new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
             new DelimiterItem(this),
 
 
