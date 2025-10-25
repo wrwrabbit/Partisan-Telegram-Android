@@ -96,7 +96,7 @@ public class SeekBarCell extends FrameLayout {
     protected void onDraw(Canvas canvas) {
         textPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteValueText));
         String valueStr = decimalFormat.format(currentValue);
-        canvas.drawText(valueStr, getMeasuredWidth() - dp(39), dp(28), textPaint);
+        canvas.drawText(valueStr, getMeasuredWidth() - dp(50), dp(28), textPaint);
     }
 
     @Override
