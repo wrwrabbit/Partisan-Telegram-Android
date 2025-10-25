@@ -28,6 +28,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.settings.BooleanSetting;
 import org.telegram.messenger.partisan.settings.FloatSetting;
+import org.telegram.messenger.partisan.settings.IntSetting;
 import org.telegram.messenger.partisan.settings.StringSetting;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.Utils;
@@ -312,21 +313,31 @@ public class TesterSettingsActivity extends BaseFragment {
     private static class SeekBarItem extends Item {
         private final Supplier<Float> getValue;
         private final Consumer<Float> setValue;
+        private final double startValue;
+        private final double endValue;
+        private final double step;
 
-        public SeekBarItem(BaseFragment fragment, FloatSetting setting) {
-            this(fragment, () -> setting.get().get(), setting::set);
+        public SeekBarItem(BaseFragment fragment, FloatSetting setting, double startValue, double endValue, double step) {
+            this(fragment, () -> setting.get().get(), setting::set, startValue, endValue, step);
         }
 
-        public SeekBarItem(BaseFragment fragment, Supplier<Float> getValue, Consumer<Float> setValue) {
+        public SeekBarItem(BaseFragment fragment, IntSetting setting, double startValue, double endValue, double step) {
+            this(fragment, () -> (float)setting.get().get(), val -> setting.set((int)(float)val), startValue, endValue, step);
+        }
+
+        public SeekBarItem(BaseFragment fragment, Supplier<Float> getValue, Consumer<Float> setValue, double startValue, double endValue, double step) {
             super(fragment, ViewTypes.SEEK_BAR.ordinal());
             this.getValue = getValue;
             this.setValue = setValue;
+            this.startValue = startValue;
+            this.endValue = endValue;
+            this.step = step;
         }
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             SeekBarCell seekBarCell = (SeekBarCell) holder.itemView;
-            seekBarCell.setValues(0.2, 2.01, 0.025, getValue.get());
+            seekBarCell.setValues(startValue, endValue, step, getValue.get());
             seekBarCell.setDelegate(value -> setValue.accept((float)(double)value));
             seekBarCell.invalidate();
         }
@@ -370,15 +381,19 @@ public class TesterSettingsActivity extends BaseFragment {
 
             new HeaderItem(this, "Voice Changing"),
             new HeaderItem(this, "Pitch Factor"),
-            new SeekBarItem(this, VoiceChangeSettings.pitchFactor),
+            new SeekBarItem(this, VoiceChangeSettings.pitchFactor, 0.2, 2.01, 0.025),
             new HeaderItem(this, "Time Stretch Factor"),
-            new SeekBarItem(this, VoiceChangeSettings.timeStretchFactor),
+            new SeekBarItem(this, VoiceChangeSettings.timeStretchFactor, 0.2, 2.01, 0.025),
             new EditableDataItem(this, "Spectrum Distortion Params", VoiceChangeSettings.spectrumDistorterParams),
             new EditableDataItem(this, "Time Distortion Params", VoiceChangeSettings.timeDistortionParams),
             new HeaderItem(this, "World F0 Shift"),
-            new SeekBarItem(this, VoiceChangeSettings.f0Shift),
+            new SeekBarItem(this, VoiceChangeSettings.f0Shift, 0.2, 2.01, 0.025),
             new HeaderItem(this, "World Formant Ratio"),
-            new SeekBarItem(this, VoiceChangeSettings.formantRatio),
+            new SeekBarItem(this, VoiceChangeSettings.formantRatio, 0.2, 2.01, 0.025),
+            new HeaderItem(this, "Bad S Cutoff"),
+            new SeekBarItem(this, VoiceChangeSettings.badSCutoff, 0, 15000, 250),
+            new HeaderItem(this, "Bad Sh Cutoff"),
+            new SeekBarItem(this, VoiceChangeSettings.badShCutoff, 0, 15000, 250),
             new ToggleItem(this, "Harvest", VoiceChangeSettings.formantShiftingHarvest),
             new DelimiterItem(this),
 
