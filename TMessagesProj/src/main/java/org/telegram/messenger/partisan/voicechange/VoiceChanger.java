@@ -129,6 +129,9 @@ public class VoiceChanger {
     }
 
     public void writingFinished() {
+        if (isWritingFinished) {
+            return;
+        }
         threadPoolExecutor.execute(() -> {
             try {
                 isWritingFinished = true;

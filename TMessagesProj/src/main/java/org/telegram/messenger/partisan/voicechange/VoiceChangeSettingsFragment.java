@@ -29,6 +29,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -47,6 +48,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -93,6 +95,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private int enableForVoiceMessagesRow = -1;
     private int enableForVideoMessagesRow = -1;
     private int enableForCallsRow = -1;
+    private int enableForTypesDelimiterRow = -1;
+    private int benchmarkRow = -1;
 
     TextSettingsCell recordCell;
 
@@ -109,9 +113,11 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 }
 
                 ByteBuffer changedBuffer = null;
-                if (voiceChanger != null && len > 0) {
-                    byte[] byteArray = java.util.Arrays.copyOf(buffer.array(), len);
-                    voiceChanger.write(byteArray);
+                if (voiceChanger != null) {
+                    if (len > 0) {
+                        byte[] byteArray = java.util.Arrays.copyOf(buffer.array(), len);
+                        voiceChanger.write(byteArray);
+                    }
                     byte[] changedVoice = voiceChanger.readAll();
                     if (changedVoice.length == 0) {
                         recordQueue.postRunnable(recordRunnable);
@@ -122,11 +128,12 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     changedBuffer.put(changedVoice, 0, len);
                     changedBuffer.rewind();
                 }
-                if (changedBuffer != null && originalOutputAudioBuffer.size() < 60 * sampleRate) {
+                if (changedBuffer != null) {
                     writeToOutputBuffer(changedOutputAudioBuffer, changedBuffer, len);
                     recordQueue.postRunnable(recordRunnable);
-                } else {
-                    stopRecordingInternal();
+                }
+                if (originalOutputAudioBuffer.size() >= 60 * sampleRate) {
+                    stopRecording();
                 }
             }
         }
@@ -271,6 +278,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             } else if (position == enableForCallsRow) {
                 boolean newValue = VoiceChangeSettings.toggleVoiceChangeType(VoiceChangeType.CALL);
                 ((TextCheckCell)view).setChecked(newValue);
+            } else if (position == benchmarkRow) {
+                runBenchmark();
             }
         });
 
@@ -280,7 +289,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private void onPlayerButtonClicked(View view, boolean changed) {
         if (audioRecorder != null) {
             stopRecording();
-            AndroidUtilities.runOnUIThread(() -> onPlayerButtonClicked(view, changed), 100);
+            AndroidUtilities.runOnUIThread(() -> onPlayerButtonClicked(view, changed));
         }
         VoiceChangeExamplePlayer player = changed ? changedPlayer : originalPlayer;
         ByteArrayOutputStream buffer = changed ? changedOutputAudioBuffer : originalOutputAudioBuffer;
@@ -312,6 +321,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, recordBufferSize);
             audioRecorder.startRecording();
             voiceChanger = new VoiceChanger(audioRecorder.getSampleRate());
+            voiceChanger.setCallback(() -> recordQueue.postRunnable(this::stopRecordingInternal, 100));
             recordQueue.postRunnable(recordRunnable);
         } catch (Exception e) {
             PartisanLog.e(e);
@@ -324,17 +334,16 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         }
     }
 
-    public void stopRecording() {
-        if (voiceChanger != null) {
-            voiceChanger.setCallback(this::stopRecording);
-            voiceChanger.writingFinished();
-            voiceChanger = null;
-            return;
-        }
+    private void stopRecording() {
         recordQueue.postRunnable(() -> {
             try {
                 if (audioRecorder != null) {
-                    audioRecorder.stop();
+                    if (audioRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                        audioRecorder.stop();
+                    }
+                }
+                if (voiceChanger != null) {
+                    voiceChanger.writingFinished();
                 }
             } catch (Exception e) {
                 PartisanLog.e(e);
@@ -354,9 +363,32 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     listAdapter.notifyDataSetChanged();
                 });
             }
+            if (voiceChanger != null) {
+                voiceChanger = null;
+            }
         } catch (Exception e) {
             FileLog.e(e);
         }
+    }
+
+    private void runBenchmark() {
+        if (originalOutputAudioBuffer == null || originalOutputAudioBuffer.size() == 0) {
+            return;
+        }
+        final long startTime = System.currentTimeMillis();
+        VoiceChanger benchmarkVoiceChanger = new VoiceChanger(sampleRate);
+        benchmarkVoiceChanger.setCallback(() -> showRatioToast(System.currentTimeMillis() - startTime));
+        benchmarkVoiceChanger.write(originalOutputAudioBuffer.toByteArray());
+        benchmarkVoiceChanger.writingFinished();
+    }
+
+    private void showRatioToast(long duration) {
+        final int sampleSize = 2;
+        double originalLength = ((double)originalOutputAudioBuffer.size() / sampleSize / sampleRate);
+        double formantRatio = duration / (originalLength * 1E3);
+        DecimalFormat df = new DecimalFormat("0.00");
+        String text = "Ratio: " + df.format(formantRatio * 100) + "%";
+        AndroidUtilities.runOnUIThread(() -> Toast.makeText(getContext(), text, Toast.LENGTH_LONG).show());
     }
 
     private List<Integer> getVoiceChangeEnabledAccounts() {
@@ -397,6 +429,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         enableForVoiceMessagesRow = rowCount++;
         enableForVideoMessagesRow = rowCount++;
         enableForCallsRow = rowCount++;
+        if (TesterSettings.areTesterSettingsActivated()) {
+            enableForTypesDelimiterRow = rowCount++;
+            benchmarkRow = rowCount++;
+        }
     }
 
     @Override
@@ -438,11 +474,11 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     || position == playChangedRow || position == playOriginalRow
                     || position == showVoiceChangedNotificationRow || position == enableForIndividualAccountsRow
                     || position == enableForVoiceMessagesRow || position == enableForVideoMessagesRow
-                    || position == enableForCallsRow) {
+                    || position == enableForCallsRow || position == benchmarkRow) {
                 boolean voiceChangeEnabled = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false);
                 if (position == playChangedRow) {
                     return voiceChangeEnabled && changedOutputAudioBuffer != null;
-                } else if (position == playOriginalRow) {
+                } else if (position == playOriginalRow || position == benchmarkRow) {
                     return voiceChangeEnabled && originalOutputAudioBuffer != null;
                 } else {
                     return voiceChangeEnabled;
@@ -537,6 +573,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                                 ? getString(R.string.FilterAllChatsShort)
                                 : enabledCount + "/" + UserConfig.getActivatedAccountsCount();
                         textCell.setTextAndValue(getString(R.string.EnableForIndividualAccounts), value, false);
+                    } else if (position == benchmarkRow) {
+                        textCell.setText("Benchmark", false);
                     }
                     break;
                 }
@@ -587,7 +625,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             } else if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow) {
                 return ViewType.RADIO_BUTTON;
             } else if (position == generateNewParametersRow || position == recordRow || position == playChangedRow
-                    || position == playOriginalRow|| position == enableForIndividualAccountsRow) {
+                    || position == playOriginalRow|| position == enableForIndividualAccountsRow
+                    || position == benchmarkRow) {
                 return ViewType.SETTING;
             } else if (position == enableDescriptionRow || position == aggressiveChangeLevelDescriptionRow
                     || position == moderateChangeLevelDescriptionRow|| position == generateNewParametersDescriptionRow) {
@@ -595,7 +634,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             } else if (position == changeLevelHeaderRow || position == checkVoiceChangingHeaderRow) {
                 return ViewType.HEADER;
             } else if (position == checkVoiceChangingDelimiterRow || position == showVoiceChangedNotificationDelimiterRow
-                    || position == enableForIndividualAccountsDelimiterRow) {
+                    || position == enableForIndividualAccountsDelimiterRow || position == enableForTypesDelimiterRow) {
                 return ViewType.DELIMITER;
             }
             throw new RuntimeException("Unknown row: " + position);

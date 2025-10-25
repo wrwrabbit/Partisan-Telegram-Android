@@ -14,7 +14,7 @@ import be.tarsos.dsp.resample.Resampler;
 public class FormantShifter extends ChainedAudioProcessor {
 
     public static final int bufferSize = 16 * 1024;
-    public static  final int bufferOverlap = bufferSize / 4 * 3;
+    public static final int bufferOverlap = bufferSize / 4 * 3;
 
     private final ParametersProvider parametersProvider;
     private final int sampleRate;
