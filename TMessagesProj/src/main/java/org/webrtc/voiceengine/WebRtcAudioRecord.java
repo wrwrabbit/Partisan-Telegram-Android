@@ -453,6 +453,8 @@ public class WebRtcAudioRecord {
     }
     if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(accountNum, org.telegram.messenger.partisan.voicechange.VoiceChangeType.CALL)) {
       voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(requestedSampleRate);
+    } else {
+      voiceChanger = null;
     }
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
@@ -460,10 +462,9 @@ public class WebRtcAudioRecord {
   }
 
   private boolean stopRecording() {
-    if (voiceChanger != null) {
-      voiceChanger.setCallback(this::stopRecording);
-      voiceChanger.writingFinished();
-      voiceChanger = null;
+    if (voiceChanger != null && !voiceChanger.isWritingFinished()) {
+      voiceChanger.setFinishedCallback(this::stopRecording);
+      voiceChanger.notifyWritingFinished();
       return true;
     }
     Logging.d(TAG, "stopRecording");

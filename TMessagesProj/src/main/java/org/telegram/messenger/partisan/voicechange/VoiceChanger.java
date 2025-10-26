@@ -28,10 +28,10 @@ public class VoiceChanger {
     private final List<AbstractDispatcherNode> dispatcherNodes = new ArrayList<>();
     private final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     protected final AudioSaverProcessor audioSaver;
-    private boolean isWritingFinished = false;
+    private boolean writingFinished = false;
 
     private static final ParametersProvider parametersProvider = new TesterSettingsParametersProvider();
-    private Runnable callback;
+    private Runnable finishedCallback;
 
     public VoiceChanger(int sampleRate) {
         this.sampleRate = sampleRate;
@@ -108,8 +108,8 @@ public class VoiceChanger {
                     @Override
                     public void processingFinishedInternal() {
                         stop();
-                        if (callback != null) {
-                            callback.run();
+                        if (finishedCallback != null) {
+                            finishedCallback.run();
                         }
                     }
                 }
@@ -119,6 +119,9 @@ public class VoiceChanger {
     }
 
     public void write(byte[] data) {
+        if (writingFinished) {
+            return;
+        }
         for (AbstractDispatcherNode node : dispatcherNodes) {
             node.startThreadIfNotStarted();
         }
@@ -126,7 +129,7 @@ public class VoiceChanger {
         final byte[] dataFinal = data.clone();
         threadPoolExecutor.execute(() -> {
             try {
-                if (isWritingFinished) {
+                if (writingFinished) {
                     return;
                 }
                 initialOutputStream.write(dataFinal);
@@ -136,18 +139,22 @@ public class VoiceChanger {
         });
     }
 
-    public void writingFinished() {
-        if (isWritingFinished) {
+    public void notifyWritingFinished() {
+        if (writingFinished) {
             return;
         }
         threadPoolExecutor.execute(() -> {
             try {
-                isWritingFinished = true;
+                writingFinished = true;
                 initialOutputStream.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public boolean isWritingFinished() {
+        return writingFinished;
     }
 
     public byte[] readAll() {
@@ -170,8 +177,8 @@ public class VoiceChanger {
         }
     }
 
-    public void setCallback(Runnable callback) {
-        this.callback = callback;
+    public void setFinishedCallback(Runnable finishedCallback) {
+        this.finishedCallback = finishedCallback;
     }
 
     public static boolean needChangeVoice(int accountNum, VoiceChangeType type) {

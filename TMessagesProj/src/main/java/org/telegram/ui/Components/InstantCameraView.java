@@ -2281,8 +2281,10 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                         byteBuffer.rewind();
                         readResult = audioRecorder.read(byteBuffer, 2048);
                         org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger = VideoRecorder.this.voiceChanger;
-                        if (voiceChanger != null && readResult > 0) {
-                            voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), readResult));
+                        if (voiceChanger != null) {
+                            if (readResult > 0) {
+                                voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), readResult));
+                            }
                             byteBuffer.clear();
                             byte[] changedVoice = voiceChanger.readBytesExactCount(readResult);
                             if (changedVoice == null || changedVoice.length == 0) {
@@ -2413,10 +2415,9 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         }
 
         public void stopRecording(int send, SendOptions options) {
-            if (voiceChanger != null) {
-                voiceChanger.setCallback(() -> stopRecording(send, options));
-                voiceChanger.writingFinished();
-                voiceChanger = null;
+            if (voiceChanger != null && !voiceChanger.isWritingFinished()) {
+                voiceChanger.setFinishedCallback(() -> stopRecording(send, options));
+                voiceChanger.notifyWritingFinished();
                 return;
             }
             handler.sendMessage(handler.obtainMessage(MSG_STOP_RECORDING, send, 0, options));
@@ -3257,6 +3258,8 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 audioRecorder.startRecording();
                 if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(currentAccount, org.telegram.messenger.partisan.voicechange.VoiceChangeType.VIDEO_MESSAGE)) {
                     voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(audioRecorder.getSampleRate());
+                } else {
+                    voiceChanger = null;
                 }
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("InstantCamera initied audio record with channels " + audioRecorder.getChannelCount() + " sample rate = " + audioRecorder.getSampleRate() + " bufferSize = " + bufferSize);

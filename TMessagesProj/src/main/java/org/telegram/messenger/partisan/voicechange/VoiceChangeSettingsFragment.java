@@ -321,7 +321,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, recordBufferSize);
             audioRecorder.startRecording();
             voiceChanger = new VoiceChanger(audioRecorder.getSampleRate());
-            voiceChanger.setCallback(() -> recordQueue.postRunnable(this::stopRecordingInternal));
+            voiceChanger.setFinishedCallback(() -> recordQueue.postRunnable(this::stopRecordingInternal));
             recordQueue.postRunnable(recordRunnable);
         } catch (Exception e) {
             PartisanLog.e(e);
@@ -343,7 +343,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     }
                 }
                 if (voiceChanger != null) {
-                    voiceChanger.writingFinished();
+                    voiceChanger.notifyWritingFinished();
                 }
             } catch (Exception e) {
                 PartisanLog.e(e);
@@ -377,9 +377,9 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         }
         final long startTime = System.currentTimeMillis();
         VoiceChanger benchmarkVoiceChanger = new VoiceChanger(sampleRate);
-        benchmarkVoiceChanger.setCallback(() -> showRatioToast(System.currentTimeMillis() - startTime));
+        benchmarkVoiceChanger.setFinishedCallback(() -> showRatioToast(System.currentTimeMillis() - startTime));
         benchmarkVoiceChanger.write(originalOutputAudioBuffer.toByteArray());
-        benchmarkVoiceChanger.writingFinished();
+        benchmarkVoiceChanger.notifyWritingFinished();
     }
 
     private void showRatioToast(long duration) {
