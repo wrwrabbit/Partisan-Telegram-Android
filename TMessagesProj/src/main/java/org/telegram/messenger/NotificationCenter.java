@@ -301,6 +301,7 @@ public class NotificationCenter {
     public static final int encryptedGroupMemberRemoved = totalEvents++;
     public static final int encryptedGroupMembersAdded = totalEvents++;
     public static final int onFileProtectedDbCleared = totalEvents++;
+    public static final int voiceChangingStateChanged = totalEvents++;
 
 
     //global

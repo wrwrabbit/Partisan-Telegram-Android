@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.voicechange;
 
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.voicechange.voiceprocessors.AudioSaverProcessor;
 import org.telegram.messenger.partisan.voicechange.voiceprocessors.ChainedAudioProcessor;
@@ -44,6 +46,7 @@ public class VoiceChanger {
             throw new RuntimeException(e);
         }
         runningVoiceChangers.add(this);
+        AndroidUtilities.runOnUIThread(() -> NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.voiceChangingStateChanged));
     }
 
     private void buildDispatcherChain() throws IOException {
@@ -166,6 +169,8 @@ public class VoiceChanger {
             stopDispatchers();
             initialOutputStream.close();
             threadPoolExecutor.shutdown();
+            runningVoiceChangers.remove(this);
+            AndroidUtilities.runOnUIThread(() -> NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.voiceChangingStateChanged));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

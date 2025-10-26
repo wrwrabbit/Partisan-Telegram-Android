@@ -550,6 +550,7 @@ public class VoIPFragment implements
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.webRtcSpeakerAmplitudeEvent);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.voipServiceCreated);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.voiceChangingStateChanged);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.closeInCallActivity);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.nearEarEvent);
     }
@@ -561,6 +562,7 @@ public class VoIPFragment implements
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.webRtcSpeakerAmplitudeEvent);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.voipServiceCreated);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.voiceChangingStateChanged);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.closeInCallActivity);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.nearEarEvent);
         if (pipSource != null) {
@@ -596,6 +598,9 @@ public class VoIPFragment implements
             }
         } else if (id == NotificationCenter.emojiLoaded) {
             updateKeyView(true);
+        } else if (id == NotificationCenter.voiceChangingStateChanged) {
+            float targetAlpha = org.telegram.messenger.partisan.voicechange.VoiceChanger.needShowVoiceChangeNotification() ? 1f : 0f;
+            voiceChangedLayout.animate().alpha(targetAlpha).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
         } else if (id == NotificationCenter.closeInCallActivity) {
             windowView.finish();
         } else if (id == NotificationCenter.webRtcSpeakerAmplitudeEvent) {
@@ -1061,14 +1066,13 @@ public class VoIPFragment implements
         ViewCompat.setImportantForAccessibility(statusTextView, ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         statusLayout.addView(statusTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 6));
 
-        if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needShowVoiceChangeNotification()) {
-            voiceChangedLayout = new TextView(context);
-            voiceChangedLayout.setText(LocaleController.getString(R.string.VoiceChanged));
-            voiceChangedLayout.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-            voiceChangedLayout.setTextColor(Color.WHITE);
-            ViewCompat.setImportantForAccessibility(voiceChangedLayout, ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
-            statusLayout.addView(voiceChangedLayout, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 6));
-        }
+        voiceChangedLayout = new TextView(context);
+        voiceChangedLayout.setText(LocaleController.getString(R.string.VoiceChanged));
+        voiceChangedLayout.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+        voiceChangedLayout.setTextColor(Color.WHITE);
+        voiceChangedLayout.setAlpha(0f);
+        ViewCompat.setImportantForAccessibility(voiceChangedLayout, ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        statusLayout.addView(voiceChangedLayout, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 6));
 
         if (state != null && state.getUser() != null && state.isConference() && state.getGroupCall() != null) {
             participantsView = new ConferenceParticipantsView(context);
@@ -2339,7 +2343,9 @@ public class VoIPFragment implements
             encryptionTooltip.hide();
             callingUserTitle.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             statusTextView.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
-            voiceChangedLayout.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+            if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needShowVoiceChangeNotification()) {
+                voiceChangedLayout.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+            }
             speakerPhoneIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             backIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             addIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
