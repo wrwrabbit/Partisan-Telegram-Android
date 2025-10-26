@@ -289,7 +289,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private void onPlayerButtonClicked(View view, boolean changed) {
         if (audioRecorder != null) {
             stopRecording();
-            AndroidUtilities.runOnUIThread(() -> onPlayerButtonClicked(view, changed));
+            AndroidUtilities.runOnUIThread(() -> onPlayerButtonClicked(view, changed), 100);
         }
         VoiceChangeExamplePlayer player = changed ? changedPlayer : originalPlayer;
         ByteArrayOutputStream buffer = changed ? changedOutputAudioBuffer : originalOutputAudioBuffer;
@@ -321,7 +321,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, recordBufferSize);
             audioRecorder.startRecording();
             voiceChanger = new VoiceChanger(audioRecorder.getSampleRate());
-            voiceChanger.setCallback(() -> recordQueue.postRunnable(this::stopRecordingInternal, 100));
+            voiceChanger.setCallback(() -> recordQueue.postRunnable(this::stopRecordingInternal));
             recordQueue.postRunnable(recordRunnable);
         } catch (Exception e) {
             PartisanLog.e(e);
