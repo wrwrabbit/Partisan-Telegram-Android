@@ -462,10 +462,9 @@ public class WebRtcAudioRecord {
   }
 
   private boolean stopRecording() {
-    if (voiceChanger != null && !voiceChanger.isWritingFinished()) {
-      voiceChanger.setFinishedCallback(this::stopRecording);
+    if (voiceChanger != null) {
       voiceChanger.notifyWritingFinished();
-      return true;
+      voiceChanger = null;
     }
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
