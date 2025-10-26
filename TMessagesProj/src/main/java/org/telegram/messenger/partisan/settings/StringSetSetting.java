@@ -2,6 +2,7 @@ package org.telegram.messenger.partisan.settings;
 
 import android.content.SharedPreferences;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class StringSetSetting  extends Setting<Set<String>> {
@@ -16,6 +17,11 @@ public class StringSetSetting  extends Setting<Set<String>> {
 
     @Override
     public void load() {
-        this.value = getLocalPreferences().getStringSet(key, defaultValue);
+        this.value = getLocalPreferences().getStringSet(key, cloneValue(defaultValue));
+    }
+
+    @Override
+    protected Set<String> cloneValue(Set<String> value) {
+        return new HashSet<>(value);
     }
 }

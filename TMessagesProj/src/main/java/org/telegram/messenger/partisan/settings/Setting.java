@@ -18,7 +18,7 @@ public abstract class Setting<T> {
     public Setting(String key, T defaultValue) {
         this.key = key;
         this.defaultValue = defaultValue;
-        this.value = defaultValue;
+        this.value = cloneValue(defaultValue);
     }
 
     public Optional<T> get() {
@@ -31,7 +31,7 @@ public abstract class Setting<T> {
 
     public T getOrDefault() {
         if (conditionForGet != null && conditionForGet.get() == false) {
-            return defaultValue;
+            return cloneValue(defaultValue);
         } else {
             return value;
         }
@@ -59,5 +59,9 @@ public abstract class Setting<T> {
 
     protected static SharedPreferences getLocalPreferences() {
         return ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+    }
+
+    protected T cloneValue(T value) {
+        return value;
     }
 }
