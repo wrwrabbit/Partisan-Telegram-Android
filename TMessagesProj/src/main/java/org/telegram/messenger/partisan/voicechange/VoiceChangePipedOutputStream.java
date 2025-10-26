@@ -6,7 +6,7 @@ import java.io.*;
  * This class is a copy of PipedOutputStream.
  * @see VoiceChangePipedInputStream
  */
-class VoiceChangePipedOutputStream extends OutputStream {
+public class VoiceChangePipedOutputStream extends OutputStream {
 
     /* REMIND: identification of the read and write sides needs to be
        more sophisticated.  Either using thread groups (but what about

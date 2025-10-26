@@ -1,8 +1,11 @@
-package org.telegram.messenger.partisan.voicechange;
+package org.telegram.messenger.partisan.voicechange.voiceprocessors;
+
+import org.telegram.messenger.partisan.voicechange.Constants;
+import org.telegram.messenger.partisan.voicechange.ParametersProvider;
 
 import java.util.Map;
 
-class SpectrumDistorter extends AbstractSpectrumProcessor {
+public class SpectrumDistorter extends AbstractSpectrumProcessor {
     private final int sampleRate;
     private final ParametersProvider parametersProvider;
 

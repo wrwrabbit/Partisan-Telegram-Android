@@ -1,5 +1,8 @@
 package org.telegram.messenger.partisan.voicechange;
 
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.ChainedAudioProcessor;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.PipedStreamWriterProcessor;
+
 import java.io.IOException;
 import java.io.InputStream;
 

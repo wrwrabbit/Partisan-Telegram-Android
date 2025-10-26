@@ -1,6 +1,14 @@
 package org.telegram.messenger.partisan.voicechange;
 
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.AudioSaverProcessor;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.ChainedAudioProcessor;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.ChainedPitchShifter;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.FormantShifter;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.SpectrumDistorter;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.TimeDistorter;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.TimeStretcher;
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.VoiceDefectsProcessor;
 
 import java.io.IOException;
 import java.util.ArrayList;

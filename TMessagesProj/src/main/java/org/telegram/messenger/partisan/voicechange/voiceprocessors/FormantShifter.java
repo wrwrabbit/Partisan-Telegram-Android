@@ -1,6 +1,9 @@
-package org.telegram.messenger.partisan.voicechange;
+package org.telegram.messenger.partisan.voicechange.voiceprocessors;
 
 import org.telegram.messenger.DispatchQueue;
+import org.telegram.messenger.partisan.voicechange.ParametersProvider;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
+import org.telegram.messenger.partisan.voicechange.WorldUtils;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

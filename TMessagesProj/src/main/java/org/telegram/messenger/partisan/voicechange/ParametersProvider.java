@@ -1,9 +1,11 @@
 package org.telegram.messenger.partisan.voicechange;
 
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.TimeDistorter;
+
 import java.util.List;
 import java.util.Map;
 
-interface ParametersProvider {
+public interface ParametersProvider {
     double getPitchFactor();
     double getTimeStretchFactor();
     Map<Integer, Integer> getSpectrumDistortionMap(int sampleRate);

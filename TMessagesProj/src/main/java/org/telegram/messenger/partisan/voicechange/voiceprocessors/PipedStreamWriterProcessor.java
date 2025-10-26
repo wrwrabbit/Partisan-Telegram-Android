@@ -1,6 +1,8 @@
-package org.telegram.messenger.partisan.voicechange;
+package org.telegram.messenger.partisan.voicechange.voiceprocessors;
 
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.voicechange.AudioEventWriteHelper;
+import org.telegram.messenger.partisan.voicechange.VoiceChangePipedOutputStream;
 
 import java.io.IOException;
 
@@ -8,7 +10,7 @@ import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.AudioProcessor;
 import be.tarsos.dsp.io.TarsosDSPAudioFormat;
 
-class PipedStreamWriterProcessor implements AudioProcessor, AudioEventWriteHelper.WriteDelegate {
+public class PipedStreamWriterProcessor implements AudioProcessor, AudioEventWriteHelper.WriteDelegate {
     private final VoiceChangePipedOutputStream outputStream;
     private final AudioEventWriteHelper writeHelper;
 

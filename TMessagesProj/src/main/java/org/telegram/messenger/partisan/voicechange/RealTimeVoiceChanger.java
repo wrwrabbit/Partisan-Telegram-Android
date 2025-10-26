@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.voicechange;
 
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.TimeStretcher;
+
 import java.io.IOException;
 import java.util.Arrays;
 

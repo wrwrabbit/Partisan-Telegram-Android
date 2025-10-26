@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.voicechange;
 
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.ChainedAudioProcessor;
+
 import java.io.InputStream;
 
 public class FinalDispatcherNode extends AbstractDispatcherNode {

@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.voicechange;
+package org.telegram.messenger.partisan.voicechange.voiceprocessors;
 
 import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.AudioProcessor;

@@ -1,9 +1,12 @@
-package org.telegram.messenger.partisan.voicechange;
+package org.telegram.messenger.partisan.voicechange.voiceprocessors;
+
+import org.telegram.messenger.partisan.voicechange.Constants;
+import org.telegram.messenger.partisan.voicechange.ParametersProvider;
 
 import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.PitchShifter;
 
-class ChainedPitchShifter extends ChainedAudioProcessor {
+public class ChainedPitchShifter extends ChainedAudioProcessor {
     private final ParametersProvider parametersProvider;
     private final PitchShifter shifter;
 

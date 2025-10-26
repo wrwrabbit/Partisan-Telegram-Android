@@ -1,11 +1,11 @@
-package org.telegram.messenger.partisan.voicechange;
+package org.telegram.messenger.partisan.voicechange.voiceprocessors;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 import be.tarsos.dsp.AudioEvent;
 
-class AudioSaverProcessor extends ChainedAudioProcessor {
+public class AudioSaverProcessor extends ChainedAudioProcessor {
     private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
     @Override
