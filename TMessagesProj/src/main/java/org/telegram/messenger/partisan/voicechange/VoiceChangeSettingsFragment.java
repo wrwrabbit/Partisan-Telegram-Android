@@ -37,6 +37,7 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.SimpleRadioButtonCell;
+import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -97,7 +98,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private int enableForTypesDelimiterRow = -1;
     private int benchmarkRow = -1;
 
-    TextSettingsCell recordCell;
+    private TextCell recordCell;
 
     private final Runnable recordRunnable = new Runnable() {
         @Override
@@ -234,10 +235,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                         return;
                     }
                     startRecording();
-                    ((TextSettingsCell)view).setText(getString(R.string.Stop), true);
+                    ((TextCell)view).setTextAndIcon(getString(R.string.Stop), R.drawable.quantum_ic_stop_white_24, true);
                 } else {
                     stopRecording();
-                    ((TextSettingsCell)view).setText(getString(R.string.RecordVoiceChangeExample), true);
+                    ((TextCell)view).setTextAndIcon(getString(R.string.RecordVoiceChangeExample), R.drawable.input_mic, true);
                 }
             } else if (position == playChangedRow) {
                 onPlayerButtonClicked(view, true);
@@ -302,7 +303,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             if (buffer != null) {
                 byte[] audioBytes = buffer.toByteArray();
                 player.startPlaying(audioBytes, () -> onPlayingFinished(changed ? playChangedRow : playOriginalRow));
-                ((TextSettingsCell)view).setText(getString(R.string.Stop), true);
+                ((TextCell)view).setTextAndIcon(getString(R.string.Stop), R.drawable.quantum_ic_stop_white_24, true);
             }
         } else {
             player.stopPlaying();
@@ -453,6 +454,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         CHECK,
         RADIO_BUTTON,
         SETTING,
+        BUTTON_WITH_ICON,
         DESCRIPTION,
         HEADER,
         DELIMITER
@@ -511,6 +513,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     ((TextSettingsCell)view).setCanDisable(true);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
+                case BUTTON_WITH_ICON:
+                    view = new TextCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
                 case DESCRIPTION:
                     view = new TextInfoPrivacyCell(mContext);
                     view.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
@@ -557,16 +563,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 }
                 case SETTING: {
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
-                    if (position == generateNewParametersRow) {
-                        textCell.setText(getString(R.string.GenerateNewVoiceChangeParameters), false);
-                    } else if (position == recordRow) {
-                        recordCell = textCell;
-                        textCell.setText(getString(R.string.RecordVoiceChangeExample), true);
-                    } else if (position == playChangedRow) {
-                        textCell.setText(getString(R.string.PlayChangedVoice), true);
-                    } else if (position == playOriginalRow) {
-                        textCell.setText(getString(R.string.PlayNormalVoice), false);
-                    } else if (position == enableForIndividualAccountsRow) {
+                    if (position == enableForIndividualAccountsRow) {
                         int enabledCount = getVoiceChangeEnabledAccounts().size();
                         String value = enabledCount == UserConfig.getActivatedAccountsCount()
                                 ? getString(R.string.FilterAllChatsShort)
@@ -574,6 +571,20 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                         textCell.setTextAndValue(getString(R.string.EnableForIndividualAccounts), value, false);
                     } else if (position == benchmarkRow) {
                         textCell.setText("Benchmark", false);
+                    }
+                    break;
+                }
+                case BUTTON_WITH_ICON: {
+                    TextCell textCell = (TextCell) holder.itemView;
+                    if (position == generateNewParametersRow) {
+                        textCell.setTextAndIcon(getString(R.string.GenerateNewVoiceChangeParameters), R.drawable.quantum_ic_refresh_white_24, false);
+                    } else if (position == recordRow) {
+                        recordCell = textCell;
+                        textCell.setTextAndIcon(getString(R.string.RecordVoiceChangeExample), R.drawable.input_mic, true);
+                    } else if (position == playChangedRow) {
+                        textCell.setTextAndIcon(getString(R.string.PlayChangedVoice), R.drawable.quantum_ic_play_arrow_white_24, true);
+                    } else if (position == playOriginalRow) {
+                        textCell.setTextAndIcon(getString(R.string.PlayNormalVoice), R.drawable.quantum_ic_play_arrow_white_24, false);
                     }
                     break;
                 }
@@ -605,9 +616,13 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
 
         @Override
         public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
-            if (holder.getItemViewType() == 2) {
+            if (holder.getItemViewType() == ViewType.SETTING.ordinal()) {
                 TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
                 textCell.setEnabled(isEnabled(holder));
+            } else if (holder.getItemViewType() == ViewType.BUTTON_WITH_ICON.ordinal()) {
+                TextCell textCell = (TextCell) holder.itemView;
+                textCell.setEnabled(isEnabled(holder));
+                textCell.showEnabledAlpha(!isEnabled(holder));
             }
         }
 
@@ -623,10 +638,11 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 return ViewType.CHECK;
             } else if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow) {
                 return ViewType.RADIO_BUTTON;
-            } else if (position == generateNewParametersRow || position == recordRow || position == playChangedRow
-                    || position == playOriginalRow|| position == enableForIndividualAccountsRow
-                    || position == benchmarkRow) {
+            } else if (position == enableForIndividualAccountsRow || position == benchmarkRow) {
                 return ViewType.SETTING;
+            } else if (position == generateNewParametersRow || position == recordRow || position == playChangedRow
+                    || position == playOriginalRow) {
+                return ViewType.BUTTON_WITH_ICON;
             } else if (position == enableDescriptionRow || position == aggressiveChangeLevelDescriptionRow
                     || position == moderateChangeLevelDescriptionRow|| position == generateNewParametersDescriptionRow) {
                 return ViewType.DESCRIPTION;
