@@ -2293,7 +2293,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                                 byteBuffer.put(changedVoice, 0, readResult);
                             }
                             byteBuffer.rewind();
-                            if (voiceChanger.isWritingFinished()) {
+                            if (voiceChanger.isVoiceChangingFinished()) {
                                 readResult = 0;
                             }
                         }

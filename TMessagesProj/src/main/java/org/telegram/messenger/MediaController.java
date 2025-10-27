@@ -1052,7 +1052,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                         voiceChanger.write(java.util.Arrays.copyOf(buffer.array(), len));
                     }
                     byte[] changedVoice = voiceChanger.readAll();
-                    if (changedVoice.length == 0) {
+                    if (changedVoice.length == 0 && !voiceChanger.isVoiceChangingFinished()) {
                         recordBuffers.add(buffer);
                         recordQueue.postRunnable(recordRunnable);
                         return;

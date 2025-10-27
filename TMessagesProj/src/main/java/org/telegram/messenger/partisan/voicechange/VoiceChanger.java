@@ -31,6 +31,7 @@ public class VoiceChanger {
     private final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     protected final AudioSaverProcessor audioSaver;
     private boolean writingFinished = false;
+    private boolean voiceChangingFinished = false;
 
     private static final ParametersProvider parametersProvider = new TesterSettingsParametersProvider();
     private Runnable finishedCallback;
@@ -111,6 +112,7 @@ public class VoiceChanger {
                     @Override
                     public void processingFinishedInternal() {
                         stop();
+                        voiceChangingFinished = true;
                         if (finishedCallback != null) {
                             finishedCallback.run();
                         }
@@ -158,6 +160,10 @@ public class VoiceChanger {
 
     public boolean isWritingFinished() {
         return writingFinished;
+    }
+
+    public boolean isVoiceChangingFinished() {
+        return voiceChangingFinished;
     }
 
     public byte[] readAll() {
