@@ -223,7 +223,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 }
             } else if (position == generateNewParametersRow) {
                 VoiceChangeSettings.generateNewParameters();
-                Toast.makeText(getContext(), getString(R.string.Set), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.VoiceChanged), Toast.LENGTH_SHORT).show();
             } else if (position == recordRow) {
                 if (audioRecorder == null) {
                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
