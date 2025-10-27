@@ -302,6 +302,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
     private int speakerIcon;
     private final ImageView speakerImageView;
 
+    private final TextView voiceChangedLabel;
     private final GroupCallMessagesListView groupCallMessagesListView;
     private final int maxGroupCallMessageLength;
 
@@ -1181,6 +1182,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         accountInstance.getNotificationCenter().removeObserver(this, NotificationCenter.groupCallSpeakingUsersUpdated);
         accountInstance.getNotificationCenter().removeObserver(this, NotificationCenter.conferenceEmojiUpdated);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.webRtcMicAmplitudeEvent);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.voiceChangingStateChanged);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didEndCall);
         super.dismiss();
     }
@@ -1320,6 +1322,8 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         } else if (id == NotificationCenter.webRtcMicAmplitudeEvent) {
             float amplitude = (float) args[0];
             setMicAmplitude(amplitude);
+        } else if (id == NotificationCenter.voiceChangingStateChanged) {
+            voiceChangedLabel.setVisibility(org.telegram.messenger.partisan.voicechange.VoiceChanger.needShowVoiceChangeNotification() ? View.VISIBLE : View.GONE);
         } else if (id == NotificationCenter.needShowAlert) {
             int num = (Integer) args[0];
             if (num == 6) {
@@ -2453,6 +2457,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         accountInstance.getNotificationCenter().addObserver(this, NotificationCenter.groupCallSpeakingUsersUpdated);
         accountInstance.getNotificationCenter().addObserver(this, NotificationCenter.conferenceEmojiUpdated);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.webRtcMicAmplitudeEvent);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.voiceChangingStateChanged);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didEndCall);
 
         shadowDrawable = context.getResources().getDrawable(R.drawable.sheet_shadow_round).mutate();
@@ -5336,6 +5341,14 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         limitTextView.setTextColor(0xffffffff);
         limitTextView.setAnimationProperties(.4f, 0, 320, CubicBezierInterpolator.EASE_OUT_QUINT);
         limitTextView.setTypeface(AndroidUtilities.bold());
+
+        voiceChangedLabel = new TextView(context);
+        voiceChangedLabel.setGravity(Gravity.CENTER_HORIZONTAL);
+        voiceChangedLabel.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 11);
+        voiceChangedLabel.setTextColor(Color.WHITE);
+        containerView.addView(voiceChangedLabel, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 6, 0, 0));
+        voiceChangedLabel.setText(org.telegram.messenger.LocaleController.getString(org.telegram.messenger.R.string.VoiceChanged));
+        voiceChangedLabel.setVisibility(View.GONE);
 
         containerView.addView(buttonsContainer);
         callMessageEnterView = new EditTextEmoji(context, sizeNotifierFrameLayout, LaunchActivity.getLastFragment(), EditTextEmoji.STYLE_CALL, true, resourcesProvider) {
@@ -10692,6 +10705,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         float visibleHeight = containerView.getMeasuredHeight() - scrollOffsetY + translationY - backgroundPaddingTop;
         visibleHeight = Math.max(visibleHeight / 3 * 2, visibleHeight - dp(250));
 
+        voiceChangedLabel.setTranslationY(translationY);
         groupCallMessagesListView.setTranslationY(translationY);
         groupCallMessagesListView.setVisibleHeight((int) (visibleHeight));
     }
