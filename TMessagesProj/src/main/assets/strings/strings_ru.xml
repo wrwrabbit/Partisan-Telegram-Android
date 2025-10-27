@@ -316,8 +316,8 @@
     <string name="GenerateNewVoiceChangeParametersDescription">Сгенерировать новые параметры голоса, изменив тем самым его звучание.</string>
     <string name="CheckVoiceChanging">Проверить изменение голоса</string>
     <string name="RecordVoiceChangeExample">Записать</string>
-    <string name="PlayChangedVoice">Воспроизвести оригинальный голос</string>
-    <string name="PlayNormalVoice">Воспроизвести обычный голос голос</string>
+    <string name="PlayChangedVoice">Воспроизвести изменённый голос</string>
+    <string name="PlayNormalVoice">Воспроизвести обычный голос</string>
     <string name="ShowVoiceChangedNotification">Показывать уведомление об изменении голоса</string>
     <string name="VoiceChanged">Голос изменён</string>
     <string name="EnableForIndividualAccounts">Включить для отдельных аккаунтов</string>
