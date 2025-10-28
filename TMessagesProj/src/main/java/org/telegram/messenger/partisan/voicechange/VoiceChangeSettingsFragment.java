@@ -72,6 +72,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private static final int sampleRate = 48000;
     private static final int recordBufferSize = 1280;
 
+    private String benchmarkRatioText = null;
+
     private int rowCount;
 
     private int enableRow = -1;
@@ -98,7 +100,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private int enableForTypesDelimiterRow = -1;
     private int benchmarkRow = -1;
 
-    private TextCell recordCell;
+    private TextCell recordCell = null;
+    private TextSettingsCell benchmarkCell = null;
 
     private final Runnable recordRunnable = new Runnable() {
         @Override
@@ -375,20 +378,32 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         if (originalOutputAudioBuffer == null || originalOutputAudioBuffer.size() == 0) {
             return;
         }
+        if (benchmarkCell != null) {
+            benchmarkCell.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+        }
         final long startTime = System.currentTimeMillis();
         VoiceChanger benchmarkVoiceChanger = new VoiceChanger(sampleRate);
-        benchmarkVoiceChanger.setFinishedCallback(() -> showRatioToast(System.currentTimeMillis() - startTime));
+        benchmarkVoiceChanger.setFinishedCallback(() -> AndroidUtilities.runOnUIThread(() -> onBehcmarkFinished(startTime)));
         benchmarkVoiceChanger.write(originalOutputAudioBuffer.toByteArray());
         benchmarkVoiceChanger.notifyWritingFinished();
     }
 
-    private void showRatioToast(long duration) {
+    private void onBehcmarkFinished(long startTime) {
+        long duration = System.currentTimeMillis() - startTime;
+        benchmarkRatioText = getBenchmarkRatioText(duration);
+        Toast.makeText(getContext(), "Ratio: " + benchmarkRatioText, Toast.LENGTH_LONG).show();
+        listAdapter.notifyItemChanged(benchmarkRow);
+        if (benchmarkCell != null) {
+            benchmarkCell.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+        }
+    }
+
+    private String getBenchmarkRatioText(long duration) {
         final int sampleSize = 2;
         double originalLength = ((double)originalOutputAudioBuffer.size() / sampleSize / sampleRate);
         double formantRatio = duration / (originalLength * 1E3);
         DecimalFormat df = new DecimalFormat("0.00");
-        String text = "Ratio: " + df.format(formantRatio * 100) + "%";
-        AndroidUtilities.runOnUIThread(() -> Toast.makeText(getContext(), text, Toast.LENGTH_LONG).show());
+        return df.format(formantRatio * 100) + "%";
     }
 
     private List<Integer> getVoiceChangeEnabledAccounts() {
@@ -570,7 +585,12 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                                 : enabledCount + "/" + UserConfig.getActivatedAccountsCount();
                         textCell.setTextAndValue(getString(R.string.EnableForIndividualAccounts), value, false);
                     } else if (position == benchmarkRow) {
-                        textCell.setText("Benchmark", false);
+                        benchmarkCell = textCell;
+                        if (benchmarkRatioText != null) {
+                            textCell.setTextAndValue("Benchmark", benchmarkRatioText, false);
+                        } else {
+                            textCell.setText("Benchmark", false);
+                        }
                     }
                     break;
                 }
