@@ -383,12 +383,12 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         }
         final long startTime = System.currentTimeMillis();
         VoiceChanger benchmarkVoiceChanger = new VoiceChanger(sampleRate, VoiceChangeType.VOICE_MESSAGE);
-        benchmarkVoiceChanger.setFinishedCallback(() -> AndroidUtilities.runOnUIThread(() -> onBehcmarkFinished(startTime)));
+        benchmarkVoiceChanger.setFinishedCallback(() -> AndroidUtilities.runOnUIThread(() -> onBenchmarkFinished(startTime)));
         benchmarkVoiceChanger.write(originalOutputAudioBuffer.toByteArray());
         benchmarkVoiceChanger.notifyWritingFinished();
     }
 
-    private void onBehcmarkFinished(long startTime) {
+    private void onBenchmarkFinished(long startTime) {
         long duration = System.currentTimeMillis() - startTime;
         benchmarkRatioText = getBenchmarkRatioText(duration);
         Toast.makeText(getContext(), "Ratio: " + benchmarkRatioText, Toast.LENGTH_LONG).show();
