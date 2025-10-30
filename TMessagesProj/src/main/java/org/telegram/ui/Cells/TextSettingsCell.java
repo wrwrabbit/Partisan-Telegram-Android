@@ -41,7 +41,7 @@ import java.util.ArrayList;
 public class TextSettingsCell extends FrameLayout {
 
     private Theme.ResourcesProvider resourcesProvider;
-    private TextView textView;
+    protected TextView textView;
     private AnimatedTextView valueTextView;
     private ImageView imageView;
     private boolean imageViewIsColorful;
