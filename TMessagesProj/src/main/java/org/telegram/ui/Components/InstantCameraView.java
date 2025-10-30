@@ -95,6 +95,7 @@ import org.telegram.messenger.camera.CameraController;
 import org.telegram.messenger.camera.CameraInfo;
 import org.telegram.messenger.camera.CameraSession;
 import org.telegram.messenger.camera.Size;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeType;
 import org.telegram.messenger.video.MP4Builder;
 import org.telegram.messenger.video.Mp4Movie;
 import org.telegram.tgnet.ConnectionsManager;
@@ -3260,7 +3261,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, audioSampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
                 audioRecorder.startRecording();
                 if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(currentAccount, org.telegram.messenger.partisan.voicechange.VoiceChangeType.VIDEO_MESSAGE)) {
-                    voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(audioRecorder.getSampleRate());
+                    voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(audioRecorder.getSampleRate(), VoiceChangeType.VIDEO_MESSAGE);
                 } else {
                     voiceChanger = null;
                 }

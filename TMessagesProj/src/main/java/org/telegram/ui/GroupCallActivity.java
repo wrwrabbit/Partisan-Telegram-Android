@@ -118,6 +118,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeType;
 import org.telegram.messenger.pip.PipSource;
 import org.telegram.messenger.pip.utils.PipUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
@@ -1323,7 +1324,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             float amplitude = (float) args[0];
             setMicAmplitude(amplitude);
         } else if (id == NotificationCenter.voiceChangingStateChanged) {
-            voiceChangedLabel.setVisibility(org.telegram.messenger.partisan.voicechange.VoiceChanger.needShowVoiceChangeNotification() ? View.VISIBLE : View.GONE);
+            voiceChangedLabel.setVisibility(org.telegram.messenger.partisan.voicechange.VoiceChanger.needShowVoiceChangeNotification(VoiceChangeType.CALL) ? View.VISIBLE : View.GONE);
         } else if (id == NotificationCenter.needShowAlert) {
             int num = (Integer) args[0];
             if (num == 6) {

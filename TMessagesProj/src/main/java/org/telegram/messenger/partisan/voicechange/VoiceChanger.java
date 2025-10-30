@@ -25,6 +25,7 @@ public class VoiceChanger {
     private static final Set<VoiceChanger> runningVoiceChangers = new HashSet<>();
 
     private final int sampleRate;
+    private final VoiceChangeType voiceChangeType;
     private final VoiceChangePipedOutputStream initialOutputStream;
     private VoiceChangePipedInputStream currentInputStream;
     private final List<AbstractDispatcherNode> dispatcherNodes = new ArrayList<>();
@@ -36,8 +37,9 @@ public class VoiceChanger {
     private static final ParametersProvider parametersProvider = new TesterSettingsParametersProvider();
     private Runnable finishedCallback;
 
-    public VoiceChanger(int sampleRate) {
+    public VoiceChanger(int sampleRate, VoiceChangeType voiceChangeType) {
         this.sampleRate = sampleRate;
+        this.voiceChangeType = voiceChangeType;
         this.initialOutputStream = new VoiceChangePipedOutputStream();
         audioSaver = new AudioSaverProcessor();
 
@@ -216,11 +218,11 @@ public class VoiceChanger {
                 || parametersProvider.badShEnabled();
     }
 
-    public static boolean needShowVoiceChangeNotification() {
-        return isAnyVoiceChangerRunning() && VoiceChangeSettings.showVoiceChangedNotification.get().orElse(true);
+    public static boolean needShowVoiceChangeNotification(VoiceChangeType type) {
+        return isAnyVoiceChangerRunning(type) && VoiceChangeSettings.showVoiceChangedNotification.get().orElse(true);
     }
 
-    private static boolean isAnyVoiceChangerRunning() {
-        return !runningVoiceChangers.isEmpty();
+    private static boolean isAnyVoiceChangerRunning(VoiceChangeType type) {
+        return !runningVoiceChangers.stream().anyMatch(v -> v.voiceChangeType == type);
     }
 }

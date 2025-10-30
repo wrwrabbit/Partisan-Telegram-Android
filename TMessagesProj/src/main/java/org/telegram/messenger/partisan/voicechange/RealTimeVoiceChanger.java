@@ -14,8 +14,8 @@ public class RealTimeVoiceChanger extends VoiceChanger {
     private boolean firstPieceRead = false;
     private double additionalSpeedupFactor = 0.0;
 
-    public RealTimeVoiceChanger(int sampleRate) {
-        super(sampleRate);
+    public RealTimeVoiceChanger(int sampleRate, VoiceChangeType type) {
+        super(sampleRate, type);
     }
 
     @Override

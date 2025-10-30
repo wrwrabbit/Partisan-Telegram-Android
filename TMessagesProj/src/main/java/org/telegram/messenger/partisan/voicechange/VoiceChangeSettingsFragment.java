@@ -323,7 +323,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             originalOutputAudioBuffer = new ByteArrayOutputStream();
             audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, recordBufferSize);
             audioRecorder.startRecording();
-            voiceChanger = new VoiceChanger(audioRecorder.getSampleRate());
+            voiceChanger = new VoiceChanger(audioRecorder.getSampleRate(), VoiceChangeType.VOICE_MESSAGE);
             voiceChanger.setFinishedCallback(() -> recordQueue.postRunnable(this::stopRecordingInternal));
             recordQueue.postRunnable(recordRunnable);
         } catch (Exception e) {
@@ -382,7 +382,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             benchmarkCell.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         }
         final long startTime = System.currentTimeMillis();
-        VoiceChanger benchmarkVoiceChanger = new VoiceChanger(sampleRate);
+        VoiceChanger benchmarkVoiceChanger = new VoiceChanger(sampleRate, VoiceChangeType.VOICE_MESSAGE);
         benchmarkVoiceChanger.setFinishedCallback(() -> AndroidUtilities.runOnUIThread(() -> onBehcmarkFinished(startTime)));
         benchmarkVoiceChanger.write(originalOutputAudioBuffer.toByteArray());
         benchmarkVoiceChanger.notifyWritingFinished();
