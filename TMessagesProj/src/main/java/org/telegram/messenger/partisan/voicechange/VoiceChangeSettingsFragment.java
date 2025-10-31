@@ -240,9 +240,11 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     }
                     startRecording();
                     ((TextCell)view).setTextAndIcon(getString(R.string.Stop), R.drawable.quantum_ic_stop_white_24, true);
+                    ((RecordTextCell)view).setRecording(true);
                 } else {
                     stopRecording();
                     ((TextCell)view).setTextAndIcon(getString(R.string.RecordVoiceChangeExample), R.drawable.input_mic, true);
+                    ((RecordTextCell)view).setRecording(false);
                 }
             } else if (position == playChangedRow) {
                 onPlayerButtonClicked(view, true);
@@ -477,6 +479,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         RADIO_BUTTON,
         SETTING,
         BUTTON_WITH_ICON,
+        RECORD_BUTTON,
         QUALITY_SLIDER,
         DESCRIPTION,
         HEADER,
@@ -538,6 +541,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     break;
                 case BUTTON_WITH_ICON:
                     view = new TextCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case RECORD_BUTTON:
+                    view = new RecordTextCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case QUALITY_SLIDER:
@@ -640,10 +647,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 }
                 case BUTTON_WITH_ICON: {
                     TextCell textCell = (TextCell) holder.itemView;
-                    if (position == recordRow) {
-                        recordCell = textCell;
-                        textCell.setTextAndIcon(getString(R.string.RecordVoiceChangeExample), R.drawable.input_mic, true);
-                    } else if (position == playChangedRow) {
+                    if (position == playChangedRow) {
                         textCell.setTextAndIcon(getString(R.string.PlayChangedVoice), R.drawable.quantum_ic_play_arrow_white_24, true);
                     } else if (position == playOriginalRow) {
                         textCell.setTextAndIcon(getString(R.string.PlayNormalVoice), R.drawable.quantum_ic_play_arrow_white_24, false);
@@ -652,6 +656,14 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     }
                     break;
                 }
+                case RECORD_BUTTON:
+                    RecordTextCell textCell = (RecordTextCell) holder.itemView;
+                    if (position == recordRow) {
+                        recordCell = textCell;
+                        textCell.setTextAndIcon(getString(R.string.RecordVoiceChangeExample), R.drawable.input_mic, true);
+                        textCell.setRecording(false);
+                    }
+                    break;
                 case DESCRIPTION: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
                     if (position == aggressiveChangeLevelDescriptionRow) {
@@ -689,7 +701,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             if (holder.getItemViewType() == ViewType.SETTING.ordinal()) {
                 TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
                 textCell.setEnabled(isEnabled(holder));
-            } else if (holder.getItemViewType() == ViewType.BUTTON_WITH_ICON.ordinal()) {
+            } else if (holder.getItemViewType() == ViewType.BUTTON_WITH_ICON.ordinal()
+                    || holder.getItemViewType() == ViewType.RECORD_BUTTON.ordinal()) {
                 TextCell textCell = (TextCell) holder.itemView;
                 textCell.setEnabled(isEnabled(holder));
                 textCell.showEnabledAlpha(!isEnabled(holder));
@@ -709,9 +722,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 return ViewType.RADIO_BUTTON;
             } else if (position == enableForIndividualAccountsRow || position == benchmarkRow) {
                 return ViewType.SETTING;
-            } else if (position == recordRow || position == playChangedRow || position == playOriginalRow
-                    || position == generateNewParametersRow) {
+            } else if (position == playChangedRow || position == playOriginalRow || position == generateNewParametersRow) {
                 return ViewType.BUTTON_WITH_ICON;
+            } else if (position == recordRow) {
+                return ViewType.RECORD_BUTTON;
             } else if (position == qualityRow) {
                 return ViewType.QUALITY_SLIDER;
             } else if (position == aggressiveChangeLevelDescriptionRow
