@@ -46,23 +46,55 @@ public class VoiceChangeSettings {
 
     public static void generateNewParameters() {
         ThreadLocalRandom random = ThreadLocalRandom.current();
+        boolean decreasePitch = random.nextBoolean();
         if (aggressiveChangeLevel.get().orElse(true)) {
-            if (random.nextBoolean()) {
-                f0Shift.set((float)random.nextDouble(0.6, 0.77));
-                formantRatio.set((float)random.nextDouble(0.6, 0.77));
+            boolean makeBadSounds = random.nextBoolean();
+            if (makeBadSounds) {
+                generateBadSoundsParams(random);
+                if (decreasePitch) {
+                    generateFormantParams(0.6, 0.77);
+                } else {
+                    generateFormantParams(1.3, 1.7);
+                }
             } else {
-                f0Shift.set((float)random.nextDouble(1.3, 1.7));
-                formantRatio.set((float)random.nextDouble(1.3, 1.7));
+                resetBadSoundsParams();
+                if (decreasePitch) {
+                    generateFormantParams(0.6, 0.7);
+                } else {
+                    generateFormantParams(1.4, 1.7);
+                }
             }
+
         } else {
-            if (random.nextBoolean()) {
-                f0Shift.set((float)random.nextDouble(0.77, 0.87));
-                formantRatio.set((float)random.nextDouble(0.77, 0.87));
+            resetBadSoundsParams();
+            if (decreasePitch) {
+                generateFormantParams(0.77, 0.87);
             } else {
-                f0Shift.set((float)random.nextDouble(1.15, 1.3));
-                formantRatio.set((float)random.nextDouble(1.15, 1.3));
+                generateFormantParams(1.15, 1.3);
             }
         }
+    }
+
+    private static void generateBadSoundsParams(ThreadLocalRandom random) {
+        boolean makeBadShSound = random.nextBoolean();
+        if (makeBadShSound) {
+            badSCutoff.set(0);
+            badShCutoff.set(random.nextInt(6000, 8000));
+        } else {
+            badSCutoff.set(random.nextInt(3000, 4000));
+            badShCutoff.set(0);
+        }
+    }
+
+    private static void resetBadSoundsParams() {
+        badSCutoff.set(0);
+        badShCutoff.set(0);
+    }
+
+    private static void generateFormantParams(double min, double max) {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        f0Shift.set((float)random.nextDouble(min, max));
+        formantRatio.set((float)random.nextDouble(min, max));
     }
 
     private static List<Setting<?>> getAllSettings() {
