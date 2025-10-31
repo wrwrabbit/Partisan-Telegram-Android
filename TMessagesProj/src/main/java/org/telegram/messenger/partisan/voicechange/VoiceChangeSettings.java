@@ -91,8 +91,9 @@ public class VoiceChangeSettings {
         ThreadLocalRandom random = ThreadLocalRandom.current();
         boolean decreasePitch = random.nextBoolean();
         if (decreasePitch) {
-            min = 1.0 / min;
-            max = 1.0 / max;
+            double newMax = 1.0 / min;
+            min = 1.0 / max;
+            max = newMax;
         }
         f0Shift.set((float)random.nextDouble(min, max));
         formantRatio.set((float)random.nextDouble(min, max));
