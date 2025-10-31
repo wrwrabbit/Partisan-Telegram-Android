@@ -43,6 +43,7 @@ import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.Components.SlideChooseView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -98,6 +99,9 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private int enableForVideoMessagesRow = -1;
     private int enableForCallsRow = -1;
     private int enableForTypesDelimiterRow = -1;
+    private int qualityHeaderRow = -1;
+    private int qualityRow = -1;
+    private int qualityDescriptionRow = -1;
     private int benchmarkRow = -1;
 
     private TextCell recordCell = null;
@@ -444,8 +448,11 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         enableForVoiceMessagesRow = rowCount++;
         enableForVideoMessagesRow = rowCount++;
         enableForCallsRow = rowCount++;
+        enableForTypesDelimiterRow = rowCount++;
+        qualityHeaderRow = rowCount++;
+        qualityRow = rowCount++;
+        qualityDescriptionRow = rowCount++;
         if (VoiceChangeSettings.showBenchmarkButton.get().orElse(false)) {
-            enableForTypesDelimiterRow = rowCount++;
             benchmarkRow = rowCount++;
         }
     }
@@ -470,6 +477,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         RADIO_BUTTON,
         SETTING,
         BUTTON_WITH_ICON,
+        QUALITY_SLIDER,
         DESCRIPTION,
         HEADER,
         DELIMITER
@@ -531,6 +539,42 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 case BUTTON_WITH_ICON:
                     view = new TextCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case QUALITY_SLIDER:
+                    SlideChooseView slideChooseView2 = new SlideChooseView(mContext);
+                    view = slideChooseView2;
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+
+                    slideChooseView2.setCallback(i -> {
+                        if (i == 0) {
+                            VoiceChangeSettings.useSpectrumDistortion.set(true);
+                            VoiceChangeSettings.formantShiftingHarvest.set(false);
+                            VoiceChangeSettings.generateNewParameters();
+                        } else if (i == 1) {
+                            boolean spectrumDistortionWasEnabled = VoiceChangeSettings.useSpectrumDistortion.get().orElse(false);
+                            VoiceChangeSettings.useSpectrumDistortion.set(false);
+                            VoiceChangeSettings.formantShiftingHarvest.set(false);
+                            if (spectrumDistortionWasEnabled) {
+                                VoiceChangeSettings.generateNewParameters();
+                            }
+                        } else if (i == 2) {
+                            VoiceChangeSettings.useSpectrumDistortion.set(false);
+                            VoiceChangeSettings.formantShiftingHarvest.set(true);
+                        }
+                    });
+                    int currentQuality;
+                    if (VoiceChangeSettings.useSpectrumDistortion.get().orElse(false)) {
+                        currentQuality = 0;
+                    } else if (VoiceChangeSettings.formantShiftingHarvest.get().orElse(false)) {
+                        currentQuality = 2;
+                    } else {
+                        currentQuality = 1;
+                    }
+                    String[] values = new String[3];
+                    values[0] = getString(R.string.AutoDownloadLow);
+                    values[1] = getString(R.string.AutoDownloadMedium);
+                    values[2] = getString(R.string.AutoDownloadHigh);
+                    slideChooseView2.setOptions(currentQuality, values);
                     break;
                 case DESCRIPTION:
                     view = new TextInfoPrivacyCell(mContext);
@@ -618,6 +662,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                         cell.setText(getString(R.string.ModerateVoiceChangeDescription));
                     } else if (position == generateNewParametersDescriptionRow) {
                         cell.setText(getString(R.string.GenerateNewVoiceChangeParametersDescription));
+                    } else if (position == qualityDescriptionRow) {
+                        cell.setText(getString(R.string.VoiceChangeQualityDescription));
                     }
                     break;
                 }
@@ -628,6 +674,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                         cell.setText(getString(R.string.VoiceChangeLevel));
                     } else if (position == checkVoiceChangingHeaderRow) {
                         cell.setText(getString(R.string.CheckVoiceChanging));
+                    } else if (position == qualityHeaderRow) {
+                        cell.setText(getString(R.string.Quality));
                     }
                     break;
                 }
@@ -663,10 +711,14 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             } else if (position == generateNewParametersRow || position == recordRow || position == playChangedRow
                     || position == playOriginalRow) {
                 return ViewType.BUTTON_WITH_ICON;
+            } else if (position == qualityRow) {
+                return ViewType.QUALITY_SLIDER;
             } else if (position == enableDescriptionRow || position == aggressiveChangeLevelDescriptionRow
-                    || position == moderateChangeLevelDescriptionRow|| position == generateNewParametersDescriptionRow) {
+                    || position == moderateChangeLevelDescriptionRow|| position == generateNewParametersDescriptionRow
+                    || position == qualityDescriptionRow) {
                 return ViewType.DESCRIPTION;
-            } else if (position == changeLevelHeaderRow || position == checkVoiceChangingHeaderRow) {
+            } else if (position == changeLevelHeaderRow || position == checkVoiceChangingHeaderRow
+                    || position == qualityHeaderRow) {
                 return ViewType.HEADER;
             } else if (position == checkVoiceChangingDelimiterRow || position == showVoiceChangedNotificationDelimiterRow
                     || position == enableForIndividualAccountsDelimiterRow || position == enableForTypesDelimiterRow) {

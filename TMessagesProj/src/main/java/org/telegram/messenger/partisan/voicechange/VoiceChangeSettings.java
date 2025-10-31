@@ -3,6 +3,7 @@ package org.telegram.messenger.partisan.voicechange;
 import androidx.annotation.NonNull;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Supplier;
 
 import org.telegram.messenger.partisan.settings.BooleanSetting;
 import org.telegram.messenger.partisan.settings.FloatSetting;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class VoiceChangeSettings {
@@ -34,6 +36,7 @@ public class VoiceChangeSettings {
     public static final BooleanSetting showVoiceChangedNotification = new BooleanSetting("showVoiceChangedNotification", true);
     public static final StringSetSetting enabledVoiceChangeTypes = new StringSetSetting("enabledVoiceChangeTypes",
             Arrays.stream(VoiceChangeType.values()).map(Object::toString).collect(Collectors.toSet()));
+    public static final BooleanSetting useSpectrumDistortion = new BooleanSetting("useSpectrumDistortion", false);
     public static final BooleanSetting formantShiftingHarvest = new BooleanSetting("formantShiftingHarvest", false);
     public static final BooleanSetting showBenchmarkButton = new BooleanSetting("showBenchmarkButton", false);
 
@@ -46,32 +49,17 @@ public class VoiceChangeSettings {
 
     public static void generateNewParameters() {
         ThreadLocalRandom random = ThreadLocalRandom.current();
-        boolean decreasePitch = random.nextBoolean();
         if (aggressiveChangeLevel.get().orElse(true)) {
             boolean makeBadSounds = random.nextBoolean();
             if (makeBadSounds) {
                 generateBadSoundsParams(random);
-                if (decreasePitch) {
-                    generateFormantParams(0.6, 0.77);
-                } else {
-                    generateFormantParams(1.3, 1.7);
-                }
             } else {
                 resetBadSoundsParams();
-                if (decreasePitch) {
-                    generateFormantParams(0.6, 0.7);
-                } else {
-                    generateFormantParams(1.4, 1.7);
-                }
             }
-
+            generateFormantOrSpectrumDistortionParams(makeBadSounds ? 1.3 : 1.4, 1.7);
         } else {
             resetBadSoundsParams();
-            if (decreasePitch) {
-                generateFormantParams(0.77, 0.87);
-            } else {
-                generateFormantParams(1.15, 1.3);
-            }
+            generateFormantOrSpectrumDistortionParams(1.15, 1.3);
         }
     }
 
@@ -91,10 +79,49 @@ public class VoiceChangeSettings {
         badShCutoff.set(0);
     }
 
+    private static void generateFormantOrSpectrumDistortionParams(double min, double max) {
+        if (useSpectrumDistortion.get().orElse(false)) {
+            generateSpectrumDistortionParams(min, max);
+        } else {
+            generateFormantParams(min, max);
+        }
+    }
+
     private static void generateFormantParams(double min, double max) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
+        boolean decreasePitch = random.nextBoolean();
+        if (decreasePitch) {
+            min = 1.0 / min;
+            max = 1.0 / max;
+        }
         f0Shift.set((float)random.nextDouble(min, max));
         formantRatio.set((float)random.nextDouble(min, max));
+
+        spectrumDistorterParams.set("");
+    }
+
+    private static void generateSpectrumDistortionParams(double minShift, double maxShift) {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        double sourceShift = random.nextDouble(0.9, 1.1);
+        Function<Integer, String> makeShiftParam = src -> {
+            int shiftedSrc = (int)(src * sourceShift);
+            double destShift = random.nextDouble(minShift, maxShift);
+            if (random.nextBoolean()) {
+                destShift = 1.0 / destShift;
+            }
+            int dest = (int)(shiftedSrc * destShift);
+            return shiftedSrc + ":" + dest;
+        };
+
+        String paramString = makeShiftParam.apply(200) + ","
+                + makeShiftParam.apply(600) + ","
+                + makeShiftParam.apply(2000) + ","
+                + makeShiftParam.apply(6000);
+
+        spectrumDistorterParams.set(paramString);
+
+        f0Shift.set(1.0f);
+        formantRatio.set(1.0f);
     }
 
     private static List<Setting<?>> getAllSettings() {

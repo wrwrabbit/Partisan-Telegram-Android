@@ -324,4 +324,5 @@
     <string name="EnableForVoiceMessages">Включить для голосовых сообщений</string>
     <string name="EnableForVideoMessages">Включить для видеосообщений</string>
     <string name="EnableForVideoCalls">Включить для звонков</string>
+    <string name="VoiceChangeQualityDescription">Изменение голоса высокого качества хорошо работает только на достаточно новых и мощных устройствах и увеличивает разряд батареи. Изменение голоса низкого качества работает даже на старых и медленных устройствах и снижает разряд батареи.</string>
 </resources>

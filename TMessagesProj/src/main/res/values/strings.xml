@@ -10147,4 +10147,5 @@
     <string name="EnableForVoiceMessages">Enable for Voice Messages</string>
     <string name="EnableForVideoMessages">Enable for Video Messages</string>
     <string name="EnableForVideoCalls">Enable for Calls</string>
+    <string name="VoiceChangeQualityDescription">High-quality voice changer only works well on relatively new and powerful devices and increases battery drain. Low-quality voice changer works even on old and slow devices and reduces battery drain.</string>
 </resources>
