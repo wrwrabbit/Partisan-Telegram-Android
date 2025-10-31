@@ -10141,7 +10141,9 @@
     <string name="RecordVoiceChangeExample">Record</string>
     <string name="PlayChangedVoice">Play Changed Voice</string>
     <string name="PlayNormalVoice">Play Normal Voice</string>
-    <string name="ShowVoiceChangedNotification">Show Voice Changed Notification</string>
+    <string name="CheckVoiceChangingDescription">Test the voice change before use. If you don\'t like the sound, generate new parameters.</string>
+    <string name="ShowVoiceChangedNotification">Voice Changed Notification</string>
+    <string name="ShowVoiceChangedNotificationDescription">Show a voice change notification when recording voice and video messages and calls.</string>
     <string name="VoiceChanged">Voice Changed</string>
     <string name="EnableForIndividualAccounts">Enable for Individual Accounts</string>
     <string name="EnableForVoiceMessages">Enable for Voice Messages</string>

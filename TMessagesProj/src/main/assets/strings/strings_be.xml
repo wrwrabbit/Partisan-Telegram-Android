@@ -319,7 +319,9 @@
     <string name="RecordVoiceChangeExample">Запісаць</string>
     <string name="PlayChangedVoice">Прайграць зменены голас</string>
     <string name="PlayNormalVoice">Прайграць звычайны голас</string>
-    <string name="ShowVoiceChangedNotification">Паказваць апавяшчэнне аб змене голасу</string>
+    <string name="CheckVoiceChangingDescription">Праверце змену голасу перад выкарыстаннем. Калі Вам не падабаецца гучанне, згенеруйце новыя параметры.</string>
+    <string name="ShowVoiceChangedNotification">Апавяшчэнне аб змене голасу</string>
+    <string name="ShowVoiceChangedNotificationDescription">Паказваць надпіс пра змяненне голасу падчас запісу галасавых і відэапаведамленняў і званкоў.</string>
     <string name="VoiceChanged">Голас зменены</string>
     <string name="EnableForIndividualAccounts">Уключыць для асобных акаўнтаў</string>
     <string name="EnableForVoiceMessages">Уключыць для галасавых паведамленняў</string>

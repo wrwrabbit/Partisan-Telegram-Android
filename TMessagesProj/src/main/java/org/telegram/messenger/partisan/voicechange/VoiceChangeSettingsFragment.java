@@ -84,24 +84,24 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private int aggressiveChangeLevelDescriptionRow = -1;
     private int moderateChangeLevelRow = -1;
     private int moderateChangeLevelDescriptionRow = -1;
-    private int generateNewParametersRow = -1;
-    private int generateNewParametersDescriptionRow = -1;
+    private int qualityHeaderRow = -1;
+    private int qualityRow = -1;
+    private int qualityDescriptionRow = -1;
     private int checkVoiceChangingHeaderRow = -1;
     private int recordRow = -1;
     private int playChangedRow = -1;
     private int playOriginalRow = -1;
-    private int checkVoiceChangingDelimiterRow = -1;
-    private int showVoiceChangedNotificationRow = -1;
-    private int showVoiceChangedNotificationDelimiterRow = -1;
+    private int checkVoiceChangingDescriptionRow = -1;
+    private int generateNewParametersRow = -1;
+    private int generateNewParametersDescriptionRow = -1;
     private int enableForIndividualAccountsRow = -1;
     private int enableForIndividualAccountsDelimiterRow = -1;
     private int enableForVoiceMessagesRow = -1;
     private int enableForVideoMessagesRow = -1;
     private int enableForCallsRow = -1;
     private int enableForTypesDelimiterRow = -1;
-    private int qualityHeaderRow = -1;
-    private int qualityRow = -1;
-    private int qualityDescriptionRow = -1;
+    private int showVoiceChangedNotificationRow = -1;
+    private int showVoiceChangedNotificationDescriptionRow = -1;
     private int benchmarkRow = -1;
 
     private TextCell recordCell = null;
@@ -229,9 +229,6 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     listAdapter.notifyItemChanged(aggressiveChangeLevelRow);
                     listAdapter.notifyItemChanged(moderateChangeLevelRow);
                 }
-            } else if (position == generateNewParametersRow) {
-                VoiceChangeSettings.generateNewParameters();
-                Toast.makeText(getContext(), getString(R.string.VoiceChanged), Toast.LENGTH_SHORT).show();
             } else if (position == recordRow) {
                 if (audioRecorder == null) {
                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
@@ -251,9 +248,9 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 onPlayerButtonClicked(view, true);
             } else if (position == playOriginalRow) {
                 onPlayerButtonClicked(view, false);
-            } else if (position == showVoiceChangedNotificationRow) {
-                boolean newValue = VoiceChangeSettings.showVoiceChangedNotification.toggle();
-                ((TextCheckCell)view).setChecked(newValue);
+            } else if (position == generateNewParametersRow) {
+                VoiceChangeSettings.generateNewParameters();
+                Toast.makeText(getContext(), getString(R.string.VoiceChanged), Toast.LENGTH_SHORT).show();
             } else if (position == enableForIndividualAccountsRow) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                 final Set<Integer> selectedAccounts = new HashSet<>(getVoiceChangeEnabledAccounts());
@@ -284,6 +281,9 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 ((TextCheckCell)view).setChecked(newValue);
             } else if (position == enableForCallsRow) {
                 boolean newValue = VoiceChangeSettings.toggleVoiceChangeType(VoiceChangeType.CALL);
+                ((TextCheckCell)view).setChecked(newValue);
+            } else if (position == showVoiceChangedNotificationRow) {
+                boolean newValue = VoiceChangeSettings.showVoiceChangedNotification.toggle();
                 ((TextCheckCell)view).setChecked(newValue);
             } else if (position == benchmarkRow) {
                 runBenchmark();
@@ -434,24 +434,24 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         aggressiveChangeLevelDescriptionRow = rowCount++;
         moderateChangeLevelRow = rowCount++;
         moderateChangeLevelDescriptionRow = rowCount++;
-        generateNewParametersRow = rowCount++;
-        generateNewParametersDescriptionRow = rowCount++;
+        qualityHeaderRow = rowCount++;
+        qualityRow = rowCount++;
+        qualityDescriptionRow = rowCount++;
         checkVoiceChangingHeaderRow = rowCount++;
         recordRow = rowCount++;
         playChangedRow = rowCount++;
         playOriginalRow = rowCount++;
-        checkVoiceChangingDelimiterRow = rowCount++;
-        showVoiceChangedNotificationRow = rowCount++;
-        showVoiceChangedNotificationDelimiterRow = rowCount++;
+        checkVoiceChangingDescriptionRow = rowCount++;
+        generateNewParametersRow = rowCount++;
+        generateNewParametersDescriptionRow = rowCount++;
         enableForIndividualAccountsRow = rowCount++;
         enableForIndividualAccountsDelimiterRow = rowCount++;
         enableForVoiceMessagesRow = rowCount++;
         enableForVideoMessagesRow = rowCount++;
         enableForCallsRow = rowCount++;
         enableForTypesDelimiterRow = rowCount++;
-        qualityHeaderRow = rowCount++;
-        qualityRow = rowCount++;
-        qualityDescriptionRow = rowCount++;
+        showVoiceChangedNotificationRow = rowCount++;
+        showVoiceChangedNotificationDescriptionRow = rowCount++;
         if (VoiceChangeSettings.showBenchmarkButton.get().orElse(false)) {
             benchmarkRow = rowCount++;
         }
@@ -496,9 +496,9 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow
                     || position == generateNewParametersRow || position == recordRow
                     || position == playChangedRow || position == playOriginalRow
-                    || position == showVoiceChangedNotificationRow || position == enableForIndividualAccountsRow
-                    || position == enableForVoiceMessagesRow || position == enableForVideoMessagesRow
-                    || position == enableForCallsRow || position == benchmarkRow) {
+                    || position == enableForIndividualAccountsRow || position == enableForVoiceMessagesRow
+                    || position == enableForVideoMessagesRow || position == enableForCallsRow
+                    || position == showVoiceChangedNotificationRow || position == benchmarkRow) {
                 boolean voiceChangeEnabled = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false);
                 if (position == playChangedRow) {
                     return voiceChangeEnabled && changedOutputAudioBuffer != null;
@@ -599,14 +599,14 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
                     if (position == enableRow) {
                         textCell.setTextAndCheck(getString(R.string.Enable), VoiceChangeSettings.voiceChangeEnabled.get().orElse(false), true);
-                    } else if (position == showVoiceChangedNotificationRow) {
-                        textCell.setTextAndCheck(getString(R.string.ShowVoiceChangedNotification), VoiceChangeSettings.showVoiceChangedNotification.get().orElse(false), true);
                     } else if (position == enableForVoiceMessagesRow) {
                         textCell.setTextAndCheck(getString(R.string.EnableForVoiceMessages), VoiceChangeSettings.isVoiceChangeTypeEnabled(VoiceChangeType.VOICE_MESSAGE), true);
                     } else if (position == enableForVideoMessagesRow) {
                         textCell.setTextAndCheck(getString(R.string.EnableForVideoMessages), VoiceChangeSettings.isVoiceChangeTypeEnabled(VoiceChangeType.VIDEO_MESSAGE), true);
                     } else if (position == enableForCallsRow) {
                         textCell.setTextAndCheck(getString(R.string.EnableForVideoCalls), VoiceChangeSettings.isVoiceChangeTypeEnabled(VoiceChangeType.CALL), true);
+                    } else if (position == showVoiceChangedNotificationRow) {
+                        textCell.setTextAndCheck(getString(R.string.ShowVoiceChangedNotification), VoiceChangeSettings.showVoiceChangedNotification.get().orElse(false), true);
                     }
                     textCell.setEnabled(isEnabled(holder), null);
                     break;
@@ -640,15 +640,15 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 }
                 case BUTTON_WITH_ICON: {
                     TextCell textCell = (TextCell) holder.itemView;
-                    if (position == generateNewParametersRow) {
-                        textCell.setTextAndIcon(getString(R.string.GenerateNewVoiceChangeParameters), R.drawable.quantum_ic_refresh_white_24, false);
-                    } else if (position == recordRow) {
+                    if (position == recordRow) {
                         recordCell = textCell;
                         textCell.setTextAndIcon(getString(R.string.RecordVoiceChangeExample), R.drawable.input_mic, true);
                     } else if (position == playChangedRow) {
                         textCell.setTextAndIcon(getString(R.string.PlayChangedVoice), R.drawable.quantum_ic_play_arrow_white_24, true);
                     } else if (position == playOriginalRow) {
                         textCell.setTextAndIcon(getString(R.string.PlayNormalVoice), R.drawable.quantum_ic_play_arrow_white_24, false);
+                    } else if (position == generateNewParametersRow) {
+                        textCell.setTextAndIcon(getString(R.string.GenerateNewVoiceChangeParameters), R.drawable.quantum_ic_refresh_white_24, false);
                     }
                     break;
                 }
@@ -660,10 +660,14 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                         cell.setText(getString(R.string.AggressiveVoiceChangeDescription));
                     } else if (position == moderateChangeLevelDescriptionRow) {
                         cell.setText(getString(R.string.ModerateVoiceChangeDescription));
-                    } else if (position == generateNewParametersDescriptionRow) {
-                        cell.setText(getString(R.string.GenerateNewVoiceChangeParametersDescription));
                     } else if (position == qualityDescriptionRow) {
                         cell.setText(getString(R.string.VoiceChangeQualityDescription));
+                    } else if (position == checkVoiceChangingDescriptionRow) {
+                        cell.setText(getString(R.string.CheckVoiceChangingDescription));
+                    } else if (position == generateNewParametersDescriptionRow) {
+                        cell.setText(getString(R.string.GenerateNewVoiceChangeParametersDescription));
+                    } else if (position == showVoiceChangedNotificationDescriptionRow) {
+                        cell.setText(getString(R.string.ShowVoiceChangedNotificationDescription));
                     }
                     break;
                 }
@@ -672,10 +676,10 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     cell.setHeight(46);
                     if (position == changeLevelHeaderRow) {
                         cell.setText(getString(R.string.VoiceChangeLevel));
-                    } else if (position == checkVoiceChangingHeaderRow) {
-                        cell.setText(getString(R.string.CheckVoiceChanging));
                     } else if (position == qualityHeaderRow) {
                         cell.setText(getString(R.string.Quality));
+                    } else if (position == checkVoiceChangingHeaderRow) {
+                        cell.setText(getString(R.string.CheckVoiceChanging));
                     }
                     break;
                 }
@@ -700,28 +704,27 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         }
 
         private ViewType getItemViewTypeInternal(int position) {
-            if (position == enableRow || position == showVoiceChangedNotificationRow
-                    || position == enableForVoiceMessagesRow || position == enableForVideoMessagesRow
-                    || position == enableForCallsRow) {
+            if (position == enableRow || position == enableForVoiceMessagesRow || position == enableForVideoMessagesRow
+                    || position == enableForCallsRow || position == showVoiceChangedNotificationRow) {
                 return ViewType.CHECK;
             } else if (position == aggressiveChangeLevelRow || position == moderateChangeLevelRow) {
                 return ViewType.RADIO_BUTTON;
             } else if (position == enableForIndividualAccountsRow || position == benchmarkRow) {
                 return ViewType.SETTING;
-            } else if (position == generateNewParametersRow || position == recordRow || position == playChangedRow
-                    || position == playOriginalRow) {
+            } else if (position == recordRow || position == playChangedRow || position == playOriginalRow
+                    || position == generateNewParametersRow) {
                 return ViewType.BUTTON_WITH_ICON;
             } else if (position == qualityRow) {
                 return ViewType.QUALITY_SLIDER;
             } else if (position == enableDescriptionRow || position == aggressiveChangeLevelDescriptionRow
-                    || position == moderateChangeLevelDescriptionRow|| position == generateNewParametersDescriptionRow
-                    || position == qualityDescriptionRow) {
+                    || position == moderateChangeLevelDescriptionRow || position == qualityDescriptionRow
+                    || position == checkVoiceChangingDescriptionRow || position == generateNewParametersDescriptionRow
+                    || position == showVoiceChangedNotificationDescriptionRow) {
                 return ViewType.DESCRIPTION;
-            } else if (position == changeLevelHeaderRow || position == checkVoiceChangingHeaderRow
-                    || position == qualityHeaderRow) {
+            } else if (position == changeLevelHeaderRow || position == qualityHeaderRow
+                    || position == checkVoiceChangingHeaderRow) {
                 return ViewType.HEADER;
-            } else if (position == checkVoiceChangingDelimiterRow || position == showVoiceChangedNotificationDelimiterRow
-                    || position == enableForIndividualAccountsDelimiterRow || position == enableForTypesDelimiterRow) {
+            } else if (position == enableForIndividualAccountsDelimiterRow || position == enableForTypesDelimiterRow) {
                 return ViewType.DELIMITER;
             }
             throw new RuntimeException("Unknown row: " + position);

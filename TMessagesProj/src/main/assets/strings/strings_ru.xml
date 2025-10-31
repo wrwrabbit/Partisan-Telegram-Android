@@ -318,7 +318,9 @@
     <string name="RecordVoiceChangeExample">Записать</string>
     <string name="PlayChangedVoice">Воспроизвести изменённый голос</string>
     <string name="PlayNormalVoice">Воспроизвести обычный голос</string>
-    <string name="ShowVoiceChangedNotification">Показывать уведомление об изменении голоса</string>
+    <string name="CheckVoiceChangingDescription">Проверьте изменение голоса перед использованием. Если Вам не нравится звучание, сгенерируйте новые параметры.</string>
+    <string name="ShowVoiceChangedNotification">Уведомление об изменении голоса</string>
+    <string name="ShowVoiceChangedNotificationDescription">Показывать надпись про изменение голоса во время записи голосовых и видеосообщений и звонков.</string>
     <string name="VoiceChanged">Голос изменён</string>
     <string name="EnableForIndividualAccounts">Включить для отдельных аккаунтов</string>
     <string name="EnableForVoiceMessages">Включить для голосовых сообщений</string>
