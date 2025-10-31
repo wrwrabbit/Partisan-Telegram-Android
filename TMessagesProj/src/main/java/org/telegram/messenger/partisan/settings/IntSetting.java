@@ -10,7 +10,7 @@ public class IntSetting extends Setting<Integer> {
 
     @Override
     protected void putValue(SharedPreferences.Editor editor, Integer newValue) {
-        editor.putFloat(key, newValue);
+        editor.putInt(key, newValue);
     }
 
     @Override
