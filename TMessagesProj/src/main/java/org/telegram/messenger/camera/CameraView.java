@@ -70,6 +70,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeType;
 import org.telegram.messenger.video.MP4Builder;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
 import org.telegram.messenger.video.Mp4Movie;
@@ -2213,6 +2214,12 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
         }
 
         public void stopRecording() {
+            org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger = CameraView.this.videoEncoder.voiceChanger;
+            if (voiceChanger != null && !voiceChanger.isWritingFinished()) {
+                voiceChanger.setFinishedCallback(this::stopRecording);
+                voiceChanger.notifyWritingFinished();
+                return;
+            }
             Handler handler = getHandler();
             if (handler != null) {
                 sendMessage(handler.obtainMessage(DO_STOP_RECORDING), 0);
@@ -2408,6 +2415,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
         private Integer lastCameraId = 0;
 
         private AudioRecord audioRecorder;
+        private org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger;
         private FloatBuffer textureBuffer;
 
         private ArrayBlockingQueue<InstantCameraView.AudioBufferInfo> buffers = new ArrayBlockingQueue<>(10);
@@ -2449,6 +2457,23 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                         ByteBuffer byteBuffer = buffer.buffer[a];
                         byteBuffer.rewind();
                         readResult = audioRecorder.read(byteBuffer, 2048);
+                        org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger = CameraView.VideoRecorder.this.voiceChanger;
+                        if (voiceChanger != null) {
+                            if (readResult > 0) {
+                                voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), readResult));
+                            }
+                            byteBuffer.clear();
+                            byte[] changedVoice = voiceChanger.readBytesExactCount(readResult);
+                            if (changedVoice == null || changedVoice.length == 0) {
+                                byteBuffer.put(new byte[readResult]);
+                            } else {
+                                byteBuffer.put(changedVoice, 0, readResult);
+                            }
+                            byteBuffer.rewind();
+                            if (voiceChanger.isVoiceChangingFinished()) {
+                                readResult = 0;
+                            }
+                        }
                         if (readResult > 0 && a % 2 == 0) {
                             byteBuffer.limit(readResult);
                             double s = 0;
@@ -2966,6 +2991,11 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                 }
                 audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, audioSampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
                 audioRecorder.startRecording();
+                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice(UserConfig.selectedAccount, org.telegram.messenger.partisan.voicechange.VoiceChangeType.VIDEO_MESSAGE)) {
+                    voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(audioRecorder.getSampleRate(), VoiceChangeType.VIDEO_MESSAGE);
+                } else {
+                    voiceChanger = null;
+                }
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("CameraView " + "initied audio record with channels " + audioRecorder.getChannelCount() + " sample rate = " + audioRecorder.getSampleRate() + " bufferSize = " + bufferSize);
                 }
