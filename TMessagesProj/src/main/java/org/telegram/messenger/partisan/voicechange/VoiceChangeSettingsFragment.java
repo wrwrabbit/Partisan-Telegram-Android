@@ -78,7 +78,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
     private int rowCount;
 
     private int enableRow = -1;
-    private int enableDescriptionRow = -1;
+    private int enableDelimiterRow = -1;
     private int changeLevelHeaderRow = -1;
     private int aggressiveChangeLevelRow = -1;
     private int aggressiveChangeLevelDescriptionRow = -1;
@@ -428,7 +428,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
         rowCount = 0;
 
         enableRow = rowCount++;
-        enableDescriptionRow = rowCount++;
+        enableDelimiterRow = rowCount++;
         changeLevelHeaderRow = rowCount++;
         aggressiveChangeLevelRow = rowCount++;
         aggressiveChangeLevelDescriptionRow = rowCount++;
@@ -654,9 +654,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 }
                 case DESCRIPTION: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
-                    if (position == enableDescriptionRow) {
-                        cell.setText(getString(R.string.VoiceChangeDescription));
-                    } else if (position == aggressiveChangeLevelDescriptionRow) {
+                    if (position == aggressiveChangeLevelDescriptionRow) {
                         cell.setText(getString(R.string.AggressiveVoiceChangeDescription));
                     } else if (position == moderateChangeLevelDescriptionRow) {
                         cell.setText(getString(R.string.ModerateVoiceChangeDescription));
@@ -716,7 +714,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 return ViewType.BUTTON_WITH_ICON;
             } else if (position == qualityRow) {
                 return ViewType.QUALITY_SLIDER;
-            } else if (position == enableDescriptionRow || position == aggressiveChangeLevelDescriptionRow
+            } else if (position == aggressiveChangeLevelDescriptionRow
                     || position == moderateChangeLevelDescriptionRow || position == qualityDescriptionRow
                     || position == checkVoiceChangingDescriptionRow || position == generateNewParametersDescriptionRow
                     || position == showVoiceChangedNotificationDescriptionRow) {
@@ -724,7 +722,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
             } else if (position == changeLevelHeaderRow || position == qualityHeaderRow
                     || position == checkVoiceChangingHeaderRow) {
                 return ViewType.HEADER;
-            } else if (position == enableForIndividualAccountsDelimiterRow || position == enableForTypesDelimiterRow) {
+            } else if (position == enableDelimiterRow || position == enableForIndividualAccountsDelimiterRow
+                    || position == enableForTypesDelimiterRow) {
                 return ViewType.DELIMITER;
             }
             throw new RuntimeException("Unknown row: " + position);
