@@ -223,6 +223,6 @@ public class VoiceChanger {
     }
 
     private static boolean isAnyVoiceChangerRunning(VoiceChangeType type) {
-        return !runningVoiceChangers.stream().anyMatch(v -> v.voiceChangeType == type);
+        return runningVoiceChangers.stream().anyMatch(v -> v.voiceChangeType == type);
     }
 }
