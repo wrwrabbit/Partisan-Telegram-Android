@@ -107,7 +107,9 @@ public class VoiceChangeSettings {
                 && Strings.isNullOrEmpty(spectrumDistorterParams.get().orElse(""))
                 && Strings.isNullOrEmpty(timeDistortionParams.get().orElse(""))
                 && Math.abs(f0Shift.get().orElse(1.0f) - 1.0f) < 0.01f
-                && Math.abs(formantRatio.get().orElse(1.0f) - 1.0f) < 0.01f;
+                && Math.abs(formantRatio.get().orElse(1.0f) - 1.0f) < 0.01f
+                && badSCutoff.get().orElse(0) == 0
+                && badShCutoff.get().orElse(0) == 0;
     }
 
     public static boolean isVoiceChangeTypeEnabled(@NonNull VoiceChangeType type) {
