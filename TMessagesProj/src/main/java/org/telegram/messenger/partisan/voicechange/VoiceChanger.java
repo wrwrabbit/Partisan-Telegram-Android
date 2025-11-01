@@ -205,7 +205,7 @@ public class VoiceChanger {
         if (type != null && !VoiceChangeSettings.isVoiceChangeTypeEnabled(type)) {
             return false;
         }
-        return UserConfig.getInstance(accountNum).voiceChangeEnabled;
+        return UserConfig.getInstance(accountNum).voiceChangeEnabledForAccount;
     }
 
     private static boolean anyParameterSet() {

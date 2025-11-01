@@ -269,7 +269,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                 builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                 builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialogInterface, i) -> {
                     for (int accountNum : Utils.getActivatedAccountsSortedByLoginTime()) {
-                        UserConfig.getInstance(accountNum).voiceChangeEnabled = selectedAccounts.contains(accountNum);
+                        UserConfig.getInstance(accountNum).voiceChangeEnabledForAccount = selectedAccounts.contains(accountNum);
                         UserConfig.getInstance(accountNum).saveConfig(false);
                     }
                     listAdapter.notifyItemChanged(enableForIndividualAccountsRow);
@@ -414,7 +414,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
 
     private List<Integer> getVoiceChangeEnabledAccounts() {
         return Utils.getActivatedAccountsSortedByLoginTime().stream()
-                .filter(a -> UserConfig.getInstance(a).voiceChangeEnabled)
+                .filter(a -> UserConfig.getInstance(a).voiceChangeEnabledForAccount)
                 .collect(Collectors.toList());
     }
 
