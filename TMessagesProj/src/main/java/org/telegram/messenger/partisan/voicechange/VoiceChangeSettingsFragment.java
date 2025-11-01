@@ -578,9 +578,9 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                         currentQuality = 1;
                     }
                     String[] values = new String[3];
-                    values[0] = getString(R.string.AutoDownloadLow);
-                    values[1] = getString(R.string.AutoDownloadMedium);
-                    values[2] = getString(R.string.AutoDownloadHigh);
+                    values[0] = getString(R.string.Quality480); // "Low"
+                    values[1] = getString(R.string.Quality720); // "Medium"
+                    values[2] = getString(R.string.Quality1080);// "High"
                     slideChooseView2.setOptions(currentQuality, values);
                     break;
                 case DESCRIPTION:
