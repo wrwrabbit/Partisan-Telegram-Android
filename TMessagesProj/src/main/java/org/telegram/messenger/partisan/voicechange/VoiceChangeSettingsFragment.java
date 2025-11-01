@@ -28,6 +28,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.PartisanSlideChooseView;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -43,7 +44,6 @@ import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
-import org.telegram.ui.Components.SlideChooseView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -501,7 +501,8 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     || position == playChangedRow || position == playOriginalRow
                     || position == enableForIndividualAccountsRow || position == enableForVoiceMessagesRow
                     || position == enableForVideoMessagesRow || position == enableForCallsRow
-                    || position == showVoiceChangedNotificationRow || position == benchmarkRow) {
+                    || position == showVoiceChangedNotificationRow || position == benchmarkRow
+                    || position == qualityRow) {
                 boolean voiceChangeEnabled = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false);
                 if (position == playChangedRow) {
                     return voiceChangeEnabled && changedOutputAudioBuffer != null;
@@ -548,11 +549,11 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case QUALITY_SLIDER:
-                    SlideChooseView slideChooseView2 = new SlideChooseView(mContext);
-                    view = slideChooseView2;
+                    PartisanSlideChooseView slideChooseView = new PartisanSlideChooseView(mContext);
+                    view = slideChooseView;
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
 
-                    slideChooseView2.setCallback(i -> {
+                    slideChooseView.setCallback(i -> {
                         if (i == 0) {
                             VoiceChangeSettings.useSpectrumDistortion.set(true);
                             VoiceChangeSettings.formantShiftingHarvest.set(false);
@@ -581,7 +582,7 @@ public class VoiceChangeSettingsFragment extends BaseFragment {
                     values[0] = getString(R.string.Quality480); // "Low"
                     values[1] = getString(R.string.Quality720); // "Medium"
                     values[2] = getString(R.string.Quality1080);// "High"
-                    slideChooseView2.setOptions(currentQuality, values);
+                    slideChooseView.setOptions(currentQuality, values);
                     break;
                 case DESCRIPTION:
                     view = new TextInfoPrivacyCell(mContext);
