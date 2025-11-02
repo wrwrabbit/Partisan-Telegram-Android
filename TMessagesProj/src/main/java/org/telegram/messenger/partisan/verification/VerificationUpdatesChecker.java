@@ -39,6 +39,11 @@ public class VerificationUpdatesChecker extends AbstractChannelChecker {
     }
 
     @Override
+    protected String getLoggingTag() {
+        return "VerificationUpdatesChecker";
+    }
+
+    @Override
     protected long getChannelId() {
         return storage.chatId;
     }

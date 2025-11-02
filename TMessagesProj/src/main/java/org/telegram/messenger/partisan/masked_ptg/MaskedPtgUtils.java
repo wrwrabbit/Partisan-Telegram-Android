@@ -8,9 +8,9 @@ import android.content.pm.PackageManager;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.ui.BasePermissionsActivity;
-import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
+import org.telegram.ui.Components.PermissionRequest;
 import org.telegram.ui.DialogBuilder.DialogCheckBox;
 import org.telegram.ui.DialogBuilder.DialogTemplate;
 import org.telegram.ui.DialogBuilder.DialogType;
@@ -53,13 +53,16 @@ public class MaskedPtgUtils {
     }
 
     public static boolean needShowPermissionsDisabledDialog(int requestCode, String[] permissions) {
-        if (!SharedConfig.showPermissionDisabledDialog) {
+        if (!TesterSettings.showPermissionDisabledDialog.get().orElse(true)) {
             return false;
         }
         if (requestCode == 17 || requestCode == BasePermissionsActivity.REQUEST_CODE_CALLS) {
             return false;
         }
         if (requestCode == 1 && Arrays.asList(permissions).contains(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            return false;
+        }
+        if (requestCode == (PermissionRequest.lastId - 1) && Arrays.asList(permissions).contains(Manifest.permission.POST_NOTIFICATIONS)) {
             return false;
         }
         return true;
@@ -73,8 +76,8 @@ public class MaskedPtgUtils {
         template.addCheckboxTemplate(false, LocaleController.getString("DoNotShowAgain", R.string.DoNotShowAgain));
         template.positiveListener = views -> {
             boolean isNotShowAgain = !((DialogCheckBox) views.get(0)).isChecked();
-            if (SharedConfig.showPermissionDisabledDialog != isNotShowAgain) {
-                SharedConfig.showPermissionDisabledDialog = isNotShowAgain;
+            if (TesterSettings.showPermissionDisabledDialog.get().orElse(true) != isNotShowAgain) {
+                TesterSettings.showPermissionDisabledDialog.set(isNotShowAgain);
                 SharedConfig.saveConfig();
             }
         };

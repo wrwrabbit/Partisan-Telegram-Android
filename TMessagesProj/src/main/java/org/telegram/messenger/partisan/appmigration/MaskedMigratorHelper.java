@@ -2,14 +2,13 @@ package org.telegram.messenger.partisan.appmigration;
 
 import android.content.pm.PackageInfo;
 
-import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.INavigationLayout;
 
 import java.io.File;
 import java.util.Arrays;
@@ -88,13 +87,15 @@ public class MaskedMigratorHelper {
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
         builder.setTitle(LocaleController.getString(R.string.MigrationTitle));
         builder.setMessage(LocaleController.getString(R.string.ContinueMaskedMigrationDescription));
+        INavigationLayout parentLayout = fragment.getParentLayout();
         builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialog1, which) -> {
-            fragment.presentFragment(new AppMigrationActivity());
+            parentLayout.presentFragment(new AppMigrationActivity());
         });
         builder.setNeutralButton(LocaleController.getString(R.string.Cancel), null);
         AlertDialog dialog = builder.create();
         dialog.setCanCancel(false);
         dialog.setCancelable(false);
+        dialog.setCanDismissDialogOnPause(false);
         fragment.showDialog(dialog);
     }
 }

@@ -156,6 +156,10 @@ public class ApplicationLoader extends Application {
         return applicationLoaderInstance.isBeta();
     }
 
+    public static boolean isAndroidTestEnvironment() {
+        return applicationLoaderInstance.isAndroidTestEnv();
+    }
+
     protected boolean isHuaweiBuild() {
         return false;
     }
@@ -181,6 +185,10 @@ public class ApplicationLoader extends Application {
         return false;
     }
 
+    protected boolean isAndroidTestEnv() {
+        return false;
+    }
+
     public static File getFilesDirFixed() {
         for (int a = 0; a < 10; a++) {
             File path = ApplicationLoader.applicationContext.getFilesDir();
@@ -197,6 +205,19 @@ public class ApplicationLoader extends Application {
             FileLog.e(e);
         }
         return new File("/data/data/org.telegram.messenger/files");
+    }
+
+    public static File getFilesDirFixed(String child) {
+        try {
+            File path = getFilesDirFixed();
+            File dir = new File(path, child);
+            dir.mkdirs();
+
+            return dir;
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return null;
     }
 
     public static void postInitApplication() {
@@ -258,7 +279,7 @@ public class ApplicationLoader extends Application {
         SharedConfig.loadConfig();
         SharedPrefsHelper.init(applicationContext);
         checkFiledCopiedFromOldTelegram();
-        if (SharedConfig.saveLogcatAfterRestart) {
+        if (org.telegram.messenger.partisan.settings.TesterSettings.saveLogcatAfterRestart.get().orElse(false)) {
             saveLogcatFile();
         }
         RemoveAfterReadingMessages.runChecker();
@@ -296,6 +317,8 @@ public class ApplicationLoader extends Application {
         if (filesCopiedFromUpdater) {
             PartisanLog.d("Remove migration preferences from config");
             SharedConfig.filesCopiedFromOldTelegram = true;
+            SharedConfig.oldTelegramRemoved = false;
+            SharedConfig.runNumber = 0;
             if (SharedConfig.getPasscodeHash() != null && !SharedConfig.getPasscodeHash().isEmpty()) {
                 SharedConfig.needShowMaskedPasscodeScreenTutorial = true;
                 SharedConfig.setAppLocked(true); // Force passcode tutorial after migration

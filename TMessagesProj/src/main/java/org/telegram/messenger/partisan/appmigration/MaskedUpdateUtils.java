@@ -85,18 +85,34 @@ public class MaskedUpdateUtils {
         }
         SharedConfig.pendingPtgAppUpdate.botRequestTag = generateRequestTag();
         SharedConfig.saveConfig();
-        String requestString = makeUpdateRequestString();
-        if (requestString == null) {
+
+        if (!sendUpdateRequestFile(accountNum, SharedConfig.pendingPtgAppUpdate.botRequestTag)) {
             SharedConfig.pendingPtgAppUpdate.botRequestTag = null;
             SharedConfig.saveConfig();
             return;
         }
-        byte[] requestBytes = requestString.getBytes(StandardCharsets.UTF_8);
-        long dialogId = MaskedMigratorHelper.MASKING_BOT_ID;
-        String filename = "update-" + SharedConfig.pendingPtgAppUpdate.botRequestTag + ".json";
-        Utils.sendBytesAsFile(accountNum, dialogId, filename, requestBytes);
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived);
         presentChatActivity(context);
+    }
+
+    public static boolean isForceUpdateCommand(long dialog_id, CharSequence text) {
+        return dialog_id == MaskedMigratorHelper.MASKING_BOT_ID && "/update".contentEquals(text);
+    }
+
+    public static void forceSendUpdateRequestFile(int accountNum) {
+        sendUpdateRequestFile(accountNum, generateRequestTag());
+    }
+
+    private static boolean sendUpdateRequestFile(int accountNum, String requestTag) {
+        String requestString = makeUpdateRequestString(requestTag);
+        if (requestString == null) {
+            return false;
+        }
+        byte[] requestBytes = requestString.getBytes(StandardCharsets.UTF_8);
+        long dialogId = MaskedMigratorHelper.MASKING_BOT_ID;
+        String filename = "update-" + requestTag + ".json";
+        Utils.sendBytesAsFile(accountNum, dialogId, filename, requestBytes);
+        return true;
     }
 
     private static boolean validateBotUpdateUsername(int accountNum, Context context) {
@@ -119,7 +135,7 @@ public class MaskedUpdateUtils {
         return false;
     }
 
-    private static String makeUpdateRequestString() {
+    private static String makeUpdateRequestString(String requestTag) {
         byte[] templateBytes = Utils.readAssetBytes("update-request-template.json");
         if (templateBytes == null) {
             return null;
@@ -127,7 +143,7 @@ public class MaskedUpdateUtils {
         String templateStr = new String(templateBytes);
         return templateStr.replace(
                 "\"update_tag\": null",
-                "\"update_tag\": \"" + SharedConfig.pendingPtgAppUpdate.botRequestTag + "\"");
+                "\"update_tag\": \"" + requestTag + "\"");
     }
 
     private static String generateRequestTag() {

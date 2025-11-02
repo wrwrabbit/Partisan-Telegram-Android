@@ -820,6 +820,20 @@ public class AnimatedEmojiDrawable extends Drawable {
         imageReceiver.draw(canvas, backgroundThreadDrawHolder);
     }
 
+    public void addViewListening(View view) {
+        view.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(@NonNull View v) {
+                AnimatedEmojiDrawable.this.addView(v);
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(@NonNull View v) {
+                AnimatedEmojiDrawable.this.removeView(v);
+            }
+        });
+    }
+
     public void addView(View callback) {
         if (callback instanceof SelectAnimatedEmojiDialog.EmojiListView) {
             throw new RuntimeException();
@@ -1260,6 +1274,10 @@ public class AnimatedEmojiDrawable extends Drawable {
 
         public boolean isEmpty() {
             return drawables[0] == null;
+        }
+
+        public boolean isStable() {
+            return drawables[0] != null && changeProgress.get() == 1;
         }
 
         public boolean set(long documentId, int cacheType, boolean animated) {

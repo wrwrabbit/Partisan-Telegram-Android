@@ -1,6 +1,7 @@
 package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
+import static org.telegram.messenger.Utilities.swapItems;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -39,6 +40,7 @@ import androidx.annotation.NonNull;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
@@ -53,6 +55,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.ArrayList;
 
@@ -90,7 +93,7 @@ public class ViewPagerFixed extends FrameLayout {
 
     private final float touchSlop;
 
-    private Adapter adapter;
+    public Adapter adapter;
     TabsView tabsView;
 
     ValueAnimator.AnimatorUpdateListener updateTabProgress = new ValueAnimator.AnimatorUpdateListener() {
@@ -109,7 +112,7 @@ public class ViewPagerFixed extends FrameLayout {
     private Rect rect = new Rect();
     private boolean allowDisallowInterceptTouch = true;
 
-    protected void onTabAnimationUpdate(boolean manual) {
+    public void onTabAnimationUpdate(boolean manual) {
 
     }
 
@@ -124,6 +127,22 @@ public class ViewPagerFixed extends FrameLayout {
             position += nextPosition * t;
         }
         return position;
+    }
+
+    public float getCurrentPositionAlpha() {
+        if (viewPages[0] != null && viewPages[0].getVisibility() == View.VISIBLE) {
+            return Utilities.clamp(1f - Math.abs(viewPages[0].getTranslationX() / getAvailableTranslationX()), 1, 0);
+        }
+        return 0;
+    }
+    public int getNextPosition() {
+        return nextPosition;
+    }
+    public float getNextPositionAlpha() {
+        if (viewPages[1] != null && viewPages[1].getVisibility() == View.VISIBLE) {
+            return Utilities.clamp(1f - Math.abs(viewPages[1].getTranslationX() / getAvailableTranslationX()), 1, 0);
+        }
+        return 0;
     }
 
     protected float getAvailableTranslationX() {
@@ -171,6 +190,10 @@ public class ViewPagerFixed extends FrameLayout {
         fillTabs(false);
     }
 
+    protected void onTabPageSelected(int position, boolean forward) {
+        onTabPageSelected(position);
+    }
+
     protected void onTabPageSelected(int position) {
 
     }
@@ -198,7 +221,7 @@ public class ViewPagerFixed extends FrameLayout {
         nextPosition = page;
         updateViewForIndex(1);
 
-        onTabPageSelected(page);
+        onTabPageSelected(page, forward);
         final int tX = viewPages[0] != null ? viewPages[0].getMeasuredWidth() : 0;
         if (forward) {
             setTranslationX(viewPages[1], tX);
@@ -221,6 +244,11 @@ public class ViewPagerFixed extends FrameLayout {
             }
             currentProgress = progress;
             onTabAnimationUpdate(true);
+            if (tabsView != null) {
+                tabsView.listView.invalidate();
+                tabsView.listView.invalidateViews();
+                tabsView.invalidate();
+            }
         });
         manualScrolling.addListener(new AnimatorListenerAdapter() {
             @Override
@@ -234,6 +262,11 @@ public class ViewPagerFixed extends FrameLayout {
                 }
                 manualScrolling = null;
                 onTabAnimationUpdate(true);
+                if (tabsView != null) {
+                    tabsView.listView.invalidate();
+                    tabsView.listView.invalidateViews();
+                    tabsView.invalidate();
+                }
                 onScrollEnd();
                 notificationsLocker.unlock();
             }
@@ -249,7 +282,7 @@ public class ViewPagerFixed extends FrameLayout {
             @Override
             public void selectTab(int currentPosition, int nextPosition, float progress) {
                 super.selectTab(currentPosition, nextPosition, progress);
-                onTabPageSelected(progress <= 0.5f ? currentPosition : nextPosition);
+                onTabPageSelected(progress <= 0.5f ? currentPosition : nextPosition, currentPosition < nextPosition);
             }
         };
         tabsView.tabMarginDp = tabMarginDp();
@@ -260,7 +293,7 @@ public class ViewPagerFixed extends FrameLayout {
                 nextPosition = page;
                 updateViewForIndex(1);
 
-                onTabPageSelected(page);
+                onTabPageSelected(page, forward);
                 int trasnlationX = viewPages[0] != null ? viewPages[0].getMeasuredWidth() : 0;
                 if (viewPages[1] != null) {
                     if (forward) {
@@ -316,6 +349,18 @@ public class ViewPagerFixed extends FrameLayout {
             @Override
             public void invalidateBlur() {
                 ViewPagerFixed.this.invalidateBlur();
+            }
+
+            @Override
+            public boolean canReorder(int position) {
+                if (adapter == null) return false;
+                return adapter.canReorder(position);
+            }
+
+            @Override
+            public void applyReorder(ArrayList<Integer> ids) {
+                if (adapter == null) return;
+                adapter.applyReorder(ids);
             }
         });
         fillTabs(false);
@@ -423,18 +468,18 @@ public class ViewPagerFixed extends FrameLayout {
     }
 
     public void fillTabs(boolean animated) {
-        if (adapter != null && tabsView != null) {
-            tabsView.removeTabs();
-            for (int i = 0; i < adapter.getItemCount(); i++) {
-                if (adapter.needsTab(i))
-                    tabsView.addTab(adapter.getItemId(i), adapter.getItemTitle(i));
-            }
-            addMoreTabs();
-            if (animated) {
-                TransitionManager.beginDelayedTransition(tabsView.listView, TransitionExt.createSimpleTransition());
-            }
-            tabsView.finishAddingTabs();
+        if (adapter == null || tabsView == null) return;
+
+        tabsView.removeTabs();
+        for (int i = 0; i < adapter.getItemCount(); i++) {
+            if (adapter.needsTab(i))
+                tabsView.addTab(adapter.getItemId(i), adapter.getItemTitle(i));
         }
+        addMoreTabs();
+        if (animated) {
+            TransitionManager.beginDelayedTransition(tabsView.listView, TransitionExt.createSimpleTransition());
+        }
+        tabsView.finishAddingTabs();
     }
 
     protected void addMoreTabs() {
@@ -989,7 +1034,7 @@ public class ViewPagerFixed extends FrameLayout {
             return position;
         }
 
-        public String getItemTitle(int position) {
+        public CharSequence getItemTitle(int position) {
             return "";
         }
 
@@ -1007,6 +1052,14 @@ public class ViewPagerFixed extends FrameLayout {
 
         public boolean canScrollTo(int position) {
             return true;
+        }
+
+        public boolean canReorder(int position) {
+            return false;
+        }
+
+        public void applyReorder(ArrayList<Integer> itemIds) {
+
         }
     }
 
@@ -1033,6 +1086,133 @@ public class ViewPagerFixed extends FrameLayout {
         return currentPosition;
     }
 
+    public void cancelTouches() {
+        if (velocityTracker != null) {
+            velocityTracker.computeCurrentVelocity(1000, maximumVelocity);
+        }
+        float velX = 0;
+        float velY = 0;
+        if (startedTracking) {
+            float x = viewPages[0].getX();
+            tabsAnimation = new AnimatorSet();
+            if (additionalOffset != 0) {
+                if (Math.abs(velX) > 1500) {
+                    backAnimation = animatingForward ? velX > 0 : velX < 0;
+                } else {
+                    if (animatingForward) {
+                        if (viewPages[1] != null) {
+                            backAnimation = (viewPages[1].getX() > (viewPages[0].getMeasuredWidth() >> 1));
+                        } else {
+                            backAnimation = false;
+                        }
+                    } else {
+                        backAnimation = (viewPages[0].getX() < (viewPages[0].getMeasuredWidth() >> 1));
+                    }
+                }
+            } else {
+                backAnimation = Math.abs(x) < viewPages[0].getMeasuredWidth() / 3.0f && (Math.abs(velX) < 3500 || Math.abs(velX) < Math.abs(velY));
+            }
+            float distToMove;
+            float dx = 0;
+            if (backAnimation) {
+                dx = Math.abs(x);
+                if (animatingForward) {
+                    tabsAnimation.playTogether(translateAnimator(viewPages[0], 0));
+                    if (viewPages[1] != null) {
+                        tabsAnimation.playTogether(translateAnimator(viewPages[1], viewPages[1].getMeasuredWidth()));
+                    }
+                } else {
+                    tabsAnimation.playTogether(translateAnimator(viewPages[0], 0));
+                    if (viewPages[1] != null) {
+                        tabsAnimation.playTogether(translateAnimator(viewPages[1], -viewPages[1].getMeasuredWidth()));
+                    }
+                }
+            } else if (nextPosition >= 0) {
+                dx = viewPages[0].getMeasuredWidth() - Math.abs(x);
+                if (animatingForward) {
+                    tabsAnimation.playTogether(translateAnimator(viewPages[0], -viewPages[0].getMeasuredWidth()));
+                    if (viewPages[1] != null) {
+                        tabsAnimation.playTogether(translateAnimator(viewPages[1], 0));
+                    }
+                } else {
+                    tabsAnimation.playTogether(translateAnimator(viewPages[0], viewPages[0].getMeasuredWidth()));
+                    if (viewPages[1] != null) {
+                        tabsAnimation.playTogether(translateAnimator(viewPages[1], 0));
+                    }
+                }
+            }
+            if (nextPosition < 0) {
+                ValueAnimator backAnimator = ValueAnimator.ofFloat(backProgress, backAnimation ? 0f : 1f);
+                backAnimator.addUpdateListener(anm -> {
+                    onBackProgress(backProgress = (float) anm.getAnimatedValue());
+                });
+                tabsAnimation.playTogether(backAnimator);
+            }
+            ValueAnimator animator = ValueAnimator.ofFloat(0,1f);
+            animator.addUpdateListener(updateTabProgress);
+            tabsAnimation.playTogether(animator);
+            tabsAnimation.setInterpolator(interpolator);
+
+            int width = getMeasuredWidth();
+            int halfWidth = width / 2;
+            float distanceRatio = Math.min(1.0f, 1.0f * dx / (float) width);
+            float distance = (float) halfWidth + (float) halfWidth * distanceInfluenceForSnapDuration(distanceRatio);
+            velX = Math.abs(velX);
+            int duration;
+            if (velX > 0) {
+                duration = 4 * Math.round(1000.0f * Math.abs(distance / velX));
+            } else {
+                float pageDelta = dx / getMeasuredWidth();
+                duration = (int) ((pageDelta + 1.0f) * 100.0f);
+            }
+            duration = Math.max(150, Math.min(duration, 600));
+
+            tabsAnimation.setDuration(duration);
+            tabsAnimation.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    tabsAnimation = null;
+                    if (nextPosition < 0) {
+                        onBack();
+                    }
+                    if (viewPages[1] != null) {
+                        if (!backAnimation) {
+                            swapViews();
+                        }
+
+                        viewsByType.put(viewTypes[1], viewPages[1]);
+                        removeView(viewPages[1]);
+                        viewPages[1].setVisibility(View.GONE);
+                        viewPages[1] = null;
+                    }
+                    tabsAnimationInProgress = false;
+                    maybeStartTracking = false;
+                    if (tabsView != null) {
+                        tabsView.setEnabled(true);
+                    }
+
+                    onTabAnimationUpdate(false);
+                    onScrollEnd();
+                    notificationsLocker.unlock();
+                }
+            });
+            tabsAnimation.start();
+            tabsAnimationInProgress = true;
+            startedTracking = false;
+
+            onTabAnimationUpdate(false);
+        } else {
+            maybeStartTracking = false;
+            if (tabsView != null) {
+                tabsView.setEnabled(true);
+            }
+        }
+        if (velocityTracker != null) {
+            velocityTracker.recycle();
+            velocityTracker = null;
+        }
+    }
+
     public static class TabsView extends FrameLayout {
 
         private float overrideFromX;
@@ -1046,6 +1226,13 @@ public class ViewPagerFixed extends FrameLayout {
             default void invalidateBlur() {};
             default boolean canPerformActions() { return true; };
             default boolean needsTab(int page) { return true; }
+            default boolean canReorder(int position) { return false; }
+            default void applyReorder(ArrayList<Integer> ids) {};
+        }
+
+        private Utilities.Callback2Return<Integer, View, Boolean> onTabLongClick;
+        public void setOnTabLongClick(Utilities.Callback2Return<Integer, View, Boolean> onTabLongClick) {
+            this.onTabLongClick = onTabLongClick;
         }
 
         private static class Tab {
@@ -1061,7 +1248,7 @@ public class ViewPagerFixed extends FrameLayout {
             }
 
             public int getWidth(boolean store, TextPaint textPaint) {
-                int width = titleWidth = (int) Math.ceil(textPaint.measureText(title == null ? "" : title.toString()));
+                int width = titleWidth = (int) Math.ceil(HintView2.measureCorrectly(title, textPaint));
                 return Math.max(0, width);
             }
 
@@ -1082,8 +1269,17 @@ public class ViewPagerFixed extends FrameLayout {
             private int currentPosition;
             private RectF rect = new RectF();
             private CharSequence currentText;
-            private StaticLayout textLayout;
+            private Text text;
             private int textOffsetX;
+
+            private boolean reordering;
+            private Shaker shaker;
+            private final AnimatedFloat shakeAlpha = new AnimatedFloat(this, 360, CubicBezierInterpolator.EASE_OUT_QUINT);
+            public void setReordering(boolean reordering) {
+                if (this.reordering == reordering) return;
+                this.reordering = reordering;
+                invalidate();
+            }
 
             public TabView(Context context) {
                 super(context);
@@ -1110,6 +1306,14 @@ public class ViewPagerFixed extends FrameLayout {
             @SuppressLint("DrawAllocation")
             @Override
             protected void onDraw(Canvas canvas) {
+                canvas.save();
+                final float shakeAlpha = this.shakeAlpha.set(reordering);
+                if (shakeAlpha > 0) {
+                    if (shaker == null) shaker = new Shaker(this);
+                    canvas.translate(getWidth() / 2f, getHeight() / 2f);
+                    shaker.concat(canvas, shakeAlpha);
+                    canvas.translate(-getWidth() / 2f, -getHeight() / 2f);
+                }
                 if (currentTab.id != Integer.MAX_VALUE && editingAnimationProgress != 0) {
                     canvas.save();
                     float p = editingAnimationProgress * (currentPosition % 2 == 0 ? 1.0f : -1.0f);
@@ -1171,18 +1375,23 @@ public class ViewPagerFixed extends FrameLayout {
 
                 tabWidth = currentTab.titleWidth + (countWidth != 0 ? countWidth + dp(6 * (counterText != null ? 1.0f : editingStartAnimationProgress)) : 0);
                 int textX = (getMeasuredWidth() - tabWidth) / 2;
-                if (!TextUtils.equals(currentTab.title, currentText)) {
-                    currentText = currentTab.title;
-                    CharSequence text = Emoji.replaceEmoji(currentText, textPaint.getFontMetricsInt(), false);
-                    textLayout = new StaticLayout(text, textPaint, dp(400), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
-                    textHeight = textLayout.getHeight();
-                    textOffsetX = (int) -textLayout.getLineLeft(0);
+                if (currentTab.title == null && currentText != null || !currentTab.title.equals(currentText)) {
+                    currentText = currentTab.title = Emoji.replaceEmoji(currentTab.title, textPaint.getFontMetricsInt(), false);
+                    if (this.text != null) {
+                        this.text.detach();
+                    }
+                    this.text = new Text(currentText, textPaint.getTextSize() / AndroidUtilities.density, textPaint.getTypeface())
+                        .supportAnimatedEmojis(this);
                 }
-                if (textLayout != null) {
-                    canvas.save();
-                    canvas.translate(textX + textOffsetX, (getMeasuredHeight() - textHeight) / 2 + 1);
-                    textLayout.draw(canvas);
-                    canvas.restore();
+                if (this.text != null) {
+                    this.text
+                        .ellipsize(dp(400))
+                        .draw(
+                            canvas,
+                            textX + textOffsetX, getMeasuredHeight() / 2,
+                            textPaint.getColor(),
+                            1.0f
+                        );
                 }
 
                 if (counterText != null || currentTab.id != Integer.MAX_VALUE && (isEditing || editingStartAnimationProgress != 0)) {
@@ -1228,6 +1437,7 @@ public class ViewPagerFixed extends FrameLayout {
                 if (currentTab.id != Integer.MAX_VALUE && editingAnimationProgress != 0) {
                     canvas.restore();
                 }
+                canvas.restore();
             }
 
             @Override
@@ -1237,17 +1447,12 @@ public class ViewPagerFixed extends FrameLayout {
             }
         }
 
-        private TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        private TextPaint textCounterPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        private Paint deletePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        private Paint counterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final TextPaint textCounterPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint deletePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint counterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        private ArrayList<Tab> tabs = new ArrayList<>();
-
-        private Bitmap crossfadeBitmap;
-        private Paint crossfadePaint = new Paint();
-        private float crossfadeAlpha;
-        private boolean commitCrossfade;
+        private final ArrayList<Tab> tabs = new ArrayList<>();
 
         private boolean isEditing;
         private long lastEditingAnimationTime;
@@ -1260,9 +1465,9 @@ public class ViewPagerFixed extends FrameLayout {
 
         private boolean ignoreLayout;
 
-        private RecyclerListView listView;
-        private LinearLayoutManager layoutManager;
-        private ListAdapter adapter;
+        public RecyclerListView listView;
+        public LinearLayoutManager layoutManager;
+        public ListAdapter adapter;
 
         private TabsViewDelegate delegate;
 
@@ -1463,6 +1668,13 @@ public class ViewPagerFixed extends FrameLayout {
                 }
                 scrollToTab(tabView.currentTab.id, position);
             });
+            listView.setOnItemLongClickListener((view, position) -> {
+                if (onTabLongClick == null) {
+                    return false;
+                }
+                TabView tabView = (TabView) view;
+                return onTabLongClick.run(tabView.currentTab.id, view);
+            });
             listView.setOnScrollListener(new RecyclerView.OnScrollListener() {
                 @Override
                 public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
@@ -1574,6 +1786,10 @@ public class ViewPagerFixed extends FrameLayout {
             return positionToId.get(currentPosition + (forward ? 1 : -1), -1);
         }
 
+        public int getPageIdByPosition(int position) {
+            return positionToId.get(position, -1);
+        }
+
         public void addTab(int id, CharSequence text) {
             int position = tabs.size();
             if (position == 0 && selectedTabId == -1) {
@@ -1596,6 +1812,76 @@ public class ViewPagerFixed extends FrameLayout {
             positionToWidth.clear();
             positionToX.clear();
             allTabsWidth = 0;
+        }
+
+        private boolean reordering;
+        private ItemTouchHelper itemTouchHelper;
+        private DefaultItemAnimator itemAnimator;
+
+        public void setReordering(boolean reordering) {
+            if (this.reordering == reordering)
+                return;
+            this.reordering = reordering;
+            if (this.reordering && itemTouchHelper == null) {
+                itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
+                    @Override
+                    public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                        if (delegate.canReorder(viewHolder.getAdapterPosition())) {
+                            return makeMovementFlags(ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT, 0);
+                        } else {
+                            return makeMovementFlags(0, 0);
+                        }
+                    }
+
+                    @Override
+                    public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                        final int from = viewHolder.getAdapterPosition();
+                        final int to = target.getAdapterPosition();
+                        if (!delegate.canReorder(from) || !delegate.canReorder(to))
+                            return false;
+                        swapItems(tabs, from, to);
+                        adapter.notifyItemMoved(from, to);
+                        final ArrayList<Integer> ids = new ArrayList<>();
+                        for (final Tab tab : tabs) {
+                            ids.add(tab.id);
+                        }
+                        delegate.applyReorder(ids);
+                        return true;
+                    }
+
+                    @Override
+                    public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
+
+                    @Override
+                    public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+                        super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+                        invalidate();
+                    }
+                });
+            }
+            if (this.reordering && itemAnimator == null) {
+                itemAnimator = new DefaultItemAnimator() {
+                    @Override
+                    protected void onMoveAnimationUpdate(RecyclerView.ViewHolder holder) {
+                        super.onMoveAnimationUpdate(holder);
+                        TabsView.this.invalidate();
+                    }
+                };
+                itemAnimator.setSupportsChangeAnimations(false);
+                itemAnimator.setDelayAnimations(false);
+                itemAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
+                itemAnimator.setDurations(350);
+            }
+            if (itemTouchHelper != null) {
+                itemTouchHelper.attachToRecyclerView(reordering ? listView : null);
+            }
+            listView.setItemAnimator(reordering ? itemAnimator : null);
+            AndroidUtilities.forEachViews(listView, child -> {
+                final int position = listView.getChildAdapterPosition(child);
+                if (child instanceof TabView) {
+                    ((TabView) child).setReordering(reordering && delegate != null && delegate.canReorder(position));
+                }
+            });
         }
 
         public void finishAddingTabs() {
@@ -1684,7 +1970,7 @@ public class ViewPagerFixed extends FrameLayout {
                     RecyclerListView.ViewHolder holder = listView.findViewHolderForAdapterPosition(currentPosition);
                     if (holder != null) {
                         TabView tabView = (TabView) holder.itemView;
-                        indicatorWidth = Math.max(dp(40), tabView.tabWidth);
+                        indicatorWidth = tabView.tabWidth;
                         indicatorX = (int) (tabView.getX() + (tabView.getMeasuredWidth() - indicatorWidth) / 2);
                     }
                 }
@@ -1705,10 +1991,6 @@ public class ViewPagerFixed extends FrameLayout {
                         selectorDrawable.setBounds(indicatorX, (int) (height - AndroidUtilities.dpr(4) + hideProgress * AndroidUtilities.dpr(4)), indicatorX + indicatorWidth, (int) (height + hideProgress * AndroidUtilities.dpr(4)));
                         selectorDrawable.draw(canvas);
                     }
-                }
-                if (crossfadeBitmap != null) {
-                    crossfadePaint.setAlpha((int) (crossfadeAlpha * 255));
-                    canvas.drawBitmap(crossfadeBitmap, 0, 0, crossfadePaint);
                 }
             }
 
@@ -1930,6 +2212,7 @@ public class ViewPagerFixed extends FrameLayout {
             public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
                 TabView tabView = (TabView) holder.itemView;
                 tabView.setTab(tabs.get(position), position);
+                tabView.setReordering(reordering && delegate != null && delegate.canReorder(position));
             }
 
             @Override

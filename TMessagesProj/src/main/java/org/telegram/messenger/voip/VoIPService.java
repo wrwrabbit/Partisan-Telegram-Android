@@ -117,7 +117,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.XiaomiUtilities;
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.utils.tlutils.TlUtils;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils;
 import org.telegram.tgnet.ConnectionsManager;
@@ -830,7 +830,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		} catch (Exception e) {
 			FileLog.e(e);
 		}
-		if (FakePasscodeUtils.isHideAccount(currentAccount) || FakePasscodeUtils.isHideChat(userID, currentAccount)) {
+		if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideAccount(currentAccount) || org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideChat(userID, currentAccount)) {
 			callIShouldHavePutIntoIntent = null;
 			stopSelf();
 			return START_NOT_STICKY;
@@ -1609,6 +1609,10 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				FileLog.e(e);
 			}
 		}
+		if (conference != null) {
+			groupCall.processGroupCallUpdate(call);
+		}
+
 		if ((currentState == STATE_WAIT_INIT || newModeStreaming != currentGroupModeStreaming) && myParams != null) {
 			if (tgVoip[CAPTURE_DEVICE_CAMERA] == null) {
 				lastGroupCallUpdate = call;
@@ -1683,6 +1687,10 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			needRateCall = phoneCall.need_rating;
 			if (BuildVars.LOGS_ENABLED) {
 				FileLog.d("call discarded, stopping service");
+			}
+			final MessagesController messagesController = MessagesController.getInstance(currentAccount);
+			if (messagesController.voipDebug != null) {
+				messagesController.voipDebug.done(phoneCall.id, phoneCall.need_debug);
 			}
 			if (phoneCall.reason instanceof TLRPC.TL_phoneCallDiscardReasonMigrateConferenceCall) {
 				final TLRPC.TL_phoneCallDiscardReasonMigrateConferenceCall reason = (TLRPC.TL_phoneCallDiscardReasonMigrateConferenceCall) phoneCall.reason;
@@ -2157,7 +2165,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 					conference.inputGroupCall = new TLRPC.TL_inputGroupCall();
 					conference.inputGroupCall.id = groupCall1.id;
 					conference.inputGroupCall.access_hash = groupCall1.access_hash;
-					conference.groupCall = groupCall1;
+					conference.groupCall = TlUtils.applyGroupCallUpdate(conference.groupCall, groupCall1);
 					startConferenceGroupCall(false, 0, null, false);
 					if (inviteUsersToConference != null) {
 						for (long userId : inviteUsersToConference) {
@@ -2332,7 +2340,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 								groupCall.setCall(AccountInstance.getInstance(currentAccount), 0, groupCall1);
 							}
 							if (conference != null) {
-								conference.groupCall = groupCall1;
+								conference.groupCall = TlUtils.applyGroupCallUpdate(conference.groupCall, groupCall1);
 							}
 						}
 
@@ -4587,7 +4595,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	}
 
 	private void onTgVoipStop(Instance.FinalState finalState) {
-		if (user == null) {
+		if (user == null || privateCall == null || finalState == null) {
 			return;
 		}
 		if (TextUtils.isEmpty(finalState.debugLog)) {
@@ -4597,38 +4605,15 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				e.printStackTrace();
 			}
 		}
-		if (needSendDebugLog && finalState.debugLog != null) {
-			final String logPath = lastLogFilePath;
-			lastLogFilePath = null;
+		final MessagesController messagesController = MessagesController.getInstance(currentAccount);
+		if (messagesController.voipDebug == null) {
+			messagesController.voipDebug = new VoIPDebugToSend(currentAccount);
+		}
+		messagesController.voipDebug.push(privateCall.id, privateCall.access_hash, finalState, lastLogFilePath);
+		lastLogFilePath = null;
 
-			TL_phone.saveCallDebug req = new TL_phone.saveCallDebug();
-			req.debug = new TLRPC.TL_dataJSON();
-			req.debug.data = finalState.debugLog;
-			req.peer = new TLRPC.TL_inputPhoneCall();
-			req.peer.access_hash = privateCall.access_hash;
-			req.peer.id = privateCall.id;
-			ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-				if (BuildVars.LOGS_ENABLED) {
-					FileLog.d("Sent debug logs, response = " + response);
-				}
-				if (response instanceof TLRPC.TL_boolTrue && !TextUtils.isEmpty(logPath)) {
-					final File gzippedLog = new File(logPath + ".gzip");
-					Utilities.searchQueue.postRunnable(() -> {
-						if (!AndroidUtilities.gzip(new File(logPath), gzippedLog))
-							return;
-						AndroidUtilities.runOnUIThread(() -> {
-							FileLoader.getInstance(currentAccount).uploadFile(gzippedLog.getAbsolutePath(), file -> {
-								if (file == null) return;
-
-								final TL_phone.saveCallLog req2 = new TL_phone.saveCallLog();
-								req2.peer = req.peer;
-								req2.file = file;
-								ConnectionsManager.getInstance(currentAccount).sendRequest(req2, null);
-							});
-						});
-					});
-				}
-			});
+		if (needSendDebugLog) {
+			messagesController.voipDebug.done(privateCall.id, needSendDebugLog);
 			needSendDebugLog = false;
 		}
 	}
@@ -5665,11 +5650,11 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (id == NotificationCenter.appDidLogout) {
 			callEnded();
 		} else if (id == NotificationCenter.dialogsHidingChanged) {
-			if (FakePasscodeUtils.isHideChat(getCallerId(), currentAccount)) {
+			if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideChat(getCallerId(), currentAccount)) {
 				callEnded();
 			}
 		} else if (id == NotificationCenter.accountHidingChanged) {
-			if (FakePasscodeUtils.isHideAccount(currentAccount)) {
+			if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideAccount(currentAccount)) {
 				callEnded();
 			}
 		}

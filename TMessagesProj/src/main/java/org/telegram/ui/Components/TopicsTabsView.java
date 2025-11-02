@@ -12,10 +12,13 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Canvas;
+import android.graphics.ColorFilter;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.text.SpannableStringBuilder;
@@ -31,6 +34,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.ChatListItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
@@ -43,13 +47,14 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SavedMessagesController;
 import org.telegram.messenger.TopicsController;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
-import org.telegram.messenger.support.LongSparseLongArray;
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -67,11 +72,9 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
     private final long dialogId;
     private final Theme.ResourcesProvider resourcesProvider;
     private final boolean mono;
+    private final boolean bot;
     private final BaseFragment fragment;
     private final boolean canShowProgress;
-
-    private int lastTabId = 0;
-    private final LongSparseLongArray tabToDialog = new LongSparseLongArray();
 
     private final BlurredFrameLayout topTabsContainer;
     private final View topTabsShadowView;
@@ -94,6 +97,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
         this.resourcesProvider = resourcesProvider;
 
         mono = ChatObject.isMonoForum(MessagesController.getInstance(currentAccount).getChat(-dialogId));
+        bot = UserObject.isBotForum(MessagesController.getInstance(currentAccount).getUser(dialogId));
         canShowProgress = !UserConfig.getInstance(currentAccount).getPreferences().getBoolean("topics_end_reached_" + -dialogId, false);
 
         setClipChildren(true);
@@ -490,11 +494,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.savedMessagesDialogsUpdate) {
-            if ((Long) args[0] != dialogId)
-                return;
-            updateTabs();
-        } else if (id == NotificationCenter.topicsDidLoaded) {
+        if (id == NotificationCenter.topicsDidLoaded) {
             if ((Long) args[0] != -dialogId)
                 return;
             updateTabs();
@@ -534,25 +534,25 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
     private void setAttached(boolean attach) {
         if (notificationsAttached == attach) return;
         if (notificationsAttached = attach) {
-            NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.savedMessagesDialogsUpdate);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.topicsDidLoaded);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
             MessagesController.getInstance(currentAccount).getTopicsController().onTopicFragmentResume(-dialogId);
         } else {
             MessagesController.getInstance(currentAccount).getTopicsController().onTopicFragmentPause(-dialogId);
-            NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.savedMessagesDialogsUpdate);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.topicsDidLoaded);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
         }
     }
 
     private void fillVerticalTabs(ArrayList<UItem> items, UniversalAdapter adapter) {
+        final TLRPC.Chat currentChat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
         final TopicsController controller = MessagesController.getInstance(currentAccount).getTopicsController();
         final ArrayList<TLRPC.TL_forumTopic> topics = controller.getTopics(-dialogId);
-        items.add(VerticalTabView.Factory.asAll(mono).setChecked(currentTopicId == 0));
+        items.add(VerticalTabView.Factory.asAll(bot, mono).setChecked(currentTopicId == 0));
         boolean reorder = false;
         if (topics != null) {
             for (TLRPC.TL_forumTopic topic : topics) {
+                if (bot && topic.id == 1) continue;
                 if (excludeTopics.contains(topic.id)) continue;
                 if (!topic.pinned && reorder) {
                     adapter.reorderSectionEnd();
@@ -572,18 +572,20 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             items.add(VerticalTabView.Factory.asLoading(-3));
             items.add(VerticalTabView.Factory.asLoading(-4));
         }
-        if (!mono) {
+        if (!bot && !mono && ChatObject.canCreateTopic(currentChat)) {
             items.add(VerticalTabView.Factory.asAdd(false));
         }
     }
 
     private void fillHorizontalTabs(ArrayList<UItem> items, UniversalAdapter adapter) {
+        final TLRPC.Chat currentChat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
         final TopicsController controller = MessagesController.getInstance(currentAccount).getTopicsController();
         final ArrayList<TLRPC.TL_forumTopic> topics = controller.getTopics(-dialogId);
-        items.add(HorizontalTabView.Factory.asAll(mono).setChecked(currentTopicId == 0));
+        items.add(HorizontalTabView.Factory.asAll(bot, mono).setChecked(currentTopicId == 0));
         boolean reorder = false;
         if (topics != null) {
             for (TLRPC.TL_forumTopic topic : topics) {
+                if (bot && topic.id == 1) continue;
                 if (excludeTopics.contains(topic.id)) continue;
                 if (!topic.pinned && reorder) {
                     adapter.reorderSectionEnd();
@@ -602,6 +604,9 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             items.add(HorizontalTabView.Factory.asLoading(-2));
             items.add(HorizontalTabView.Factory.asLoading(-3));
             items.add(HorizontalTabView.Factory.asLoading(-4));
+        }
+        if (!bot && !mono && ChatObject.canCreateTopic(currentChat)) {
+            items.add(HorizontalTabView.Factory.asAdd());
         }
     }
 
@@ -652,7 +657,8 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
         if (item.object instanceof TLRPC.TL_forumTopic) {
             final TLRPC.TL_forumTopic topic = (TLRPC.TL_forumTopic) item.object;
             final MessagesController messagesController = MessagesController.getInstance(currentAccount);
-            final TLRPC.Chat currentChat = messagesController.getChat(-dialogId);
+            final TLRPC.Chat currentChat = dialogId < 0 ? messagesController.getChat(-dialogId) : null;
+            final TLRPC.User currentUser = dialogId > 0 ? messagesController.getUser(dialogId) : null;
             final ItemOptions options = ItemOptions.makeOptions(fragment, view, true);
 
             if (ChatObject.isMonoForum(currentChat)) {
@@ -676,8 +682,50 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
                         }
                     }
                 );
+                long _chatId = currentChat.id;
+                if (ChatObject.isMonoForum(currentChat) && ChatObject.canManageMonoForum(currentAccount, currentChat) && currentChat.linked_monoforum_id != 0) {
+                    _chatId = currentChat.linked_monoforum_id;
+                }
+                final long chatId = _chatId;
+                final TLRPC.Chat channel = MessagesController.getInstance(currentAccount).getChat(chatId);
+                final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(topicId);
+                if (user != null && ChatObject.canBlockUsers(channel)) {
+                    options.add(R.drawable.msg_remove, getString(R.string.BanUserMonoforum), null);
+                    ActionBarMenuSubItem subitem = options.getLast();
+                    subitem.setVisibility(View.GONE);
+                    MessagesController.getInstance(currentAccount).checkIsInChat(true, channel, user, (isInChat, currentAdminRights, rank) -> {
+                        AndroidUtilities.runOnUIThread(() -> {
+                            final boolean banned = !isInChat;
+                            subitem.setVisibility(View.VISIBLE);
+                            subitem.setText(getString(banned ? R.string.UnbanUserMonoforum : R.string.BanUserMonoforum));
+                            subitem.setOnClickListener(v -> {
+                                options.dismiss();
+                                if (!banned) {
+                                    MessagesController.getInstance(currentAccount).deleteParticipantFromChat(chatId, user, null, false, false);
+                                } else {
+                                    TLRPC.TL_channels_editBanned req = new TLRPC.TL_channels_editBanned();
+                                    req.participant = MessagesController.getInputPeer(user);
+                                    req.channel = MessagesController.getInputChannel(channel);
+                                    req.banned_rights = new TLRPC.TL_chatBannedRights();
+                                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+                                        if (response != null) {
+                                            final TLRPC.Updates updates = (TLRPC.Updates) response;
+                                            MessagesController.getInstance(currentAccount).processUpdates(updates, false);
+                                            if (!updates.chats.isEmpty()) {
+                                                AndroidUtilities.runOnUIThread(() -> {
+                                                    TLRPC.Chat chat = updates.chats.get(0);
+                                                    MessagesController.getInstance(currentAccount).loadFullChat(chat.id, 0, true);
+                                                }, 1000);
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                    });
+                }
             } else {
-                if (ChatObject.canManageTopics(currentChat)) {
+                if (ChatObject.canManageTopics(currentChat) || UserObject.isBotForum(currentUser)) {
                     options.add(
                             topic.pinned ? R.drawable.msg_unpin : R.drawable.msg_pin,
                             getString(topic.pinned ? R.string.DialogUnpin : R.string.DialogPin),
@@ -720,7 +768,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
                             }
                         }
                 );
-                if (ChatObject.canManageTopic(currentAccount, currentChat, topic)) {
+                if (ChatObject.canManageTopic(currentAccount, currentChat, topic) && !UserObject.isBotForum(currentUser)) {
                     options.add(
                             topic.closed ? R.drawable.msg_topic_restart : R.drawable.msg_topic_close,
                             topic.closed ? getString(R.string.RestartTopic) : getString(R.string.CloseTopic),
@@ -898,7 +946,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             layout.addView(imageLayoutView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
 
             imageView = new BackupImageView(context);
-            imageLayoutView.addView(imageView, imageViewParams = LayoutHelper.createFrame(30, 30, Gravity.CENTER));
+            imageLayoutView.addView(imageView, imageViewParams = LayoutHelper.createFrame(34, 34, Gravity.CENTER));
             avatarDrawable = new AvatarDrawable();
 
             textView = new TextView(context);
@@ -908,7 +956,8 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             textView.setTypeface(AndroidUtilities.bold());
             textView.setMaxLines(3);
             textView.setEllipsize(TextUtils.TruncateAt.END);
-            layout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 4, 0, 4, 4));
+            layout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 4, 0, 4, 0));
+            layout.setPadding(0, 0, 0, dp(4));
 
             lineView = new ImageView(context);
             lineView.setBackground(Theme.createRoundRectDrawable(dp(2.33f), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
@@ -1011,15 +1060,22 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             counterAnimator.start();
         }
 
-        public void setAll(boolean mono, boolean selected) {
+        public void setAll(boolean bot, boolean mono, boolean selected) {
             setLayout(mono);
             this.topicId = -1;
             this.staticImage = true;
             this.isAdd = false;
-            textView.setText(getString(R.string.AllTopicsSide));
+            textView.setText(getString(bot ? R.string.BotForumNewTopic : R.string.AllTopicsSide));
+            textView.setVisibility(bot ? GONE : VISIBLE);
             imageView.clearImage();
             imageView.setAnimatedEmojiDrawable(null);
-            imageView.setImageResource(R.drawable.other_chats);
+            if (bot) {
+                BotNewTopicDrawable drawable = new BotNewTopicDrawable(getContext());
+                drawable.setColor(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider));
+                imageView.setImageDrawable(drawable);
+            } else {
+                imageView.setImageResource(R.drawable.other_chats);
+            }
             imageView.setScaleX(1f);
             imageView.setScaleY(1f);
             setSelected(selected);
@@ -1037,6 +1093,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             this.staticImage = true;
             this.isAdd = true;
             textView.setText(getString(R.string.NewTopic));
+            textView.setVisibility(VISIBLE);
             imageView.clearImage();
             imageView.setAnimatedEmojiDrawable(null);
             imageView.setImageResource(R.drawable.emoji_tabs_new3);
@@ -1060,6 +1117,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             span.setScaleY(0.75f);
             sb.setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             textView.setText(sb);
+            textView.setVisibility(VISIBLE);
             imageView.clearImage();
             imageView.setAnimatedEmojiDrawable(null);
             if (loadingDrawable == null) {
@@ -1092,17 +1150,21 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             this.topicId = topic.id;
             this.isAdd = false;
             textView.setText(topic.title);
+            textView.setVisibility(VISIBLE);
             if (topic.id == 1) {
                 this.staticImage = true;
                 imageView.clearImage();
+                imageView.setAnimatedEmojiDrawable(null);
                 imageView.setImageResource(R.drawable.msg_filled_general);
                 imageView.setScaleX(0.66f);
                 imageView.setScaleY(0.66f);
             } else if (topic.icon_emoji_id != 0) {
+                imageView.clearImage();
                 imageView.setAnimatedEmojiDrawable(AnimatedEmojiDrawable.make(UserConfig.selectedAccount, AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW, topic.icon_emoji_id));
                 imageView.setScaleX(1f);
                 imageView.setScaleY(1f);
             } else {
+                imageView.setAnimatedEmojiDrawable(null);
                 imageView.setImageDrawable(ForumUtilities.createTopicDrawable(topic, false));
                 imageView.setScaleX(1f);
                 imageView.setScaleY(1f);
@@ -1143,6 +1205,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
             final boolean animated = dialogId == topicId;
             topicId = dialogId;
             textView.setText(DialogObject.getName(dialogId));
+            textView.setVisibility(VISIBLE);
             if (dialogId >= 0) {
                 TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
                 avatarDrawable.setInfo(user);
@@ -1225,7 +1288,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
                     if (item.longValue == -2) {
                         cell.setAdd(item.accent, item.checked);
                     } else {
-                        cell.setAll(item.accent, item.checked);
+                        cell.setAll((item.flags & 1) != 0, item.accent, item.checked);
                     }
                 } else if (item.object instanceof TLRPC.TL_forumTopic) {
                     if (!item.withUsername) {
@@ -1237,12 +1300,13 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
                 cell.setReorder(listView != null && listView.isReorderAllowed() && cell.pinned);
             }
 
-            public static UItem asAll(boolean monoforum) {
+            public static UItem asAll(boolean botforum, boolean monoforum) {
                 UItem item = UItem.ofFactory(Factory.class);
                 item.id = 0;
                 item.longValue = 0;
                 item.object = null;
                 item.accent = monoforum;
+                item.flags = botforum ? 1 : 0;
                 return item;
             }
 
@@ -1405,6 +1469,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
         }
 
         private long topicId;
+        private boolean isAdd = false;
         private boolean mono = false;
         private void setLayout(boolean mono) {
             if (this.mono == mono) return;
@@ -1420,12 +1485,27 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
         }
 
         private boolean staticImage = false;
-        public void setAll(boolean mono, boolean selected) {
+        public void setAll(boolean bot, boolean mono, boolean selected) {
             setLayout(mono);
             this.topicId = 0;
+            this.isAdd = false;
             this.staticImage = true;
-            textView.setText(getString(R.string.AllTopicsShort));
+            textView.setText(getString(bot ? R.string.BotForumNewTopic : R.string.AllTopicsShort));
             setSelected(selected);
+            updateTextColor();
+            setCounter(true, 0, false, false, false);
+            setPinned(false, false);
+        }
+
+        public void setAdd() {
+            setLayout(false);
+            this.topicId = 0;
+            this.isAdd = true;
+            this.staticImage = false;
+            SpannableStringBuilder sb = new SpannableStringBuilder("e\u200B");
+            sb.setSpan(new ColoredImageSpan(R.drawable.menu_topic_add), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            textView.setText(sb);
+            setSelected(false);
             updateTextColor();
             setCounter(true, 0, false, false, false);
             setPinned(false, false);
@@ -1485,7 +1565,7 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
         }
 
         private int getTextColor() {
-            return ColorUtils.blendARGB(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), selectT);
+            return ColorUtils.blendARGB(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), isAdd ? 1.0f : selectT);
         }
 
         private AvatarSpan avatarSpan;
@@ -1649,7 +1729,11 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
                 if (item.red) {
                     cell.setLoading();
                 } else if (item.object == null) {
-                    cell.setAll(item.accent, item.checked);
+                    if (item.id == -2) {
+                        cell.setAdd();
+                    } else {
+                        cell.setAll((item.flags & 1) != 0, item.accent, item.checked);
+                    }
                 } else if (item.object instanceof TLRPC.TL_forumTopic) {
                     if (!item.withUsername) {
                         cell.setMf(item.dialogId, (TLRPC.TL_forumTopic) item.object, item.checked);
@@ -1660,12 +1744,13 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
                 cell.setReorder(listView != null && listView.isReorderAllowed() && cell.pinned);
             }
 
-            public static UItem asAll(boolean monoforum) {
+            public static UItem asAll(boolean botforum, boolean monoforum) {
                 UItem item = UItem.ofFactory(Factory.class);
                 item.id = 0;
                 item.longValue = 0;
                 item.object = null;
                 item.accent = monoforum;
+                item.flags = botforum ? 1 : 0;
                 return item;
             }
 
@@ -1685,6 +1770,14 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
                 UItem item = UItem.ofFactory(Factory.class);
                 item.id = id;
                 item.red = true;
+                return item;
+            }
+
+            public static UItem asAdd() {
+                UItem item = UItem.ofFactory(Factory.class);
+                item.id = -2;
+                item.longValue = -2;
+                item.object = null;
                 return item;
             }
         }
@@ -1726,5 +1819,52 @@ public class TopicsTabsView extends FrameLayout implements NotificationCenter.No
 
     private long getTopicId(TLRPC.TL_forumTopic topic) {
         return mono ? DialogObject.getPeerDialogId(topic.from_id) : topic.id;
+    }
+
+    private static class BotNewTopicDrawable extends Drawable {
+        private final Drawable drawable;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF rectF = new RectF();
+
+        public BotNewTopicDrawable(Context context) {
+            drawable = context.getResources().getDrawable(R.drawable.menu_topic_add).mutate();
+        }
+
+        public void setColor(int color) {
+            paint.setColor(color);
+        }
+
+        @Override
+        public void draw(@NonNull Canvas canvas) {
+            canvas.drawRoundRect(rectF, dp(10), dp(10), paint);
+            drawable.draw(canvas);
+        }
+
+        @Override
+        protected void onBoundsChange(@NonNull Rect bounds) {
+            super.onBoundsChange(bounds);
+            rectF.set(bounds);
+
+            final int x = bounds.centerX() - dp(12);
+            final int y = bounds.centerY() - dp(12);
+
+            drawable.setBounds(x, y, x + dp(24), y + dp(24));
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+            paint.setAlpha(alpha);
+            drawable.setAlpha(alpha);
+        }
+
+        @Override
+        public void setColorFilter(@Nullable ColorFilter colorFilter) {
+
+        }
+
+        @Override
+        public int getOpacity() {
+            return PixelFormat.UNKNOWN;
+        }
     }
 }

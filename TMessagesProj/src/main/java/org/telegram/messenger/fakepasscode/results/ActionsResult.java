@@ -1,13 +1,17 @@
 package org.telegram.messenger.fakepasscode.results;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.fakepasscode.Action;
 import org.telegram.messenger.fakepasscode.ChatFilter;
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.serialization.PartisanListDeserializer;
+import org.telegram.messenger.partisan.serialization.PartisanCollectionSerializer;
+import org.telegram.messenger.partisan.serialization.PartisanSetDeserializer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +30,12 @@ public class ActionsResult {
     public Map<Integer, TelegramMessageResult> telegramMessageResults = new HashMap<>();
     public Map<Integer, String> fakePhoneNumbers = new HashMap<>();
     @Deprecated
+    @JsonSerialize(using = PartisanCollectionSerializer.class)
+    @JsonDeserialize(using = PartisanSetDeserializer.class, contentAs = Integer.class)
     public Set<Integer> hiddenAccounts = Collections.synchronizedSet(new HashSet<>());
+
+    @JsonSerialize(using = PartisanCollectionSerializer.class)
+    @JsonDeserialize(using = PartisanListDeserializer.class, contentAs = HideAccountResult.class)
     public List<HideAccountResult> hiddenAccountEntries = Collections.synchronizedList(new ArrayList<>());
 
     @JsonIgnore

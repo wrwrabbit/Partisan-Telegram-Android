@@ -18,6 +18,7 @@ import android.util.SparseIntArray;
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupChatUpdateHandler;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.InputSerializedData;
@@ -2063,7 +2064,7 @@ public class SecretChatHelper extends BaseController {
                                 if (strategy.allowShowingDialogs()) {
                                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
                                     builder.setTitle(LocaleController.getString(R.string.AppName));
-                                    if (SharedConfig.isTesterSettingsActivated()) {
+                                    if (TesterSettings.areTesterSettingsActivated()) {
                                         builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError) + "\n" + error1.text);
                                     } else {
                                         builder.setMessage(LocaleController.getString(R.string.CreateEncryptedChatError));

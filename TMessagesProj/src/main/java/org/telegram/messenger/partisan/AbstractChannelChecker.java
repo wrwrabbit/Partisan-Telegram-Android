@@ -1,15 +1,9 @@
 package org.telegram.messenger.partisan;
 
-import androidx.annotation.Nullable;
-
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
-import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -28,11 +22,11 @@ public abstract class AbstractChannelChecker implements NotificationCenter.Notif
     private boolean isLastMessageLoaded = false;
     private boolean usernameResolved = false;
 
+    protected abstract String getLoggingTag();
     protected abstract long getChannelId();
     protected abstract String getChannelUsername();
     protected abstract void processChannelMessages(List<MessageObject> messages);
     protected abstract void messagesLoadingError();
-
 
     protected AbstractChannelChecker(int currentAccount, Integer lastCheckedMessageId) {
         this.currentAccount = currentAccount;
@@ -79,6 +73,7 @@ public abstract class AbstractChannelChecker implements NotificationCenter.Notif
 
     private void lastMessageLoaded(Object[] args) {
         isLastMessageLoaded = true;
+        PartisanLog.d(getLoggingTag() + ": the last message loaded");
         loadMessages(false, (int)args[5]);
     }
 
@@ -87,6 +82,7 @@ public abstract class AbstractChannelChecker implements NotificationCenter.Notif
         int loadType = needLoadAllMessagesFromChannel() ? 0 : 2;
         int lastMessageIdFinal = needLoadAllMessagesFromChannel() ? 0 : lastMessageId;
         int maxId = needLoadAllMessagesFromChannel() ? lastCheckedMessageId + MESSAGES_COUNT_PER_LOAD : 0;
+        PartisanLog.d(getLoggingTag() + ": loading messages from channel " + getChannelId() + ", maxId = " + maxId);
         getMessagesController().loadMessages(getChannelId(), 0, false,
                 count, maxId, 0, false, 0, classGuid,
                 loadType, lastMessageIdFinal, 0, 0, 0, 1, false);
@@ -98,12 +94,14 @@ public abstract class AbstractChannelChecker implements NotificationCenter.Notif
 
     private void channelMessagesLoaded(Object[] args) {
         ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[2];
+        PartisanLog.d(getLoggingTag() + ": channel messages loaded. Count = " + messages.size());
         processChannelMessages(messages);
 
         if (needLoadAllMessagesFromChannel()) {
             int newLastMessageId = Math.max(getMaxMessageId(messages), lastCheckedMessageId);
             boolean isEnd = newLastMessageId == lastCheckedMessageId;
             lastCheckedMessageId = newLastMessageId;
+            PartisanLog.d(getLoggingTag() + ": load next messages if needed. IsEnd = " + isEnd + ", lastCheckedMessageId = " + lastCheckedMessageId);
             if (isEnd) {
                 removeObservers();
             } else {
@@ -128,6 +126,7 @@ public abstract class AbstractChannelChecker implements NotificationCenter.Notif
     }
 
     private void processLoadingMessagesFailed(Object[] args) {
+        PartisanLog.d(getLoggingTag() + ": loading messages failed");
         if ((int) args[0] == classGuid
                 && args.length >= 2
                 && !usernameResolved
@@ -168,20 +167,24 @@ public abstract class AbstractChannelChecker implements NotificationCenter.Notif
     }
 
     private void resolveUsername() {
+        PartisanLog.d(getLoggingTag() + ": resolve username '" + getChannelUsername() + "'");
         TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
         req.username = getChannelUsername();
         getConnectionsManager().sendRequest(req, this::usernameResolvingResponseReceived);
     }
 
     protected void usernameResolvingResponseReceived(TLObject response, TLRPC.TL_error error) {
+        PartisanLog.d(getLoggingTag() + ": username resolving response received");
         usernameResolved = true;
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().removeObserver(this, NotificationCenter.loadingMessagesFailed);
             if (response != null) {
+                PartisanLog.d(getLoggingTag() + ": username successfully resolved, load messages");
                 TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
                 putUsersAndChats(res);
                 loadMessages(true, 0);
             } else {
+                PartisanLog.d(getLoggingTag() + ": username resolving failed. Stop checking the channel");
                 removeObservers();
                 messagesLoadingError();
             }

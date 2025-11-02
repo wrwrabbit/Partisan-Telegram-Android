@@ -1976,7 +1976,7 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
 
                                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.premiumPromoUpdated);
                                 updateRows(true);
-                            }, null, getResourceProvider()).create());
+                            }, null, false, getResourceProvider()).create());
                         }), true));
                         backgroundResId = R.drawable.greydivider;
                     } else if (position == detailRow) {

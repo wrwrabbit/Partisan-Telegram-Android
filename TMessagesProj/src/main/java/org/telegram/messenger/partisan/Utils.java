@@ -38,6 +38,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.FilteredArrayList;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.CacheControlActivity;
@@ -175,7 +176,7 @@ public class Utils {
                     }
                 }
 
-                if (SharedConfig.clearLogsWithCache) {
+                if (TesterSettings.clearLogsWithCache.get().orElse(false)) {
                     logs = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "logs");
                     if (logs.exists()) {
                         CacheControlActivity.cleanDirJava(logs.getAbsolutePath(), 0, null, x -> {});
@@ -618,7 +619,7 @@ public class Utils {
 
     public static List<TLRPC.Dialog> filterDialogs(List<TLRPC.Dialog> dialogs, Optional<Integer> account) {
         List<TLRPC.Dialog> filteredDialogsByPasscode = FakePasscodeUtils.filterDialogs(dialogs, account);
-        if (!account.isPresent() || SharedConfig.showEncryptedChatsFromEncryptedGroups) {
+        if (!account.isPresent() || TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false)) {
             return filteredDialogsByPasscode;
         }
         MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());
@@ -709,5 +710,20 @@ public class Utils {
             return 0;
         });
         return accounts;
+    }
+
+    public static long getMessageDialogId(TLRPC.Message message) {
+        if (message.dialog_id != 0) {
+            return message.dialog_id;
+        } else if (message.from_id != null) {
+            if (message.from_id instanceof TLRPC.TL_peerUser) {
+                return message.from_id.user_id;
+            } else if (message.from_id instanceof TLRPC.TL_peerChannel) {
+                return -message.from_id.channel_id;
+            } else if (message.from_id instanceof TLRPC.TL_peerChat) {
+                return -message.from_id.chat_id;
+            }
+        }
+        return 0;
     }
 }

@@ -2,6 +2,7 @@ package org.telegram.messenger.partisan.messageinterception;
 
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.tgnet.TLRPC;
 
 public class HiddenByPasscodeMessageInterceptor implements MessageInterceptor {
@@ -15,6 +16,6 @@ public class HiddenByPasscodeMessageInterceptor implements MessageInterceptor {
         if (passcode == null) {
             return false;
         }
-        return passcode.isPreventMessageSaving(accountNum, FakePasscodeUtils.getMessageDialogId(message));
+        return passcode.isPreventMessageSaving(accountNum, Utils.getMessageDialogId(message));
     }
 }

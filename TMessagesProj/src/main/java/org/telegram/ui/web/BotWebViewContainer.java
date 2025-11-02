@@ -15,6 +15,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.DownloadManager;
+import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -398,8 +399,8 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
             AndroidUtilities.removeFromParent(replaceWith);
         }
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && SharedConfig.debugWebView) {
-                WebView.setWebContentsDebuggingEnabled(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                WebView.setWebContentsDebuggingEnabled(SharedConfig.debugWebView && !isVerifyingAge());
             }
         } catch (Exception e) {
             FileLog.e(e);
@@ -446,6 +447,9 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 settings.setSafeBrowsingEnabled(true);
             }
+        }
+        if (isVerifyingAge()) {
+            settings.setMediaPlaybackRequiresUserGesture(false);
         }
 
         try {
@@ -765,9 +769,15 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
         if (requestCode == REQUEST_CODE_WEB_VIEW_FILE && mFilePathCallback != null) {
             Uri[] results = null;
 
-            if (resultCode == Activity.RESULT_OK) {
-                if (data != null && data.getDataString() != null) {
-                    results = new Uri[] {Uri.parse(data.getDataString())};
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                if (data.getClipData() != null) {
+                    ClipData clipData = data.getClipData();
+                    results = new Uri[clipData.getItemCount()];
+                    for (int i = 0; i < clipData.getItemCount(); i++) {
+                        results[i] = clipData.getItemAt(i).getUri();
+                    }
+                } else if (data.getData() != null) {
+                    results = new Uri[]{data.getData()};
                 }
             }
 
@@ -2646,7 +2656,37 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
             case "web_app_secure_storage_restore_key": {
                 if (botUser == null) return;
                 if (secureStorage == null) secureStorage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, true);
-                restoreStorageKey(secureStorage, eventData, "secure_storage_key_restored", "secure_storage_cleared");
+                restoreStorageKey(secureStorage, eventData, "secure_storage_key_restored", "secure_storage_failed");
+                break;
+            }
+            case "web_app_hide_keyboard": {
+                Activity activity = AndroidUtilities.findActivity(getContext());
+                if (activity == null) activity = LaunchActivity.instance;
+                if (activity != null) {
+                    AndroidUtilities.hideKeyboard(activity.getCurrentFocus());
+                }
+                break;
+            }
+            case "web_app_verify_age": {
+                if (onVerifiedAge != null) {
+                    final boolean passed;
+                    final double age;
+                    final String gender;
+                    final double genderProbability;
+                    try {
+                        JSONObject o = new JSONObject(eventData);
+                        passed = o.getBoolean("passed");
+                        age = o.getDouble("age");
+                        gender = o.optString("gender");
+                        genderProbability = o.optDouble("genderProbability");
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                        return;
+                    }
+                    AndroidUtilities.runOnUIThread(() -> {
+                        onVerifiedAge.run(passed, age, gender, genderProbability);
+                    });
+                }
                 break;
             }
             default: {
@@ -3812,7 +3852,9 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                    getSettings().setMediaPlaybackRequiresUserGesture(true);
+                    if (botWebViewContainer == null || !botWebViewContainer.isVerifyingAge()) {
+                        getSettings().setMediaPlaybackRequiresUserGesture(true);
+                    }
                     if (currentSheet != null) {
                         currentSheet.dismiss();
                         currentSheet = null;
@@ -4203,7 +4245,12 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
                     botWebViewContainer.mFilePathCallback = filePathCallback;
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        activity.startActivityForResult(fileChooserParams.createIntent(), REQUEST_CODE_WEB_VIEW_FILE);
+                        final boolean allowMultiple = fileChooserParams.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE;
+                        Intent intent = fileChooserParams.createIntent();
+                        if (allowMultiple) {
+                            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                        }
+                        activity.startActivityForResult(intent, REQUEST_CODE_WEB_VIEW_FILE);
                     } else {
                         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -4293,6 +4340,11 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
                         if (botWebViewContainer.parentActivity == null) {
                             request.deny();
+                            return;
+                        }
+
+                        if (botWebViewContainer.isVerifyingAge()) {
+                            request.grant(resources);
                             return;
                         }
 
@@ -4656,7 +4708,9 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
         public boolean onTouchEvent(MotionEvent event) {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 botWebViewContainer.lastClickMs = System.currentTimeMillis();
-                getSettings().setMediaPlaybackRequiresUserGesture(false);
+                if (!botWebViewContainer.isVerifyingAge()) {
+                    getSettings().setMediaPlaybackRequiresUserGesture(false);
+                }
             }
             return super.onTouchEvent(event);
         }
@@ -4997,4 +5051,13 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
             return null;
         }
     }
+
+    private Utilities.Callback4<Boolean, Double, String, Double> onVerifiedAge;
+    private boolean isVerifyingAge() {
+        return onVerifiedAge != null;
+    }
+    public void setOnVerifiedAge(Utilities.Callback4<Boolean, Double, String, Double> callback) {
+        onVerifiedAge = callback;
+    }
+
 }

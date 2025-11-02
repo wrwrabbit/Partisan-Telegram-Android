@@ -968,6 +968,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     private float currentAspectRatioFrameLayoutRatio;
     private boolean currentAspectRatioFrameLayoutReady;
 
+    public MessagesController.SavedMusicList currentSavedMusicList;
     private ArrayList<MessageObject> playlist = new ArrayList<>();
     private HashMap<Integer, MessageObject> playlistMap = new HashMap<>();
     private ArrayList<MessageObject> shuffledPlaylist = new ArrayList<>();
@@ -1002,6 +1003,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     private long recordDialogId;
     private long recordTopicId;
     private long recordMonoForumPeerId;
+    private MessageSuggestionParams recordMonoForumSuggestionParams;
     private MessageObject recordReplyingMsg;
     private MessageObject recordReplyingTopMsg;
     private TL_stories.StoryItem recordReplyingStory;
@@ -1025,22 +1027,41 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     private Runnable recordStartRunnable;
     private DispatchQueue recordQueue;
     private DispatchQueue fileEncodingQueue;
+    private org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger;
     private Runnable recordRunnable = new Runnable() {
         @Override
         public void run() {
             if (audioRecorder != null) {
                 ByteBuffer buffer;
+                org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger = MediaController.this.voiceChanger;
                 if (!recordBuffers.isEmpty()) {
                     buffer = recordBuffers.get(0);
                     recordBuffers.remove(0);
+                    if (voiceChanger != null) {
+                        buffer = ByteBuffer.allocateDirect(recordBufferSize);
+                        buffer.order(ByteOrder.nativeOrder());
+                    }
                 } else {
                     buffer = ByteBuffer.allocateDirect(recordBufferSize);
                     buffer.order(ByteOrder.nativeOrder());
                 }
                 buffer.rewind();
                 int len = audioRecorder.read(buffer, buffer.capacity());
+                if (voiceChanger != null && len > 0) {
+                    voiceChanger.write(java.util.Arrays.copyOf(buffer.array(), len));
+                    byte[] changedVoice = voiceChanger.readAll();
+                    if (changedVoice.length == 0) {
+                        recordBuffers.add(buffer);
+                        recordQueue.postRunnable(recordRunnable);
+                        return;
+                    }
+                    len = changedVoice.length;
+                    buffer = ByteBuffer.allocateDirect(len);
+                    buffer.order(ByteOrder.nativeOrder());
+                    buffer.put(changedVoice, 0, len);
+                    buffer.rewind();
+                }
                 if (len > 0) {
-                    buffer.limit(len);
                     double sum = 0;
                     try {
                         long newSamplesCount = samplesCount + len / 2;
@@ -1414,6 +1435,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 NotificationCenter.getInstance(a).addObserver(MediaController.this, NotificationCenter.removeAllMessagesFromDialog);
                 NotificationCenter.getInstance(a).addObserver(MediaController.this, NotificationCenter.musicDidLoad);
                 NotificationCenter.getInstance(a).addObserver(MediaController.this, NotificationCenter.mediaDidLoad);
+                NotificationCenter.getInstance(a).addObserver(MediaController.this, NotificationCenter.musicListLoaded);
                 NotificationCenter.getGlobalInstance().addObserver(MediaController.this, NotificationCenter.playerDidStartPlaying);
             }
         });
@@ -1603,6 +1625,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     }
 
     private void clearPlaylist() {
+        currentSavedMusicList = null;
         playlist.clear();
         playlistMap.clear();
         shuffledPlaylist.clear();
@@ -1878,6 +1901,33 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     wasPlayingAudioBeforePause = true;
                 }
                 pauseMessage(message);
+            }
+        } else if (id == NotificationCenter.musicListLoaded) {
+            if (currentSavedMusicList != null && args[0] == currentSavedMusicList) {
+                int addedCount = currentSavedMusicList.list.size() - playlist.size();
+                playlist.clear();
+                playlist.addAll(currentSavedMusicList.list);
+                sortPlaylist();
+                if (SharedConfig.shuffleMusic) {
+                    buildShuffledPlayList();
+                } else if (playingMessageObject != null) {
+                    int newIndex = playlist.indexOf(playingMessageObject);
+                    if (newIndex >= 0) {
+                        currentPlaylistNum = newIndex;
+                    } else {
+                        if (currentPlaylistNum < 0 || currentPlaylistNum >= playlist.size()) {
+                            currentPlaylistNum = 0;
+                        }
+                        if (playlist.size() == 0) {
+                            cleanup();
+                        } else {
+                            playMessage(playlist.get(0));
+                        }
+                    }
+                }
+                if (addedCount != 0 && playingMessageObject != null) {
+                    NotificationCenter.getInstance(playingMessageObject.currentAccount).postNotificationName(NotificationCenter.moreMusicDidLoad, addedCount);
+                }
             }
         }
     }
@@ -2188,7 +2238,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         if (recordingAudio != null) {
             toggleRecordingPause(false);
         } else if (raised) {
-            startRecording(raiseChat.getCurrentAccount(), raiseChat.getDialogId(), null, raiseChat.getThreadMessage(), null, raiseChat.getClassGuid(), false, raiseChat != null ? raiseChat.quickReplyShortcut : null, raiseChat != null ? raiseChat.getQuickReplyId() : 0, raiseChat != null ? raiseChat.getSendMonoForumPeerId(): 0);
+            startRecording(raiseChat.getCurrentAccount(), raiseChat.getDialogId(), null, raiseChat.getThreadMessage(), null, raiseChat.getClassGuid(), false, raiseChat != null ? raiseChat.quickReplyShortcut : null, raiseChat != null ? raiseChat.getQuickReplyId() : 0, raiseChat != null ? raiseChat.getSendMonoForumPeerId(): 0, raiseChat != null ? raiseChat.getSendMessageSuggestionParams(): null);
         } else {
             stopRecording(2, false, 0, false, 0);
         }
@@ -2210,7 +2260,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             return;
         }
         raiseToEarRecord = true;
-        startRecording(raiseChat.getCurrentAccount(), raiseChat.getDialogId(), null, raiseChat.getThreadMessage(), null, raiseChat.getClassGuid(), false, raiseChat != null ? raiseChat.quickReplyShortcut : null, raiseChat != null ? raiseChat.getQuickReplyId() : 0, raiseChat != null ? raiseChat.getSendMonoForumPeerId(): 0);
+        startRecording(raiseChat.getCurrentAccount(), raiseChat.getDialogId(), null, raiseChat.getThreadMessage(), null, raiseChat.getClassGuid(), false, raiseChat != null ? raiseChat.quickReplyShortcut : null, raiseChat != null ? raiseChat.getQuickReplyId() : 0, raiseChat != null ? raiseChat.getSendMonoForumPeerId(): 0, raiseChat != null ? raiseChat.getSendMessageSuggestionParams(): null);
         ignoreOnPause = true;
     }
 
@@ -2598,8 +2648,11 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         ArrayList<MessageObject> all = new ArrayList<>(playlist);
         shuffledPlaylist.clear();
 
-        MessageObject messageObject = playlist.get(currentPlaylistNum);
-        all.remove(currentPlaylistNum);
+        MessageObject messageObject = null;
+        if (currentPlaylistNum >= 0 && currentPlaylistNum < playlist.size()) {
+            messageObject = playlist.get(currentPlaylistNum);
+            all.remove(currentPlaylistNum);
+        }
 
         int count = all.size();
         for (int a = 0; a < count; a++) {
@@ -2607,11 +2660,17 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             shuffledPlaylist.add(all.get(index));
             all.remove(index);
         }
-        shuffledPlaylist.add(messageObject);
-        currentPlaylistNum = shuffledPlaylist.size() - 1;
+        if (messageObject != null) {
+            shuffledPlaylist.add(messageObject);
+            currentPlaylistNum = shuffledPlaylist.size() - 1;
+        }
     }
 
     public void loadMoreMusic() {
+        if (currentSavedMusicList != null) {
+            currentSavedMusicList.load();
+            return;
+        }
         if (loadingPlaylist || playingMessageObject == null || playingMessageObject.scheduled || DialogObject.isEncryptedDialog(playingMessageObject.getDialogId()) || playlistClassGuid == 0) {
             return;
         }
@@ -2827,6 +2886,9 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
 
         if (byStop && (SharedConfig.repeatMode == 2 || SharedConfig.repeatMode == 1 && currentPlayList.size() == 1) && !forceLoopCurrentPlaylist) {
             cleanupPlayer(false, false);
+            if (currentPlaylistNum < 0 || currentPlaylistNum >= currentPlayList.size()) {
+                return;
+            }
             MessageObject messageObject = currentPlayList.get(currentPlaylistNum);
             messageObject.audioProgress = 0;
             messageObject.audioProgressSec = 0;
@@ -4276,6 +4338,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         return playlist;
     }
 
+    public MessagesController.SavedMusicList getMusicList() {
+        return currentSavedMusicList;
+    }
+
     public boolean isPlayingMessage(MessageObject messageObject) {
         if (messageObject != null && messageObject.isRepostPreview) {
             return false;
@@ -4327,7 +4393,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         }
     }
 
-    public void prepareResumedRecording(int currentAccount, MediaDataController.DraftVoice draft, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem replyStory, int guid, String query_shortcut, int query_shortcut_id, long monoForumPeerId) {
+    public void prepareResumedRecording(int currentAccount, MediaDataController.DraftVoice draft, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem replyStory, int guid, String query_shortcut, int query_shortcut_id, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
         manualRecording = false;
         requestRecordAudioFocus(true);
         recordQueue.cancelRunnable(recordStartRunnable);
@@ -4362,6 +4428,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 recordSamples = draft.recordSamples;
                 recordDialogId = dialogId;
                 recordMonoForumPeerId = monoForumPeerId;
+                recordMonoForumSuggestionParams = suggestionParams;
                 recordTopicId = replyToTopMsg == null ? 0 : MessageObject.getTopicId(recordingCurrentAccount, replyToTopMsg.messageOwner, false);
                 recordingCurrentAccount = currentAccount;
                 recordReplyingMsg = replyToMsg;
@@ -4569,7 +4636,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         });
     }
 
-    public void startRecording(int currentAccount, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem replyStory, int guid, boolean manual, String quick_shortcut, int quick_shortcut_id, long monoForumPeerId) {
+    public void startRecording(int currentAccount, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem replyStory, int guid, boolean manual, String quick_shortcut, int quick_shortcut_id, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
         boolean paused = false;
         if (playingMessageObject != null && isPlayingMessage(playingMessageObject) && !isMessagePaused()) {
             paused = true;
@@ -4638,6 +4705,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 samplesCount = 0;
                 recordDialogId = dialogId;
                 recordMonoForumPeerId = monoForumPeerId;
+                recordMonoForumSuggestionParams = suggestionParams;
                 recordTopicId = replyToTopMsg == null ? 0 : MessageObject.getTopicId(recordingCurrentAccount, replyToTopMsg.messageOwner, false);
                 recordingCurrentAccount = currentAccount;
                 recordReplyingMsg = replyToMsg;
@@ -4646,8 +4714,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 recordQuickReplyShortcut = quick_shortcut;
                 recordQuickReplyShortcutId = quick_shortcut_id;
                 fileBuffer.rewind();
-
                 audioRecorder.startRecording();
+                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
+                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(audioRecorder.getSampleRate());
+                }
             } catch (Exception e) {
                 FileLog.e(e);
                 recordingAudio = null;
@@ -4787,6 +4857,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                         if (send == 1) {
                             SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(audioToSend, null, recordingAudioFileToSend.getAbsolutePath(), recordDialogId, recordReplyingMsg, recordReplyingTopMsg, null, null, null, null, notify, scheduleDate, once ? 0x7FFFFFFF : 0, null, null, false);
                             params.monoForumPeer = recordMonoForumPeerId;
+                            params.suggestionParams = recordMonoForumSuggestionParams;
                             params.replyToStoryItem = recordReplyingStory;
                             params.quick_reply_shortcut = recordQuickReplyShortcut;
                             params.quick_reply_shortcut_id = recordQuickReplyShortcutId;
@@ -4831,6 +4902,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         if (recordStartRunnable != null) {
             recordQueue.cancelRunnable(recordStartRunnable);
             recordStartRunnable = null;
+        }
+        if (voiceChanger != null) {
+            voiceChanger.stop();
+            voiceChanger = null;
         }
         recordQueue.postRunnable(() -> {
             if (sendAfterDone == 3) {
@@ -6472,6 +6547,9 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
 
         final ArrayList<MessageObject> currentPlayList = SharedConfig.shuffleMusic ? shuffledPlaylist : playlist;
         if (currentPlayList == null) {
+            return false;
+        }
+        if (currentPlaylistNum < 0 || currentPlaylistNum >= currentPlayList.size()) {
             return false;
         }
 

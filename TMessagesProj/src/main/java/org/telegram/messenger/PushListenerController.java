@@ -328,10 +328,12 @@ public class PushListenerController {
                             } else {
                                 args = null;
                             }
-                            if ((System.currentTimeMillis() - time) < MessagesController.getInstance(account).callRingTimeout) {
-                                VoIPGroupNotification.request(ApplicationLoader.applicationContext, account, dialogId, args != null && args.length > 2 ? args[2] : null, call_id, msg_id, "CONF_VIDEOCALL_REQUEST".equals(loc_key));
-                            } else {
-                                VoIPGroupNotification.hide(ApplicationLoader.applicationContext, account, msg_id);
+                            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideChat(dialogId, account)) {
+                                if ((System.currentTimeMillis() - time) < MessagesController.getInstance(account).callRingTimeout) {
+                                    VoIPGroupNotification.request(ApplicationLoader.applicationContext, account, dialogId, args != null && args.length > 2 ? args[2] : null, call_id, msg_id, "CONF_VIDEOCALL_REQUEST".equals(loc_key));
+                                } else {
+                                    VoIPGroupNotification.hide(ApplicationLoader.applicationContext, account, msg_id);
+                                }
                             }
                         } else if ("READ_HISTORY".equals(loc_key)) {
                             int max_id = custom.getInt("max_id");
@@ -541,6 +543,18 @@ public class PushListenerController {
                                             message1 = getString(R.string.Gift2UniqueUpgradeNotification);
                                             break;
                                         }
+                                        case "MESSAGE_STARGIFT_PREPAID_UPGRADE": {
+                                            userName = args[0];
+                                            messageText = LocaleController.formatPluralStringComma("NotificationMessageUniqueStarGiftPrepaidUpgrade", Integer.parseInt(args[1]), args[0]);
+                                            message1 = getString(R.string.Gift2UniquePrepaidUpgradeNotification);
+                                            break;
+                                        }
+                                        case "MESSAGE_STARGIFT_UNPACK_UPGRADE": {
+                                            userName = args[0];
+                                            messageText = LocaleController.formatString(R.string.NotificationMessageUniqueStarGiftUnpackUpgrade, args[0]);
+                                            message1 = getString(R.string.Gift2UniqueUnpackUpgradeNotification);
+                                            break;
+                                        }
                                         case "MESSAGE_PAID_MEDIA": {
                                             int stars = Integer.parseInt(args[1]);
                                             messageText = LocaleController.formatPluralString("NotificationMessagePaidMedia", stars, args[0]);
@@ -650,6 +664,11 @@ public class PushListenerController {
                                             message1 = getString(R.string.Poll);
                                             break;
                                         }
+                                        case "MESSAGE_TODO": {
+                                            messageText = LocaleController.formatString(R.string.NotificationMessageTodo2, args[0], args[1]);
+                                            message1 = getString(R.string.Todo);
+                                            break;
+                                        }
                                         case "MESSAGE_GEO": {
                                             messageText = LocaleController.formatString("NotificationMessageMap", R.string.NotificationMessageMap, args[0]);
                                             message1 = getString(R.string.AttachLocation);
@@ -724,8 +743,12 @@ public class PushListenerController {
                                             localMessage = true;
                                             break;
                                         }
+                                        case "MESSAGE_SUGGEST_BIRTHDAY": {
+                                            messageText = LocaleController.formatString(R.string.NotificationMessageSuggestBirthday, args[0]);
+                                            break;
+                                        }
                                         case "MESSAGES": {
-                                            messageText = LocaleController.formatString("NotificationMessageAlbum", R.string.NotificationMessageAlbum, args[0]);
+                                            messageText = LocaleController.formatString(R.string.NotificationMessageAlbum, args[0]);
                                             localMessage = true;
                                             break;
                                         }
@@ -799,8 +822,21 @@ public class PushListenerController {
                                             break;
                                         }
                                         case "CHANNEL_MESSAGE_POLL": {
-                                            messageText = LocaleController.formatString("ChannelMessagePoll2", R.string.ChannelMessagePoll2, args[0], args[1]);
+                                            messageText = LocaleController.formatString(R.string.ChannelMessagePoll2, args[0], args[1]);
                                             message1 = getString(R.string.Poll);
+                                            break;
+                                        }
+                                        case "CHANNEL_MESSAGE_TODO": {
+                                            messageText = LocaleController.formatString(R.string.ChannelMessageTodo2, args[0], args[1]);
+                                            message1 = getString(R.string.Todo);
+                                            break;
+                                        }
+                                        case "CHANNEL_MESSAGE_TODO_DONE": {
+                                            messageText = LocaleController.formatString(R.string.ChannelMessageTodoDone2, args[0], args[2]);
+                                            break;
+                                        }
+                                        case "CHANNEL_MESSAGE_TODO_APPEND": {
+                                            messageText = LocaleController.formatString(R.string.ChannelMessageTodoAppend2, args[0], args[2]);
                                             break;
                                         }
                                         case "CHANNEL_MESSAGE_GEO": {
@@ -928,8 +964,21 @@ public class PushListenerController {
                                             break;
                                         }
                                         case "CHAT_MESSAGE_POLL": {
-                                            messageText = LocaleController.formatString("NotificationMessageGroupPoll2", R.string.NotificationMessageGroupPoll2, args[0], args[1], args[2]);
+                                            messageText = LocaleController.formatString(R.string.NotificationMessageGroupPoll2, args[0], args[1], args[2]);
                                             message1 = getString(R.string.Poll);
+                                            break;
+                                        }
+                                        case "CHAT_MESSAGE_TODO": {
+                                            messageText = LocaleController.formatString(R.string.NotificationMessageGroupTodo2, args[0], args[1], args[2]);
+                                            message1 = getString(R.string.Todo);
+                                            break;
+                                        }
+                                        case "CHAT_MESSAGE_TODO_DONE": {
+                                            messageText = LocaleController.formatString(R.string.NotificationMessageGroupTodoDone2, args[0], args[1], args[2]);
+                                            break;
+                                        }
+                                        case "CHAT_MESSAGE_TODO_APPEND": {
+                                            messageText = LocaleController.formatString(R.string.NotificationMessageGroupTodoAppend2, args[0], args[1], args[2]);
                                             break;
                                         }
                                         case "CHAT_MESSAGE_GEO": {
@@ -1196,6 +1245,18 @@ public class PushListenerController {
                                             }
                                             break;
                                         }
+                                        case "PINNED_TODO": {
+                                            if (dialogId > 0) {
+                                                messageText = LocaleController.formatString(R.string.NotificationActionPinnedTodoUser, args[0], args[1]);
+                                            } else {
+                                                if (isGroup) {
+                                                    messageText = LocaleController.formatString(R.string.NotificationActionPinnedTodo2, args[0], args[2], args[1]);
+                                                } else {
+                                                    messageText = LocaleController.formatString(R.string.NotificationActionPinnedTodoChannel2, args[0], args[1]);
+                                                }
+                                            }
+                                            break;
+                                        }
                                         case "PINNED_GEO": {
                                             if (dialogId > 0) {
                                                 messageText = LocaleController.formatString(R.string.NotificationActionPinnedGeoUser, args[0], args[1]);
@@ -1456,6 +1517,9 @@ public class PushListenerController {
             case "REACT_POLL": {
                 return LocaleController.formatString(R.string.PushReactPoll, args);
             }
+            case "REACT_TODO": {
+                return LocaleController.formatString(R.string.PushReactTodo, args);
+            }
             case "REACT_QUIZ": {
                 return LocaleController.formatString(R.string.PushReactQuiz, args);
             }
@@ -1509,6 +1573,9 @@ public class PushListenerController {
             }
             case "CHAT_REACT_POLL": {
                 return LocaleController.formatString(R.string.PushChatReactPoll, args);
+            }
+            case "CHAT_REACT_TODO": {
+                return LocaleController.formatString(R.string.PushChatReactTodo, args);
             }
             case "CHAT_REACT_QUIZ": {
                 return LocaleController.formatString(R.string.PushChatReactQuiz, args);

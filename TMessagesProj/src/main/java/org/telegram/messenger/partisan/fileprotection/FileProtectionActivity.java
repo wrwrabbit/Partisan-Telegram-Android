@@ -182,7 +182,9 @@ public class FileProtectionActivity extends BaseFragment {
 
     private void processDone() {
         if (!fileProtectedAccountsChanged()) {
-            SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+            if (fileProtectionWorksWhenFakePasscodeActivatedChanged()) {
+                SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+            }
             finishFragment();
             return;
         }

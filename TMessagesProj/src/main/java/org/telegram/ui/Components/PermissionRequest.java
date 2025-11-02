@@ -21,7 +21,7 @@ import org.telegram.ui.LaunchActivity;
 
 public class PermissionRequest {
 
-    private static int lastId = 1500;
+    public static int lastId = 1500;
 
     public static void ensurePermission(int iconResId, int stringResId, String permission) {
         ensurePermission(iconResId, stringResId, permission, null);

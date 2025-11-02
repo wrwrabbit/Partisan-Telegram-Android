@@ -87,7 +87,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.messenger.camera.CameraController;
 import org.telegram.messenger.camera.CameraView;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -597,6 +596,11 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         @Override
         public boolean isEditingMessage() {
             return parentAlert != null && parentAlert.editingMessageObject != null;
+        }
+
+        @Override
+        public boolean isEditingMessageResend() {
+            return parentAlert != null && parentAlert.editingMessageObject != null && parentAlert.editingMessageObject.needResendWhenEdit();
         }
     };
 
@@ -3804,6 +3808,10 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
 
     @Override
     public boolean canScheduleMessages() {
+        if (!super.canScheduleMessages()) {
+            return false;
+        }
+
         boolean hasTtl = false;
         for (HashMap.Entry<Object, Object> entry : selectedPhotos.entrySet()) {
             Object object = entry.getValue();
