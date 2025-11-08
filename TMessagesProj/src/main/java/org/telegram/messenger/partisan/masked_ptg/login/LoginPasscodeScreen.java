@@ -77,7 +77,7 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
         loginTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         loginTextView.setTextColor(0xff000000);
         loginTextView.setEllipsize(TextUtils.TruncateAt.START);
-        loginTextView.setHint("Enter username");
+        loginTextView.setHint("Username");
         loginTextView.setSingleLine();
         loginTextView.setWidth(300);
         loginTextView.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
@@ -102,7 +102,7 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
         passwordTextView = new EditText(context);
         passwordTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         passwordTextView.setTextColor(0xff000000);
-        passwordTextView.setHint("Enter password");
+        passwordTextView.setHint("Password");
         passwordTextView.setEllipsize(TextUtils.TruncateAt.START);
         passwordTextView.setSingleLine();
         passwordTextView.setWidth(300);
@@ -191,10 +191,18 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
             passwordTextView.setVisibility(View.VISIBLE);
             loginButton.setVisibility(View.VISIBLE);
         }
-        inputTextView.setText("Login using username and password");
+        inputTextView.setText(R.string.AppName);
         this.tutorialType = tutorialType;
         if (tutorialType == TutorialType.FULL) {
             createInstructionDialog().show();
+        }
+    }
+
+    @Override
+    public void onDetachedFromWindow() {
+        Activity a = AndroidUtilities.findActivity(context);
+        if (a != null) {
+            a.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         }
     }
 
