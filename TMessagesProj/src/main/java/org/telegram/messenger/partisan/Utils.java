@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Environment;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -486,10 +487,14 @@ public class Utils {
 
     public static void clearDownloads() {
         Utilities.globalQueue.postRunnable(() -> {
-            deleteDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Telegram"));
-            deleteDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "Telegram"));
-            deleteDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Telegram"));
-            deleteDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Telegram"));
+            // If the Android version is Q or higher, the app will delete its files in the directories.
+            // If the Android version is older than Q, we cannot determine which files were create by the app, so we will not delete them.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                deleteDirectory(/*new File(*/Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)/*, "Telegram")*/);
+                deleteDirectory(/*new File(*/Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)/*, "Telegram")*/);
+                deleteDirectory(/*new File(*/Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)/*, "Telegram")*/);
+                deleteDirectory(/*new File(*/Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)/*, "Telegram")*/);
+            }
         });
     }
 
