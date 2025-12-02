@@ -147,6 +147,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanVersion;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils;
+import org.telegram.messenger.partisan.masked_ptg.OriginalVersion;
 import org.telegram.messenger.utils.CustomHtml;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -6685,9 +6686,11 @@ public class AndroidUtilities {
     public static String getBuildVersionInfo() {
         try {
             PackageInfo pInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
-            int code = pInfo.versionCode / 10;
+            int versionCode = OriginalVersion.ORIGINAL_BUILD_VERSION != null ? OriginalVersion.ORIGINAL_BUILD_VERSION : pInfo.versionCode;
+            String versionName = OriginalVersion.ORIGINAL_VERSION_STRING != null ? OriginalVersion.ORIGINAL_VERSION_STRING : pInfo.versionName;
+            int code = versionCode / 10;
             String abi = "";
-            switch (pInfo.versionCode % 10) {
+            switch (versionCode % 10) {
                 case 1:
                 case 2:
                     abi = "store bundled " + Build.CPU_ABI + " " + Build.CPU_ABI2;
@@ -6701,7 +6704,7 @@ public class AndroidUtilities {
                     }
                     break;
             }
-            String versionString = formatString("TelegramVersion", R.string.TelegramVersion, String.format(Locale.US, "v%s (%d) %s", pInfo.versionName, code, abi));
+            String versionString = formatString("TelegramVersion", R.string.TelegramVersion, String.format(Locale.US, "v%s (%d) %s", versionName, code, abi));
             if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showVersion) {
                 versionString += "\nPTelegram version " + PartisanVersion.PARTISAN_VERSION_STRING + " ("  + PartisanVersion.PARTISAN_BUILD_VERSION + ")";
             }
