@@ -4,7 +4,7 @@ import android.content.SharedPreferences;
 
 public class BooleanSetting extends Setting<Boolean> {
 
-    BooleanSetting(String key, Boolean defaultValue) {
+    public BooleanSetting(String key, Boolean defaultValue) {
         super(key, defaultValue);
     }
 
@@ -16,5 +16,11 @@ public class BooleanSetting extends Setting<Boolean> {
     @Override
     public void load() {
         this.value = getLocalPreferences().getBoolean(key, defaultValue);
+    }
+
+    public boolean toggle() {
+        boolean newValue = !getOrDefault();
+        set(newValue);
+        return newValue;
     }
 }

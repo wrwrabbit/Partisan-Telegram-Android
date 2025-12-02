@@ -155,6 +155,9 @@ public class QuickShareSelectorOverlayLayout extends View {
                 if (peer.peer.user_id == 0) {
                     continue;
                 }
+                if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHidePeer(peer.peer, currentAccount)) {
+                    continue;
+                }
 
                 long did = peer.peer.user_id;
                 TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(peer.peer.user_id);
@@ -176,6 +179,9 @@ public class QuickShareSelectorOverlayLayout extends View {
                 continue;
             }
             if (dialog.id == selfUserId) {
+                continue;
+            }
+            if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideChat(dialog.id, currentAccount)) {
                 continue;
             }
             if (!DialogObject.isEncryptedDialog(dialog.id)) {

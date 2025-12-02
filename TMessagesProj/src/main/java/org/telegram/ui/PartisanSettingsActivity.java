@@ -27,15 +27,19 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.NewFeatureTextSettingsCell;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionActivity;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionSwitcher;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeSettingsFragment;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -102,6 +106,8 @@ public class PartisanSettingsActivity extends BaseFragment {
     private int confirmDangerousActionDetailRow;
     private int fileProtectionRow;
     private int fileProtectionDetailRow;
+    private int voiceChangeRow;
+    private int voiceChangeDetailRow;
     private int transferDataToOtherPtgRow;
     private int transferDataToOtherPtgDetailRow;
 
@@ -349,6 +355,8 @@ public class PartisanSettingsActivity extends BaseFragment {
                     AlertDialog dialog = builder.create();
                     showDialog(dialog);
                 }
+            } else if (position == voiceChangeRow) {
+                presentFragment(new VoiceChangeSettingsFragment());
             } else if (position == transferDataToOtherPtgRow) {
                 presentFragment(new AppMigrationActivity());
             }
@@ -368,6 +376,25 @@ public class PartisanSettingsActivity extends BaseFragment {
     private void updateRows() {
         rowCount = 0;
 
+        if (AppMigrator.isNewerPtgInstalled(ApplicationLoader.applicationContext, false)
+                || AppMigratorPreferences.isMigrationToMaskedPtg()) {
+            transferDataToOtherPtgRow = rowCount++;
+            transferDataToOtherPtgDetailRow = rowCount++;
+        } else {
+            transferDataToOtherPtgRow = -1;
+            transferDataToOtherPtgDetailRow = -1;
+        }
+        voiceChangeRow = rowCount++;
+        voiceChangeDetailRow = rowCount++;
+        fileProtectionRow = rowCount++;
+        fileProtectionDetailRow = rowCount++;
+        onScreenLockActionRow = rowCount++;
+        onScreenLockActionDetailRow = rowCount++;
+        confirmDangerousActionRow = rowCount++;
+        confirmDangerousActionDetailRow = rowCount++;
+        isDeleteMessagesForAllByDefaultRow = rowCount++;
+        isDeleteMessagesForAllByDefaultDetailRow = rowCount++;
+
         versionRow = rowCount++;
         versionDetailRow = rowCount++;
         idRow = rowCount++;
@@ -386,14 +413,10 @@ public class PartisanSettingsActivity extends BaseFragment {
         reactionsDetailRow = rowCount++;
         foreignAgentsRow = rowCount++;
         foreignAgentsDetailRow = rowCount++;
-        onScreenLockActionRow = rowCount++;
-        onScreenLockActionDetailRow = rowCount++;
         isClearAllDraftsOnScreenLockRow = rowCount++;
         isClearAllDraftsOnScreenLockDetailRow = rowCount++;
         showCallButtonRow = rowCount++;
         showCallButtonDetailRow = rowCount++;
-        isDeleteMessagesForAllByDefaultRow = rowCount++;
-        isDeleteMessagesForAllByDefaultDetailRow = rowCount++;
         if (ApplicationLoader.isRealBuildStandaloneBuild()) {
             marketIconsRow = rowCount++;
             marketIconsDetailRow = rowCount++;
@@ -403,33 +426,6 @@ public class PartisanSettingsActivity extends BaseFragment {
         }
         verifiedRow = rowCount++;
         verifiedDetailRow = rowCount++;
-        confirmDangerousActionRow = rowCount++;
-        confirmDangerousActionDetailRow = rowCount++;
-        fileProtectionRow = rowCount++;
-        fileProtectionDetailRow = rowCount++;
-        if (AppMigrator.isNewerPtgInstalled(ApplicationLoader.applicationContext, false)
-                || AppMigratorPreferences.isMigrationToMaskedPtg()) {
-            transferDataToOtherPtgRow = rowCount++;
-            transferDataToOtherPtgDetailRow = rowCount++;
-        } else {
-            transferDataToOtherPtgRow = -1;
-            transferDataToOtherPtgDetailRow = -1;
-        }
-    }
-
-    @Override
-    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        if (listView != null) {
-            ViewTreeObserver obs = listView.getViewTreeObserver();
-            obs.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    listView.getViewTreeObserver().removeOnPreDrawListener(this);
-                    return true;
-                }
-            });
-        }
     }
 
     private static boolean fileProtectionEnabledForAnyAccount() {
@@ -468,7 +464,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     && position != onScreenLockActionDetailRow && position != isClearAllDraftsOnScreenLockDetailRow
                     && position != showCallButtonDetailRow && position != isDeleteMessagesForAllByDefaultDetailRow
                     && position != marketIconsDetailRow && position!= confirmDangerousActionDetailRow
-                    && position != fileProtectionDetailRow
+                    && position != fileProtectionDetailRow && position != voiceChangeDetailRow
                     && position != transferDataToOtherPtgDetailRow;
         }
 
@@ -495,6 +491,12 @@ public class PartisanSettingsActivity extends BaseFragment {
                 case 3:
                     view = new NotificationsCheckCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case 4:
+                    NewFeatureTextSettingsCell newTextCell = new NewFeatureTextSettingsCell(mContext);
+                    newTextCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    newTextCell.setCanDisable(true);
+                    view = newTextCell;
                     break;
                 case 1:
                 default:
@@ -607,6 +609,9 @@ public class PartisanSettingsActivity extends BaseFragment {
                     } else if (position == fileProtectionDetailRow) {
                         cell.setText(LocaleController.getString(R.string.FileProtectionInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                    } else if (position == voiceChangeDetailRow) {
+                        cell.setText(LocaleController.getString(R.string.VoiceChangeDescription));
+                        cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == transferDataToOtherPtgDetailRow) {
                         cell.setText(LocaleController.getString(R.string.TransferDataToOtherPtgInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
@@ -659,6 +664,15 @@ public class PartisanSettingsActivity extends BaseFragment {
                     }
                     break;
                 }
+                case 4: {
+                    NewFeatureTextSettingsCell textCell = (NewFeatureTextSettingsCell) holder.itemView;
+                    if (position == voiceChangeRow) {
+                        String value = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false)
+                                ? LocaleController.getString(R.string.PasswordOn)
+                                : LocaleController.getString(R.string.PasswordOff);
+                        textCell.setTextAndValue(LocaleController.getString(R.string.VoiceChange), value, true);
+                    }
+                }
             }
         }
 
@@ -687,12 +701,14 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == showCallButtonDetailRow || position == isDeleteMessagesForAllByDefaultDetailRow
                     || position == marketIconsDetailRow || position == verifiedDetailRow
                     || position == confirmDangerousActionDetailRow || position == fileProtectionDetailRow
-                    || position == transferDataToOtherPtgDetailRow) {
+                    || position == voiceChangeDetailRow || position == transferDataToOtherPtgDetailRow) {
                 return 1;
-            } else if (position == onScreenLockActionRow || position == transferDataToOtherPtgRow) {
+            } else if (position == onScreenLockActionRow|| position == transferDataToOtherPtgRow) {
                 return 2;
             } else if (position == verifiedRow || position == fileProtectionRow) {
                 return 3;
+            } else if (position == voiceChangeRow) {
+                return 4;
             }
             return 0;
         }

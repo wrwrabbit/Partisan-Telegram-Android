@@ -10,15 +10,15 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public abstract class Setting<T> {
-    public T value;
+    protected T value;
     protected final String key;
     protected final T defaultValue;
     private Supplier<Boolean> conditionForGet;
 
-    Setting(String key, T defaultValue) {
+    public Setting(String key, T defaultValue) {
         this.key = key;
         this.defaultValue = defaultValue;
-        this.value = defaultValue;
+        this.value = cloneValue(defaultValue);
     }
 
     public Optional<T> get() {
@@ -26,6 +26,14 @@ public abstract class Setting<T> {
             return Optional.empty();
         } else {
             return Optional.of(value);
+        }
+    }
+
+    public T getOrDefault() {
+        if (conditionForGet != null && conditionForGet.get() == false) {
+            return cloneValue(defaultValue);
+        } else {
+            return value;
         }
     }
 
@@ -51,5 +59,9 @@ public abstract class Setting<T> {
 
     protected static SharedPreferences getLocalPreferences() {
         return ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+    }
+
+    protected T cloneValue(T value) {
+        return value;
     }
 }
