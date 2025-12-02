@@ -94,13 +94,13 @@ import java.util.StringTokenizer;
 public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLayout {
 
     public interface DocumentSelectActivityDelegate {
-        void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars);
+        void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, long payStars);
 
-        default void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars, Integer autoDeleteDelay) {
-            didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, effectId, invertMedia, payStars);
+        default void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, long payStars, Integer autoDeleteDelay) {
+            didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia, payStars);
         }
 
-        default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, long payStars, Integer autoDeleteDelay) {
+        default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars, Integer autoDeleteDelay) {
 
         }
 
@@ -447,12 +447,12 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                             }
 
                             @Override
-                            public void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate) {
-                                actionButtonPressed(canceled, notify, scheduleDate, null);
+                            public void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
+                                actionButtonPressed(canceled, notify, scheduleDate, scheduleRepeatPeriod, null);
                             }
 
                             @Override
-                            public void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
+                            public void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, int scheduleRepeatPeriod, Integer autoDeleteDelay) {
                                 if (!canceled) {
                                     sendSelectedPhotos(selectedPhotos, selectedPhotosOrder, notify, scheduleDate, autoDeleteDelay);
                                 }
@@ -763,7 +763,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
-    public boolean sendSelectedItems(boolean notify, int scheduleDate, long effectId, boolean invertMedia, Integer autoDeleteDelay) {
+    public boolean sendSelectedItems(boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, Integer autoDeleteDelay) {
         if (selectedFiles.size() == 0 && selectedMessages.size() == 0 || delegate == null || sendPressed) {
             return false;
         }
@@ -781,7 +781,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
 
         return AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), (!TextUtils.isEmpty(caption) ? 1 : 0) + files.size() + parentAlert.getAdditionalMessagesCount(), payStars -> {
             sendPressed = true;
-            delegate.didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, effectId, invertMedia, payStars, autoDeleteDelay);
+            delegate.didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, 0, effectId, invertMedia, payStars, autoDeleteDelay);
             parentAlert.dismiss(true);
         });
     }
@@ -923,7 +923,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
             }
         }
         AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), media.size() + parentAlert.getAdditionalMessagesCount(), payStars -> {
-            delegate.didSelectPhotos(media, notify, scheduleDate, payStars, autoDeleteDelay);
+            delegate.didSelectPhotos(media, notify, scheduleDate, 0, payStars, autoDeleteDelay);
         });
     }
 

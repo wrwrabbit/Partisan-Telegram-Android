@@ -126,6 +126,9 @@ public class DialogsBotsAdapter extends UniversalAdapter {
             if (!searchMessages.isEmpty() && !showOnlyPopular) {
                 items.add(UItem.asGraySection(getString(R.string.SearchMessages)));
                 for (MessageObject message : searchMessages) {
+                    if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideMessage(currentAccount, org.telegram.messenger.partisan.Utils.getMessageDialogId(message.messageOwner), message.getId())) {
+                        continue;
+                    }
                     items.add(UItem.asSearchMessage(message));
                 }
                 if (hasMore) {

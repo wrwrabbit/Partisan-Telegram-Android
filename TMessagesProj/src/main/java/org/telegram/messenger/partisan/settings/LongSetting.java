@@ -4,7 +4,7 @@ import android.content.SharedPreferences;
 
 public class LongSetting extends Setting<Long> {
 
-    LongSetting(String key, Long defaultValue) {
+    public LongSetting(String key, Long defaultValue) {
         super(key, defaultValue);
     }
 

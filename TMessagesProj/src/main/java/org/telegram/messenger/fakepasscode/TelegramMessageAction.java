@@ -104,7 +104,7 @@ public class TelegramMessageAction extends AccountAction implements Notification
         SendMessagesHelper.allowReloadDialogsByMessage = false;
         activeAction = this;
         getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(text, entry.userId, null, null, null, false,
-                null, null, null, true, 0, null, false));
+                null, null, null, true, 0, 0, null, false));
         SendMessagesHelper.allowReloadDialogsByMessage = true;
         activeAction = null;
         entry.dialogDeleted = false;

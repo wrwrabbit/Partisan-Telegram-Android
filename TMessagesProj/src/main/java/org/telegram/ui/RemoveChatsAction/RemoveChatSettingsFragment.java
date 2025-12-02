@@ -184,7 +184,7 @@ public class RemoveChatSettingsFragment extends BaseFragment {
                     }
                 }
                 updateRows();
-                listAdapter.notifyDataSetChanged();
+                listAdapter.notifyItemRangeChanged(0, rowCount);
             } else if (position == deleteFromCompanionRow) {
                 changed = true;
                 CheckBoxThreeStateCell checkBox = (CheckBoxThreeStateCell) view;
@@ -232,7 +232,7 @@ public class RemoveChatSettingsFragment extends BaseFragment {
                     }
                 }
                 updateRows();
-                listAdapter.notifyDataSetChanged();
+                listAdapter.notifyItemRangeChanged(0, rowCount);
             } else if (position == strictHidingRow) {
                 changed = true;
                 CheckBoxThreeStateCell checkBox = (CheckBoxThreeStateCell) view;
@@ -483,21 +483,6 @@ public class RemoveChatSettingsFragment extends BaseFragment {
         return getState(e -> e.strictHiding, Item::getStrictHidingPermission);
     }
 
-    @Override
-    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        if (listView != null) {
-            ViewTreeObserver obs = listView.getViewTreeObserver();
-            obs.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    listView.getViewTreeObserver().removeOnPreDrawListener(this);
-                    return true;
-                }
-            });
-        }
-    }
-
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
 
         private Context mContext;
@@ -584,6 +569,7 @@ public class RemoveChatSettingsFragment extends BaseFragment {
                         String title = LocaleController.getString(R.string.StrictHiding);
                         checkBoxCell.setText(title, "", getStrictHidingState(), false);
                     }
+                    checkBoxCell.setEnabled(isEnabled(holder));
                     break;
                 }
                 case 2: {

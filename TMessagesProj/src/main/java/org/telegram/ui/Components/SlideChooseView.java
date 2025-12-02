@@ -8,7 +8,6 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextPaint;
-import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -229,7 +228,9 @@ public class SlideChooseView extends View {
             float ut = MathUtils.clamp(selectedIndexAnimated - a + 1f, 0, 1);
             int color = ColorUtils.blendARGB(getThemedColor(Theme.key_switchTrack), Theme.multAlpha(getThemedColor(Theme.key_switchTrackChecked), minIndex != Integer.MIN_VALUE && a <= minIndex ? .50f : 1.0f), ut);
             paint.setColor(color);
+            paint.setAlpha(getComponentsAlpha());
             linePaint.setColor(color);
+            linePaint.setAlpha(getComponentsAlpha());
             canvas.drawCircle(cx, cy, AndroidUtilities.lerp(circleSize / 2, AndroidUtilities.dp(6), t), paint);
             if (a != 0) {
                 int x = cx - circleSize / 2 - gapSize - lineSize;
@@ -255,6 +256,7 @@ public class SlideChooseView extends View {
             int size = optionsSizes[a];
             String text = optionsStr[a];
             textPaint.setColor(ColorUtils.blendARGB(getThemedColor(Theme.key_windowBackgroundWhiteGrayText), getThemedColor(Theme.key_windowBackgroundWhiteBlueText), t));
+            textPaint.setAlpha(getComponentsAlpha());
 
             if (leftDrawables != null) {
                 canvas.save();
@@ -289,6 +291,7 @@ public class SlideChooseView extends View {
         paint.setColor(ColorUtils.setAlphaComponent(getThemedColor(Theme.key_switchTrackChecked), 80));
         canvas.drawCircle(cx, cy, AndroidUtilities.dp(12 * movingAnimated), paint);
         paint.setColor(getThemedColor(Theme.key_switchTrackChecked));
+        paint.setAlpha(getComponentsAlpha());
         canvas.drawCircle(cx, cy, AndroidUtilities.dp(6), paint);
     }
 
@@ -318,5 +321,9 @@ public class SlideChooseView extends View {
         default void onTouchEnd() {
 
         }
+    }
+
+    protected int getComponentsAlpha() {
+        return 255;
     }
 }

@@ -328,4 +328,27 @@
     <string name="EncryptedGroupAvatarChangeForbidden">Нельга змяніць аватар да ініцыялізацыі групы.</string>
     <string name="CantAddNewMemberToEncryptedGroupMessage">Неабходна дачакацца пацверджання ад папярэдніх чальцоў перад даданнем новага.</string>
     <string name="SlowSecretGroupCreationWarning">Сакрэтная група на 7 і больш удзельнікаў будзе стварацца даўжэй, чым звычайна.</string>
+    <string name="VoiceChange">Змена голасу</string>
+    <string name="VoiceChangeDescription">Змена голасу дазваляе пазбегнуць дэананімізацыі пры адпраўцы галасавых паведамленняў, кружочкаў і пры званках.</string>
+    <string name="VoiceChangeLevel">Узровень змены голасу</string>
+    <string name="AggressiveVoiceChange">Агрэсіўная змена голасу</string>
+    <string name="AggressiveVoiceChangeDescription">Голас будзе моцна змяняцца для зніжэння верагоднасці дэананімізацыі і можа быць менш натуральным.</string>
+    <string name="ModerateVoiceChange">Умераная змена голасу</string>
+    <string name="ModerateVoiceChangeDescription">Голас будзе змяняцца менш моцна і будзе заставацца больш натуральным. Рызыка дэананімізацыі будзе нізкай, але вышэйшай, чым пры агрэсіўнай змене.</string>
+    <string name="GenerateNewVoiceChangeParameters">Згенераваць новыя параметры</string>
+    <string name="GenerateNewVoiceChangeParametersDescription">Згенераваць новыя параметры голасу, змяніўшы тым самым яго гучанне.</string>
+    <string name="CheckVoiceChanging">Праверыць змену голасу</string>
+    <string name="RecordVoiceChangeExample">Запісаць</string>
+    <string name="PlayChangedVoice">Прайграць зменены голас</string>
+    <string name="PlayNormalVoice">Прайграць звычайны голас</string>
+    <string name="CheckVoiceChangingDescription">Праверце змену голасу перад выкарыстаннем. Калі Вам не падабаецца гучанне, згенеруйце новыя параметры.</string>
+    <string name="ShowVoiceChangedNotification">Апавяшчэнне аб змене голасу</string>
+    <string name="ShowVoiceChangedNotificationDescription">Паказваць надпіс пра змяненне голасу падчас запісу галасавых і відэапаведамленняў і званкоў.</string>
+    <string name="VoiceChanged">Голас зменены</string>
+    <string name="EnableForIndividualAccounts">Уключыць для асобных акаўнтаў</string>
+    <string name="EnableForVoiceMessages">Уключыць для галасавых паведамленняў</string>
+    <string name="EnableForVideoMessages">Уключыць для відэапаведамленняў</string>
+    <string name="EnableForVideoCalls">Уключыць для званкоў і стрымаў</string>
+    <string name="VoiceChangeQualityDescription">Змена голасу высокай якасці зробіць гаворку больш разборлівай, але павялічыць разрад батарэі і можа не працаваць правільна на старых тэлефонах. Змяненне голасу нізкай якасці працуе нават на старых і слабых прыладах і зніжае разрад батарэі, але зробіць голас менш натуральным.</string>
+    <string name="ChangesWillBeAppliedToTheNextCall">Голас у бягучым званку застанецца без змен. Змены прымяняюцца толькі ў наступным званку.</string>
 </resources>

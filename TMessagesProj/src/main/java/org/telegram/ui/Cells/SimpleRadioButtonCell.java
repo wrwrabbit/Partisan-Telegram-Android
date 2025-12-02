@@ -21,6 +21,7 @@ public class SimpleRadioButtonCell extends FrameLayout {
     private TextView textView;
     private RadioButton radioButton;
     private boolean needDivider;
+    private boolean attached;
 
     public SimpleRadioButtonCell(Context context) {
         this(context, false);
@@ -72,7 +73,7 @@ public class SimpleRadioButtonCell extends FrameLayout {
 
     public void setTextAndValue(String text, boolean divider, boolean checked) {
         textView.setText(text);
-        radioButton.setChecked(checked, false);
+        radioButton.setChecked(checked, true);
         needDivider = divider;
     }
 
@@ -83,8 +84,26 @@ public class SimpleRadioButtonCell extends FrameLayout {
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
-        textView.setAlpha(enabled ? 1.0f : 0.5f);
-        radioButton.setAlpha(enabled ? 1.0f : 0.5f);
+        float alpha = enabled ? 1.0f : 0.5f;
+        if (attached) {
+            textView.animate().alpha(alpha).start();
+            radioButton.animate().alpha(alpha).start();
+        } else {
+            textView.setAlpha(alpha);
+            radioButton.setAlpha(alpha);
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        attached = true;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        attached = false;
     }
 
     @Override

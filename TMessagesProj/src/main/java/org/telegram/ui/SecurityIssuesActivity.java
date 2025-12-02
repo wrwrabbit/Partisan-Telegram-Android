@@ -151,21 +151,6 @@ public class SecurityIssuesActivity extends BaseFragment implements Notification
         }
     }
 
-    @Override
-    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        if (listView != null) {
-            ViewTreeObserver obs = listView.getViewTreeObserver();
-            obs.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    listView.getViewTreeObserver().removeOnPreDrawListener(this);
-                    return true;
-                }
-            });
-        }
-    }
-
     private void showPrivacyErrorAlert() {
         if (getContext() == null) {
             return;

@@ -12,6 +12,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupProtocol;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.ConnectionsManager;
+import org.telegram.ui.Stories.StoriesController;
 
 public interface AccountControllersProvider {
     int getAccountNum();
@@ -62,5 +63,9 @@ public interface AccountControllersProvider {
 
     default EncryptedGroupUtils getEncryptedGroupUtils() {
         return new EncryptedGroupUtils(getAccountNum());
+    }
+
+    default StoriesController getStoriesController() {
+        return getMessagesController().storiesController;
     }
 }

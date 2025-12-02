@@ -260,6 +260,7 @@ class VoiceChangePipedInputStream extends InputStream {
      *           <a href="#BROKEN"> <code>broken</code></a>, closed,
      *           or if an I/O error occurs.
      */
+    @Override
     public synchronized int read()  throws IOException {
         if (!connected) {
             throw new IOException("Pipe not connected");
@@ -324,6 +325,7 @@ class VoiceChangePipedInputStream extends InputStream {
      *           {@link #connect(VoiceChangePipedOutputStream) unconnected},
      *           closed, or if an I/O error occurs.
      */
+    @Override
     public synchronized int read(byte b[], int off, int len)  throws IOException {
         if (b == null) {
             throw new NullPointerException();
@@ -383,6 +385,7 @@ class VoiceChangePipedInputStream extends InputStream {
      * @exception  IOException  if an I/O error occurs.
      * @since   1.0.2
      */
+    @Override
     public synchronized int available() throws IOException {
         if(in < 0)
             return 0;
@@ -400,6 +403,7 @@ class VoiceChangePipedInputStream extends InputStream {
      *
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void close()  throws IOException {
         closedByReader = true;
         synchronized (this) {

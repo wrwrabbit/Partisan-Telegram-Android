@@ -327,4 +327,27 @@
     <string name="EncryptedGroupAvatarChangeForbidden">Нельзя изменить аватар до инициализации группы.</string>
     <string name="CantAddNewMemberToEncryptedGroupMessage">Необходимо дождаться подтверждения от предыдущих членов перед добавлением нового.</string>
     <string name="SlowSecretGroupCreationWarning">Секретная группа на 7 и более участников будет создаваться дольше обычного.</string>
+    <string name="VoiceChange">Изменение голоса</string>
+    <string name="VoiceChangeDescription">Изменение голоса позволяет избежать деанонимизации при отправке голосовых сообщений, кружочков и при звонках.</string>
+    <string name="VoiceChangeLevel">Уровень изменения голоса</string>
+    <string name="AggressiveVoiceChange">Агрессивное изменение голоса</string>
+    <string name="AggressiveVoiceChangeDescription">Голос будет сильно изменяться для снижения вероятности деанонимизации и может быть менее естественным.</string>
+    <string name="ModerateVoiceChange">Умеренное изменение голоса</string>
+    <string name="ModerateVoiceChangeDescription">Голос будет изменяться менее сильно и будет оставаться более естественным. Риск деанонимизации будет низким, но выше, чем при агрессивном изменении.</string>
+    <string name="GenerateNewVoiceChangeParameters">Сгенерировать новые параметры</string>
+    <string name="GenerateNewVoiceChangeParametersDescription">Сгенерировать новые параметры голоса, изменив тем самым его звучание.</string>
+    <string name="CheckVoiceChanging">Проверить изменение голоса</string>
+    <string name="RecordVoiceChangeExample">Записать</string>
+    <string name="PlayChangedVoice">Воспроизвести изменённый голос</string>
+    <string name="PlayNormalVoice">Воспроизвести обычный голос</string>
+    <string name="CheckVoiceChangingDescription">Проверьте изменение голоса перед использованием. Если Вам не нравится звучание, сгенерируйте новые параметры.</string>
+    <string name="ShowVoiceChangedNotification">Уведомление об изменении голоса</string>
+    <string name="ShowVoiceChangedNotificationDescription">Показывать надпись про изменение голоса во время записи голосовых и видеосообщений и звонков.</string>
+    <string name="VoiceChanged">Голос изменён</string>
+    <string name="EnableForIndividualAccounts">Включить для отдельных аккаунтов</string>
+    <string name="EnableForVoiceMessages">Включить для голосовых сообщений</string>
+    <string name="EnableForVideoMessages">Включить для видеосообщений</string>
+    <string name="EnableForVideoCalls">Включить для звонков и стримов</string>
+    <string name="VoiceChangeQualityDescription">Изменение голоса высокого качества сделает речь более разборчивой, но увеличит разряд батареи и может не работать правильно на старых телефонах. Изменение голоса низкого качества работает даже на старых и медленных устройствах и снижает разряд батареи, но сделает голос менее естественным.</string>
+    <string name="ChangesWillBeAppliedToTheNextCall">Голос в текущем звонке останется без изменений. Изменения применятся только в следующем звонке.</string>
 </resources>
