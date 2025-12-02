@@ -62,6 +62,12 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 ),
                 new SimpleEditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
                 new ButtonItem(this, "Reset Update", view -> resetUpdate()),
+                new ButtonItem(this, "Reset Masked Update Tag", view -> {
+                    SharedConfig.pendingPtgAppUpdate.botRequestTag = null;
+                    SharedConfig.saveConfig();
+                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived);
+                    Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
+                }),
                 new DelimiterItem(this),
 
 
@@ -134,6 +140,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                         this::setSavedChannels,
                         ()  -> Integer.toString(getUserConfig().savedChannels.size())
                 ).setMultiline(),
+                new ToggleItem(this, "Show permission disabled dialog", TesterSettings.showPermissionDisabledDialog),
                 new ToggleItem(this, "Force Allow Screenshots", TesterSettings.forceAllowScreenshots)
                         .addCondition(() -> SharedConfig.activatedTesterSettingType == 2),
                 new ToggleItem(this, "Save Logcat After Restart", TesterSettings.saveLogcatAfterRestart),
