@@ -180,6 +180,8 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
             String fileName = FileLoader.getAttachFileName(SharedConfig.pendingPtgAppUpdate.document);
             File path = FileLoader.getInstance(LaunchActivity.getUpdateAccountNum()).getPathToAttach(SharedConfig.pendingPtgAppUpdate.document, true);
             String botRequestTag = SharedConfig.pendingPtgAppUpdate.botRequestTag;
+            PartisanLog.d("UpdateChecker: pendingPtgAppUpdate == " + SharedConfig.pendingPtgAppUpdate.hashCode() +
+                    ", botRequestTag == " + (SharedConfig.pendingPtgAppUpdate.botRequestTag != null ? SharedConfig.pendingPtgAppUpdate.botRequestTag : "NULL"));
             boolean showSize;
             if (path.exists() && botRequestTag != null) {
                 updateLayoutIcon.setIcon(MediaActionDrawable.ICON_UPDATE, true, animated);

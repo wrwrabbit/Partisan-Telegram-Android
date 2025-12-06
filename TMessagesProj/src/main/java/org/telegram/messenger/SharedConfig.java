@@ -886,6 +886,7 @@ public class SharedConfig {
                 String update = preferences.getString("ptgAppUpdate", null);
                 if (update != null) {
                     pendingPtgAppUpdate = fromJson(update, UpdateData.class);
+                    PartisanLog.d("UpdateChecker: pendingPtgAppUpdate == " + SharedConfig.pendingPtgAppUpdate.hashCode());
                 } else {
                     PartisanLog.d("pendingPtgAppUpdate: reset 1");
                 }
@@ -1274,6 +1275,7 @@ public class SharedConfig {
             return false;
         }
         pendingPtgAppUpdate = data;
+        PartisanLog.d("UpdateChecker: pendingPtgAppUpdate == " + SharedConfig.pendingPtgAppUpdate.hashCode());
         saveConfig();
         return true;
     }

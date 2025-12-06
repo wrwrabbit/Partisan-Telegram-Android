@@ -57,6 +57,7 @@ public class UpdateDownloader implements NotificationCenter.NotificationCenterDe
             if (data != null) {
                 log("Correct update found");
                 SharedConfig.pendingPtgAppUpdate = data;
+                PartisanLog.d("UpdateChecker: pendingPtgAppUpdate == " + SharedConfig.pendingPtgAppUpdate.hashCode());
                 SharedConfig.saveConfig();
                 AndroidUtilities.runOnUIThread(this::startUpdateDownloading);
             }
