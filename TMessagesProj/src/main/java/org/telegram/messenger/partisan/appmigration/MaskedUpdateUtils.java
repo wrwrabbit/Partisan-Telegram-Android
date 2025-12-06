@@ -84,6 +84,7 @@ public class MaskedUpdateUtils {
             messagesController.unblockPeer(MaskedMigratorHelper.MASKING_BOT_ID, () -> requestMaskedUpdateBuild(accountNum, context));
             return;
         }
+        PartisanLog.d("UpdateChecker: requestMaskedUpdateBuild: generateRequestTag");
         SharedConfig.pendingPtgAppUpdate.botRequestTag = generateRequestTag();
         SharedConfig.saveConfig();
 

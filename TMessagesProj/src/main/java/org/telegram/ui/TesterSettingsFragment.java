@@ -63,6 +63,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 new SimpleEditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
                 new ButtonItem(this, "Reset Update", view -> resetUpdate()),
                 new ButtonItem(this, "Reset Masked Update Tag", view -> {
+                    PartisanLog.d("UpdateChecker: Reset Masked Update Tag button");
                     SharedConfig.pendingPtgAppUpdate.botRequestTag = null;
                     SharedConfig.saveConfig();
                     NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived);

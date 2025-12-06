@@ -27,6 +27,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.appmigration.MaskedUpdateUtils;
 import org.telegram.messenger.partisan.update.UpdateDownloader;
 import org.telegram.ui.ActionBar.SimpleTextView;
@@ -70,6 +71,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                 Long totalSize = (Long) args[2];
                 float loadProgress = loadedSize / (float) totalSize;
                 updateLayoutIcon.setProgress(loadProgress, true);
+                PartisanLog.d("UpdateChecker: AppUpdateDownloading");
                 updateTextViews[0].setText(LocaleController.formatString("AppUpdateDownloading", R.string.AppUpdateDownloading, (int) (loadProgress * 100)));
             }
         }
@@ -155,6 +157,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
             updateTextViews[i].setGravity(Gravity.LEFT);
             updateLayout.addView(updateTextViews[i], LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 74, 0, 0, 0));
         }
+        PartisanLog.d("UpdateChecker: RequestUpdate");
         updateTextViews[0].setText(LocaleController.getString(R.string.RequestUpdate));
         updateTextViews[1].setAlpha(0f);
         updateTextViews[1].setVisibility(View.GONE);
@@ -277,6 +280,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
     }
 
     private void setUpdateText(String text, boolean animate) {
+        PartisanLog.d("UpdateChecker: setUpdateText: " + text);
         if (TextUtils.equals(updateTextViews[0].getText(), text)) {
             return;
         }
