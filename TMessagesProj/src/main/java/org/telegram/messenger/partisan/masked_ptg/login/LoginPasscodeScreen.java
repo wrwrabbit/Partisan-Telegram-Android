@@ -2,6 +2,8 @@ package org.telegram.messenger.partisan.masked_ptg.login;
 
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import android.os.Handler;
+import android.text.InputType;
+import android.text.method.PasswordTransformationMethod;
 
 
 import android.app.Activity;
@@ -13,7 +15,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.EditText;
@@ -28,12 +29,6 @@ import org.telegram.messenger.partisan.masked_ptg.AbstractMaskedPasscodeScreen;
 import org.telegram.messenger.partisan.masked_ptg.PasscodeEnteredDelegate;
 import org.telegram.messenger.partisan.masked_ptg.TutorialType;
 import org.telegram.ui.ActionBar.AlertDialog;
-import org.telegram.ui.Components.LayoutHelper;
-
-import java.math.BigDecimal;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Locale;
 
 public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
     private RelativeLayout backgroundFrameLayout;
@@ -41,9 +36,6 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
     private EditText loginTextView;
     private EditText passwordTextView;
     private Button loginButton;
-
-    private FrameLayout buttonsFrameLayout;
-    private ArrayList<Button> buttons;
 
     public LoginPasscodeScreen(Context context, PasscodeEnteredDelegate delegate, boolean unlockingApp) {
         super(context, delegate, unlockingApp);
@@ -98,13 +90,15 @@ public class LoginPasscodeScreen extends AbstractMaskedPasscodeScreen {
         loginTextView.setLayoutParams(loginParams);
         backgroundFrameLayout.addView(loginTextView);
 
-        // Password text view
         passwordTextView = new EditText(context);
         passwordTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        passwordTextView.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        // This line should be present
+        passwordTextView.setTransformationMethod(PasswordTransformationMethod.getInstance());
         passwordTextView.setTextColor(0xff000000);
         passwordTextView.setHint("Password");
         passwordTextView.setEllipsize(TextUtils.TruncateAt.START);
-        passwordTextView.setSingleLine();
+        passwordTextView.setMaxLines(1);
         passwordTextView.setWidth(300);
         passwordTextView.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
         GradientDrawable border_2 = new GradientDrawable();
