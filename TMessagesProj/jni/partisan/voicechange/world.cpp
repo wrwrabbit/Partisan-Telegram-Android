@@ -156,7 +156,7 @@ struct FormantParameters {
     FormantRatioParameters highFormantRatio;
 
     bool isDefault() {
-        return std::abs(shift_from - 1.0) < 1E-6 && std::abs(shift_from - 1.0) < 1E-6
+        return std::abs(shift_from - 1.0) < 1E-6 && std::abs(shift_to - 1.0) < 1E-6
                && lowFormantRatio.isDefault() && midFormantRatio.isDefault() && highFormantRatio.isDefault();
     }
 };
@@ -398,5 +398,7 @@ extern "C" JNIEXPORT jint Java_org_telegram_messenger_partisan_voicechange_World
                 fs, xTmp, x_length, yTmp, &yLength, harvest,
                 bad_s_threshold, bad_s_cutoff,
                 bad_sh_min_threshold, bad_sh_max_threshold, bad_sh_cutoff);
+    env->ReleaseFloatArrayElements(x, xTmp, JNI_ABORT);
+    env->ReleaseFloatArrayElements(y, yTmp, 0);
     return yLength;
 }

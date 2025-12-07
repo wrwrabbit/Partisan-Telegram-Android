@@ -342,7 +342,7 @@
     <string name="PlayNormalVoice">Воспроизвести обычный голос</string>
     <string name="CheckVoiceChangingDescription">Проверьте изменение голоса перед использованием. Если Вам не нравится звучание, сгенерируйте новые параметры.</string>
     <string name="ShowVoiceChangedNotification">Уведомление об изменении голоса</string>
-    <string name="ShowVoiceChangedNotificationDescription">Показывать надпись про изменение голоса во время записи голосовых и видеосообщений и звонков.</string>
+    <string name="ShowVoiceChangedNotificationDescription">Показывать надпись про изменение голоса во время звонков, записи голосовых и видеосообщений.</string>
     <string name="VoiceChanged">Голос изменён</string>
     <string name="EnableForIndividualAccounts">Включить для отдельных аккаунтов</string>
     <string name="EnableForVoiceMessages">Включить для голосовых сообщений</string>

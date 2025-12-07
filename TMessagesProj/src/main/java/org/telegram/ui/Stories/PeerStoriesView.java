@@ -4807,7 +4807,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
             storyCaptionView.captionTextview.invalidate();
         } else if (id == NotificationCenter.voiceChangingStateChanged) {
             boolean show = org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.needShowVoiceChangeNotification(currentAccount, org.telegram.messenger.partisan.voicechange.VoiceChangeType.CALL);
-            //voiceChangedLabel.animate().alpha(show ? 1 : 0).setDuration(350).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
             voiceChangedLabel.setVisibility(show ? View.VISIBLE : View.GONE);
         } else if (id == NotificationCenter.stealthModeChanged) {
             checkStealthMode(true);
