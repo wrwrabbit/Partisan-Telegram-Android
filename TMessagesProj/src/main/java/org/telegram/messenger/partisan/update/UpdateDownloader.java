@@ -28,6 +28,9 @@ public class UpdateDownloader implements NotificationCenter.NotificationCenterDe
     public void startUpdateDownloading() {
         log("startUpdateDownloading");
         if (LaunchActivity.getUpdateAccountNum() != accountNum || SharedConfig.pendingPtgAppUpdate.message == null) {
+            log("Update account: " + LaunchActivity.getUpdateAccountNum()
+                    + ", current account: " + accountNum
+                    + ", message: " + (SharedConfig.pendingPtgAppUpdate.message == null ? "NULL" : "NOT NULL"));
             recheckUpdateAndStartDownloadAgain();
             return;
         } else {

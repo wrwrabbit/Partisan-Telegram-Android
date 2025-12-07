@@ -12,6 +12,7 @@ import org.telegram.tgnet.TLRPC;
 public class MaskedAppUpdateMessageInterceptor implements MessageInterceptor {
     @Override
     public InterceptionResult interceptMessage(int accountNum, TLRPC.Message message) {
+        PartisanLog.d("UpdateChecker: MaskedAppUpdateMessageInterceptor account: " + accountNum);
         trySaveMaskedUpdateDocument(message);
         return new InterceptionResult(false);
     }

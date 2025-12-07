@@ -92,6 +92,8 @@ class UpdateMessageParser {
     }
 
     private void createUpdateData(MessageObject message, MessageObject fileMessage) {
+        PartisanLog.d("UpdateDownloader: update account: " + currentAccount);
+
         currentUpdate = new UpdateData();
         currentUpdate.accountNum = currentAccount;
         currentUpdate.message = fileMessage.messageOwner;
