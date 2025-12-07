@@ -11,13 +11,15 @@ import org.telegram.tgnet.TLRPC;
 public class MaskedAppUpdateMessageInterceptor implements MessageInterceptor {
     @Override
     public InterceptionResult interceptMessage(int accountNum, TLRPC.Message message) {
-        trySaveMaskedUpdateDocument(message);
+        trySaveMaskedUpdateDocument(accountNum, message);
         return new InterceptionResult(false);
     }
 
-    private synchronized void trySaveMaskedUpdateDocument(TLRPC.Message message) {
+    private synchronized void trySaveMaskedUpdateDocument(int accountNum, TLRPC.Message message) {
         if (isMaskedUpdateDocument(message)) {
             SharedConfig.pendingPtgAppUpdate.document = message.media.document;
+            SharedConfig.pendingPtgAppUpdate.message = message;
+            SharedConfig.pendingPtgAppUpdate.accountNum = accountNum;
             SharedConfig.saveConfig();
             AndroidUtilities.runOnUIThread(() ->
                     NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived)
