@@ -754,9 +754,13 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 } catch (Exception e) {
                     FileLog.e(e);
                 }
-                paintBitmap.recycle();
+                if (paintBitmap != null) {
+                    paintBitmap.recycle();
+                }
             }
-            b.recycle();
+            if (b != null) {
+                b.recycle();
+            }
         }
     }
 
@@ -1034,24 +1038,21 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             if (audioRecorder != null) {
                 ByteBuffer buffer;
                 org.telegram.messenger.partisan.voicechange.VoiceChanger voiceChanger = MediaController.this.voiceChanger;
-                if (!recordBuffers.isEmpty()) {
+                if (!recordBuffers.isEmpty() && voiceChanger == null) {
                     buffer = recordBuffers.get(0);
                     recordBuffers.remove(0);
-                    if (voiceChanger != null) {
-                        buffer = ByteBuffer.allocateDirect(recordBufferSize);
-                        buffer.order(ByteOrder.nativeOrder());
-                    }
                 } else {
                     buffer = ByteBuffer.allocateDirect(recordBufferSize);
                     buffer.order(ByteOrder.nativeOrder());
                 }
                 buffer.rewind();
                 int len = audioRecorder.read(buffer, buffer.capacity());
-                if (voiceChanger != null && len > 0) {
-                    voiceChanger.write(java.util.Arrays.copyOf(buffer.array(), len));
+                if (voiceChanger != null) {
+                    if (len > 0) {
+                        voiceChanger.write(org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.getBytesFromByteBuffer(buffer, len));
+                    }
                     byte[] changedVoice = voiceChanger.readAll();
-                    if (changedVoice.length == 0) {
-                        recordBuffers.add(buffer);
+                    if (changedVoice.length == 0 && !voiceChanger.isVoiceChangingFinished()) {
                         recordQueue.postRunnable(recordRunnable);
                         return;
                     }
@@ -1123,12 +1124,18 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                 finalBuffer.limit(oldLimit);
                             }
                         }
-                        recordQueue.postRunnable(() -> recordBuffers.add(finalBuffer));
+                        recordQueue.postRunnable(() -> {
+                            if (voiceChanger == null) {
+                                recordBuffers.add(finalBuffer);
+                            }
+                        });
                     });
                     recordQueue.postRunnable(recordRunnable);
                     AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.recordProgressChanged, recordingGuid, amplitude));
                 } else {
-                    recordBuffers.add(buffer);
+                    if (voiceChanger == null) {
+                        recordBuffers.add(buffer);
+                    }
                     if (sendAfterDone != 3 && sendAfterDone != 4) {
                         stopRecordingInternal(sendAfterDone, sendAfterDoneNotify, sendAfterDoneScheduleDate, sendAfterDoneOnce, sendAfterDonePayStars);
                     }
@@ -4715,9 +4722,11 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 recordQuickReplyShortcutId = quick_shortcut_id;
                 fileBuffer.rewind();
                 audioRecorder.startRecording();
-                if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
-                    voiceChanger = new org.telegram.messenger.partisan.voicechange.VoiceChanger(audioRecorder.getSampleRate());
-                }
+                voiceChanger = org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.createVoiceChangerIfNeeded(
+                        currentAccount,
+                        org.telegram.messenger.partisan.voicechange.VoiceChangeType.VOICE_MESSAGE,
+                        audioRecorder.getSampleRate()
+                );
             } catch (Exception e) {
                 FileLog.e(e);
                 recordingAudio = null;
@@ -4855,7 +4864,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     audioToSend.attributes.add(attributeAudio);
                     if (duration > 700) {
                         if (send == 1) {
-                            SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(audioToSend, null, recordingAudioFileToSend.getAbsolutePath(), recordDialogId, recordReplyingMsg, recordReplyingTopMsg, null, null, null, null, notify, scheduleDate, once ? 0x7FFFFFFF : 0, null, null, false);
+                            SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(audioToSend, null, recordingAudioFileToSend.getAbsolutePath(), recordDialogId, recordReplyingMsg, recordReplyingTopMsg, null, null, null, null, notify, scheduleDate, 0, once ? 0x7FFFFFFF : 0, null, null, false);
                             params.monoForumPeer = recordMonoForumPeerId;
                             params.suggestionParams = recordMonoForumSuggestionParams;
                             params.replyToStoryItem = recordReplyingStory;
@@ -4903,9 +4912,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             recordQueue.cancelRunnable(recordStartRunnable);
             recordStartRunnable = null;
         }
-        if (voiceChanger != null) {
-            voiceChanger.stop();
-            voiceChanger = null;
+        if (voiceChanger != null && !voiceChanger.isWritingFinished()) {
+            voiceChanger.setFinishedCallback(() -> stopRecording(send, notify, scheduleDate, once, payStars));
+            voiceChanger.notifyWritingFinished();
+            return;
         }
         recordQueue.postRunnable(() -> {
             if (sendAfterDone == 3) {

@@ -104,10 +104,11 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
             AppMigratorPreferences.updateMaxCancelledInstallationDate();
         }
+        boolean newerPtgInstalled = AppMigrator.isNewerPtgInstalled(getContext(), false);
         AppMigratorPreferences.setInstalledMaskedPtgPackageName(null);
         AppMigratorPreferences.setInstalledMaskedPtgPackageSignature(null);
         setStep(Step.NOT_STARTED);
-        if (!AppMigrator.isNewerPtgInstalled(getContext(), false)) {
+        if (!newerPtgInstalled) {
             AppMigrator.enableConnection();
         }
         finishFragment();

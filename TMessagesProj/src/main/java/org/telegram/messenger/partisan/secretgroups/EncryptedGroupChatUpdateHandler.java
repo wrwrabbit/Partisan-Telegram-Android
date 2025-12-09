@@ -51,7 +51,7 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
         SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(
                 getInviteMessageForNonPtgUsers(), innerChat.getDialogId().get(),
                 null, null, null, true, new ArrayList<>(), null,
-                null, true, 0, null, false
+                null, true, 0, 0, null, false
         );
         SendMessagesHelper.allowReloadDialogsByMessage = false;
         SendMessagesHelper.getInstance(accountNum).sendMessage(params);

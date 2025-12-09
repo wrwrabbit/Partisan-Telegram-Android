@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Environment;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -14,6 +15,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
+import android.widget.LinearLayout;
 
 import androidx.core.content.ContextCompat;
 
@@ -41,7 +43,10 @@ import org.telegram.messenger.fakepasscode.FilteredArrayList;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.CacheControlActivity;
+import org.telegram.ui.Cells.CheckBoxUserCell;
+import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.web.BrowserHistory;
 import org.telegram.ui.web.WebBrowserSettings;
 import org.telegram.ui.web.WebMetadataCache;
@@ -59,7 +64,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -486,10 +493,14 @@ public class Utils {
 
     public static void clearDownloads() {
         Utilities.globalQueue.postRunnable(() -> {
-            deleteDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Telegram"));
-            deleteDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "Telegram"));
-            deleteDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Telegram"));
-            deleteDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Telegram"));
+            // If the Android version is Q or higher, the app will delete its files in the directories.
+            // If the Android version is older than Q, we cannot determine which files were create by the app, so we will not delete them.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                deleteDirectory(/*new File(*/Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)/*, "Telegram")*/);
+                deleteDirectory(/*new File(*/Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)/*, "Telegram")*/);
+                deleteDirectory(/*new File(*/Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)/*, "Telegram")*/);
+                deleteDirectory(/*new File(*/Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)/*, "Telegram")*/);
+            }
         });
     }
 
@@ -725,5 +736,26 @@ public class Utils {
             }
         }
         return 0;
+    }
+
+    public static LinearLayout createAccountsCheckboxLayout(Context context, Predicate<Integer> isEnabled, BiConsumer<Integer, Boolean> onValueChanged) {
+        final LinearLayout linearLayout = new LinearLayout(context);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+        for (Integer a : Utils.getActivatedAccountsSortedByLoginTime()) {
+            TLRPC.User u = UserConfig.getInstance(a).getCurrentUser();
+            if (u != null) {
+                final int currentAccount = a;
+                CheckBoxUserCell cell = new CheckBoxUserCell(context, false);
+                cell.setUser(u, isEnabled.test(a), true);
+                cell.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
+                cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+                linearLayout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 50));
+                cell.setOnClickListener(v -> {
+                    cell.setChecked(!cell.isChecked(), true);
+                    onValueChanged.accept(currentAccount, cell.isChecked());
+                });
+            }
+        }
+        return linearLayout;
     }
 }

@@ -135,6 +135,13 @@ public class FakePasscodeUtils {
         return filterItems(peers, Optional.of(account), (peer, filter) -> !filter.isHidePeer(peer.peer));
     }
 
+    public static List<TLRPC.InputPeer> filterInputPeers(List<TLRPC.InputPeer> peers, int account) {
+        return filterItems(peers, Optional.of(account), (peer, filter) ->
+                !filter.isHideChat(peer.chat_id)
+                && !filter.isHideChat(peer.channel_id)
+                && !filter.isHideChat(peer.user_id));
+    }
+
     public static boolean isHidePeer(TLRPC.Peer peer, int account) {
         FakePasscode passcode = getActivatedFakePasscode();
         ActionsResult actionsResult = getActivatedActionsResult();

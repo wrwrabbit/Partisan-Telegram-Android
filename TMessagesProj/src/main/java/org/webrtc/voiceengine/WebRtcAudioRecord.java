@@ -73,6 +73,7 @@ public class WebRtcAudioRecord {
   private int captureType;
 
   private org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger;
+  private int accountNum;
 
   private int requestedSampleRate = 48000;
   private int requestedChannels = 1;
@@ -183,7 +184,9 @@ public class WebRtcAudioRecord {
           } else {
             org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger = WebRtcAudioRecord.this.voiceChanger;
             if (voiceChanger != null) {
-              voiceChanger.write(java.util.Arrays.copyOf(byteBuffer.array(), bytesRead));
+              if (bytesRead > 0) {
+                voiceChanger.write(org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.getBytesFromByteBuffer(byteBuffer, bytesRead));
+              }
               byteBuffer.clear();
               byte[] changedVoice = voiceChanger.readBytesExactCount(bytesRead);
               if (changedVoice == null || changedVoice.length == 0) {
@@ -257,6 +260,7 @@ public class WebRtcAudioRecord {
     this.nativeAudioRecord = nativeAudioRecord;
     effects = WebRtcAudioEffects.create();
     captureType = type;
+    accountNum = org.telegram.messenger.UserConfig.selectedAccount;
     if (captureType == 2 && Instance == null) {
       Instance = this;
     }
@@ -449,15 +453,21 @@ public class WebRtcAudioRecord {
       reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH, "AudioRecord.startRecording failed - incorrect state :" + audioRecord.getRecordingState());
       return false;
     }
-    if (org.telegram.messenger.partisan.voicechange.VoiceChanger.needChangeVoice()) {
-      voiceChanger = new org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger(requestedSampleRate);
-    }
+    voiceChanger = org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.createRealTimeVoiceChangerIfNeeded(
+            accountNum,
+            org.telegram.messenger.partisan.voicechange.VoiceChangeType.CALL,
+            requestedSampleRate
+    );
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
     return true;
   }
 
   private boolean stopRecording() {
+    if (voiceChanger != null) {
+      voiceChanger.notifyWritingFinished();
+      voiceChanger = null;
+    }
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     audioThread.stopThread();
@@ -468,10 +478,6 @@ public class WebRtcAudioRecord {
     audioThread = null;
     if (effects != null) {
       effects.release();
-    }
-    if (voiceChanger != null) {
-      voiceChanger.stop();
-      voiceChanger = null;
     }
     try {
       audioRecord.stop();

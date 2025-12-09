@@ -437,7 +437,7 @@ public class PushListenerController {
                             }
 
                             int story_id = -1;
-                            if (loc_key.equals("STORY_NOTEXT") || loc_key.equals("STORY_HIDDEN_AUTHOR")) {
+                            if (loc_key.equals("STORY_NOTEXT") || loc_key.equals("STORY_LIVE") || loc_key.equals("STORY_HIDDEN_AUTHOR")) {
                                 if (custom.has("story_id")) {
                                     story_id = custom.getInt("story_id");
                                 }
@@ -494,6 +494,12 @@ public class PushListenerController {
                                     switch (loc_key) {
                                         case "STORY_NOTEXT": {
                                             messageText = getString(R.string.StoryNotificationSingle);
+                                            message1 = null;
+                                            msg_id = story_id;
+                                            break;
+                                        }
+                                        case "STORY_LIVE": {
+                                            messageText = getString(R.string.StoryLiveNotificationSingle);
                                             message1 = null;
                                             msg_id = story_id;
                                             break;
@@ -1426,6 +1432,7 @@ public class PushListenerController {
                                     messageObject.isStoryReactionPush = loc_key.startsWith("REACT_STORY");
                                     messageObject.isReactionPush = !messageObject.isStoryReactionPush && (loc_key.startsWith("REACT_") || loc_key.startsWith("CHAT_REACT_"));
                                     messageObject.isStoryPush = loc_key.equals("STORY_NOTEXT") || loc_key.equals("STORY_HIDDEN_AUTHOR");
+                                    messageObject.isLiveStoryPush = loc_key.equals("STORY_LIVE");
                                     messageObject.isStoryMentionPush = loc_key.equals("MESSAGE_STORY_MENTION");
                                     messageObject.isStoryPushHidden = loc_key.equals("STORY_HIDDEN_AUTHOR");
                                     ArrayList<MessageObject> arrayList = new ArrayList<>();

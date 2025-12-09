@@ -308,8 +308,16 @@ public class WebRtcAudioManager {
       return WebRtcAudioUtils.getDefaultSampleRateHz();
     }
     String sampleRateString = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+    int nativeOutputSampleRate = 0;
+    if (org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.needChangeVoice(org.telegram.messenger.UserConfig.selectedAccount,
+            org.telegram.messenger.partisan.voicechange.VoiceChangeType.CALL)) {
+        // Sometimes audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE) only returns 8000 Hz.
+        // This value is too small for voice changing. So we use getNativeOutputSampleRate instead.
+        // This method returns a more realistic sample rate.
+        nativeOutputSampleRate = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_VOICE_CALL);
+    }
     return (sampleRateString == null) ? WebRtcAudioUtils.getDefaultSampleRateHz()
-                                      : Integer.parseInt(sampleRateString);
+                                      : Math.max(Integer.parseInt(sampleRateString), nativeOutputSampleRate);
   }
 
   // Returns the native output buffer size for low-latency output streams.
