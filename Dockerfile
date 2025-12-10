@@ -31,16 +31,16 @@ COPY . .
 
 # Pre-build the app to cache libs. The real build will be offline.
 # Build alpha instead of standalone because debug.keystore has default password.
-RUN mkdir -p /home/source/TMessagesProj/build/outputs/apk && \
-    mkdir -p /home/source/TMessagesProj/build/outputs/native-debug-symbols && \
-    cp -R /home/source/. /home/gradle && \
-    cd /home/gradle && \
-    gradle :TMessagesProj_AppStandalone:assembleAfatAlpha
+#RUN mkdir -p /home/source/TMessagesProj/build/outputs/apk && \
+#    mkdir -p /home/source/TMessagesProj/build/outputs/native-debug-symbols && \
+#    cp -R /home/source/. /home/gradle && \
+#    cd /home/gradle && \
+#    gradle :TMessagesProj_AppStandalone:assembleAfatAlpha
 
 CMD mkdir -p /home/source/TMessagesProj/build/outputs/apk && \
     mkdir -p /home/source/TMessagesProj/build/outputs/native-debug-symbols && \
     cp -R /home/source/. /home/gradle && \
     cd /home/gradle && \
-    gradle --offline :TMessagesProj_AppStandalone:assembleAfatStandalone && \
+    gradle :TMessagesProj_AppStandalone:assembleAfatStandalone && \
     cp -R /home/gradle/TMessagesProj_AppStandalone/build/outputs/apk/. /home/source/TMessagesProj/build/outputs/apk && \
     chmod -R 777 /home/source/TMessagesProj/build
