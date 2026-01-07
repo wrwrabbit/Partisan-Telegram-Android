@@ -194,7 +194,7 @@ public class FakePasscodeUtils {
             return null;
         }
         return FakePasscodeUtils.filterItems(participants, Optional.of(account),
-                (participant, filter) -> !filter.isHidePeer(participant.peer)
+                (participant, filter) -> participant.peer == null || !filter.isHidePeer(participant.peer)
         );
     }
 
