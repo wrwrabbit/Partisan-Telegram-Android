@@ -525,7 +525,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                                 finishFragment();
                             } else if (id == ID_SWITCH_TYPE) {
                                 currentPasswordType = currentPasswordType == SharedConfig.PASSCODE_TYPE_PIN ? SharedConfig.PASSCODE_TYPE_PASSWORD : SharedConfig.PASSCODE_TYPE_PIN;
-                                if (!SharedConfig.fakePasscodes.isEmpty() && SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD && currentPasswordType == SharedConfig.PASSCODE_TYPE_PIN) {
+                                if (needToShowPasswordToPinSwitchWarning()) {
                                     showPasswordToPinSwitchWarning();
                                 }
                                 AndroidUtilities.runOnUIThread(()->{
@@ -1433,6 +1433,13 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
             AlertDialog alertDialog = builder.create();
             showDialog(alertDialog);
         }
+    }
+
+    private boolean needToShowPasswordToPinSwitchWarning() {
+        return !FakePasscodeUtils.isFakePasscodeActivated() &&
+                !SharedConfig.fakePasscodes.isEmpty() &&
+                SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD &&
+                currentPasswordType == SharedConfig.PASSCODE_TYPE_PIN;
     }
 
     private void showPasswordToPinSwitchWarning() {
