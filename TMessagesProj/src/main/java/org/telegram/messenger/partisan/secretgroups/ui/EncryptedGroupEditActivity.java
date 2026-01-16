@@ -152,7 +152,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
             @Override
             public void onItemClick(int id) {
                 if (id == -1) {
-                    if (checkDiscard()) {
+                    if (checkDiscard(true)) {
                         finishFragment();
                     }
                 } else if (id == done_button) {
@@ -516,22 +516,24 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
     }
 
     @Override
-    public boolean onBackPressed() {
+    public boolean onBackPressed(boolean invoked) {
         if (nameTextView != null && nameTextView.isPopupShowing()) {
-            nameTextView.hidePopup(true);
+            if (invoked) nameTextView.hidePopup(true);
             return false;
         }
-        return checkDiscard();
+        return checkDiscard(invoked);
     }
 
-    private boolean checkDiscard() {
+    private boolean checkDiscard(boolean invoked) {
         if (nameTextView != null && !encryptedGroup.getName().equals(nameTextView.getText().toString())) {
-            showDialog(new AlertDialog.Builder(getParentActivity())
-                    .setTitle(getString("UserRestrictionsApplyChanges", R.string.UserRestrictionsApplyChanges))
-                    .setMessage(getString(R.string.GroupSettingsChangedAlert))
-                    .setPositiveButton(getString("ApplyTheme", R.string.ApplyTheme), (dialogInterface, i) -> processDone())
-                    .setNegativeButton(getString("PassportDiscard", R.string.PassportDiscard), (dialog, which) -> finishFragment())
-                    .create());
+            if (invoked) {
+                showDialog(new AlertDialog.Builder(getParentActivity())
+                        .setTitle(getString("UserRestrictionsApplyChanges", R.string.UserRestrictionsApplyChanges))
+                        .setMessage(getString(R.string.GroupSettingsChangedAlert))
+                        .setPositiveButton(getString("ApplyTheme", R.string.ApplyTheme), (dialogInterface, i) -> processDone())
+                        .setNegativeButton(getString("PassportDiscard", R.string.PassportDiscard), (dialog, which) -> finishFragment())
+                        .create());
+            }
             return false;
         }
         return true;
