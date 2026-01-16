@@ -274,11 +274,11 @@ public class RemoveChatSettingsFragment extends BaseFragment {
     }
 
     @Override
-    public boolean onBackPressed() {
+    public boolean onBackPressed(boolean invoked) {
         if (isNew || changed) {
-            confirmExit();
+            if (invoked) confirmExit();
         } else {
-            finishFragment();
+            if (invoked) finishFragment();
         }
         return false;
     }
