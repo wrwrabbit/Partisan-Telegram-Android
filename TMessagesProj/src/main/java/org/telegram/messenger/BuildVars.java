@@ -41,7 +41,7 @@ public class BuildVars {
     public static boolean IS_BILLING_UNAVAILABLE = false;
 
     // works only on official app ids, disable on your forks
-    public static boolean SUPPORTS_PASSKEYS = true;
+    public static boolean SUPPORTS_PASSKEYS = false;
 
     static {
         if (ApplicationLoader.applicationContext != null) {
