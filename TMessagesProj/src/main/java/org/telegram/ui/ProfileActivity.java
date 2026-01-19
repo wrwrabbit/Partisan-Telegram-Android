@@ -10808,7 +10808,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (BuildVars.DEBUG_VERSION) {
                     switchBackendRow = rowCount++;
                 }
-                if (org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
+                if (org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()
+                        && (!FakePasscodeUtils.isFakePasscodeActivated() || org.telegram.messenger.partisan.settings.TesterSettings.showTesterSettingsWithFakePasscode.get().orElse(false)) ) {
                     testerSettingsRow = rowCount++;
                 }
                 versionRow = rowCount++;

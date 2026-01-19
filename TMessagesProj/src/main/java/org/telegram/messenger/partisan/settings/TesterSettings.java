@@ -22,6 +22,7 @@ public class TesterSettings {
     public static final BooleanSetting showPlainBackup = new BooleanSetting("showPlainBackup", false);
     public static final BooleanSetting forceSearchDuringDeletion = new BooleanSetting("forceSearchDuringDeletion", false);
     public static final BooleanSetting moreTimerValues = new BooleanSetting("moreTimerValues", false);
+    public static final BooleanSetting showTesterSettingsWithFakePasscode = new BooleanSetting("showTesterSettingsWithFakePasscode", false);
 
     public static void loadSettings() {
         for (Setting<?> setting : getAllSettings()) {
