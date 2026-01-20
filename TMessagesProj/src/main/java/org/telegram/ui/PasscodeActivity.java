@@ -209,7 +209,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
         super();
         this.type = type;
         if (!FakePasscodeUtils.isFakePasscodeActivated() && type == TYPE_SETUP_CODE && !SharedConfig.fakePasscodes.isEmpty()) {
-            currentPasswordType = SharedConfig.passcodeType;
+            currentPasswordType = SharedConfig.getPasscodeType();
         }
     }
 
@@ -1231,7 +1231,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
         if (FakePasscodeUtils.isFakePasscodeActivated()) {
             return false;
         }
-        String passcode = SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD
+        String passcode = SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD
                 ? passwordEditText.getText().toString()
                 : codeFieldContainer.getCode();
         SharedConfig.PasscodeCheckResult passcodeCheckResult = SharedConfig.checkPasscode(passcode);
@@ -1244,12 +1244,12 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
     private boolean isPinCode() {
         return type == TYPE_SETUP_CODE && currentPasswordType == SharedConfig.PASSCODE_TYPE_PIN ||
-                type == TYPE_ENTER_CODE_TO_MANAGE_SETTINGS && SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN;
+                type == TYPE_ENTER_CODE_TO_MANAGE_SETTINGS && SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN;
     }
 
     private boolean isPassword() {
         return type == TYPE_SETUP_CODE && currentPasswordType == SharedConfig.PASSCODE_TYPE_PASSWORD ||
-                type == TYPE_ENTER_CODE_TO_MANAGE_SETTINGS && SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD;
+                type == TYPE_ENTER_CODE_TO_MANAGE_SETTINGS && SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD;
     }
 
     private void processDone() {
@@ -1287,12 +1287,12 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                 SharedConfig.allowScreenCapture = true;
             }
 
-            boolean passcodeTypeChanged = SharedConfig.passcodeType != currentPasswordType;
+            boolean passcodeTypeChanged = SharedConfig.getPasscodeType() != currentPasswordType;
             if (passcodeTypeChanged) {
                 MaskedMigratorHelper.removeMigrationIssueAndShowDialogIfNeeded(this, MaskedMigrationIssue.INVALID_PASSCODE_TYPE);
             }
 
-            SharedConfig.passcodeType = currentPasswordType;
+            SharedConfig.setPasscodeType(currentPasswordType);
             SharedConfig.saveConfig();
 
             passwordEditText.clearFocus();
@@ -1438,7 +1438,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     private boolean needToShowPasswordToPinSwitchWarning() {
         return !FakePasscodeUtils.isFakePasscodeActivated() &&
                 !SharedConfig.fakePasscodes.isEmpty() &&
-                SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD &&
+                SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD &&
                 currentPasswordType == SharedConfig.PASSCODE_TYPE_PIN;
     }
 

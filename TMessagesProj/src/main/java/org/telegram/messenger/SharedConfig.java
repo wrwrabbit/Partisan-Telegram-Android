@@ -250,7 +250,7 @@ public class SharedConfig {
     public static String directShareHash;
 
     @PasscodeType
-    public static int passcodeType;
+    private static int passcodeType;
     private static String passcodeHash = "";
     public static long passcodeRetryInMs;
     public static long lastUptimeMillis;
@@ -1341,6 +1341,25 @@ public class SharedConfig {
 
     public static void setPasscode(String passcode) {
         passcodeHash = passcode;
+    }
+
+    public static @PasscodeType int getPasscodeType() {
+        if (FakePasscodeUtils.isFakePasscodeActivated()) {
+            return FakePasscodeUtils.getActivatedFakePasscode().getPasscodeType();
+        }
+        return passcodeType;
+    }
+
+    public static @PasscodeType int getMainPasscodeType() {
+        return passcodeType;
+    }
+
+    public static void setPasscodeType(@PasscodeType int passcodeType) {
+        if (FakePasscodeUtils.isFakePasscodeActivated()) {
+            FakePasscodeUtils.getActivatedFakePasscode().setPasscodeType(passcodeType);
+            return;
+        }
+        SharedConfig.passcodeType = passcodeType;
     }
 
     public static void clearConfig() {
