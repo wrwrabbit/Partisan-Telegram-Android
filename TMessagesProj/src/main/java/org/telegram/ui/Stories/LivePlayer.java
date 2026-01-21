@@ -232,6 +232,10 @@ public class LivePlayer implements NotificationCenter.NotificationCenterDelegate
     private void init() {
         if (destroyed) return;
 
+        if (outgoing) {
+            org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.setPendingCallAccountNum(currentAccount);
+        }
+
         instance = NativeInstance.makeGroup(
                 VoIPHelper.getLogFilePath("live_" + inputCall.id),
                 0,
