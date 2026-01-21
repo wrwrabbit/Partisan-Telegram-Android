@@ -36144,6 +36144,14 @@ public class ChatActivity extends BaseFragment implements
         MediaController.getInstance().resetGoingToShowMessageObject();
     }
 
+    @Override
+    public void clearViews() {
+        restoreStartLoadFromMessage();
+        if (!startLoadFromMessageRestored || fragmentView == null) {
+            super.clearViews();
+        }
+    }
+
     public void restoreStartLoadFromMessage() {
         SharedPreferences sharedPreferences = MessagesController.getNotificationsSettings(currentAccount);
         int messageId = sharedPreferences.getInt("diditem" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), 0);
