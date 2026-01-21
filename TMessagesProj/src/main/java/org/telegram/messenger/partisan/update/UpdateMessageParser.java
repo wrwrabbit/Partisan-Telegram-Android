@@ -9,9 +9,7 @@ import org.telegram.tgnet.TLRPC;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +18,7 @@ class UpdateMessageParser {
     private MessageObject currentMessage;
     private String lang = "en";
     private int langInaccuracy = 0;
-    private MaskedUpdateType maskedUpdateType = MaskedUpdateType.ALLOW;
+    private MaskedUpdateType currentMaskedUpdateType = MaskedUpdateType.ALLOW;
 
     private final int currentAccount;
     private final Map<Long, List<MessageObject>> messagesByGroupId = new HashMap<>();
@@ -30,6 +28,7 @@ class UpdateMessageParser {
     }
 
     public UpdateData processMessage(MessageObject message) {
+        currentMaskedUpdateType = MaskedUpdateType.ALLOW;
         saveMessageByGroupId(message);
         return parseUpdateData(message);
     }
@@ -143,7 +142,7 @@ class UpdateMessageParser {
             }
             isFirstCharInNewLine = lineEnd;
         }
-        if (maskedUpdateType == MaskedUpdateType.ONLY) {
+        if (currentMaskedUpdateType == MaskedUpdateType.ONLY) {
             currentUpdate = null;
         }
         return currentUpdate;
@@ -228,13 +227,13 @@ class UpdateMessageParser {
             }
         } else if (name.equals("masked")) {
             if ("allow".equalsIgnoreCase(value)) {
-                maskedUpdateType = MaskedUpdateType.ALLOW;
+                currentMaskedUpdateType = MaskedUpdateType.ALLOW;
             } else if ("prohibit".equalsIgnoreCase(value)) {
-                maskedUpdateType = MaskedUpdateType.PROHIBIT;
+                currentMaskedUpdateType = MaskedUpdateType.PROHIBIT;
             } else if ("only".equalsIgnoreCase(value)) {
-                maskedUpdateType = MaskedUpdateType.ONLY;
+                currentMaskedUpdateType = MaskedUpdateType.ONLY;
             } else {
-                maskedUpdateType = MaskedUpdateType.ALLOW;
+                currentMaskedUpdateType = MaskedUpdateType.ALLOW;
             }
         }
     }
