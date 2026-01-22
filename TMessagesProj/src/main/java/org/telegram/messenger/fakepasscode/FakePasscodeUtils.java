@@ -86,6 +86,21 @@ public class FakePasscodeUtils {
         }
     }
 
+    public static String getFakePhoneNumberIfSelf(int accountNum, TLRPC.User user) {
+        if (user == null) {
+            return "";
+        }
+        if (UserConfig.getInstance(accountNum).clientUserId != user.id) {
+            return user.phone;
+        }
+        String fakeNumber = getFakePhoneNumber(accountNum);
+        if (TextUtils.isEmpty(fakeNumber)) {
+            return user.phone;
+        } else {
+            return fakeNumber;
+        }
+    }
+
     public static <T> List<T> filterItems(List<T> items, Optional<Integer> account, BiPredicate<T, ChatFilter> filter) {
         FakePasscode passcode = getActivatedFakePasscode();
         ActionsResult actionsResult = getActivatedActionsResult();

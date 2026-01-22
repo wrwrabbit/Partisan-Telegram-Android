@@ -980,7 +980,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
                 }
                 if (user != null) {
                     final TLRPC.User finalUser = user;
-                    userCell.setData(user, null, () -> PhoneFormat.getInstance().format("+" + finalUser.phone), divider);
+                    userCell.setData(user, null, () -> PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumberIfSelf(currentAccount, finalUser)), divider);
                 }
 
                 userCell.setChecked(selectedContacts.containsKey(ListItemID.of(object)), false);
@@ -1217,7 +1217,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
                 }
                 if (user != null) {
                     final TLRPC.User finalUser = user;
-                    userCell.setData(user, searchResultNames.get(position - 1), () -> PhoneFormat.getInstance().format("+" + finalUser.phone), divider);
+                    userCell.setData(user, searchResultNames.get(position - 1), () -> PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumberIfSelf(parentAlert.currentAccount, finalUser)), divider);
                 }
 
                 userCell.setChecked(selectedContacts.containsKey(ListItemID.of(object)), false);
