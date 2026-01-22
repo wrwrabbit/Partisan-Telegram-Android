@@ -6088,7 +6088,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         TLRPC.Chat chat = getMessagesController().getChat(-did);
                         if (chat == null) continue;
                         if (s.length() > 0) s.append(", ");
-                        s.append(chat.title);
+                        s.append(UserConfig.getChatTitleOverride(currentAccount, chat));
                     }
                     starsNeeded += sub.pricing.amount;
                 }

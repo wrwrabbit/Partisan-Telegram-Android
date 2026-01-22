@@ -563,7 +563,7 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
                     if (liveStories) {
                         new StarsIntroActivity.StarsNeededSheet(context, resourcesProvider, totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_LIVE_COMMENTS, DialogObject.getShortName(currentAccount, dialogId), send, 0).show();
                     } else {
-                        new StarsIntroActivity.StarsNeededSheet(context, resourcesProvider, totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, chat == null ? "" : chat.title, send, 0).show();
+                        new StarsIntroActivity.StarsNeededSheet(context, resourcesProvider, totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, chat == null ? "" : UserConfig.getChatTitleOverride(currentAccount, chat), send, 0).show();
                     }
                 } else {
                     send.run();
