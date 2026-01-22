@@ -168,6 +168,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.settings.TesterSettings;
@@ -321,7 +322,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
@@ -4386,7 +4386,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     presentFragment(fragment);
                 }
             } else if (position == joinRow) {
-                AlertsCreator.showConfirmDangerousActionDialogIfNeed(this, () -> {
+                PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(this, () -> {
                     onJoinClicked(false);
                 });
             } else if (position == subscribersRow) {
@@ -4478,7 +4478,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else if (position == bioRow) {
                 presentFragment(new UserInfoActivity());
             } else if (position == numberRow) {
-                AlertsCreator.showCantChangePhoneNumberDialogIfNeed(this, () -> {
+                PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(this, () -> {
                     presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE));
                 });
             } else if (position == setAvatarRow) {
@@ -13533,7 +13533,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         @Override
                         protected void onNoClick(int type) {
                             if (type == SettingsSuggestionCell.TYPE_PHONE) {
-                                AlertsCreator.showCantChangePhoneNumberDialogIfNeed(ProfileActivity.this, () -> {
+                                PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(ProfileActivity.this, () -> {
                                     presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE));
                                 });
                             } else {
@@ -14704,7 +14704,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         private SearchResult[] onCreateSearchArray() {
             return new SearchResult[]{
                     new SearchResult(500, getString(R.string.EditName), 0, () -> presentFragment(new ChangeNameActivity(resourcesProvider))),
-                    new SearchResult(501, getString(R.string.ChangePhoneNumber), 0, () -> AlertsCreator.showCantChangePhoneNumberDialogIfNeed(ProfileActivity.this, () -> presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE)))),
+                    new SearchResult(501, getString(R.string.ChangePhoneNumber), 0, () -> PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(ProfileActivity.this, () -> presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE)))),
                     new SearchResult(502, getString(R.string.AddAnotherAccount), 0, () -> {
                         int freeAccount = -1;
                         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
@@ -14798,8 +14798,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     new SearchResult(217, getString(R.string.Calls), "callsSectionRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> presentFragment(new DataSettingsActivity())),
                     new SearchResult(218, getString(R.string.VoipUseLessData), "useLessDataForCallsRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> presentFragment(new DataSettingsActivity())),
                     new SearchResult(219, getString(R.string.VoipQuickReplies), "quickRepliesRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> presentFragment(new DataSettingsActivity())),
-                    new SearchResult(220, getString(R.string.ProxySettings), getString(R.string.DataSettings), R.drawable.msg2_data, () -> AlertsCreator.showConnectionDisabledDialogIfNeed(ProfileActivity.this, () -> presentFragment(new ProxyListActivity()))),
-                    new SearchResult(221, getString(R.string.UseProxyForCalls), "callsRow", getString(R.string.DataSettings), getString(R.string.ProxySettings), R.drawable.msg2_data, () -> AlertsCreator.showConnectionDisabledDialogIfNeed(ProfileActivity.this, () -> presentFragment(new ProxyListActivity()))),
+                    new SearchResult(220, getString(R.string.ProxySettings), getString(R.string.DataSettings), R.drawable.msg2_data, () -> PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(ProfileActivity.this, () -> presentFragment(new ProxyListActivity()))),
+                    new SearchResult(221, getString(R.string.UseProxyForCalls), "callsRow", getString(R.string.DataSettings), getString(R.string.ProxySettings), R.drawable.msg2_data, () -> PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(ProfileActivity.this, () -> presentFragment(new ProxyListActivity()))),
                     new SearchResult(111, getString(R.string.PrivacyDeleteCloudDrafts), "clearDraftsRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> presentFragment(new DataSettingsActivity())),
                     new SearchResult(222, getString(R.string.SaveToGallery), "saveToGallerySectionRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> presentFragment(new DataSettingsActivity())),
                     new SearchResult(223, getString(R.string.SaveToGalleryPrivate), "saveToGalleryPeerRow", getString(R.string.DataSettings), getString(R.string.SaveToGallery), R.drawable.msg2_data, () -> presentFragment(new DataSettingsActivity())),
@@ -16573,7 +16573,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             });
         } else if (position == phoneRow) {
             itemOptions.add(R.drawable.menu_storage_path, getString(R.string.ProfilePhoneEdit), () -> {
-                AlertsCreator.showCantChangePhoneNumberDialogIfNeed(ProfileActivity.this, () -> {
+                PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(ProfileActivity.this, () -> {
                     presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE));
                 });
             });

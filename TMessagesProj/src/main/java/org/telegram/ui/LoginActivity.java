@@ -219,15 +219,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_LASTSEEN;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_INVITE;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_CALLS;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_P2P;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_PHOTO;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_FORWARDS;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_PHONE;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_ADDED_BY_PHONE;
-
 @SuppressLint("HardwareIds")
 public class LoginActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
     public final static boolean ENABLE_PASTED_TEXT_PROCESSING = false;
@@ -868,7 +859,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
         proxyButtonView = new ImageView(context);
         proxyButtonView.setImageDrawable(proxyDrawable = new ProxyDrawable(context));
-        proxyButtonView.setOnClickListener(v -> AlertsCreator.showConnectionDisabledDialogIfNeed(this, () -> presentFragment(new ProxyListActivity())));
+        proxyButtonView.setOnClickListener(v -> org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(this, () -> presentFragment(new ProxyListActivity())));
         proxyButtonView.setAlpha(0f);
         proxyButtonView.setVisibility(View.GONE);
         sizeNotifierFrameLayout.addView(proxyButtonView, LayoutHelper.createFrame(32, 32, Gravity.RIGHT | Gravity.TOP, 16, 16, 16, 16));

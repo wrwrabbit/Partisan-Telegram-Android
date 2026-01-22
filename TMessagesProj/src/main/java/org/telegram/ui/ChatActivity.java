@@ -191,6 +191,7 @@ import org.telegram.messenger.camera.CameraView;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.messenger.partisan.UserMessagesDeleter;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.findmessages.FindMessagesController;
@@ -8615,7 +8616,7 @@ public class ChatActivity extends BaseFragment implements
                 toggleMute(true);
             } else if (currentUser != null && userBlocked) {
                 if (currentUser.bot) {
-                    AlertsCreator.showConfirmDangerousActionDialogIfNeed(this, () -> {
+                    PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(this, () -> {
                         String botUserLast = botUser;
                         botUser = null;
                         getMessagesController().unblockPeer(currentUser.id, () -> {
@@ -8637,7 +8638,7 @@ public class ChatActivity extends BaseFragment implements
             } else if (UserObject.isReplyUser(currentUser)) {
                 toggleMute(true);
             } else if (currentUser != null && currentUser.bot && botUser != null) {
-                AlertsCreator.showConfirmDangerousActionDialogIfNeed(this, () -> {
+                PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(this, () -> {
                     if (botUser.length() != 0) {
                         getMessagesController().sendBotStart(currentUser, botUser);
                     } else {
@@ -8649,7 +8650,7 @@ public class ChatActivity extends BaseFragment implements
             } else {
                 if (ChatObject.isChannel(currentChat) && !(currentChat instanceof TLRPC.TL_channelForbidden)) {
                     if (ChatObject.isNotInChat(currentChat)) {
-                        AlertsCreator.showConfirmDangerousActionDialogIfNeed(this, () -> {
+                        PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(this, () -> {
                             if (currentChat.join_request) {
 //                            showDialog(new JoinGroupAlert(context, currentChat, null, this));
                                 showBottomOverlayProgress(true, true);
@@ -32509,7 +32510,7 @@ public class ChatActivity extends BaseFragment implements
         }
         boolean dialogShowingAllowed = !ChatObject.isChannelAndNotMegaGroup(currentChat)
                 || visibleReaction != null && visibleReaction.isStar;
-        AlertsCreator.showConfirmDangerousActionDialogIfNeed(this, dialogShowingAllowed, () -> {
+        PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(this, dialogShowingAllowed, () -> {
             View cell = cellArg;
             if (visibleReaction != null && visibleReaction.isStar) {
                 closeMenu();
@@ -35976,7 +35977,7 @@ public class ChatActivity extends BaseFragment implements
             } else if (messageObject != null && str.startsWith("/")) {
                 if (URLSpanBotCommand.enabled) {
                     MessageObject finalMessageObject = messageObject;
-                    AlertsCreator.showConfirmDangerousActionDialogIfNeed(this, !longPress && !messageObject.isOut(), () -> {
+                    PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(this, !longPress && !messageObject.isOut(), () -> {
                         chatActivityEnterView.setCommand(finalMessageObject, str, longPress, currentChat != null && currentChat.megagroup);
                         if (!longPress && chatActivityEnterView.getFieldText() == null) {
                             hideFieldPanel(false);
@@ -40656,7 +40657,7 @@ public class ChatActivity extends BaseFragment implements
                 Browser.openUrl(getParentActivity(), Uri.parse(webPage.url), true, true, false, progressDialogCurrent, null, false, true, false);
             } else {
                 if (messageObject.isSponsored()) {
-                    AlertsCreator.showConfirmDangerousActionDialogIfNeed(ChatActivity.this,
+                    PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(ChatActivity.this,
                             messageObject.sponsoredUrl != null && !Browser.isInternalUri(Uri.parse(messageObject.sponsoredUrl), null),
                             () -> {
                         logSponsoredClicked(messageObject, false, false);

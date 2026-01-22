@@ -139,6 +139,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
+import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.appmigration.AppMigrationDialogs;
 import org.telegram.messenger.partisan.appmigration.MigrationIntentHandler;
@@ -3619,7 +3620,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     fragment = new FiltersSetupActivity();
                 } else if (open_settings == 5) {
                     if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-                        AlertsCreator.showCantChangePhoneNumberDialogIfNeed(getLastFragment(), null);
+                        PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(getLastFragment(), null);
                         return pushOpened;
                     } else {
                         fragment = new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE);
@@ -8675,7 +8676,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 if (lastFragment instanceof ProxyListActivity || lastFragment instanceof ProxySettingsActivity) {
                     return;
                 }
-                AlertsCreator.showConnectionDisabledDialogIfNeed(getLastFragment(), () -> {
+                PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(getLastFragment(), () -> {
                     presentFragment(new ProxyListActivity());
                 });
             };
