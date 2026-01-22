@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan;
 
+import android.content.Context;
+
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
@@ -15,6 +17,7 @@ import java.util.function.Supplier;
 public class PartisanWarningDialogBuilder {
     private Supplier<Boolean> condition;
     private BaseFragment fragment;
+    private Context context;
     private String title;
     private String message;
     private String buttonText;
@@ -22,6 +25,14 @@ public class PartisanWarningDialogBuilder {
 
     private PartisanWarningDialogBuilder(BaseFragment fragment, Runnable onAccepted) {
         this.fragment = fragment;
+        if (fragment != null) {
+            this.context = fragment.getContext();
+        }
+        this.onAccepted = onAccepted;
+    }
+
+    private PartisanWarningDialogBuilder(Context context, Runnable onAccepted) {
+        this.context = context;
         this.onAccepted = onAccepted;
     }
 
@@ -58,12 +69,27 @@ public class PartisanWarningDialogBuilder {
         builder.showDialogIfNeeded();
     }
 
+    public static void showCantSetupPasskeysIfNeeded(BaseFragment fragment, Runnable onAccepted) {
+        showCantSetupPasskeysIfNeededInternal(new PartisanWarningDialogBuilder(fragment, onAccepted));
+    }
+
+    public static void showCantSetupPasskeysIfNeeded(Context context, Runnable onAccepted) {
+        showCantSetupPasskeysIfNeededInternal(new PartisanWarningDialogBuilder(context, onAccepted));
+    }
+
+    private static void showCantSetupPasskeysIfNeededInternal(PartisanWarningDialogBuilder builder) {
+        builder.condition = () -> !FakePasscodeUtils.isFakePasscodeActivated();
+        builder.title = LocaleController.getString(R.string.CantSetupPasskeys);
+        builder.message = LocaleController.getString(R.string.CantSetupPasskeysDescription);
+        builder.showDialogIfNeeded();
+    }
+
     private void showDialogIfNeeded() {
         if (condition.get()) {
-            if (fragment == null) {
+            if (fragment == null && context == null) {
                 return;
             }
-            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
             builder.setTitle(title);
             builder.setMessage(message);
             if (buttonText != null) {
@@ -72,7 +98,11 @@ public class PartisanWarningDialogBuilder {
                 );
             }
             builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            fragment.showDialog(builder.create());
+            if (fragment != null) {
+                fragment.showDialog(builder.create());
+            } else {
+                builder.create().show();
+            }
         } else if (onAccepted != null) {
             onAccepted.run();
         }
