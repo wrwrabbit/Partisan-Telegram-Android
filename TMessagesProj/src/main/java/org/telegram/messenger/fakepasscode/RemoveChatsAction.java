@@ -240,10 +240,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
     }
 
     private void removeChatsFromOtherPasscodes() {
-        Set<Long> entriesToRemove = chatEntriesToRemove.stream()
-                .filter(e -> e.isExitFromChat)
-                .map(e -> e.chatId)
-                .collect(Collectors.toSet());
+        Set<Long> entriesToRemove = getExitingEntriesIds();
         for (FakePasscode fakePasscode : SharedConfig.fakePasscodes) {
             for (AccountActions accountActions : fakePasscode.getAllAccountActions()) {
                 RemoveChatsAction action = accountActions.getRemoveChatsAction();
@@ -315,10 +312,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
     }
 
     private boolean removeDialogsFromFolder(MessagesController.DialogFilter folder) {
-        List<Long> idsToRemove = chatEntriesToRemove.stream()
-                .filter(e -> e.isExitFromChat)
-                .map(e -> e.chatId)
-                .collect(Collectors.toList());
+        Set<Long> idsToRemove = getExitingEntriesIds();
         boolean folderChanged = folder.alwaysShow.removeAll(idsToRemove);
         folderChanged |= folder.neverShow.removeAll(idsToRemove);
         for (Long chatId : idsToRemove) {
@@ -384,17 +378,10 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
             return;
         }
         ArrayList<MessagesController.DialogFilter> filters = new ArrayList<>(getMessagesController().dialogFilters);
-        Set<Long> idsToHide = chatEntriesToRemove.stream()
-                .filter(e -> !e.isExitFromChat)
-                .map(e -> e.chatId)
-                .collect(Collectors.toSet());
+        Set<Long> idsToHide = getHidingEntriesIds();
 
         for (MessagesController.DialogFilter folder : filters) {
-            if (folder.isDefault()) {
-                continue;
-            }
-            List<Long> folderDialogIds = getFolderDialogIds(folder);
-            if (folderDialogIds != null && !folderDialogIds.isEmpty() && idsToHide.containsAll(folderDialogIds)) {
+            if (needHideFolder(folder, idsToHide)) {
                 hiddenFolders.add(folder.id);
             }
         }
@@ -403,17 +390,43 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
         }
     }
 
-    private List<Long> getFolderDialogIds(MessagesController.DialogFilter folder) {
+    private boolean needHideFolder(MessagesController.DialogFilter folder, Set<Long> idsToHide) {
+        if (folder.isDefault()) {
+            return false;
+        }
+        Set<Long> folderDialogIds = getFolderDialogIds(folder);
+        if (folderDialogIds == null || folderDialogIds.isEmpty()) {
+            return false;
+        }
+
+        folderDialogIds.removeAll(idsToHide);
+        return folderContainsOnlyLeftChats(folderDialogIds);
+    }
+
+    private Set<Long> getFolderDialogIds(MessagesController.DialogFilter folder) {
         if ((folder.flags & DIALOG_FILTER_FLAG_ALL_CHATS) == 0) {
-            return folder.alwaysShow;
+            return new HashSet<>(folder.alwaysShow);
         } else if ((folder.flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) == 0) {
             return getMessagesController().getDialogs(0).stream()
                     .filter(d -> folder.includesDialog(getAccountInstance(), d.id))
                     .map(d -> d.id)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toSet());
         } else {
             return null;
         }
+    }
+
+    private boolean folderContainsOnlyLeftChats(Set<Long> folderDialogIds) {
+        for (long dialogId : folderDialogIds) {
+            if (!DialogObject.isChatDialog(dialogId)) {
+                return false;
+            }
+            TLRPC.Chat chat = getMessagesController().getChat(-dialogId);
+            if (chat == null || !chat.left) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean folderHasDialogs(MessagesController.DialogFilter folder, List<Long> idsToCheck) {
@@ -496,6 +509,14 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
                 .filter(filter)
                 .map(e -> e.chatId)
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private Set<Long> getExitingEntriesIds() {
+        return new HashSet<>(getFilteredEntriesIds(e -> e.isExitFromChat));
+    }
+
+    private Set<Long> getHidingEntriesIds() {
+        return new HashSet<>(getFilteredEntriesIds(e -> !e.isExitFromChat));
     }
 
     private void postNotifications(boolean foldersCleared) {
