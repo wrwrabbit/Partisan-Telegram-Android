@@ -1101,12 +1101,12 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     }
 
     @Override
-    public boolean onBackPressed() {
+    public boolean onBackPressed(boolean invoked) {
         if (screen != null) {
-            return screen.onBackPressed();
-        } else {
-            return true;
+            if (invoked) return screen.onBackPressed();
+            return false;
         }
+        return super.onBackPressed(invoked);
     }
 
 
@@ -1435,7 +1435,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
     private boolean isNewPasscodeIdenticalOtherPasscode(String password) {
         if (FakePasscodeUtils.isFakePasscodeActivated()) {
-            SharedConfig.PasscodeCheckResult result = SharedConfig.checkPasscode(password);
+            SharedConfig.PasscodeCheckResult result = SharedConfig.checkPasscode(password, false, false);
             return result.isRealPasscodeSuccess
                     || result.fakePasscode != null && result.fakePasscode != FakePasscodeUtils.getActivatedFakePasscode();
         }

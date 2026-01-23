@@ -11920,7 +11920,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (FakePasscodeUtils.isFakePasscodeActivated()) {
             FakePasscode passcode = FakePasscodeUtils.getActivatedFakePasscode();
             if (passcode.passwordlessMode && !passcode.passcodeEnabled()) {
-                SharedConfig.PasscodeCheckResult result = SharedConfig.checkPasscode(text, true);
+                SharedConfig.PasscodeCheckResult result = SharedConfig.checkPasscode(text, true, true);
                 if (result.fakePasscode == passcode) {
                     return;
                 }
