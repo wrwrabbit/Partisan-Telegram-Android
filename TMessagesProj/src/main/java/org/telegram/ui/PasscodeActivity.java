@@ -1101,12 +1101,12 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     }
 
     @Override
-    public boolean onBackPressed() {
+    public boolean onBackPressed(boolean invoked) {
         if (screen != null) {
-            return screen.onBackPressed();
-        } else {
-            return true;
+            if (invoked) return screen.onBackPressed();
+            return false;
         }
+        return super.onBackPressed(invoked);
     }
 
 
