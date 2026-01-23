@@ -68,13 +68,13 @@ public class ForumUtilities {
         if (ChatObject.isMonoForum(chat)) {
             TLRPC.Chat mfChat = MessagesController.getInstance(currentAccount).getChat(chat.linked_monoforum_id);
             if (mfChat != null) {
-                return showChannelName ? mfChat.title : LocaleController.formatString(R.string.MonoforumTitle, mfChat.title);
+                return showChannelName ? UserConfig.getChatTitleOverride(currentAccount, mfChat) : LocaleController.formatString(R.string.MonoforumTitle, UserConfig.getChatTitleOverride(currentAccount, mfChat));
             }
         } else if (chat != null && chat.linked_monoforum_id != 0) {
-            return showChannelName ? chat.title : LocaleController.formatString(R.string.MonoforumTitle, chat.title);
+            return showChannelName ? UserConfig.getChatTitleOverride(currentAccount, chat) : LocaleController.formatString(R.string.MonoforumTitle, UserConfig.getChatTitleOverride(currentAccount, chat));
         }
 
-        return chat != null ? chat.title : null;
+        return chat != null ? UserConfig.getChatTitleOverride(currentAccount, chat) : null;
     }
 
     public static void setMonoForumAvatar(int currentAccount, TLRPC.Chat chat, AvatarDrawable avatarDrawable, BackupImageView imageView) {

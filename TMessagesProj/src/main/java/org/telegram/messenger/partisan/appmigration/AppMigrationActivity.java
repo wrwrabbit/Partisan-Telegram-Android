@@ -17,6 +17,7 @@ import android.widget.TextView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -24,7 +25,6 @@ import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
-import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.voip.CellFlickerDrawable;
@@ -96,7 +96,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
             cancelMigration();
         } else {
-            AlertsCreator.showConnectionDisabledDialogIfNeed(this, this::cancelMigration);
+            PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(this, this::cancelMigration);
         }
     }
 

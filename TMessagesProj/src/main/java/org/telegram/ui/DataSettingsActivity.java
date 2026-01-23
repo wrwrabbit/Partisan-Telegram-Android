@@ -541,7 +541,7 @@ public class DataSettingsActivity extends BaseFragment {
                 builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                 showDialog(builder.create());
             } else if (position == proxyRow) {
-                AlertsCreator.showConnectionDisabledDialogIfNeed(this, () -> {
+                org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(this, () -> {
                     presentFragment(new ProxyListActivity());
                 });
             } else if (position == enableStreamRow) {

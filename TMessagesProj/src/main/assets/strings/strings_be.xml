@@ -310,7 +310,7 @@
     <string name="MaskedPasscodeScreen_WrongPasscode">Вы ўвялі няправільны код блакіроўкі. Паспрабуйце яшчэ раз.</string>
 
     <string name="FileProtection">Абарона файлаў</string>
-    <string name="FileProtectionInfo">Абарона файлаў дазваляе абараніцца ад вымання інфармацыі пры даглядзе тэлефона. Уключэнне опцыі можа прывесці да некарэктнай працы прыкладання. Пасля ўключэння абароны файлаў кэш паведамленняў будзе ачышчаны, а дадатак перазагрузіцца.</string>
+    <string name="FileProtectionInfo">Абарона файлаў дазваляе абараніцца ад вымання інфармацыі пры даглядзе тэлефона. Уключэнне опцыі можа прывесці да некарэктнай працы прыкладання. Пасля ўключэння абароны файлаў кэш паведамленняў будзе ачышчаны, а прыкладанне перазагрузіцца.</string>
     <string name="ApplicationWillBeRestarted">Прыкладанне будзе перазапушчана.</string>
     <string name="WorksWithFakePasscodes">Працуе пры несапраўдных кадах блакіроўкі</string>
     <string name="NewPtelegramFeatureTitle">Новая функцыя PTelegram</string>
@@ -343,7 +343,7 @@
     <string name="PlayNormalVoice">Прайграць звычайны голас</string>
     <string name="CheckVoiceChangingDescription">Праверце змену голасу перад выкарыстаннем. Калі Вам не падабаецца гучанне, згенеруйце новыя параметры.</string>
     <string name="ShowVoiceChangedNotification">Апавяшчэнне аб змене голасу</string>
-    <string name="ShowVoiceChangedNotificationDescription">Паказваць надпіс пра змяненне голасу падчас запісу галасавых і відэапаведамленняў і званкоў.</string>
+    <string name="ShowVoiceChangedNotificationDescription">Паказваць надпіс пра змяненне голасу падчас званкоў, запісу галасавых і відэапаведамленняў.</string>
     <string name="VoiceChanged">Голас зменены</string>
     <string name="EnableForIndividualAccounts">Уключыць для асобных акаўнтаў</string>
     <string name="EnableForVoiceMessages">Уключыць для галасавых паведамленняў</string>
@@ -351,4 +351,6 @@
     <string name="EnableForVideoCalls">Уключыць для званкоў і стрымаў</string>
     <string name="VoiceChangeQualityDescription">Змена голасу высокай якасці зробіць гаворку больш разборлівай, але павялічыць разрад батарэі і можа не працаваць правільна на старых тэлефонах. Змяненне голасу нізкай якасці працуе нават на старых і слабых прыладах і зніжае разрад батарэі, але зробіць голас менш натуральным.</string>
     <string name="ChangesWillBeAppliedToTheNextCall">Голас у бягучым званку застанецца без змен. Змены прымяняюцца толькі ў наступным званку.</string>
+    <string name="CantSetupPasskeys">Немагчыма наладзіць ключы доступу</string>
+    <string name="CantSetupPasskeysDescription">Партызанскі Тэлеграм не можа наладзіць ключы доступу. Выкарыстоўвайце для гэтага афіцыйнае прыкладанне.</string>
 </resources>

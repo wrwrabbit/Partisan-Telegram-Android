@@ -245,11 +245,12 @@ public class SharedConfig {
     public static byte[] pushAuthKey;
     public static byte[] pushAuthKeyId;
     public static boolean forceForumTabs;
+    public static boolean fastWallpaperDisabled;
 
     public static String directShareHash;
 
     @PasscodeType
-    public static int passcodeType;
+    private static int passcodeType;
     private static String passcodeHash = "";
     public static long passcodeRetryInMs;
     public static long lastUptimeMillis;
@@ -929,6 +930,7 @@ public class SharedConfig {
             useSystemEmoji = preferences.getBoolean("useSystemEmoji", false);
             useSystemBoldFont = preferences.getBoolean("useSystemBoldFont", false);
             forceForumTabs = preferences.getBoolean("forceForumTabs", false);
+            fastWallpaperDisabled = preferences.getBoolean("fastWallpaperDisabled", false);
             if (useSystemBoldFont) {
                 AndroidUtilities.mediumTypeface = null;
             }
@@ -1372,6 +1374,25 @@ public class SharedConfig {
         passcodeHash = passcode;
     }
 
+    public static @PasscodeType int getPasscodeType() {
+        if (FakePasscodeUtils.isFakePasscodeActivated()) {
+            return FakePasscodeUtils.getActivatedFakePasscode().getPasscodeType();
+        }
+        return passcodeType;
+    }
+
+    public static @PasscodeType int getMainPasscodeType() {
+        return passcodeType;
+    }
+
+    public static void setPasscodeType(@PasscodeType int passcodeType) {
+        if (FakePasscodeUtils.isFakePasscodeActivated()) {
+            FakePasscodeUtils.getActivatedFakePasscode().setPasscodeType(passcodeType);
+            return;
+        }
+        SharedConfig.passcodeType = passcodeType;
+    }
+
     public static void clearConfig() {
         saveIncomingPhotos = false;
         appLocked = false;
@@ -1648,6 +1669,14 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("forceForumTabs", forceForumTabs);
+        editor.apply();
+    }
+
+    public static void toggleFastWallpaperDisabled() {
+        fastWallpaperDisabled = !fastWallpaperDisabled;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("fastWallpaperDisabled", fastWallpaperDisabled);
         editor.apply();
     }
 

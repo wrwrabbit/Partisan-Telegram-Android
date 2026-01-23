@@ -73,7 +73,6 @@ public class WebRtcAudioRecord {
   private int captureType;
 
   private org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger;
-  private int accountNum;
 
   private int requestedSampleRate = 48000;
   private int requestedChannels = 1;
@@ -260,7 +259,6 @@ public class WebRtcAudioRecord {
     this.nativeAudioRecord = nativeAudioRecord;
     effects = WebRtcAudioEffects.create();
     captureType = type;
-    accountNum = org.telegram.messenger.UserConfig.selectedAccount;
     if (captureType == 2 && Instance == null) {
       Instance = this;
     }
@@ -453,11 +451,7 @@ public class WebRtcAudioRecord {
       reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH, "AudioRecord.startRecording failed - incorrect state :" + audioRecord.getRecordingState());
       return false;
     }
-    voiceChanger = org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.createRealTimeVoiceChangerIfNeeded(
-            accountNum,
-            org.telegram.messenger.partisan.voicechange.VoiceChangeType.CALL,
-            requestedSampleRate
-    );
+    voiceChanger = org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.createVoiceChangerForCall(requestedSampleRate);
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
     return true;
