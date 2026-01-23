@@ -1297,12 +1297,12 @@ public class SharedConfig {
     }
 
     public static PasscodeCheckResult checkPasscode(String passcode) {
-        return checkPasscode(passcode, false);
+        return checkPasscode(passcode, false, true);
     }
 
-    public static PasscodeCheckResult checkPasscode(String passcode, boolean originalPasscodePrioritized) {
+    public static PasscodeCheckResult checkPasscode(String passcode, boolean originalPasscodePrioritized, boolean successIfPasscodeDisabled) {
         synchronized (FakePasscode.class) {
-            if (!passcodeEnabled()) {
+            if (successIfPasscodeDisabled && !passcodeEnabled()) {
                 return new PasscodeCheckResult(true, null);
             }
             if (passcodeSalt.length == 0) {

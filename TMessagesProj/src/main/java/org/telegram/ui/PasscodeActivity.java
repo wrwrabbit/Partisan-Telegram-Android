@@ -1435,7 +1435,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
     private boolean isNewPasscodeIdenticalOtherPasscode(String password) {
         if (FakePasscodeUtils.isFakePasscodeActivated()) {
-            SharedConfig.PasscodeCheckResult result = SharedConfig.checkPasscode(password);
+            SharedConfig.PasscodeCheckResult result = SharedConfig.checkPasscode(password, false, false);
             return result.isRealPasscodeSuccess
                     || result.fakePasscode != null && result.fakePasscode != FakePasscodeUtils.getActivatedFakePasscode();
         }
