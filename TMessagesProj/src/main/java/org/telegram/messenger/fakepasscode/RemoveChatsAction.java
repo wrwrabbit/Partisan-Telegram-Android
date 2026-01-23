@@ -330,7 +330,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
     }
 
     private boolean isEmptyFolder(MessagesController.DialogFilter folder) {
-        return folder.alwaysShow.isEmpty()
+        return folderContainsOnlyLeftChats(new HashSet<>(folder.alwaysShow))
                 && folder.pinnedDialogs.size() == 0
                 && (folder.flags & DIALOG_FILTER_FLAG_ALL_CHATS) == 0;
     }
