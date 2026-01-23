@@ -232,6 +232,10 @@ public class LivePlayer implements NotificationCenter.NotificationCenterDelegate
     private void init() {
         if (destroyed) return;
 
+        if (outgoing) {
+            org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.setPendingCallAccountNum(currentAccount);
+        }
+
         instance = NativeInstance.makeGroup(
                 VoIPHelper.getLogFilePath("live_" + inputCall.id),
                 0,
@@ -474,7 +478,7 @@ public class LivePlayer implements NotificationCenter.NotificationCenterDelegate
                     req.location = inputGroupCallStream;
                     String key = videoChannel == 0 ? ("" + timestamp) : (videoChannel + "_" + timestamp + "_" + quality);
                     int reqId = AccountInstance.getInstance(currentAccount).getConnectionsManager().sendRequest(req, (response, error, responseTime) -> {
-                        if (destroyed) return;
+                        if (destroyed || instance == null) return;
                         AndroidUtilities.runOnUIThread(() -> currentStreamRequestTimestamp.remove(key));
 
                         if (response != null) {

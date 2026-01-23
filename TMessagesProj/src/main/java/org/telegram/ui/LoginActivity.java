@@ -137,6 +137,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.PasskeysController;
 import org.telegram.messenger.PushListenerController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SRPHelper;
@@ -174,6 +175,7 @@ import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkPath;
+import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.LoadingDrawable;
 import org.telegram.ui.Components.LoginOrView;
 import org.telegram.ui.Components.OutlineTextContainerView;
@@ -217,15 +219,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_LASTSEEN;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_INVITE;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_CALLS;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_P2P;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_PHOTO;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_FORWARDS;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_PHONE;
-import static org.telegram.ui.PrivacyControlActivity.PRIVACY_RULES_TYPE_ADDED_BY_PHONE;
 
 @SuppressLint("HardwareIds")
 public class LoginActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
@@ -637,7 +630,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 if (id == done_button) {
                     onDoneButtonPressed();
                 } else if (id == -1) {
-                    if (onBackPressed()) {
+                    if (onBackPressed(true)) {
                         finishFragment();
                     }
                 }
@@ -839,7 +832,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         backButtonView = new ImageView(context);
         backButtonView.setImageResource(R.drawable.ic_ab_back);
         backButtonView.setOnClickListener(v -> {
-            if (onBackPressed()) {
+            if (onBackPressed(true)) {
                 finishFragment();
             }
         });
@@ -867,7 +860,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
         proxyButtonView = new ImageView(context);
         proxyButtonView.setImageDrawable(proxyDrawable = new ProxyDrawable(context));
-        proxyButtonView.setOnClickListener(v -> AlertsCreator.showConnectionDisabledDialogIfNeed(this, () -> presentFragment(new ProxyListActivity())));
+        proxyButtonView.setOnClickListener(v -> org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(this, () -> presentFragment(new ProxyListActivity())));
         proxyButtonView.setAlpha(0f);
         proxyButtonView.setVisibility(View.GONE);
         sizeNotifierFrameLayout.addView(proxyButtonView, LayoutHelper.createFrame(32, 32, Gravity.RIGHT | Gravity.TOP, 16, 16, 16, 16));
@@ -1197,41 +1190,55 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     }
 
     @Override
-    public boolean onBackPressed() {
+    public boolean onBackPressed(boolean invoked) {
         if (emailChangeIsSuggestion && currentViewNum == VIEW_ADD_EMAIL) {
             return false;
         }
 
         if (currentViewNum == VIEW_PHONE_INPUT || activityMode == MODE_CHANGE_LOGIN_EMAIL && currentViewNum == VIEW_ADD_EMAIL) {
-            for (int a = 0; a < views.length; a++) {
-                if (views[a] != null) {
-                    views[a].onDestroyActivity();
+            if (invoked) {
+                for (int a = 0; a < views.length; a++) {
+                    if (views[a] != null) {
+                        views[a].onDestroyActivity();
+                    }
                 }
+                clearCurrentState();
             }
-            clearCurrentState();
             return true;
         } else if (currentViewNum == VIEW_PASSWORD) {
-            views[currentViewNum].onBackPressed(true);
-            setPage(VIEW_PHONE_INPUT, true, null, true);
+            if (invoked) {
+                views[currentViewNum].onBackPressed(true);
+                setPage(VIEW_PHONE_INPUT, true, null, true);
+            }
         } else if (currentViewNum == VIEW_RECOVER || currentViewNum == VIEW_RESET_WAIT) {
-            views[currentViewNum].onBackPressed(true);
-            setPage(VIEW_PASSWORD, true, null, true);
+            if (invoked) {
+                views[currentViewNum].onBackPressed(true);
+                setPage(VIEW_PASSWORD, true, null, true);
+            }
         } else if ((currentViewNum >= VIEW_CODE_MESSAGE && currentViewNum <= VIEW_CODE_CALL) || currentViewNum == AUTH_TYPE_MISSED_CALL || currentViewNum == AUTH_TYPE_FRAGMENT_SMS) {
-            if (views[currentViewNum].onBackPressed(false)) {
+            if (invoked && views[currentViewNum].onBackPressed(false)) {
                 setPage(VIEW_PHONE_INPUT, true, null, true);
             }
         } else if (currentViewNum == VIEW_REGISTER) {
-            ((LoginActivityRegisterView) views[currentViewNum]).wrongNumber.callOnClick();
+            if (invoked) {
+                ((LoginActivityRegisterView) views[currentViewNum]).wrongNumber.callOnClick();
+            }
         } else if (currentViewNum == VIEW_NEW_PASSWORD_STAGE_1) {
-            views[currentViewNum].onBackPressed(true);
-            setPage(VIEW_RECOVER, true, null, true);
+            if (invoked) {
+                views[currentViewNum].onBackPressed(true);
+                setPage(VIEW_RECOVER, true, null, true);
+            }
         } else if (currentViewNum == VIEW_NEW_PASSWORD_STAGE_2) {
-            views[currentViewNum].onBackPressed(true);
-            setPage(VIEW_NEW_PASSWORD_STAGE_1, true, null, true);
+            if (invoked) {
+                views[currentViewNum].onBackPressed(true);
+                setPage(VIEW_NEW_PASSWORD_STAGE_1, true, null, true);
+            }
         } else if (currentViewNum == VIEW_CODE_EMAIL_SETUP) {
-            views[currentViewNum].onBackPressed(true);
-            setPage(VIEW_ADD_EMAIL, true, null, true);
-        } else {
+            if (invoked) {
+                views[currentViewNum].onBackPressed(true);
+                setPage(VIEW_ADD_EMAIL, true, null, true);
+            }
+        } else if (invoked) {
             if (views[currentViewNum].onBackPressed(true)) {
                 setPage(VIEW_PHONE_INPUT, true, null, true);
             }
@@ -2155,7 +2162,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private OutlineTextContainerView countryOutlineView;
         private OutlineTextContainerView phoneOutlineView;
         private TextView plusTextView;
-        private TextView subtitleView;
+        private LinkSpanDrawable.LinksTextView subtitleView;
         private View codeDividerView;
         private ImageView chevronRight;
         private CheckBoxCell syncContactsBox;
@@ -2240,7 +2247,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 }
             });
 
-            subtitleView = new TextView(context);
+            subtitleView = new LinkSpanDrawable.LinksTextView(context);
             subtitleView.setText(getString(activityMode == MODE_CHANGE_PHONE_NUMBER ? R.string.ChangePhoneHelp : R.string.StartText));
             subtitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
             subtitleView.setGravity(Gravity.CENTER);
@@ -2693,6 +2700,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     loadCountries();
                 });
             }
+
             if (bottomMargin > 0 && !AndroidUtilities.isSmallScreen()) {
                 Space bottomSpacer = new Space(context);
                 bottomSpacer.setMinimumHeight(AndroidUtilities.dp(bottomMargin));
@@ -2868,6 +2876,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         public void updateColors() {
             titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             subtitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
+            subtitleView.setLinkTextColor(Theme.getColor(Theme.key_chat_messageLinkIn));
             for (int i = 0; i < countryButton.getChildCount(); i++) {
                 TextView textView = (TextView) countryButton.getChildAt(i);
                 textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
@@ -3589,7 +3598,87 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         }
                     }
                 }
+                if (activityMode == MODE_LOGIN) {
+                    requestPasskey(false);
+                }
             }, SHOW_DELAY);
+        }
+
+        @Override
+        public void onDestroyActivity() {
+            super.onDestroyActivity();
+            if (cancelRequestingPasskey != null) {
+                cancelRequestingPasskey.run();
+                cancelRequestingPasskey = null;
+            }
+        }
+
+        private boolean requestedPasskey = false;
+        private boolean requestingPasskey = false;
+        private Runnable cancelRequestingPasskey;
+        private void requestPasskey(boolean clickedButton) {
+            if (activityMode != MODE_LOGIN) return;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || !BuildVars.SUPPORTS_PASSKEYS) return;
+            if (requestingPasskey || !clickedButton && requestedPasskey) return;
+
+            requestingPasskey = true;
+            requestedPasskey = true;
+            cancelRequestingPasskey = PasskeysController.login(getContext(), currentAccount, clickedButton, (userId, authObject, err) -> {
+                cancelRequestingPasskey = null;
+                requestingPasskey = false;
+                if (err != null && ("EMPTY".equals(err) || "CANCELLED".equals(err))) {
+                    if (subtitleView != null && "CANCELLED".equals(err)) {
+                        subtitleView.setText(AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(getString(R.string.StartTextPasskey), () -> {
+                            requestPasskey(true);
+                        }), true));
+                    }
+                    return;
+                }
+                if (userId != 0 && getParentActivity() instanceof LaunchActivity) {
+                    for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                        UserConfig userConfig = UserConfig.getInstance(a);
+                        if (!userConfig.isClientActivated()) {
+                            continue;
+                        }
+                        if (userConfig.getClientUserId() == userId && ConnectionsManager.getInstance(a).isTestBackend() == testBackend) {
+                            if (UserConfig.selectedAccount != a) {
+                                ((LaunchActivity) getParentActivity()).switchToAccount(a, false);
+                            }
+                            finishFragment();
+                            needHideProgress(false);
+                            return;
+                        }
+                    }
+                }
+                if (err != null && err.contains("SESSION_PASSWORD_NEEDED")) {
+                    final TL_account.getPassword req2 = new TL_account.getPassword();
+                    ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
+                        nextPressed = false;
+                        showDoneButton(false, true);
+                        if (error1 == null) {
+                            final TL_account.Password password = (TL_account.Password) response1;
+                            if (!TwoStepVerificationActivity.canHandleCurrentPassword(password, true)) {
+                                AlertsCreator.showUpdateAppAlert(getParentActivity(), getString("UpdateAppAlert", R.string.UpdateAppAlert), true);
+                                return;
+                            }
+                            final Bundle bundle = new Bundle();
+                            final SerializedData data = new SerializedData(password.getObjectSize());
+                            password.serializeToStream(data);
+                            bundle.putString("password", Utilities.bytesToHex(data.toByteArray()));
+                            setPage(VIEW_PASSWORD, true, bundle, false);
+                        } else {
+                            needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), error1.text);
+                        }
+                    }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
+                } else if (err != null) {
+                    if (BuildVars.DEBUG_VERSION)
+                        BulletinFactory.of(LoginActivity.this).showForError(err);
+                    return;
+                }
+                if (authObject instanceof TLRPC.TL_auth_authorization) {
+                    onAuthSuccess((TLRPC.TL_auth_authorization) authObject);
+                }
+            });
         }
 
         @Override
@@ -6045,7 +6134,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             titleView.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
             addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 16, 32, 0));
 
-            subtitleView = new TextView(context);
+            subtitleView = new LinkSpanDrawable.LinksTextView(context);
             subtitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
             subtitleView.setGravity(Gravity.CENTER);
             subtitleView.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
@@ -6151,6 +6240,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         public void updateColors() {
             titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             subtitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
+            subtitleView.setLinkTextColor(Theme.getColor(Theme.key_chat_messageLinkIn));
             emailField.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             signInWithGoogleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
             loginOrView.updateColors();
@@ -10002,15 +10092,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             textView.setGravity(Gravity.CENTER);
             topView.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 16, 152, 16, 0));
 
-            cells[0] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET);
+            cells[0] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourceProvider);
             cells[0].set(R.drawable.menu_high_price, getString(R.string.SMSFee1Title), getString(R.string.SMSFee1Text));
             addView(cells[0], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL | Gravity.TOP, 0, 0, 0, 6));
 
-            cells[1] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET);
+            cells[1] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourceProvider);
             cells[1].set(R.drawable.menu_feature_code, getString(R.string.SMSFee2Title), getString(R.string.SMSFee2Text));
             addView(cells[1], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL | Gravity.TOP, 0, 0, 0, 6));
 
-            cells[2] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET);
+            cells[2] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourceProvider);
             cells[2].set(R.drawable.menu_feature_hands, AndroidUtilities.replaceArrows(replaceSingleTag(getString(R.string.SMSFee3Title), () -> {
                 final PremiumPreviewFragment fragment = new PremiumPreviewFragment("sms");
                 fragment.setCurrentAccount(currentAccount);

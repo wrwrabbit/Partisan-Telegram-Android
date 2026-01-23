@@ -276,7 +276,7 @@ public class PhonebookShareAlert extends BottomSheet {
         } else {
             AndroidUtilities.VcardItem item = new AndroidUtilities.VcardItem();
             item.type = 0;
-            item.vcardData.add(item.fullData = "TEL;MOBILE:+" + contact.user.phone);
+            item.vcardData.add(item.fullData = "TEL;MOBILE:+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumberIfSelf(currentAccount, contact.user));
             phones.add(item);
         }
         if (user == null && contact != null) {
@@ -319,7 +319,7 @@ public class PhonebookShareAlert extends BottomSheet {
             currentUser.status = user.status;
             currentUser.first_name = user.first_name;
             currentUser.last_name = user.last_name;
-            currentUser.phone = user.phone;
+            currentUser.phone = org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumberIfSelf(currentAccount, user);
             if (vcard != null) {
                 currentUser.restriction_reason = vcard;
             }

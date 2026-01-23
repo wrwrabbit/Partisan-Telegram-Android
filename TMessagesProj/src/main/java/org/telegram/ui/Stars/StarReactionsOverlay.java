@@ -18,6 +18,7 @@ import android.view.ViewConfiguration;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
@@ -139,7 +140,7 @@ public class StarReactionsOverlay extends View {
                     name = UserObject.getForcedFirstName(user);
                 } else {
                     TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-dialogId);
-                    name = chat == null ? "" : chat.title;
+                    name = chat == null ? "" : UserConfig.getChatTitleOverride(chatActivity.getCurrentAccount(), chat);
                 }
                 new StarsIntroActivity.StarsNeededSheet(chatActivity.getContext(), chatActivity.getResourceProvider(), totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, name, () -> {
                     starsController.sendPaidReaction(msg, chatActivity, totalStars, true, true, null);

@@ -11711,7 +11711,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 if (currentState != 0) {
                     return;
                 }
-                AlertsCreator.showConfirmDangerousActionDialogIfNeed(parentFragment, () -> {
+                org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(parentFragment, () -> {
                     setState(1, true);
                     joinChannel(BlockChannelCell.this, loadedChannel);
                 });

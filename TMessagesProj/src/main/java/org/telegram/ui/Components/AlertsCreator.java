@@ -998,6 +998,9 @@ public class AlertsCreator {
     }
 
     public static Dialog showSimpleAlert(BaseFragment baseFragment, final String title, final String text, Theme.ResourcesProvider resourcesProvider) {
+        if (baseFragment == null) {
+            baseFragment = LaunchActivity.getSafeLastFragment();
+        }
         if (text == null || baseFragment == null || baseFragment.getParentActivity() == null) {
             return null;
         }
@@ -8078,53 +8081,6 @@ public class AlertsCreator {
         return dialog;
     }
 
-    public static void showConfirmDangerousActionDialogIfNeed(BaseFragment fragment, Runnable onAccepted) {
-        showConfirmDangerousActionDialogIfNeed(fragment, true, onAccepted);
-    }
-
-    public static void showConfirmDangerousActionDialogIfNeed(BaseFragment fragment, boolean dialogShowingAllowed, Runnable onAccepted) {
-        // This approach may seem strange, but it allows us not to move or duplicate the original code,
-        // but to wrap it in a positive runnable. The showDialog flag serves the same purpose.
-        if (SharedConfig.confirmDangerousActions && !FakePasscodeUtils.isFakePasscodeActivated() && fragment != null && dialogShowingAllowed) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
-            builder.setTitle(LocaleController.getString(R.string.ConfirmAction));
-            builder.setMessage(LocaleController.getString(R.string.ConfirmDangerousActionAlertInfo));
-            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog2, which) -> onAccepted.run());
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            fragment.showDialog(builder.create());
-        } else if (onAccepted != null) {
-            onAccepted.run();
-        }
-    }
-
-    public static void showCantChangePhoneNumberDialogIfNeed(BaseFragment fragment, Runnable defaultAction) {
-        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-            if (fragment == null) {
-                return;
-            }
-            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
-            builder.setTitle(LocaleController.getString(R.string.CantChangePhoneNumberTitle));
-            builder.setMessage(LocaleController.getString(R.string.CantChangePhoneNumberDescription));
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            fragment.showDialog(builder.create());
-        } else if (defaultAction != null) {
-            defaultAction.run();
-        }
-    }
-
-    public static void showConnectionDisabledDialogIfNeed(BaseFragment fragment, Runnable onAccepted) {
-        if (AppMigrator.isConnectionDisabled() && !FakePasscodeUtils.isFakePasscodeActivated() && fragment != null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
-            builder.setTitle(LocaleController.getString(R.string.ConnectionDisabledTitle));
-            builder.setMessage(LocaleController.getString(R.string.ConnectionDisabledMessage));
-            builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialog2, which) -> onAccepted.run());
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            fragment.showDialog(builder.create());
-        } else if (onAccepted != null) {
-            onAccepted.run();
-        }
-    }
-
     public interface SoundFrequencyDelegate {
         void didSelectValues(int time, int minute);
     }
@@ -8546,5 +8502,84 @@ public class AlertsCreator {
             })
             .setNegativeButton(getString(R.string.Cancel), null)
             .show();
+    }
+
+    public static BottomSheet createCustomPicker(Context context, String title, int selected, String[] positions, final Utilities.Callback<Integer> whenPicked) {
+        final int currentAccount = UserConfig.selectedAccount;
+        if (TimezonesController.getInstance(currentAccount).getTimezones().isEmpty()) {
+            return null;
+        }
+
+        ScheduleDatePickerColors datePickerColors = new ScheduleDatePickerColors();
+
+        BottomSheet.Builder builder = new BottomSheet.Builder(context, false, null);
+        builder.setApplyBottomPadding(false);
+
+        LinearLayout linearLayout = new LinearLayout(context);
+        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+        linearLayout.setWeightSum(1f);
+
+        final NumberPicker picker = new NumberPicker(context);
+        picker.setAllItemsCount(positions.length);
+        picker.setItemCount(Math.min(positions.length, 8));
+        picker.setTextColor(datePickerColors.textColor);
+        picker.setGravity(Gravity.CENTER);
+        picker.setMinValue(0);
+        picker.setMaxValue(positions.length - 1);
+        picker.setValue(selected);
+
+        linearLayout.addView(picker, LayoutHelper.createLinear(0, 54 * 8, 1f));
+        picker.setFormatter(value -> positions[value]);
+
+        LinearLayout container = new LinearLayout(context) {
+            boolean ignoreLayout = false;
+
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                ignoreLayout = true;
+                picker.getLayoutParams().height = dp(NumberPicker.DEFAULT_SIZE_PER_COUNT) * 8;
+                ignoreLayout = false;
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            }
+
+            @Override
+            public void requestLayout() {
+                if (ignoreLayout) {
+                    return;
+                }
+                super.requestLayout();
+            }
+        };
+        container.setOrientation(LinearLayout.VERTICAL);
+
+        FrameLayout titleLayout = new FrameLayout(context);
+
+        TextView titleView = new TextView(context);
+        titleView.setText(title);
+        titleView.setTextColor(datePickerColors.textColor);
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+        titleView.setTypeface(AndroidUtilities.bold());
+        titleLayout.addView(titleView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 0, 12, 0, 0));
+        titleView.setOnTouchListener((v, event) -> true);
+        container.addView(titleLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 22, 0, 0, 4));
+
+        container.addView(linearLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1f, 0, 0, 12, 0, 12));
+
+        BottomSheet[] sheet = new BottomSheet[1];
+
+        ButtonWithCounterView button = new ButtonWithCounterView(context, null);
+        button.setText(LocaleController.getString(R.string.Select), false);
+        button.setOnClickListener(v -> sheet[0].dismiss());
+        container.addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, 0, 16, 12, 16, 12));
+
+        builder.setCustomView(container);
+        BottomSheet bottomSheet = builder.show();
+        bottomSheet.setOnDismissListener(dialog -> {
+            whenPicked.run(picker.getValue());
+        });
+        bottomSheet.setBackgroundColor(datePickerColors.backgroundColor);
+        bottomSheet.fixNavigationBar(datePickerColors.backgroundColor);
+
+        return sheet[0] = builder.create();
     }
 }
