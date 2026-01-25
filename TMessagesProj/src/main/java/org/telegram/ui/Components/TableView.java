@@ -366,6 +366,10 @@ public class TableView extends TableLayout {
     }
 
     public TableRow addRow(CharSequence title, CharSequence text, ButtonSpan.TextViewButtons[] textViewRef) {
+        return addRow(title, text, null, textViewRef);
+    }
+
+    public TableRow addRow(CharSequence title, CharSequence text, TableRowTitle[] titleRef, ButtonSpan.TextViewButtons[] textViewRef) {
         ButtonSpan.TextViewButtons textView = new ButtonSpan.TextViewButtons(getContext());
         textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
@@ -375,7 +379,12 @@ public class TableView extends TableLayout {
         TableRow row = new TableRow(getContext());
         TableRow.LayoutParams lp;
         lp = new TableRow.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        row.addView(new TableRowTitle(this, title), lp);
+        TableRowTitle tableRowTitle = new TableRowTitle(this, title);
+        if (titleRef != null) {
+            titleRef[0] = tableRowTitle;
+        }
+
+        row.addView(tableRowTitle, lp);
         lp = new TableRow.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
         row.addView(new TableRowContent(this, textView), lp);
         addView(row);
@@ -478,7 +487,7 @@ public class TableView extends TableLayout {
         @Override
         protected void onDraw(Canvas canvas) {
             if (first || last) {
-                final float r = dp(4);
+                final float r = dp(8);
                 table.radii[0] = table.radii[1] = first ? r : 0; // top left
                 table.radii[2] = table.radii[3] = 0; // top right
                 table.radii[4] = table.radii[5] = 0; // bottom right
@@ -535,7 +544,7 @@ public class TableView extends TableLayout {
         @Override
         protected void onDraw(Canvas canvas) {
             if (first || last) {
-                final float r = dp(4);
+                final float r = dp(8);
                 table.radii[0] = table.radii[1] = first ? r : 0; // top left
                 table.radii[2] = table.radii[3] = first ? r : 0; // top right
                 table.radii[4] = table.radii[5] = last ? r : 0; // bottom right
@@ -575,6 +584,7 @@ public class TableView extends TableLayout {
         }
 
         private boolean first, last;
+        private boolean left = false, right = true;
 
         public void setFirstLast(boolean first, boolean last) {
             if (this.first != first || this.last != last) {
@@ -584,16 +594,27 @@ public class TableView extends TableLayout {
             }
         }
 
+        public void setLeftRight(boolean left, boolean right) {
+            if (this.left != left || this.right != right) {
+                this.left = left;
+                this.right = right;
+                invalidate();
+            }
+        }
+
         @Override
         protected void onDraw(Canvas canvas) {
             if (first || last) {
-                final float r = dp(4);
-                table.radii[0] = table.radii[1] = 0; // top left
-                table.radii[2] = table.radii[3] = first ? r : 0; // top right
-                table.radii[4] = table.radii[5] = last ? r : 0; // bottom right
-                table.radii[6] = table.radii[7] = 0; // bottom left
+                final float r = dp(8);
+                table.radii[0] = table.radii[1] = first && left ? r : 0; // top left
+                table.radii[2] = table.radii[3] = first && right ? r : 0; // top right
+                table.radii[4] = table.radii[5] = last && right ? r : 0; // bottom right
+                table.radii[6] = table.radii[7] = last && left ? r : 0; // bottom left
                 table.path.rewind();
                 AndroidUtilities.rectTmp.set(table.hw, table.hw, getWidth() - table.hw, getHeight() + table.hw * dp(last ? -1f : +1f));
+                if (!right) {
+                    AndroidUtilities.rectTmp.right += table.w;
+                }
                 table.path.addRoundRect(AndroidUtilities.rectTmp, table.radii, Path.Direction.CW);
                 canvas.drawPath(table.path, table.borderPaint);
             } else {
@@ -625,6 +646,7 @@ public class TableView extends TableLayout {
                     ((TableRowTitle) child).setFirstLast(y == 0, y == height - 1);
                 } else if (child instanceof TableRowContent) {
                     ((TableRowContent) child).setFirstLast(y == 0, y == height - 1);
+                    ((TableRowContent) child).setLeftRight(x == 0, x == width - 1);
                 } else if (child instanceof TableRowFullContent) {
                     ((TableRowFullContent) child).setFirstLast(y == 0, y == height - 1);
                 }

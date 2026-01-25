@@ -40,7 +40,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ConfigurationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.DataSetObserver;
@@ -269,6 +268,7 @@ import org.telegram.ui.Components.Premium.boosts.UserSelectorBottomSheet;
 import org.telegram.ui.Components.ProfileGalleryView;
 import org.telegram.ui.Components.ProfileGooeyView;
 import org.telegram.ui.Components.ProfileMusicView;
+import org.telegram.ui.Components.ProfileSuggestionView;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RadialProgressView;
@@ -321,7 +321,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -391,6 +390,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private FrameLayout avatarContainer;
     private FrameLayout avatarContainer2;
     private ProfileActionsView actionsView;
+    private ProfileSuggestionView suggestionView;
     private MessagesController.SavedMusicList savedMusicList;
     private ProfileMusicView musicView;
     private DrawerProfileCell.AnimatedStatusView animatedStatusView;
@@ -475,6 +475,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private boolean isTopic;
     private boolean openSimilar;
     public boolean myProfile;
+    public boolean passkeySuggestion;
     public boolean openGifts;
     public int openGiftsCollection;
     public boolean openGiftsUpgradable;
@@ -1530,8 +1531,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             final float k = 0.5f;
             topOverlayRect.set(0, 0, w, (int) (actionBarHeight * k));
             bottomOverlayRect.set(0, (int) (h - AndroidUtilities.dp(72f) * k), w, h);
-            topOverlayGradient.setBounds(0, topOverlayRect.bottom, w, actionBarHeight + AndroidUtilities.dp(16f));
-            bottomOverlayGradient.setBounds(0, h - getActionsExtraHeight() - AndroidUtilities.dp(72f) - AndroidUtilities.dp(24f), w, bottomOverlayRect.top);
+            topOverlayGradient.setBounds(0, topOverlayRect.bottom, w, actionBarHeight + dp(16f));
+            bottomOverlayGradient.setBounds(0, h - getActionsExtraHeight() - dp(72f) - dp(24f), w, bottomOverlayRect.top);
             pressedOverlayGradient[0].setBounds(0, 0, w / 5, h);
             pressedOverlayGradient[1].setBounds(w - (w / 5), 0, w, h);
         }
@@ -2621,7 +2622,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     args.putBoolean("closeFragment", false);
 //                    args.putString("addToGroupAlertString", LocaleController.formatString("AddToTheGroupAlertText", R.string.AddToTheGroupAlertText, UserObject.getUserName(user, currentAccount), "%1$s"));
                     DialogsActivity fragment = new DialogsActivity(args);
-                    fragment.setDelegate((fragment1, dids, message, param, notify, scheduleDate, topicsFragment) -> {
+                    fragment.setDelegate((fragment1, dids, message, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment) -> {
                         long did = dids.get(0).dialogId;
 
                         TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-did);
@@ -3809,7 +3810,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         };
         sharedMediaLayout.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.MATCH_PARENT));
 
-        if (getActionsExtraHeight() > 0) {
+        if (!(userId != 0 && imageUpdater != null || myProfile)) {
             actionsView = new ProfileActionsView(context, getActionsExtraHeight());
             setActionsMode();
             updateNotifications(false);
@@ -3895,6 +3896,23 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         break;
                 }
             });
+        }
+        if (userId != 0 && imageUpdater != null || myProfile) {
+            passkeySuggestion = false && MessagesController.getInstance(currentAccount).pendingSuggestions.contains("SETUP_PASSKEY");
+
+            suggestionView = new ProfileSuggestionView(context, resourcesProvider);
+            suggestionView.setVisibility(passkeySuggestion ? View.VISIBLE : View.GONE);
+            suggestionView.setOnClickListener(v -> {
+                PasskeysActivity.showLearnSheet(context, currentAccount, resourcesProvider, true);
+            });
+            suggestionView.closeView.setOnClickListener(v -> {
+                passkeySuggestion = false;
+
+                finishFragment();
+            });
+            if (avatarsBlurView != null) {
+                avatarsBlurView.setSize(getActionsExtraHeight());
+            }
         }
 
         ActionBarMenu menu = actionBar.createMenu();
@@ -4620,6 +4638,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 "Reload app config",
                                 !SharedConfig.forceForumTabs ? "Force Forum Tabs" : "Do Not Force Forum Tabs",
                             "Make Memory Dump",
+                                BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.fastWallpaperDisabled ? "enable wallpaper shader" : "disable wallpaper shader") : null,
                                 !FakePasscodeUtils.isFakePasscodeActivated() ? "Enter tester settings password" : null
                         };
 
@@ -4918,6 +4937,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 SharedConfig.toggleForceForumTabs();
                             } else if (which == 37) {
                                 FileLog.getInstance().dumpMemory(true);
+                            } else if (which == 38) {
+                                SharedConfig.toggleFastWallpaperDisabled();
                             }
                         });
                         builder.setNegativeButton(getString("Cancel", R.string.Cancel), null);
@@ -5402,6 +5423,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (actionsView != null) {
             avatarsBlurView.setActionsView(actionsView);
             avatarContainer2.addView(actionsView, LayoutHelper.createFrame(-1, -1));
+        }
+        if (suggestionView != null) {
+            avatarsBlurView.setSuggestionView(suggestionView);
+            avatarContainer2.addView(suggestionView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
         }
         if (musicView != null) {
             avatarsBlurView.setMusicView(musicView);
@@ -5939,6 +5964,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private int getActionsExtraHeight() {
         if (userId != 0 && imageUpdater != null || myProfile) {
+            if (passkeySuggestion) {
+                return dp(88);
+            }
             return 0;
         }
         return dp(74);
@@ -6400,6 +6428,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         mediaCounterTextView.setTranslationY(Math.max(minOnlineY, onlineTextViewY));
 
         updateActionsPosition();
+        updateSuggestionsPosition();
 
         final Object onlineTextViewTag = onlineTextView[1].getTag();
         int statusColor;
@@ -8926,6 +8955,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         updateEmojiStatusEffectPosition();
         updateActionsPosition();
+        updateSuggestionsPosition();
     }
 
     public void calculatePositionsOnFirstLoad() {
@@ -9185,6 +9215,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         invalidateIsInLandscapeMode();
         if (isInLandscapeMode && actionsView != null) {
             actionsView.drawingBlur(false);
+        }
+        if (isInLandscapeMode && suggestionView != null) {
+            suggestionView.drawingBlur(false);
         }
         if (isInLandscapeMode && musicView != null) {
             musicView.drawingBlur(false);
@@ -9484,6 +9517,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             updateRowsIds();
             if (prevRow1 != passwordSuggestionRow || prevSecuritySuggestionRow != securitySuggestionRow || prevRow2 != phoneSuggestionRow || prevRow3 != graceSuggestionRow) {
                 AndroidUtilities.runOnUIThread(() -> listAdapter.notifyDataSetChanged());
+            }
+
+            final boolean passkey = false && suggestionView != null && MessagesController.getInstance(currentAccount).pendingSuggestions.contains("SETUP_PASSKEY");
+            if (passkey != passkeySuggestion) {
+                passkeySuggestion = passkey;
+                if (!passkey) {
+                    finishFragment();
+                }
             }
         } else if (id == NotificationCenter.topicsDidLoaded) {
             if (isTopic) {
@@ -9915,6 +9956,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (playProfileAnimation == 2) {
             avatarImage.setProgressToExpand(progress);
             updateActionsPosition();
+            updateSuggestionsPosition();
         }
 
         if (ratingView != null) {
@@ -11258,6 +11300,28 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         );
     }
 
+    private void updateSuggestionsPosition() {
+        if (suggestionView == null || onlineTextView[1] == null) return;
+
+        final int newTop = ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0);
+        suggestionView.isOpeningLayout = openAnimationInProgress;
+
+        if (openAnimationInProgress && playProfileAnimation == 2 && avatarContainer != null) {
+            float vh = avatarContainer.getHeight() * avatarContainer.getScaleY();
+            suggestionView.clipHeight = avatarContainer.getY() + vh;
+            suggestionView.setAlpha(avatarAnimationProgress);
+            suggestionView.updatePosition(listView.getMeasuredWidth(), getActionsExtraHeight());
+            if (suggestionView != null) {
+                suggestionView.updatePosition(listView.getMeasuredWidth(), getActionsExtraHeight());
+            }
+        } else {
+            suggestionView.clipHeight = -1;
+            float bottom = extraHeight + newTop;
+            float height = Math.min(getActionsExtraHeight(), bottom - newTop);
+            suggestionView.updatePosition(bottom - height, height);
+        }
+    }
+
     private void updateActionsPosition() {
         if (actionsView == null || onlineTextView[1] == null) {
             return;
@@ -11270,6 +11334,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             actionsView.clipHeight = avatarContainer.getY() + vh;
             actionsView.setAlpha(avatarAnimationProgress);
             actionsView.updatePosition(listView.getMeasuredWidth(), getActionsExtraHeight());
+            if (suggestionView != null) {
+                suggestionView.updatePosition(listView.getMeasuredWidth(), getActionsExtraHeight());
+            }
         } else {
             actionsView.clipHeight = -1;
             float bottom = extraHeight + newTop;
@@ -12546,7 +12613,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     @Override
-    public boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, TopicsFragment topicsFragment) {
+    public boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, int scheduleRepeatPeriod, TopicsFragment topicsFragment) {
         long did = dids.get(0).dialogId;
         Bundle args = new Bundle();
         args.putBoolean("scrollToTopOnResume", true);
@@ -12566,10 +12633,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         presentFragment(new ChatActivity(args), true);
         removeSelfFromStack();
         TLRPC.User user = getMessagesController().getUser(userId);
-        getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(user, did, null, null, null, null, notify, scheduleDate, 0));
+        getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(user, did, null, null, null, null, notify, scheduleDate, scheduleRepeatPeriod));
         if (!TextUtils.isEmpty(message)) {
             AccountInstance accountInstance = AccountInstance.getInstance(currentAccount);
-            SendMessagesHelper.prepareSendingText(accountInstance, message.toString(), did, notify, scheduleDate, 0, 0);
+            SendMessagesHelper.prepareSendingText(accountInstance, message.toString(), did, notify, scheduleDate, scheduleRepeatPeriod, 0);
         }
         return true;
     }
