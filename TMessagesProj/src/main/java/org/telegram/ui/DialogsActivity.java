@@ -131,6 +131,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
@@ -3801,7 +3802,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     getNotificationsController().showNotifications();
                     updatePasscodeButton();
                 } else if (id == 2) {
-                    AlertsCreator.showConnectionDisabledDialogIfNeed(DialogsActivity.this, () -> {
+                    PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(DialogsActivity.this, () -> {
                         presentFragment(new ProxyListActivity());
                     });
                 } else if (id == 3) {
@@ -6087,7 +6088,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         TLRPC.Chat chat = getMessagesController().getChat(-did);
                         if (chat == null) continue;
                         if (s.length() > 0) s.append(", ");
-                        s.append(chat.title);
+                        s.append(UserConfig.getChatTitleOverride(currentAccount, chat));
                     }
                     starsNeeded += sub.pricing.amount;
                 }

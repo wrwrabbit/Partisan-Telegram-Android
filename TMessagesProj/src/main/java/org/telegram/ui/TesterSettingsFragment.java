@@ -140,6 +140,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 new ToggleItem(this, "Clear Logs With Cache", TesterSettings.clearLogsWithCache),
                 new ToggleItem(this, "Force Search During Deletion", TesterSettings.forceSearchDuringDeletion),
                 new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
+                new ToggleItem(this, "Show T.Settings with fake passcode", TesterSettings.showTesterSettingsWithFakePasscode),
                 new DelimiterItem(this),
 
 

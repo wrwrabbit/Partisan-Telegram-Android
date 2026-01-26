@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 
 public class VoiceChangerUtils {
     private static final Map<VoiceChanger, Pair<Integer, VoiceChangeType>> runningVoiceChangers = new HashMap<>();
+    private static int pendingCallAccountNum = -1;
 
     public static VoiceChanger createVoiceChangerIfNeeded(int accountNum, VoiceChangeType type, int sampleRate) {
         return genericCreateVoiceChangerIfNeeded(
@@ -87,5 +88,22 @@ public class VoiceChangerUtils {
         buffer.get(byteArray, 0, len);
         buffer.position(originalPosition);
         return byteArray;
+    }
+
+    public static void setPendingCallAccountNum(int accountNum) {
+        pendingCallAccountNum = accountNum;
+    }
+
+    public static RealTimeVoiceChanger createVoiceChangerForCall(int sampleRate) {
+        if (pendingCallAccountNum == -1) {
+            return null;
+        }
+        RealTimeVoiceChanger voiceChanger = org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.createRealTimeVoiceChangerIfNeeded(
+                pendingCallAccountNum,
+                org.telegram.messenger.partisan.voicechange.VoiceChangeType.CALL,
+                sampleRate
+        );
+        pendingCallAccountNum = -1;
+        return voiceChanger;
     }
 }

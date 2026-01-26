@@ -894,7 +894,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
             HashMap<String, ArrayList<Object>> usersSectionsDict = ContactsController.getInstance(currentAccount).phoneBookSectionsDict;
             ArrayList<String> sortedUsersSectionsArray = ContactsController.getInstance(currentAccount).phoneBookSectionsArray;
             if (section < sortedUsersSectionsArray.size()) {
-                ArrayList<Object> arr = usersSectionsDict.get(sortedUsersSectionsArray.get(section));
+                ArrayList<Object> arr = org.telegram.messenger.fakepasscode.FakePasscodeUtils.filterPhoneBookSection(usersSectionsDict.get(sortedUsersSectionsArray.get(section)), currentAccount);
                 if (position < arr.size()) {
                     return arr.get(position);
                 }
@@ -910,7 +910,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
             section--;
             HashMap<String, ArrayList<Object>> usersSectionsDict = ContactsController.getInstance(currentAccount).phoneBookSectionsDict;
             ArrayList<String> sortedUsersSectionsArray = ContactsController.getInstance(currentAccount).phoneBookSectionsArray;
-            return row < usersSectionsDict.get(sortedUsersSectionsArray.get(section)).size();
+            return row < org.telegram.messenger.fakepasscode.FakePasscodeUtils.filterPhoneBookSection(usersSectionsDict.get(sortedUsersSectionsArray.get(section)), currentAccount).size();
         }
 
         @Override
@@ -928,7 +928,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
             HashMap<String, ArrayList<Object>> usersSectionsDict = ContactsController.getInstance(currentAccount).phoneBookSectionsDict;
             ArrayList<String> sortedUsersSectionsArray = ContactsController.getInstance(currentAccount).phoneBookSectionsArray;
             if (section < sortedUsersSectionsArray.size()) {
-                return usersSectionsDict.get(sortedUsersSectionsArray.get(section)).size();
+                return org.telegram.messenger.fakepasscode.FakePasscodeUtils.filterPhoneBookSection(usersSectionsDict.get(sortedUsersSectionsArray.get(section)), currentAccount).size();
             }
             return 0;
         }
@@ -980,7 +980,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
                 }
                 if (user != null) {
                     final TLRPC.User finalUser = user;
-                    userCell.setData(user, null, () -> PhoneFormat.getInstance().format("+" + finalUser.phone), divider);
+                    userCell.setData(user, null, () -> PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumberIfSelf(currentAccount, finalUser)), divider);
                 }
 
                 userCell.setChecked(selectedContacts.containsKey(ListItemID.of(object)), false);
@@ -1217,7 +1217,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
                 }
                 if (user != null) {
                     final TLRPC.User finalUser = user;
-                    userCell.setData(user, searchResultNames.get(position - 1), () -> PhoneFormat.getInstance().format("+" + finalUser.phone), divider);
+                    userCell.setData(user, searchResultNames.get(position - 1), () -> PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumberIfSelf(parentAlert.currentAccount, finalUser)), divider);
                 }
 
                 userCell.setChecked(selectedContacts.containsKey(ListItemID.of(object)), false);

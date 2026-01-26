@@ -8081,53 +8081,6 @@ public class AlertsCreator {
         return dialog;
     }
 
-    public static void showConfirmDangerousActionDialogIfNeed(BaseFragment fragment, Runnable onAccepted) {
-        showConfirmDangerousActionDialogIfNeed(fragment, true, onAccepted);
-    }
-
-    public static void showConfirmDangerousActionDialogIfNeed(BaseFragment fragment, boolean dialogShowingAllowed, Runnable onAccepted) {
-        // This approach may seem strange, but it allows us not to move or duplicate the original code,
-        // but to wrap it in a positive runnable. The showDialog flag serves the same purpose.
-        if (SharedConfig.confirmDangerousActions && !FakePasscodeUtils.isFakePasscodeActivated() && fragment != null && dialogShowingAllowed) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
-            builder.setTitle(LocaleController.getString(R.string.ConfirmAction));
-            builder.setMessage(LocaleController.getString(R.string.ConfirmDangerousActionAlertInfo));
-            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog2, which) -> onAccepted.run());
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            fragment.showDialog(builder.create());
-        } else if (onAccepted != null) {
-            onAccepted.run();
-        }
-    }
-
-    public static void showCantChangePhoneNumberDialogIfNeed(BaseFragment fragment, Runnable defaultAction) {
-        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-            if (fragment == null) {
-                return;
-            }
-            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
-            builder.setTitle(LocaleController.getString(R.string.CantChangePhoneNumberTitle));
-            builder.setMessage(LocaleController.getString(R.string.CantChangePhoneNumberDescription));
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            fragment.showDialog(builder.create());
-        } else if (defaultAction != null) {
-            defaultAction.run();
-        }
-    }
-
-    public static void showConnectionDisabledDialogIfNeed(BaseFragment fragment, Runnable onAccepted) {
-        if (AppMigrator.isConnectionDisabled() && !FakePasscodeUtils.isFakePasscodeActivated() && fragment != null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getContext());
-            builder.setTitle(LocaleController.getString(R.string.ConnectionDisabledTitle));
-            builder.setMessage(LocaleController.getString(R.string.ConnectionDisabledMessage));
-            builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialog2, which) -> onAccepted.run());
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            fragment.showDialog(builder.create());
-        } else if (onAccepted != null) {
-            onAccepted.run();
-        }
-    }
-
     public interface SoundFrequencyDelegate {
         void didSelectValues(int time, int minute);
     }

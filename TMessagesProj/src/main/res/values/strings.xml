@@ -10557,4 +10557,6 @@
     <string name="EnableForVideoCalls">Enable for Calls and Streams</string>
     <string name="VoiceChangeQualityDescription">High-quality voice change will make speech more intelligible, but will drain battery power and may not work properly on older phones. Low-quality voice change works even on older and slower devices and reduces battery drain, but will make the voice sound less natural.</string>
     <string name="ChangesWillBeAppliedToTheNextCall">The voice in the current call will remain unchanged. Changes will only be applied to the next call.</string>
+    <string name="CantSetupPasskeys">Cannot Set Up Passkeys</string>
+    <string name="CantSetupPasskeysDescription">Partisan Telegram cannot set up passkeys. Use the official app for this.</string>
 </resources>

@@ -288,7 +288,7 @@
     <string name="ThisFeatureIsNotImplemented">Гэтая функцыя яшчэ не рэалізавана.</string>
     <string name="DeleteSecretGroupOptionForMembers">Выдаліць паведамленні для астатніх</string>
     <string name="FileProtection">Абарона файлаў</string>
-    <string name="FileProtectionInfo">Абарона файлаў дазваляе абараніцца ад вымання інфармацыі пры даглядзе тэлефона. Уключэнне опцыі можа прывесці да некарэктнай працы прыкладання. Пасля ўключэння абароны файлаў кэш паведамленняў будзе ачышчаны, а дадатак перазагрузіцца.</string>
+    <string name="FileProtectionInfo">Абарона файлаў дазваляе абараніцца ад вымання інфармацыі пры даглядзе тэлефона. Уключэнне опцыі можа прывесці да некарэктнай працы прыкладання. Пасля ўключэння абароны файлаў кэш паведамленняў будзе ачышчаны, а прыкладанне перазагрузіцца.</string>
     <string name="ApplicationWillBeRestarted">Прыкладанне будзе перазапушчана.</string>
     <string name="WorksWithFakePasscodes">Працуе пры несапраўдных кадах блакіроўкі</string>
     <string name="NewPtelegramFeatureTitle">Новая функцыя PTelegram</string>
@@ -329,4 +329,6 @@
     <string name="EnableForVideoCalls">Уключыць для званкоў і стрымаў</string>
     <string name="VoiceChangeQualityDescription">Змена голасу высокай якасці зробіць гаворку больш разборлівай, але павялічыць разрад батарэі і можа не працаваць правільна на старых тэлефонах. Змяненне голасу нізкай якасці працуе нават на старых і слабых прыладах і зніжае разрад батарэі, але зробіць голас менш натуральным.</string>
     <string name="ChangesWillBeAppliedToTheNextCall">Голас у бягучым званку застанецца без змен. Змены прымяняюцца толькі ў наступным званку.</string>
+    <string name="CantSetupPasskeys">Немагчыма наладзіць ключы доступу</string>
+    <string name="CantSetupPasskeysDescription">Партызанскі Тэлеграм не можа наладзіць ключы доступу. Выкарыстоўвайце для гэтага афіцыйнае прыкладанне.</string>
 </resources>

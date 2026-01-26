@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.update;
 
+import android.os.Build;
+
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
@@ -9,18 +11,20 @@ import org.telegram.tgnet.TLRPC;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import javax.annotation.Nullable;
 
 class UpdateMessageParser {
     private UpdateData currentUpdate;
     private MessageObject currentMessage;
     private String lang = "en";
     private int langInaccuracy = 0;
-    private MaskedUpdateType maskedUpdateType = MaskedUpdateType.ALLOW;
+    private MaskedUpdateType currentMaskedUpdateType = MaskedUpdateType.ALLOW;
+    private int currentMinSdk = 0;
 
     private final int currentAccount;
     private final Map<Long, List<MessageObject>> messagesByGroupId = new HashMap<>();
@@ -30,6 +34,8 @@ class UpdateMessageParser {
     }
 
     public UpdateData processMessage(MessageObject message) {
+        currentMaskedUpdateType = MaskedUpdateType.ALLOW;
+        currentMinSdk = 0;
         saveMessageByGroupId(message);
         return parseUpdateData(message);
     }
@@ -143,7 +149,7 @@ class UpdateMessageParser {
             }
             isFirstCharInNewLine = lineEnd;
         }
-        if (maskedUpdateType == MaskedUpdateType.ONLY) {
+        if (currentMaskedUpdateType == MaskedUpdateType.ONLY || Build.VERSION.SDK_INT < currentMinSdk) {
             currentUpdate = null;
         }
         return currentUpdate;
@@ -220,22 +226,37 @@ class UpdateMessageParser {
                 currentUpdate.stickerEmoji = stickerValueParts[1];
             }
         } else if (name.equals("formatVersion")) {
-            if (value != null) {
-                try {
-                    currentUpdate.formatVersion = Integer.parseInt(value);
-                } catch (NumberFormatException ignore) {
-                }
-            }
+            tryParseIntValue(value).ifPresent(version ->
+                    currentUpdate.formatVersion = version
+            );
         } else if (name.equals("masked")) {
-            if ("allow".equalsIgnoreCase(value)) {
-                maskedUpdateType = MaskedUpdateType.ALLOW;
-            } else if ("prohibit".equalsIgnoreCase(value)) {
-                maskedUpdateType = MaskedUpdateType.PROHIBIT;
-            } else if ("only".equalsIgnoreCase(value)) {
-                maskedUpdateType = MaskedUpdateType.ONLY;
-            } else {
-                maskedUpdateType = MaskedUpdateType.ALLOW;
+            currentMaskedUpdateType = parseMaskedUpdateType(value);
+        } else if (name.equals("minSdk")) {
+            tryParseIntValue(value).ifPresent(minSdk ->
+                    currentMinSdk = minSdk
+            );
+        }
+    }
+
+    private Optional<Integer> tryParseIntValue(@Nullable String value) {
+        if (value != null) {
+            try {
+                return Optional.of(Integer.parseInt(value));
+            } catch (NumberFormatException ignore) {
             }
+        }
+        return Optional.empty();
+    }
+
+    private MaskedUpdateType parseMaskedUpdateType(String value) {
+        if ("allow".equalsIgnoreCase(value)) {
+            return MaskedUpdateType.ALLOW;
+        } else if ("prohibit".equalsIgnoreCase(value)) {
+            return MaskedUpdateType.PROHIBIT;
+        } else if ("only".equalsIgnoreCase(value)) {
+            return MaskedUpdateType.ONLY;
+        } else {
+            return MaskedUpdateType.ALLOW;
         }
     }
 }

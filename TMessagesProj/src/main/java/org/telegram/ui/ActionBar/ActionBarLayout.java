@@ -2606,9 +2606,6 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         previousFragment.setParentLayout(this);
         View fragmentView = previousFragment.fragmentView;
         if (fragmentView == null) {
-            if (!FakePasscodeUtils.isFakePasscodeActivated() && previousFragment instanceof ChatActivity) {
-                ((ChatActivity)previousFragment).restoreStartLoadFromMessage();
-            }
             fragmentView = previousFragment.createView(parentActivity);
         } else {
             ViewGroup parent = (ViewGroup) fragmentView.getParent();

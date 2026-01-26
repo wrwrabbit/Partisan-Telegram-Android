@@ -155,23 +155,25 @@ public class PasskeysActivity extends BaseFragment {
 
     private void onItemClick(UItem item, View view, int position, float x, float y) {
         if (item.id == -1) {
-            PasskeysController.create(getContext(), currentAccount, (passkey, error) -> {
-                if (error != null) {
-                    if ("CANCELLED".equalsIgnoreCase(error))
-                        return;
-                    if ("EMPTY".equalsIgnoreCase(error)) {
-                        new AlertDialog.Builder(getContext())
-                            .setTitle(getString(R.string.PasskeyNoOptionsTitle))
-                            .setMessage(getString(R.string.PasskeyNoOptionsText))
-                            .setPositiveButton(getString(R.string.OK), null)
-                            .show();
-                        return;
+            org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showCantSetupPasskeysIfNeeded(this, () -> {
+                PasskeysController.create(getContext(), currentAccount, (passkey, error) -> {
+                    if (error != null) {
+                        if ("CANCELLED".equalsIgnoreCase(error))
+                            return;
+                        if ("EMPTY".equalsIgnoreCase(error)) {
+                            new AlertDialog.Builder(getContext())
+                                    .setTitle(getString(R.string.PasskeyNoOptionsTitle))
+                                    .setMessage(getString(R.string.PasskeyNoOptionsText))
+                                    .setPositiveButton(getString(R.string.OK), null)
+                                    .show();
+                            return;
+                        }
+                        BulletinFactory.of(this).showForError(error, true);
+                    } else if (passkey != null) {
+                        MessagesController.getInstance(currentAccount).removeSuggestion(0, "SETUP_PASSKEY");
+                        added(passkey);
                     }
-                    BulletinFactory.of(this).showForError(error, true);
-                } else if (passkey != null) {
-                    MessagesController.getInstance(currentAccount).removeSuggestion(0, "SETUP_PASSKEY");
-                    added(passkey);
-                }
+                });
             });
         } else if (item.object != null) {
             openMenu(view);
@@ -345,62 +347,64 @@ public class PasskeysActivity extends BaseFragment {
         ButtonWithCounterView button = new ButtonWithCounterView(context, resourcesProvider);
         button.setText(getString(R.string.PasskeyFeatureButton), false);
         button.setOnClickListener(v -> {
-            if (button.isLoading()) return;
-            button.setLoading(true);
-            PasskeysController.create(context, currentAccount, (passkey, error) -> {
-                button.setLoading(false);
-                if ("CANCELLED".equalsIgnoreCase(error))
-                    return;
-                if ("EMPTY".equalsIgnoreCase(error)) {
-                    new AlertDialog.Builder(context)
-                        .setTitle(getString(R.string.PasskeyNoOptionsTitle))
-                        .setMessage(getString(R.string.PasskeyNoOptionsText))
-                        .setPositiveButton(getString(R.string.OK), null)
-                        .setOnDismissListener((di) -> {
-                            sheet.dismiss();
-                        })
-                        .show();
-                    return;
-                }
-
-                BaseFragment fragment = LaunchActivity.getSafeLastFragment();
-                if (fragment == null) return;
-
-                if (error != null) {
-                    BulletinFactory.of(sheet.topBulletinContainer, sheet.getResourcesProvider()).showForError(error);
-                } else if (passkey != null) {
-                    MessagesController.getInstance(currentAccount).removeSuggestion(0, "SETUP_PASSKEY");
-                    if (fragment instanceof PasskeysActivity) {
-                        sheet.dismiss();
-                        ((PasskeysActivity) fragment).added(passkey);
-                    } else if (fragment instanceof PrivacySettingsActivity) {
-                        sheet.dismiss();
-                        ArrayList<TL_account.Passkey> passkeys = ((PrivacySettingsActivity) fragment).currentPasskeys;
-                        if (passkeys == null) passkeys = new ArrayList<>();
-                        passkeys.add(passkey);
-                        ((PrivacySettingsActivity) fragment).updateRows(true);
-                        fragment.presentFragment(new PasskeysActivity(passkeys));
-                    } else {
-                        ConnectionsManager.getInstance(currentAccount).sendRequestTyped(new TL_account.getPasskeys(), AndroidUtilities::runOnUIThread, (res, err) -> {
-                            if (res != null) {
-                                sheet.dismiss();
-                                for (int i = 0; i < res.passkeys.size(); ++i) {
-                                    if (TextUtils.equals(res.passkeys.get(i).id, passkey.id)) {
-                                        res.passkeys.remove(i);
-                                        i--;
-                                    }
-                                }
-                                BaseFragment fragment2 = LaunchActivity.getSafeLastFragment();
-                                if (fragment2 == null) return;
-                                final PasskeysActivity activity = new PasskeysActivity(res.passkeys);
-                                fragment2.presentFragment(activity);
-                                AndroidUtilities.runOnUIThread(() -> activity.added(passkey), 150);
-                            } else if (err != null) {
-                                BulletinFactory.of(sheet.topBulletinContainer, sheet.getResourcesProvider()).showForError(error);
-                            }
-                        });
+            org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showCantSetupPasskeysIfNeeded(context, () -> {
+                if (button.isLoading()) return;
+                button.setLoading(true);
+                PasskeysController.create(context, currentAccount, (passkey, error) -> {
+                    button.setLoading(false);
+                    if ("CANCELLED".equalsIgnoreCase(error))
+                        return;
+                    if ("EMPTY".equalsIgnoreCase(error)) {
+                        new AlertDialog.Builder(context)
+                                .setTitle(getString(R.string.PasskeyNoOptionsTitle))
+                                .setMessage(getString(R.string.PasskeyNoOptionsText))
+                                .setPositiveButton(getString(R.string.OK), null)
+                                .setOnDismissListener((di) -> {
+                                    sheet.dismiss();
+                                })
+                                .show();
+                        return;
                     }
-                }
+
+                    BaseFragment fragment = LaunchActivity.getSafeLastFragment();
+                    if (fragment == null) return;
+
+                    if (error != null) {
+                        BulletinFactory.of(sheet.topBulletinContainer, sheet.getResourcesProvider()).showForError(error);
+                    } else if (passkey != null) {
+                        MessagesController.getInstance(currentAccount).removeSuggestion(0, "SETUP_PASSKEY");
+                        if (fragment instanceof PasskeysActivity) {
+                            sheet.dismiss();
+                            ((PasskeysActivity) fragment).added(passkey);
+                        } else if (fragment instanceof PrivacySettingsActivity) {
+                            sheet.dismiss();
+                            ArrayList<TL_account.Passkey> passkeys = ((PrivacySettingsActivity) fragment).currentPasskeys;
+                            if (passkeys == null) passkeys = new ArrayList<>();
+                            passkeys.add(passkey);
+                            ((PrivacySettingsActivity) fragment).updateRows(true);
+                            fragment.presentFragment(new PasskeysActivity(passkeys));
+                        } else {
+                            ConnectionsManager.getInstance(currentAccount).sendRequestTyped(new TL_account.getPasskeys(), AndroidUtilities::runOnUIThread, (res, err) -> {
+                                if (res != null) {
+                                    sheet.dismiss();
+                                    for (int i = 0; i < res.passkeys.size(); ++i) {
+                                        if (TextUtils.equals(res.passkeys.get(i).id, passkey.id)) {
+                                            res.passkeys.remove(i);
+                                            i--;
+                                        }
+                                    }
+                                    BaseFragment fragment2 = LaunchActivity.getSafeLastFragment();
+                                    if (fragment2 == null) return;
+                                    final PasskeysActivity activity = new PasskeysActivity(res.passkeys);
+                                    fragment2.presentFragment(activity);
+                                    AndroidUtilities.runOnUIThread(() -> activity.added(passkey), 150);
+                                } else if (err != null) {
+                                    BulletinFactory.of(sheet.topBulletinContainer, sheet.getResourcesProvider()).showForError(error);
+                                }
+                            });
+                        }
+                    }
+                });
             });
         });
 

@@ -149,7 +149,6 @@ import org.telegram.messenger.camera.CameraController;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.voicechange.VoiceChangeType;
-import org.telegram.messenger.partisan.voicechange.VoiceChanger;
 import org.telegram.messenger.partisan.voicechange.VoiceChangerUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
@@ -188,7 +187,6 @@ import org.telegram.ui.MultiContactsSelectorBottomSheet;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
-import org.telegram.ui.StakedDiceSheet;
 import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.StickersActivity;
@@ -3294,7 +3292,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             if ((messageSendPreview != null && messageSendPreview.isShowing()) || (runningAnimationAudio != null && runningAnimationAudio.isRunning()) || moveToSendStateRunnable != null) {
                 return;
             }
-            AlertsCreator.showConfirmDangerousActionDialogIfNeed(parentFragment, parentFragment != null && parentFragment.isReplyChatComment(), () -> {
+            org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(parentFragment, parentFragment != null && parentFragment.isReplyChatComment(), () -> {
                 sendMessage();
             });
         });
