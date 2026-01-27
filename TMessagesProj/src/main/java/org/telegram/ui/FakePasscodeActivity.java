@@ -1036,14 +1036,13 @@ public class FakePasscodeActivity extends BaseFragment {
         AndroidUtilities.removeAltFocusable(getParentActivity(), classGuid);
     }
 
-
     @Override
-    public boolean onBackPressed() {
+    public boolean onBackPressed(boolean invoked) {
         if (screen != null) {
-            return screen.onBackPressed();
-        } else {
-            return true;
+            if (invoked) return screen.onBackPressed();
+            return false;
         }
+        return super.onBackPressed(invoked);
     }
 
     private void updateRows() {
@@ -1132,14 +1131,14 @@ public class FakePasscodeActivity extends BaseFragment {
         if (type == TYPE_FAKE_PASSCODE_SETTINGS) {
             text = LocaleController.getString(R.string.EnterYourPasscodeInfo);
         } else if (passcodeSetStep == 0) {
-            text = LocaleController.getString(SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN ? R.string.CreateFakePasscodeInfoPIN : R.string.CreateFakePasscodeInfoPassword);
+            text = LocaleController.getString(SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN ? R.string.CreateFakePasscodeInfoPIN : R.string.CreateFakePasscodeInfoPassword);
         } else text = descriptionTextSwitcher.getCurrentView().getText().toString();
 
         boolean animate = !(descriptionTextSwitcher.getCurrentView().getText().equals(text) || TextUtils.isEmpty(descriptionTextSwitcher.getCurrentView().getText()));
         if (type == TYPE_FAKE_PASSCODE_SETTINGS) {
             descriptionTextSwitcher.setText(LocaleController.getString(R.string.EnterYourPasscodeInfo), animate);
         } else if (passcodeSetStep == 0) {
-            descriptionTextSwitcher.setText(LocaleController.getString(SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN ? R.string.CreateFakePasscodeInfoPIN : R.string.CreateFakePasscodeInfoPassword), animate);
+            descriptionTextSwitcher.setText(LocaleController.getString(SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN ? R.string.CreateFakePasscodeInfoPIN : R.string.CreateFakePasscodeInfoPassword), animate);
         }
         if (isPinCode()) {
             AndroidUtilities.updateViewVisibilityAnimated(codeFieldContainer, true, 1f, animate);
@@ -1171,7 +1170,7 @@ public class FakePasscodeActivity extends BaseFragment {
     }
 
     private void processNext() {
-        if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD && passwordEditText.getText().length() == 0 || SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN && codeFieldContainer.getCode().length() != 4) {
+        if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD && passwordEditText.getText().length() == 0 || SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN && codeFieldContainer.getCode().length() != 4) {
             onPasscodeError();
             return;
         }
@@ -1202,7 +1201,7 @@ public class FakePasscodeActivity extends BaseFragment {
     }
 
     private boolean checkPasscodeInUse() {
-        String passcode = SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD
+        String passcode = SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD
                 ? passwordEditText.getText().toString()
                 : codeFieldContainer.getCode();
         SharedConfig.PasscodeCheckResult passcodeCheckResult = SharedConfig.checkPasscode(passcode);
@@ -1214,11 +1213,11 @@ public class FakePasscodeActivity extends BaseFragment {
     }
 
     private boolean isPinCode() {
-        return SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN;
+        return SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN;
     }
 
     private boolean isPassword() {
-        return SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD;
+        return SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD;
     }
 
     private void processDone() {

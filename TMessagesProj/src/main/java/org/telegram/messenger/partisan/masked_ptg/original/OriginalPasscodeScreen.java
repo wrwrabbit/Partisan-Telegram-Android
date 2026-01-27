@@ -243,7 +243,7 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (passwordEditText.length() == 4 && SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN) {
+                if (passwordEditText.length() == 4 && SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN) {
                     delegate.passcodeEntered(getPasswordString());
                 }
             }
@@ -487,9 +487,9 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
     }
 
     private String getPasswordString() {
-        if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN) {
+        if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN) {
             return passwordEditText2.getString();
-        } else if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD) {
+        } else if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD) {
             return passwordEditText.getText().toString();
         } else {
             return "";
@@ -945,7 +945,7 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
         } else {
             fingerprintView.setVisibility(View.GONE);
         }
-        if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD) {
+        if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD) {
             fingerprintImage.setVisibility(fingerprintView.getVisibility());
         }
         subtitleView.setText(LocaleController.getString(hasFingerprint ? R.string.EnterPINorFingerprint : R.string.EnterPIN));
@@ -965,7 +965,7 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
         showed = false;
         checkFingerprintButton();
         Activity parentActivity = AndroidUtilities.findActivity(context);
-        if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD) {
+        if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD) {
             if (!animated && retryTextView.getVisibility() != View.VISIBLE && passwordEditText != null) {
                 passwordEditText.requestFocus();
                 AndroidUtilities.showKeyboard(passwordEditText);
@@ -1032,7 +1032,7 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
 
         passcodeTextView.setText(LocaleController.getString(R.string.AppLocked));
 
-        if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN) {
+        if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN) {
             if (retryTextView.getVisibility() != View.VISIBLE) {
                 numbersFrameLayout.setVisibility(View.VISIBLE);
             }
@@ -1040,7 +1040,7 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
             passwordEditText2.setVisibility(View.VISIBLE);
             checkImage.setVisibility(View.GONE);
             fingerprintImage.setVisibility(View.GONE);
-        } else if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD) {
+        } else if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD) {
             passwordEditText.setFilters(new InputFilter[0]);
             passwordEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
             numbersFrameLayout.setVisibility(View.GONE);
@@ -1071,14 +1071,14 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
         final boolean landscape = !AndroidUtilities.isTablet() && context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
 
         if (border != null) {
-            border.setVisibility(SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD ? View.VISIBLE : View.GONE);
+            border.setVisibility(SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD ? View.VISIBLE : View.GONE);
         }
 
         if (landscape) {
             layoutParams = (FrameLayout.LayoutParams) passwordFrameLayout.getLayoutParams();
-            layoutParams.width = SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN ? width / 2 : width;
+            layoutParams.width = SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN ? width / 2 : width;
             layoutParams.height = dp(180);
-            layoutParams.topMargin = (height - dp(140)) / 2 + (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN ? dp(40) : 0);
+            layoutParams.topMargin = (height - dp(140)) / 2 + (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN ? dp(40) : 0);
             passwordFrameLayout.setLayoutParams(layoutParams);
 
             layoutParams = (FrameLayout.LayoutParams) numbersContainer.getLayoutParams();
@@ -1109,7 +1109,7 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
                 }
             }
             layoutParams = (FrameLayout.LayoutParams) passwordFrameLayout.getLayoutParams();
-            layoutParams.height = height / 3 + (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN ? dp(40) : 0);
+            layoutParams.height = height / 3 + (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN ? dp(40) : 0);
             layoutParams.width = width;
             layoutParams.topMargin = top;
             layoutParams.leftMargin = left;

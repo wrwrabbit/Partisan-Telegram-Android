@@ -2,7 +2,6 @@ package org.telegram.messenger.fakepasscode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.MessageObject;
@@ -72,7 +71,7 @@ public class TelegramMessageAction extends AccountAction implements Notification
         FakePasscodeMessages.hasUnDeletedMessages.clear();
         FakePasscodeMessages.saveMessages();
 
-        getMessagesController().forceResetDialogs();
+        resetDialogs();
 
         getNotificationCenter().addObserver(this, NotificationCenter.messageReceivedByServer);
         getNotificationCenter().addObserver(this, NotificationCenter.dialogDeletedByAction);
@@ -93,6 +92,25 @@ public class TelegramMessageAction extends AccountAction implements Notification
             fakePasscode.actionsResult.actionsPreventsLogoutAction.add(this);
         }
         SharedConfig.saveConfig();
+    }
+
+    private void resetDialogs() {
+        runRestorePromoDialogIfNeeded();
+        getMessagesController().forceResetDialogs();
+    }
+
+    private void runRestorePromoDialogIfNeeded() {
+        TLRPC.Dialog promoDialog = getMessagesController().getPromoDialog();
+        if (promoDialog != null) {
+            waitAndRestorePromoDialog(promoDialog.id);
+        }
+    }
+
+    private void waitAndRestorePromoDialog(long dialogId) {
+        if (getMessagesController().getDialog(dialogId) != null) {
+            AndroidUtilities.runOnUIThread(() -> waitAndRestorePromoDialog(dialogId), 100);
+        }
+        getMessagesController().checkPromoInfo(true);
     }
 
     private void sendMessage(Entry entry) {
