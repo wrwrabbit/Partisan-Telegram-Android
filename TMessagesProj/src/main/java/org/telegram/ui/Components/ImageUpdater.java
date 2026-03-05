@@ -73,6 +73,7 @@ public class ImageUpdater implements NotificationCenter.NotificationCenterDelega
     public final static int FOR_TYPE_USER = 0;
     public final static int FOR_TYPE_CHANNEL = 1;
     public final static int FOR_TYPE_GROUP = 2;
+    public final static int FOR_TYPE_MASKING = 3;
 
     public BaseFragment parentFragment;
     private ImageUpdaterDelegate delegate;
@@ -117,6 +118,7 @@ public class ImageUpdater implements NotificationCenter.NotificationCenterDelega
     public final static int TYPE_DEFAULT = 0;
     public final static int TYPE_SET_PHOTO_FOR_USER = 1;
     public final static int TYPE_SUGGEST_PHOTO_FOR_USER = 2;
+    public final static int TYPE_SUGGEST_MASKGING_ICON = 3;
 
     private int type;
     public final int setForType;
@@ -581,6 +583,8 @@ public class ImageUpdater implements NotificationCenter.NotificationCenterDelega
             chatAttachAlert.getSelectedTextView().setText(LocaleController.formatString("SetPhotoFor", R.string.SetPhotoFor, user.first_name));
         } else if (type == TYPE_SUGGEST_PHOTO_FOR_USER) {
             chatAttachAlert.getSelectedTextView().setText(LocaleController.formatString("SuggestPhotoFor", R.string.SuggestPhotoFor, user.first_name));
+        } else if (type == TYPE_SUGGEST_MASKGING_ICON) {
+            chatAttachAlert.getSelectedTextView().setText(LocaleController.formatString("MaskingIconInfo", R.string.MaskingIcon));
         }
     }
 

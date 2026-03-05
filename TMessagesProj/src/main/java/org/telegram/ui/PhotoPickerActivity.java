@@ -104,11 +104,15 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
 
     public interface PhotoPickerActivityDelegate {
         void selectedPhotosChanged();
+
         void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate);
+
         default void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
             actionButtonPressed(canceled, notify, scheduleDate);
         }
+
         void onCaptionChanged(CharSequence caption);
+
         default void onOpenInPressed() {
 
         }
@@ -120,6 +124,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
 
     public interface PhotoPickerActivitySearchDelegate {
         void shouldSearchText(String text);
+
         void shouldClearRecentSearch();
     }
 
@@ -1167,7 +1172,8 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                 sendPopupWindow.dimBehind();
                 try {
                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
 
                 return false;
             });

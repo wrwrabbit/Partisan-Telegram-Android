@@ -29,6 +29,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.EditText;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
@@ -50,6 +51,7 @@ public class TextCheckCell extends FrameLayout {
 
     private TextView textView;
     private TextView valueTextView;
+    private EditText textEdit;
     private Switch checkBox;
     private boolean needDivider;
     private boolean isMultiline;
@@ -110,6 +112,18 @@ public class TextCheckCell extends FrameLayout {
         textView.setEllipsize(TextUtils.TruncateAt.END);
         addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 70 : padding, 0, LocaleController.isRTL ? padding : 70, 0));
 
+        textEdit = new EditText(context);
+        textEdit.setTextColor(Theme.getColor(dialog ? Theme.key_dialogTextBlack : Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+        textEdit.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        textEdit.setLines(1);
+        textEdit.setMaxLines(5);
+        textEdit.setSingleLine(false);
+        textEdit.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
+        textEdit.setEllipsize(TextUtils.TruncateAt.END);
+        addView(textEdit, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 70 : padding, 0, LocaleController.isRTL ? padding : 70, 0));
+
+
+
         valueTextView = new TextView(context);
         valueTextView.setTextColor(Theme.getColor(dialog ? Theme.key_dialogIcon : Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
         valueTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
@@ -169,6 +183,7 @@ public class TextCheckCell extends FrameLayout {
         textView.setText(text);
         isMultiline = false;
         checkBox.setVisibility(View.VISIBLE);
+        textEdit.setVisibility(View.GONE);
         checkBox.setChecked(checked, attached);
         needDivider = divider;
         valueTextView.setVisibility(GONE);
@@ -195,6 +210,11 @@ public class TextCheckCell extends FrameLayout {
 
         removeView(checkBox);
         addView(checkBox, LayoutHelper.createFrame(37, 20, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, 22, 0, 22, 0));
+
+        textEdit.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
+        removeView(textEdit);
+        addView(textEdit, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 70 : padding, 0, LocaleController.isRTL ? padding : 70, 0));
+
     }
 
     public void setColors(int key, int switchKey, int switchKeyChecked, int switchThumb, int switchThumbChecked) {
@@ -227,6 +247,7 @@ public class TextCheckCell extends FrameLayout {
         AvatarSpan.checkSpansParent(text, this);
         textView.setText(text);
         valueTextView.setText(value);
+        textEdit.setVisibility(View.GONE);
         checkBox.setVisibility(View.VISIBLE);
         checkBox.setChecked(checked, false);
         needDivider = divider;
@@ -252,11 +273,26 @@ public class TextCheckCell extends FrameLayout {
         setWillNotDraw(!divider);
     }
 
+    public void setTextAndEdit(String text, String value) {
+        AvatarSpan.checkSpansParent(text, this);
+        textEdit.setVisibility(View.VISIBLE);
+        valueTextView.setVisibility(View.GONE);
+        checkBox.setVisibility(View.GONE);
+        needDivider = true;
+        isMultiline = true;
+        LayoutParams layoutParams = (LayoutParams) textView.getLayoutParams();
+        layoutParams.height = LayoutParams.WRAP_CONTENT;
+        layoutParams.topMargin = AndroidUtilities.dp(10);
+        textView.setLayoutParams(layoutParams);
+        setWillNotDraw(false);
+    }
+
     public void setTextAndValue(String text, String value, boolean multiline, boolean divider) {
         AvatarSpan.checkSpansParent(text, this);
         textView.setText(text);
         valueTextView.setText(value);
         checkBox.setVisibility(View.GONE);
+        textEdit.setVisibility(View.GONE);
         needDivider = divider;
         valueTextView.setVisibility(VISIBLE);
         isMultiline = multiline;

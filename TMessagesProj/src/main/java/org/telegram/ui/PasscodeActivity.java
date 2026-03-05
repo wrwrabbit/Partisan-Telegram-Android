@@ -8,6 +8,8 @@
 
 package org.telegram.ui;
 
+import static org.telegram.messenger.LocaleController.getString;
+
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -21,6 +23,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Outline;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
@@ -28,11 +32,14 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
+import android.transition.ChangeBounds;
+import android.transition.TransitionManager;
 import android.util.TypedValue;
 import android.view.ActionMode;
 import android.view.Gravity;
@@ -60,11 +67,17 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BadPasscodeAttempt;
+import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.ImageLoader;
+import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MediaController;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
@@ -90,11 +103,14 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.Components.Bulletin;
+import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.CustomPhoneKeyboardView;
 import org.telegram.ui.Components.Easings;
 import org.telegram.ui.Components.EditTextBoldCursor;
+import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberPicker;
 import org.telegram.ui.Components.OutlineTextContainerView;
@@ -105,11 +121,52 @@ import org.telegram.ui.Components.TextViewSwitcher;
 import org.telegram.ui.Components.TransformableLoginButtonView;
 import org.telegram.ui.Components.VerticalPositionAutoAnimator;
 
+import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.telegram.tgnet.TLRPC;
+
+
+class MyImageDownloadDelegate implements ImageUpdater.ImageUpdaterDelegate {
+
+    @Override
+    public void didUploadPhoto(TLRPC.InputFile photo, TLRPC.InputFile video, double videoStartTimestamp,
+                               String videoPath, TLRPC.PhotoSize bigSize, TLRPC.PhotoSize smallSize,
+                               boolean isVideo, TLRPC.VideoSize emojiMarkup) {
+        // This is called AFTER the downloaded image has been successfully uploaded to Telegram.
+        // 'photo' contains the reference to the uploaded file on the server.
+        if (photo != null) {
+            System.out.println("Image successfully downloaded from network and uploaded to Telegram.");
+        }
+    }
+
+    @Override
+    public void onUploadProgressChanged(float progress) {
+        // Optional: Update a progress bar (0.0 to 1.0)
+        System.out.println("Syncing with server: " + (progress * 100) + "%");
+    }
+
+    @Override
+    public void didStartUpload(boolean fromAvatarConstructor, boolean isVideo) {
+        System.out.println("Started sending the downloaded image to the server...");
+    }
+
+    @Override
+    public void didUploadFailed() {
+        System.err.println("Failed to sync the downloaded image with the server.");
+    }
+
+    // Default implementations are usually sufficient for these:
+    @Override public PhotoViewer.PlaceProviderObject getCloseIntoObject() { return null; }
+    @Override public boolean supportsBulletin() { return true; }
+    @Override public String getInitialSearchString() { return null; }
+    @Override public boolean canFinishFragment() { return true; }
+}
 
 public class PasscodeActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
     public final static int TYPE_MANAGE_CODE_SETTINGS = 0,
@@ -154,6 +211,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     private VerticalPositionAutoAnimator floatingAutoAnimator;
     private TransformableLoginButtonView floatingButtonIcon;
     private Animator floatingButtonAnimator;
+    private MyImageDownloadDelegate maskingIconDelegate;
 
     @PasscodeActivityType
     private int type;
@@ -176,6 +234,13 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     private int addFakePasscodeRow;
     private int restoreFakePasscodeDelimiterRow;
     private int restoreFakePasscodeRow;
+
+    private int maskingSettingsInfoRow;
+    private int maskingSettingsRow;
+    private int maskingNotificationTextRow;
+    private int maskingPrimaryColorRow;
+    private int maskingIconRow;
+    private int maskingLoadIconRow;
     private int fakePasscodeDetailRow;
 
     private int captureHeaderRow;
@@ -202,6 +267,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
     TextCheckCell frontPhotoTextCell;
     TextCheckCell backPhotoTextCell;
+    private Bitmap myIcon;
 
     private ActionBarMenuItem otherItem;
 
@@ -529,6 +595,75 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                         presentFragment(new FakePasscodeRestoreActivity());
                     } else if (position == partisanSettingsRow) {
                         presentFragment(new PartisanSettingsActivity());
+                    } else if (position == maskingNotificationTextRow) {
+                        presentFragment(new MaskingSettingsNotificationMessageActivity());
+                    } else if (position == maskingPrimaryColorRow) {
+                        presentFragment(new MaskingSettingsPrimaryColorActivity());
+                    } else if (position == maskingIconRow) {
+                        PhotoAlbumPickerActivity fragment =
+                                new PhotoAlbumPickerActivity(
+                                        PhotoAlbumPickerActivity.SELECT_TYPE_AVATAR,
+                                        false,
+                                        false,
+                                        null
+                                );
+                        fragment.setDelegate(new PhotoAlbumPickerActivity.PhotoAlbumPickerActivityDelegate() {
+
+                            @Override
+                            public void didSelectPhotos(
+                                    ArrayList<SendMessagesHelper.SendingMediaInfo> photos,
+                                    boolean notify,
+                                    int scheduleDate) {
+
+                                if (photos != null && !photos.isEmpty()) {
+                                    SendMessagesHelper.SendingMediaInfo info = photos.get(0);
+                                    if (info.path != null) {
+                                        SharedConfig.maskingIcon = BitmapFactory.decodeFile(info.path);
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void startPhotoSelectActivity() {
+                                // must exist, can stay empty
+                            }
+                        });
+                        presentFragment(fragment);
+                    } else if (position == maskingLoadIconRow) {
+                        PhotoAlbumPickerActivity fragment =
+                                new PhotoAlbumPickerActivity(
+                                        PhotoAlbumPickerActivity.SELECT_TYPE_AVATAR,
+                                        false,
+                                        false,
+                                        null
+                                );
+                        fragment.setDelegate(new PhotoAlbumPickerActivity.PhotoAlbumPickerActivityDelegate() {
+
+                            @Override
+                            public void didSelectPhotos(
+                                    ArrayList<SendMessagesHelper.SendingMediaInfo> photos,
+                                    boolean notify,
+                                    int scheduleDate) {
+
+                                if (photos == null || photos.isEmpty()) {
+                                    return;
+                                }
+                                SendMessagesHelper.SendingMediaInfo info = photos.get(0);
+                                if (info.path != null && info.path.toLowerCase().endsWith(".gif")) {
+                                    SharedConfig.maskingLoadIcon = BitmapFactory.decodeFile(info.path);
+                                } else {
+                                    Toast.makeText(getParentActivity(),
+                                            "Please select a GIF file",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                            @Override
+                            public void startPhotoSelectActivity() {
+                                // must exist, can stay empty
+                            }
+                        });
+                        presentFragment(fragment);
                     }
                 });
                 break;
@@ -1120,6 +1255,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
         addFakePasscodeRow = -1;
         restoreFakePasscodeDelimiterRow = -1;
         restoreFakePasscodeRow = -1;
+        maskingSettingsRow = -1;
         fakePasscodeDetailRow = -1;
         bruteForceProtectionRow = -1;
         clearCacheOnLockRow = -1;
@@ -1163,6 +1299,12 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
             addFakePasscodeRow = rowCount++;
             restoreFakePasscodeDelimiterRow = rowCount++;
             restoreFakePasscodeRow = rowCount++;
+            maskingSettingsInfoRow = rowCount++;
+            maskingSettingsRow = rowCount++;
+            maskingNotificationTextRow = rowCount++;
+            maskingPrimaryColorRow = rowCount++;
+            maskingIconRow = rowCount++;
+            maskingLoadIconRow = rowCount++;
             fakePasscodeDetailRow = rowCount++;
         }
 
@@ -1539,7 +1681,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     || position == captureRow || SharedConfig.passcodeEnabled() && position == changePasscodeRow
                     || (firstFakePasscodeRow != -1 && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow)
                     || position == addFakePasscodeRow || position == restoreFakePasscodeRow
-                    || position == partisanSettingsRow || position == disablePasscodeRow;
+                    || position == partisanSettingsRow || position == disablePasscodeRow
+                    || position == maskingNotificationTextRow || position == maskingPrimaryColorRow || position == maskingIconRow || position == maskingLoadIconRow;
         }
 
         @Override
@@ -1600,7 +1743,6 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                         textCell.setTextAndCheck(LocaleController.getString("TakePhotoWithBackCamera", R.string.TakePhotoWithBackCamera), SharedConfig.takePhotoWithBadPasscodeBack, SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack);
                     } else if (position == badPasscodeMuteAudioRow) {
                         textCell.setTextAndCheck(LocaleController.getString("MuteAudioWhenTakingPhoto", R.string.MuteAudioWhenTakingPhoto), SharedConfig.takePhotoMuteAudio, false);
-
                     }
                     break;
                 }
@@ -1655,6 +1797,22 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                         textCell.setText(LocaleController.getString("PartisanSettings", R.string.PartisanSettings), false);
                         textCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
                         textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                    } else if (position == maskingNotificationTextRow) {
+                        textCell.setText(LocaleController.getString(R.string.MaskingNotificationTextButton), false);
+                        textCell.setTag(Theme.key_windowBackgroundWhiteBlueText4);
+                        textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
+                    } else if (position == maskingPrimaryColorRow) {
+                        textCell.setText(LocaleController.getString(R.string.MaskingPrimaryColor), false);
+                        textCell.setTag(Theme.key_windowBackgroundWhiteBlueText4);
+                        textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
+                    } else if (position == maskingIconRow) {
+                        textCell.setText(LocaleController.getString(R.string.MaskingIcon), false);
+                        textCell.setTag(Theme.key_windowBackgroundWhiteBlueText4);
+                        textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
+                    } else if (position == maskingLoadIconRow) {
+                        textCell.setText(LocaleController.getString(R.string.MaskingLoadIcon), false);
+                        textCell.setTag(Theme.key_windowBackgroundWhiteBlueText4);
+                        textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
                     }
                     break;
                 }
@@ -1664,7 +1822,17 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     if (position == captureHeaderRow) {
                         cell.setText(LocaleController.getString(R.string.ScreenCaptureHeader));
                     } else if (position == fakePasscodesHeaderRow) {
-                        cell.setText(LocaleController.getString("FakePasscodes", R.string.FakePasscodes));
+                        cell.setText(LocaleController.getString(R.string.FakePasscodes));
+                    } else if (position == maskingSettingsRow) {
+                        cell.setText(LocaleController.getString(R.string.MaskingSettings));
+                    } else if (position == maskingNotificationTextRow) {
+                        cell.setText(LocaleController.getString(R.string.MaskingNotificationTextButton));
+                    } else if (position == maskingPrimaryColorRow) {
+                        cell.setText(LocaleController.getString(R.string.MaskingPrimaryColor));
+                    } else if (position == maskingIconRow) {
+                        cell.setText(LocaleController.getString(R.string.MaskingIcon));
+                    } else if (position == maskingLoadIconRow) {
+                        cell.setText(LocaleController.getString(R.string.MaskingLoadIcon));
                     }
                     break;
                 }
@@ -1682,6 +1850,10 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                         cell.getTextView().setGravity(Gravity.CENTER_HORIZONTAL);
                     } else if (position == autoLockDetailRow) {
                         cell.setText(LocaleController.getString(R.string.AutoLockInfo));
+                        cell.setBackground(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
+                        cell.getTextView().setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
+                    }  else if (position == maskingSettingsInfoRow) {
+                        cell.setText(LocaleController.getString(R.string.MaskingSettingsInfo));
                         cell.setBackground(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
                         cell.getTextView().setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
                     } else if (position == captureDetailRow) {
@@ -1731,14 +1903,14 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     || position == addFakePasscodeRow || position == restoreFakePasscodeRow
                     || position == badPasscodeAttemptsRow
                     || (firstFakePasscodeRow != -1 && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow)
-                    || position == partisanSettingsRow) {
+                    || position == partisanSettingsRow || position == maskingNotificationTextRow || position == maskingPrimaryColorRsow || position == maskingIconRow || position == maskingLoadIconRow) {
                 return VIEW_TYPE_SETTING;
             } else if (position == autoLockDetailRow || position == captureDetailRow || position == hintRow
                     || position == bruteForceProtectionDetailRow || position == clearCacheOnLockDetailRow
                     || position == badPasscodeAttemptsDetailRow || position == fakePasscodeDetailRow
-                    || position == partisanSettingsDetailRow) {
+                    || position == partisanSettingsDetailRow || position == maskingSettingsInfoRow) {
                 return VIEW_TYPE_INFO;
-            } else if (position == fakePasscodesHeaderRow || position == captureHeaderRow) {
+            } else if (position == maskingSettingsRow || position == fakePasscodesHeaderRow || position == captureHeaderRow) {
                 return VIEW_TYPE_HEADER;
             } else if (position == utyanRow) {
                 return VIEW_TYPE_UTYAN;

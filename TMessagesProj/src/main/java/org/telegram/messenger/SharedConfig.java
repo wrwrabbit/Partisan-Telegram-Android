@@ -13,6 +13,8 @@ import android.app.ActivityManager;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.os.Build;
@@ -359,6 +361,11 @@ public class SharedConfig {
 
     public static boolean hasEmailLogin;
 
+    public static String maskingNotificationText;
+    public static Integer maskingPrimaryColor = Color.BLUE;
+    public static Bitmap maskingIcon;
+    public static Bitmap maskingLoadIcon;
+
     @PerformanceClass
     private static int devicePerformanceClass;
     @PerformanceClass
@@ -406,6 +413,7 @@ public class SharedConfig {
     public static int fakePasscodeActivatedIndex = -1;
     private static boolean fakePasscodeLoadedWithErrors = false;
     public static List<FakePasscode> fakePasscodes = new ArrayList<>();
+
     public static class FakePasscodesWrapper {
         public List<FakePasscode> fakePasscodes;
         public FakePasscodesWrapper(List<FakePasscode> fakePasscodes) {
