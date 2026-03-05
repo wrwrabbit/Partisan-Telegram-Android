@@ -1903,7 +1903,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     || position == addFakePasscodeRow || position == restoreFakePasscodeRow
                     || position == badPasscodeAttemptsRow
                     || (firstFakePasscodeRow != -1 && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow)
-                    || position == partisanSettingsRow || position == maskingNotificationTextRow || position == maskingPrimaryColorRsow || position == maskingIconRow || position == maskingLoadIconRow) {
+                    || position == partisanSettingsRow || position == maskingNotificationTextRow || position == maskingPrimaryColorRow || position == maskingIconRow || position == maskingLoadIconRow) {
                 return VIEW_TYPE_SETTING;
             } else if (position == autoLockDetailRow || position == captureDetailRow || position == hintRow
                     || position == bruteForceProtectionDetailRow || position == clearCacheOnLockDetailRow
