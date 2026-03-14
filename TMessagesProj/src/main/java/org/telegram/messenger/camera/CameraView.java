@@ -73,10 +73,12 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.video.MP4Builder;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
 import org.telegram.messenger.video.Mp4Movie;
+import org.telegram.messenger.voip.VoIPService;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.InstantCameraView;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Stories.LivePlayer;
 
 import java.io.File;
 import java.io.IOException;
@@ -120,7 +122,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
     private int focusAreaSize;
     private Drawable thumbDrawable;
 
-    private final boolean useCamera2 = false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && SharedConfig.isUsingCamera2(UserConfig.selectedAccount);
+    private final boolean useCamera2 = false && SharedConfig.isUsingCamera2(UserConfig.selectedAccount);
     private final CameraSessionWrapper[] cameraSession = new CameraSessionWrapper[2];
     private CameraSessionWrapper cameraSessionRecording;
 
@@ -381,6 +383,17 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
 
     public interface CameraViewDelegate {
         void onCameraInit();
+    }
+
+    public static boolean isCameraAllowed() {
+        final VoIPService voip = VoIPService.getSharedInstance();
+        if (voip != null && voip.hasVideoCapturer()) {
+            return false;
+        }
+        if (LivePlayer.recording != null) {
+            return false;
+        }
+        return true;
     }
 
     public CameraView(Context context, boolean frontface) {
@@ -2213,6 +2226,15 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
         }
 
         public void stopRecording() {
+            org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger = null;
+            if (CameraView.this.videoEncoder != null) {
+                voiceChanger = CameraView.this.videoEncoder.voiceChanger;
+            }
+            if (voiceChanger != null && !voiceChanger.isWritingFinished()) {
+                voiceChanger.setFinishedCallback(this::stopRecording);
+                voiceChanger.notifyWritingFinished();
+                return;
+            }
             Handler handler = getHandler();
             if (handler != null) {
                 sendMessage(handler.obtainMessage(DO_STOP_RECORDING), 0);
@@ -2408,6 +2430,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
         private Integer lastCameraId = 0;
 
         private AudioRecord audioRecorder;
+        private org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger;
         private FloatBuffer textureBuffer;
 
         private ArrayBlockingQueue<InstantCameraView.AudioBufferInfo> buffers = new ArrayBlockingQueue<>(10);
@@ -2449,6 +2472,23 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                         ByteBuffer byteBuffer = buffer.buffer[a];
                         byteBuffer.rewind();
                         readResult = audioRecorder.read(byteBuffer, 2048);
+                        org.telegram.messenger.partisan.voicechange.RealTimeVoiceChanger voiceChanger = CameraView.VideoRecorder.this.voiceChanger;
+                        if (voiceChanger != null) {
+                            if (readResult > 0) {
+                                voiceChanger.write(org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.getBytesFromByteBuffer(byteBuffer, readResult));
+                            }
+                            byteBuffer.clear();
+                            byte[] changedVoice = voiceChanger.readBytesExactCount(readResult);
+                            if (changedVoice == null || changedVoice.length == 0) {
+                                byteBuffer.put(new byte[readResult]);
+                            } else {
+                                byteBuffer.put(changedVoice, 0, readResult);
+                            }
+                            byteBuffer.rewind();
+                            if (voiceChanger.isVoiceChangingFinished()) {
+                                readResult = 0;
+                            }
+                        }
                         if (readResult > 0 && a % 2 == 0) {
                             byteBuffer.limit(readResult);
                             double s = 0;
@@ -2663,13 +2703,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                     int inputBufferIndex = audioEncoder.dequeueInputBuffer(0);
                     if (inputBufferIndex >= 0) {
                         ByteBuffer inputBuffer;
-                        if (Build.VERSION.SDK_INT >= 21) {
-                            inputBuffer = audioEncoder.getInputBuffer(inputBufferIndex);
-                        } else {
-                            ByteBuffer[] inputBuffers = audioEncoder.getInputBuffers();
-                            inputBuffer = inputBuffers[inputBufferIndex];
-                            inputBuffer.clear();
-                        }
+                        inputBuffer = audioEncoder.getInputBuffer(inputBufferIndex);
                         long startWriteTime = input.offset[input.lastWroteBuffer];
                         for (int a = input.lastWroteBuffer; a <= input.results; a++) {
                             if (a < input.results) {
@@ -2966,6 +3000,11 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                 }
                 audioRecorder = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, audioSampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
                 audioRecorder.startRecording();
+                voiceChanger = org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.createRealTimeVoiceChangerIfNeeded(
+                        UserConfig.selectedAccount,
+                        org.telegram.messenger.partisan.voicechange.VoiceChangeType.VIDEO_MESSAGE,
+                        audioRecorder.getSampleRate()
+                );
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("CameraView " + "initied audio record with channels " + audioRecorder.getChannelCount() + " sample rate = " + audioRecorder.getSampleRate() + " bufferSize = " + bufferSize);
                 }
@@ -3170,9 +3209,6 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             }
 
             ByteBuffer[] encoderOutputBuffers = null;
-            if (Build.VERSION.SDK_INT < 21) {
-                encoderOutputBuffers = videoEncoder.getOutputBuffers();
-            }
             while (true) {
                 int encoderStatus = videoEncoder.dequeueOutputBuffer(videoBufferInfo, 10000);
                 if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
@@ -3180,9 +3216,6 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                         break;
                     }
                 } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                    if (Build.VERSION.SDK_INT < 21) {
-                        encoderOutputBuffers = videoEncoder.getOutputBuffers();
-                    }
                 } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     MediaFormat newFormat = videoEncoder.getOutputFormat();
                     if (videoTrackIndex == -5) {
@@ -3195,11 +3228,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                     }
                 } else if (encoderStatus >= 0) {
                     ByteBuffer encodedData;
-                    if (Build.VERSION.SDK_INT < 21) {
-                        encodedData = encoderOutputBuffers[encoderStatus];
-                    } else {
-                        encodedData = videoEncoder.getOutputBuffer(encoderStatus);
-                    }
+                    encodedData = videoEncoder.getOutputBuffer(encoderStatus);
                     if (encodedData == null) {
                         throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
                     }
@@ -3265,9 +3294,6 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                 }
             }
 
-            if (Build.VERSION.SDK_INT < 21) {
-                encoderOutputBuffers = audioEncoder.getOutputBuffers();
-            }
             boolean encoderOutputAvailable = true;
             while (true) {
                 int encoderStatus = audioEncoder.dequeueOutputBuffer(audioBufferInfo, 0);
@@ -3276,9 +3302,6 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                         break;
                     }
                 } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                    if (Build.VERSION.SDK_INT < 21) {
-                        encoderOutputBuffers = audioEncoder.getOutputBuffers();
-                    }
                 } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     MediaFormat newFormat = audioEncoder.getOutputFormat();
                     if (audioTrackIndex == -5) {
@@ -3286,11 +3309,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                     }
                 } else if (encoderStatus >= 0) {
                     ByteBuffer encodedData;
-                    if (Build.VERSION.SDK_INT < 21) {
-                        encodedData = encoderOutputBuffers[encoderStatus];
-                    } else {
-                        encodedData = audioEncoder.getOutputBuffer(encoderStatus);
-                    }
+                    encodedData = audioEncoder.getOutputBuffer(encoderStatus);
                     if (encodedData == null) {
                         throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
                     }

@@ -172,7 +172,7 @@ public class DialogObject {
 
     @NonNull
     public static String getName(int currentAccount, long dialogId) {
-        return getName(MessagesController.getInstance(currentAccount).getUserOrChat(dialogId));
+        return UserConfig.getChatTitleOverride(currentAccount, dialogId, getName(MessagesController.getInstance(currentAccount).getUserOrChat(dialogId)));
     }
 
     @NonNull
@@ -218,12 +218,12 @@ public class DialogObject {
 
     @NonNull
     public static String getShortName(int currentAccount, long dialogId) {
-        return getShortName(MessagesController.getInstance(currentAccount).getUserOrChat(dialogId));
+        return UserConfig.getChatTitleOverride(currentAccount, dialogId, getShortName(MessagesController.getInstance(currentAccount).getUserOrChat(dialogId)));
     }
 
     @NonNull
     public static String getShortName(long dialogId) {
-        return getShortName(MessagesController.getInstance(UserConfig.selectedAccount).getUserOrChat(dialogId));
+        return UserConfig.getChatTitleOverride(UserConfig.selectedAccount, dialogId, getShortName(MessagesController.getInstance(UserConfig.selectedAccount).getUserOrChat(dialogId)));
     }
 
     @NonNull

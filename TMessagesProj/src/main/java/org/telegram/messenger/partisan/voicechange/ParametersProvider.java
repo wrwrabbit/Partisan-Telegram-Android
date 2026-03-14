@@ -1,34 +1,43 @@
 package org.telegram.messenger.partisan.voicechange;
 
-import java.util.List;
 import java.util.Map;
 
-interface ParametersProvider {
-    double getPitchFactor();
+public interface ParametersProvider {
     double getTimeStretchFactor();
     Map<Integer, Integer> getSpectrumDistortionMap(int sampleRate);
-    List<TimeDistorter.DistortionInterval> getTimeDistortionList();
     double getF0Shift();
-    double getFormantRatio();
+    double getLowRatio();
+    double getMidRatio();
+    double getHighRatio();
+    FormantShiftLimits getFormantShiftLimits(double currentShift);
+    boolean shiftFormantsWithHarvest();
+    double getMaxFormantSpread();
 
-    default boolean pitchShiftingEnabled() {
-        return Math.abs(getPitchFactor() - 1.0) > 0.01;
-    }
+    int getBadSThreshold();
+    int getBadShMinThreshold();
+    int getBadShMaxThreshold();
 
-    default boolean timeStretchEnabled() {
-        return Math.abs(getTimeStretchFactor() - 1.0) > 0.01;
-    }
+    int getBadSCutoff();
+    int getBadShCutoff();
+
+    boolean useOldWindowRestore();
 
     default boolean spectrumDistortionEnabled() {
         return getSpectrumDistortionMap(48000) != null;
     }
 
-    default boolean timeDistortionEnabled() {
-        return getTimeDistortionList() != null;
-    }
-
     default boolean formantShiftingEnabled() {
         return Math.abs(getF0Shift() - 1.0) > 0.01
-                || Math.abs(getFormantRatio() - 1.0) > 0.01;
+                || Math.abs(getLowRatio() - 1.0) > 0.01
+                || Math.abs(getMidRatio() - 1.0) > 0.01
+                || Math.abs(getHighRatio() - 1.0) > 0.01;
+    }
+
+    default boolean badSEnabled() {
+        return getBadSCutoff() > 0;
+    }
+
+    default boolean badShEnabled() {
+        return getBadShCutoff() > 0;
     }
 }

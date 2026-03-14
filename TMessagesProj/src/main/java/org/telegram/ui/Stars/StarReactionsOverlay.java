@@ -18,6 +18,7 @@ import android.view.ViewConfiguration;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
@@ -109,7 +110,7 @@ public class StarReactionsOverlay extends View {
             StarsController.getInstance(msg.currentAccount).commitPaidReaction();
 
             final TLRPC.ChatFull chatFull = chatActivity.getCurrentChatInfo();
-            final StarsReactionsSheet sheet = new StarsReactionsSheet(getContext(), chatActivity.getCurrentAccount(), chatActivity.getDialogId(), chatActivity, msg, reactors, chatFull == null || chatFull.paid_reactions_available, chatActivity.getResourceProvider());
+            final StarsReactionsSheet sheet = new StarsReactionsSheet(getContext(), chatActivity.getCurrentAccount(), chatActivity.getDialogId(), chatActivity, msg, reactors, chatFull == null || chatFull.paid_reactions_available, false, 0, chatActivity.getResourceProvider());
             sheet.setMessageCell(chatActivity, msg.getId(), cell);
             sheet.show();
         };
@@ -139,7 +140,7 @@ public class StarReactionsOverlay extends View {
                     name = UserObject.getForcedFirstName(user);
                 } else {
                     TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-dialogId);
-                    name = chat == null ? "" : chat.title;
+                    name = chat == null ? "" : UserConfig.getChatTitleOverride(chatActivity.getCurrentAccount(), chat);
                 }
                 new StarsIntroActivity.StarsNeededSheet(chatActivity.getContext(), chatActivity.getResourceProvider(), totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, name, () -> {
                     starsController.sendPaidReaction(msg, chatActivity, totalStars, true, true, null);
@@ -270,15 +271,6 @@ public class StarReactionsOverlay extends View {
             canvas.translate(0, counterShown ? dp(60) * (1f - t) : -dp(30) * (1f - t));
             final float counterScale = AndroidUtilities.lerp(counterShown ? 1.8f : 1.3f, 1f, t);
             canvas.scale(counterScale, counterScale, cx, cy);
-//            canvas.translate(cx, cy);
-//            canvas.skew(.02f * (counterShown ? (1f - t) : -(1f - t)), 0);
-//            canvas.translate(-cx, -cy);
-//            camera.restore();
-//            camera.rotate(0, 0, t * 360);
-//            camera.getMatrix(matrix);
-//            matrix.preTranslate(-cx, -cy);
-//            matrix.postTranslate(cx, cy);
-//            canvas.concat(matrix);
             counter.setAlpha((int) (0xFF * t));
             counter.setShadowLayer(dp(12), 0, dp(3.5f), Theme.multAlpha(0xAA000000, t));
             counter.setBounds(cx - dp(100), reactionBounds.top - dp(24 + 24), cx + dp(100), reactionBounds.top - dp(24));

@@ -52,6 +52,8 @@ public class FakePasscode {
     public String name;
     @FakePasscodeSerializer.Ignore
     private String passcodeHash = "";
+    @SharedConfig.PasscodeType
+    private int currentPasscodeType = SharedConfig.PASSCODE_TYPE_PIN;
     @FakePasscodeSerializer.Ignore
     private byte[] passcodeSalt;
     public String activationMessage = "";
@@ -93,7 +95,7 @@ public class FakePasscode {
     }
 
     private static String generatePasscodeName() {
-        String base = SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN
+        String base = SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN
                 ? LocaleController.getString(R.string.FakePasscode)
                 : LocaleController.getString(R.string.FakePassword);
         return base + " " + (SharedConfig.fakePasscodeIndex);
@@ -147,6 +149,7 @@ public class FakePasscode {
             FakePasscodeUtils.getActivatedFakePasscode().deactivate();
         }
         setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(true);
+        currentPasscodeType = passwordlessMode ? SharedConfig.PASSCODE_TYPE_PIN : SharedConfig.getMainPasscodeType();
         activationDate = ConnectionsManager.getInstance(UserConfig.selectedAccount).getCurrentTime();
         actionsResult = new ActionsResult();
         actionsResult.setActivated();
@@ -230,13 +233,13 @@ public class FakePasscode {
         if (activationDate != null && message.date < activationDate) {
             return false;
         }
-        String messageIdStr = message.id + ":" + Utils.getMessageDialogId(message);
-        if (messageIdStr.equals(SharedConfig.previousMessageActivatorId)) {
-            return false;
-        } else {
-            SharedConfig.savePreviousMessageActivatorId(messageIdStr);
-        }
         if (activationMessage.equals(message.message)) {
+            String messageIdStr = message.id + ":" + Utils.getMessageDialogId(message);
+            if (messageIdStr.equals(SharedConfig.previousMessageActivatorId)) {
+                return false;
+            } else {
+                SharedConfig.savePreviousMessageActivatorId(messageIdStr);
+            }
             executeActions();
             SharedConfig.fakePasscodeActivated(SharedConfig.fakePasscodes.indexOf(this));
             SharedConfig.saveConfig();
@@ -450,6 +453,14 @@ public class FakePasscode {
         SharedConfig.passcodeSalt = passcodeSalt;
         SharedConfig.setPasscode(passcodeHash);
         SharedConfig.fakePasscodes.remove(this);
+    }
+
+    public @SharedConfig.PasscodeType int getPasscodeType() {
+        return currentPasscodeType;
+    }
+
+    public void setPasscodeType(@SharedConfig.PasscodeType int passcodeType) {
+        this.currentPasscodeType = passcodeType;
     }
 
     private void setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(boolean disable) {

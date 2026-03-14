@@ -277,8 +277,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         }
         checkRetryTextView();
         Activity parentActivity = AndroidUtilities.findActivity(getContext());
-        if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD) {
-
+        if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD) {
         } else {
             if (parentActivity != null) {
                 View currentFocus = parentActivity.getCurrentFocus();

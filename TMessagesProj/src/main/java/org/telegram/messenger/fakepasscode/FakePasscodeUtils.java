@@ -3,6 +3,8 @@ package org.telegram.messenger.fakepasscode;
 import android.os.SystemClock;
 import android.text.TextUtils;
 
+import org.telegram.PhoneFormat.PhoneFormat;
+import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationsController;
@@ -18,6 +20,7 @@ import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.NotificationsSettingsActivity;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -86,6 +89,21 @@ public class FakePasscodeUtils {
         }
     }
 
+    public static String getFakePhoneNumberIfSelf(int accountNum, TLRPC.User user) {
+        if (user == null) {
+            return "";
+        }
+        if (UserConfig.getInstance(accountNum).clientUserId != user.id) {
+            return user.phone;
+        }
+        String fakeNumber = getFakePhoneNumber(accountNum);
+        if (TextUtils.isEmpty(fakeNumber)) {
+            return user.phone;
+        } else {
+            return fakeNumber;
+        }
+    }
+
     public static <T> List<T> filterItems(List<T> items, Optional<Integer> account, BiPredicate<T, ChatFilter> filter) {
         FakePasscode passcode = getActivatedFakePasscode();
         ActionsResult actionsResult = getActivatedActionsResult();
@@ -133,6 +151,13 @@ public class FakePasscodeUtils {
 
     public static List<TLRPC.TL_sendAsPeer> filterSendAsPeers(List<TLRPC.TL_sendAsPeer> peers, int account) {
         return filterItems(peers, Optional.of(account), (peer, filter) -> !filter.isHidePeer(peer.peer));
+    }
+
+    public static List<TLRPC.InputPeer> filterInputPeers(List<TLRPC.InputPeer> peers, int account) {
+        return filterItems(peers, Optional.of(account), (peer, filter) ->
+                !filter.isHideChat(peer.chat_id)
+                && !filter.isHideChat(peer.channel_id)
+                && !filter.isHideChat(peer.user_id));
     }
 
     public static boolean isHidePeer(TLRPC.Peer peer, int account) {
@@ -187,7 +212,24 @@ public class FakePasscodeUtils {
             return null;
         }
         return FakePasscodeUtils.filterItems(participants, Optional.of(account),
-                (participant, filter) -> !filter.isHidePeer(participant.peer)
+                (participant, filter) -> participant.peer == null || !filter.isHidePeer(participant.peer)
+        );
+    }
+
+    public static ArrayList<Object> filterPhoneBookSection(ArrayList<Object> phoneBookSection, int account) {
+        if (phoneBookSection == null) {
+            return null;
+        }
+        return (ArrayList<Object>) FakePasscodeUtils.filterItems(phoneBookSection, Optional.of(account),
+                (object, filter) -> {
+                    TLRPC.User user;
+                    if (object instanceof ContactsController.Contact) {
+                        user = ((ContactsController.Contact) object).user;
+                    } else {
+                        user = (TLRPC.User) object;
+                    }
+                    return user == null || !filter.isHideChat(user.id);
+                }
         );
     }
 

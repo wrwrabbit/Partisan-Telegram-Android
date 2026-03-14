@@ -276,7 +276,7 @@ public class PhonebookShareAlert extends BottomSheet {
         } else {
             AndroidUtilities.VcardItem item = new AndroidUtilities.VcardItem();
             item.type = 0;
-            item.vcardData.add(item.fullData = "TEL;MOBILE:+" + contact.user.phone);
+            item.vcardData.add(item.fullData = "TEL;MOBILE:+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumberIfSelf(currentAccount, contact.user));
             phones.add(item);
         }
         if (user == null && contact != null) {
@@ -319,7 +319,7 @@ public class PhonebookShareAlert extends BottomSheet {
             currentUser.status = user.status;
             currentUser.first_name = user.first_name;
             currentUser.last_name = user.last_name;
-            currentUser.phone = user.phone;
+            currentUser.phone = org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumberIfSelf(currentAccount, user);
             if (vcard != null) {
                 currentUser.restriction_reason = vcard;
             }
@@ -928,7 +928,7 @@ public class PhonebookShareAlert extends BottomSheet {
                 }
                 if (parentFragment instanceof ChatActivity && ((ChatActivity) parentFragment).isInScheduleMode()) {
                     ChatActivity chatActivity = (ChatActivity) parentFragment;
-                    AlertsCreator.createScheduleDatePickerDialog(getContext(), chatActivity.getDialogId(), (notify, scheduleDate) -> {
+                    AlertsCreator.createScheduleDatePickerDialog(getContext(), chatActivity.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
                         delegate.didSelectContact(currentUser, notify, scheduleDate, 0, false, 0);
                         dismiss();
                     }, resourcesProvider);

@@ -1,5 +1,8 @@
 package org.telegram.messenger.partisan.voicechange;
 
+import org.telegram.messenger.partisan.voicechange.voiceprocessors.TimeStretcher;
+
+import java.io.IOException;
 import java.util.Arrays;
 
 // RealTimeVoiceChanger is good for video and calls. Sometimes the audio will be sped up to eliminate lag.
@@ -11,14 +14,14 @@ public class RealTimeVoiceChanger extends VoiceChanger {
     private boolean firstPieceRead = false;
     private double additionalSpeedupFactor = 0.0;
 
-    public RealTimeVoiceChanger(int sampleRate) {
-        super(sampleRate);
+    public RealTimeVoiceChanger(ParametersProvider parametersProvider, int sampleRate) {
+        super(parametersProvider, sampleRate);
     }
 
     @Override
-    protected void addVoiceChangingProcessorsToChain() {
-        super.addVoiceChangingProcessorsToChain();
-        addAudioProcessorToChain(new TimeStretcher(new TesterSettingsParametersProvider() {
+    protected void addIntermediateDispatcherNodesToChain() throws IOException {
+        super.addIntermediateDispatcherNodesToChain();
+        addIntermediateDispatcherNode(new TimeStretcher(new CachedVoiceChangerSettingsParametersProvider() {
             @Override
             public double getTimeStretchFactor() {
                 return 1.0 + additionalSpeedupFactor;

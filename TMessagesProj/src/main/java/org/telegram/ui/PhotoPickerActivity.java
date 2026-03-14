@@ -104,11 +104,9 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
 
     public interface PhotoPickerActivityDelegate {
         void selectedPhotosChanged();
-
-        void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate);
-
-        default void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, Integer autoDeleteDelay) {
-            actionButtonPressed(canceled, notify, scheduleDate);
+        void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, int scheduleRepeatPeriod);
+        default void actionButtonPressed(boolean canceled, boolean notify, int scheduleDate, int scheduleRepeatPeriod, Integer autoDeleteDelay) {
+            actionButtonPressed(canceled, notify, scheduleDate, scheduleRepeatPeriod);
         }
 
         void onCaptionChanged(CharSequence caption);
@@ -390,7 +388,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
 
         @Override
         public boolean cancelButtonPressed() {
-            delegate.actionButtonPressed(true, true, 0);
+            delegate.actionButtonPressed(true, true, 0, 0);
             finishFragment();
             return true;
         }
@@ -401,7 +399,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
         }
 
         @Override
-        public void sendButtonPressed(int index, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, boolean forceDocument) {
+        public void sendButtonPressed(int index, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean forceDocument) {
             if (selectedPhotos.isEmpty()) {
                 if (selectedAlbum != null) {
                     if (index < 0 || index >= selectedAlbum.photos.size()) {
@@ -419,7 +417,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                     addToSelectedPhotos(searchImage, -1);
                 }
             }
-            sendSelectedPhotos(notify, scheduleDate);
+            sendSelectedPhotos(notify, scheduleDate, 0);
         }
 
         @Override
@@ -1072,9 +1070,9 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
             writeButtonContainer.addView(writeButton, LayoutHelper.createFrame(Build.VERSION.SDK_INT >= 21 ? 56 : 60, Build.VERSION.SDK_INT >= 21 ? 56 : 60, Gravity.LEFT | Gravity.TOP, Build.VERSION.SDK_INT >= 21 ? 2 : 0, 0, 0, 0));
             writeButton.setOnClickListener(v -> {
                 if (chatActivity != null && chatActivity.isInScheduleMode()) {
-                    AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), this::sendSelectedPhotos);
+                    AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> sendSelectedPhotos(notify, scheduleDate, 0));
                 } else {
-                    sendSelectedPhotos(true, 0);
+                    sendSelectedPhotos(true, 0, 0);
                 }
             });
             writeButton.setOnLongClickListener(view -> {
@@ -1137,18 +1135,18 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                                 sendPopupWindow.dismiss();
                             }
                             if (num == 0) {
-                                AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), this::sendSelectedPhotos);
+                                AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> sendSelectedPhotos(notify, scheduleDate, 0));
                             } else if (num == 2) {
                                 org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.load();
                                 org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.delays.putIfAbsent("" + currentAccount, 5000);
                                 AlertsCreator.createScheduleDeleteTimePickerDialog(getContext(), org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.delays.get("" + currentAccount),
-                                        (notify, delay) -> {
-                                            sendSelectedPhotos(true, 0, delay);
+                                        (notify, delay, scheduleRepeatPeriod) -> {
+                                            sendSelectedPhotos(true, 0, 0, delay);
                                             org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.delays.put("" + currentAccount, delay);
                                             org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages.save();
                                         });
                             } else {
-                                sendSelectedPhotos(true, 0);
+                                sendSelectedPhotos(true, 0, 0);
                             }
                         });
                     }
@@ -1560,12 +1558,12 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
     }
 
     @Override
-    public boolean onBackPressed() {
+    public boolean onBackPressed(boolean invoked) {
         if (commentTextView != null && commentTextView.isPopupShowing()) {
-            commentTextView.hidePopup(true);
+            if (invoked) commentTextView.hidePopup(true);
             return false;
         }
-        return super.onBackPressed();
+        return super.onBackPressed(invoked);
     }
 
     public void updatePhotosButton(int animated) {
@@ -1775,17 +1773,17 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
         searchDelegate = photoPickerActivitySearchDelegate;
     }
 
-    private void sendSelectedPhotos(boolean notify, int scheduleDate) {
-        sendSelectedPhotos(notify, scheduleDate, null);
+    private void sendSelectedPhotos(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
+        sendSelectedPhotos(notify, scheduleDate, scheduleRepeatPeriod, null);
     }
 
-    private void sendSelectedPhotos(boolean notify, int scheduleDate, Integer autoDeleteDelay) {
+    private void sendSelectedPhotos(boolean notify, int scheduleDate, int scheduleRepeatPeriod, Integer autoDeleteDelay) {
         if (selectedPhotos.isEmpty() || delegate == null || sendPressed) {
             return;
         }
         applyCaption();
         sendPressed = true;
-        delegate.actionButtonPressed(false, notify, scheduleDate, autoDeleteDelay);
+        delegate.actionButtonPressed(false, notify, scheduleDate, scheduleRepeatPeriod, autoDeleteDelay);
         if (selectPhotoType != PhotoAlbumPickerActivity.SELECT_TYPE_WALLPAPER && (delegate == null || delegate.canFinishFragment())) {
             finishFragment();
         }

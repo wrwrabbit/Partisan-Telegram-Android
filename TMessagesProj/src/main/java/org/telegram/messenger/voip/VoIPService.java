@@ -767,6 +767,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (currentAccount == -1) {
 			throw new IllegalStateException("No account specified when starting VoIP service");
 		}
+        org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.setPendingCallAccountNum(currentAccount);
 		classGuid = ConnectionsManager.generateClassGuid();
 		long userID = intent.getLongExtra("user_id", 0);
 		long chatID = intent.getLongExtra("chat_id", 0);
@@ -4285,6 +4286,10 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 
 	public long getCallID() {
 		return privateCall != null ? privateCall.id : 0;
+	}
+
+	public long getGroupCallID() {
+		return groupCall != null && groupCall.call != null ? groupCall.call.id : 0;
 	}
 
 	public void hangUp() {

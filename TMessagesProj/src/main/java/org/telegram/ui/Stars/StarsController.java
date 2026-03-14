@@ -1268,7 +1268,7 @@ public class StarsController {
             isBiz = !UserObject.isBot(user);
         } else {
             TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-            bot = chat == null ? "" : chat.title;
+            bot = chat == null ? "" : UserConfig.getChatTitleOverride(currentAccount, chat);
             isBot = false;
             isBiz = false;
         }
@@ -1462,7 +1462,7 @@ public class StarsController {
             bot = UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(dialogId));
         } else {
             TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-            bot = chat == null ? "" : chat.title;
+            bot = chat == null ? "" : UserConfig.getChatTitleOverride(currentAccount, chat);
         }
         final String product = form.title;
         final int subscription_period = form.invoice.subscription_period;
@@ -2020,7 +2020,7 @@ public class StarsController {
                     name = UserObject.getForcedFirstName(user);
                 } else {
                     TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-message.did);
-                    name = chat == null ? "" : chat.title;
+                    name = chat == null ? "" : UserConfig.getChatTitleOverride(currentAccount, chat);
                 }
                 Context context = chatActivity.getContext();
                 if (context == null) context = LaunchActivity.instance;
@@ -2068,7 +2068,7 @@ public class StarsController {
                             name = UserObject.getForcedFirstName(user);
                         } else {
                             TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-message.did);
-                            name = chat == null ? "" : chat.title;
+                            name = chat == null ? "" : UserConfig.getChatTitleOverride(currentAccount, chat);
                         }
                         Context context = chatActivity.getContext();
                         if (context == null) context = LaunchActivity.instance;
@@ -2120,7 +2120,7 @@ public class StarsController {
                 name = UserObject.getForcedFirstName(user);
             } else {
                 TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-dialogId);
-                name = chat == null ? "" : chat.title;
+                name = chat == null ? "" : UserConfig.getChatTitleOverride(currentAccount, chat);
             }
             if (context == null) return null;
             new StarsIntroActivity.StarsNeededSheet(context, chatActivity.getResourceProvider(), totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, name, () -> {
@@ -2149,7 +2149,7 @@ public class StarsController {
                 name = UserObject.getForcedFirstName(user);
             } else {
                 TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-dialogId);
-                name = chat == null ? "" : chat.title;
+                name = chat == null ? "" : UserConfig.getChatTitleOverride(currentAccount, chat);
             }
             new StarsIntroActivity.StarsNeededSheet(context, chatActivity.getResourceProvider(), totalStars2, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, name, () -> {
                 sendPaidReaction(messageObject, chatActivity, totalStars2, true, true, peer);

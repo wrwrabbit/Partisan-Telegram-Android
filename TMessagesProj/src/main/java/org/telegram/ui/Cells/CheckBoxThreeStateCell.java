@@ -24,6 +24,7 @@ public class CheckBoxThreeStateCell extends FrameLayout {
     private boolean needDivider;
     private boolean isMultiline;
     private int currentType;
+    private boolean attached;
 
     private int checkBoxSize = 18;
 
@@ -155,9 +156,28 @@ public class CheckBoxThreeStateCell extends FrameLayout {
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
-        textView.setAlpha(enabled ? 1.0f : 0.5f);
-        valueTextView.setAlpha(enabled ? 1.0f : 0.5f);
-        checkBox.setAlpha(enabled ? 1.0f : 0.5f);
+        float alpha = enabled ? 1.0f : 0.5f;
+        if (attached) {
+            textView.animate().alpha(alpha).start();
+            valueTextView.animate().alpha(alpha).start();;
+            checkBox.animate().alpha(alpha).start();;
+        } else {
+            textView.setAlpha(alpha);
+            valueTextView.setAlpha(alpha);
+            checkBox.setAlpha(alpha);
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        attached = true;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        attached = false;
     }
 
     public void setState(CheckBoxSquareThreeState.State state, boolean animated) {

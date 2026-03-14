@@ -918,7 +918,10 @@ public class ChatObject {
             if (peer == null) {
                 selfPeer = null;
             } else {
-                if (peer instanceof TLRPC.TL_inputPeerUser) {
+                if (peer instanceof TLRPC.TL_inputPeerSelf) {
+                    selfPeer = new TLRPC.TL_peerUser();
+                    selfPeer.user_id = currentAccount.getUserConfig().getClientUserId();
+                } else if (peer instanceof TLRPC.TL_inputPeerUser) {
                     selfPeer = new TLRPC.TL_peerUser();
                     selfPeer.user_id = peer.user_id;
                 } else if (peer instanceof TLRPC.TL_inputPeerChat) {
@@ -1993,6 +1996,10 @@ public class ChatObject {
 
     public static boolean hasAdminRights(TLRPC.Chat chat) {
         return chat != null && (chat.creator || chat.admin_rights != null && chat.admin_rights.flags != 0);
+    }
+
+    public static boolean isCreator(TLRPC.Chat chat) {
+        return chat != null && chat.creator;
     }
 
     public static boolean canChangeChatInfo(TLRPC.Chat chat) {

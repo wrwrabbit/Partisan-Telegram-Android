@@ -1266,12 +1266,12 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
     }
 
     @Override
-    public boolean onBackPressed() {
+    public boolean onBackPressed(boolean invoked) {
         if (actionBar != null && actionBar.isActionModeShowed()) {
-            hideActionMode();
+            if (invoked) hideActionMode();
             return false;
         }
-        return super.onBackPressed();
+        return super.onBackPressed(invoked);
     }
 
     @Override

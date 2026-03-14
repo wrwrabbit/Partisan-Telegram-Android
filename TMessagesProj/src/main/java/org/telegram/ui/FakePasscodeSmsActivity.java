@@ -182,21 +182,6 @@ public class FakePasscodeSmsActivity extends BaseFragment {
         sendOnlyIfDisconnectedRow = rowCount++;
     }
 
-    @Override
-    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        if (listView != null) {
-            ViewTreeObserver obs = listView.getViewTreeObserver();
-            obs.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    listView.getViewTreeObserver().removeOnPreDrawListener(this);
-                    return true;
-                }
-            });
-        }
-    }
-
     DialogCheckBox.OnCheckedChangeListener getGeolocationCheckboxListener() {
         return (view, checked) -> {
             Activity parentActivity = getParentActivity();

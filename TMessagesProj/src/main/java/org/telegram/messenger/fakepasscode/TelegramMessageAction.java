@@ -2,7 +2,6 @@ package org.telegram.messenger.fakepasscode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.MessageObject;
@@ -72,7 +71,7 @@ public class TelegramMessageAction extends AccountAction implements Notification
         FakePasscodeMessages.hasUnDeletedMessages.clear();
         FakePasscodeMessages.saveMessages();
 
-        getMessagesController().forceResetDialogs();
+        resetDialogs();
 
         getNotificationCenter().addObserver(this, NotificationCenter.messageReceivedByServer);
         getNotificationCenter().addObserver(this, NotificationCenter.dialogDeletedByAction);
@@ -95,6 +94,25 @@ public class TelegramMessageAction extends AccountAction implements Notification
         SharedConfig.saveConfig();
     }
 
+    private void resetDialogs() {
+        runRestorePromoDialogIfNeeded();
+        getMessagesController().forceResetDialogs();
+    }
+
+    private void runRestorePromoDialogIfNeeded() {
+        TLRPC.Dialog promoDialog = getMessagesController().getPromoDialog();
+        if (promoDialog != null) {
+            waitAndRestorePromoDialog(promoDialog.id);
+        }
+    }
+
+    private void waitAndRestorePromoDialog(long dialogId) {
+        if (getMessagesController().getDialog(dialogId) != null) {
+            AndroidUtilities.runOnUIThread(() -> waitAndRestorePromoDialog(dialogId), 100);
+        }
+        getMessagesController().checkPromoInfo(true);
+    }
+
     private void sendMessage(Entry entry) {
         String geolocation = Utils.getLastLocationString();
         String text = entry.text;
@@ -104,7 +122,7 @@ public class TelegramMessageAction extends AccountAction implements Notification
         SendMessagesHelper.allowReloadDialogsByMessage = false;
         activeAction = this;
         getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(text, entry.userId, null, null, null, false,
-                null, null, null, true, 0, null, false));
+                null, null, null, true, 0, 0, null, false));
         SendMessagesHelper.allowReloadDialogsByMessage = true;
         activeAction = null;
         entry.dialogDeleted = false;

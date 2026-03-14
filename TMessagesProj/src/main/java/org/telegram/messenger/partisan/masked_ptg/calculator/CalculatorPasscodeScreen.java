@@ -203,7 +203,7 @@ public class CalculatorPasscodeScreen extends AbstractMaskedPasscodeScreen {
         }
         backgroundFrameLayout.setBackgroundColor(0xff000000);
 
-        if (SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PIN) {
+        if (SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PIN) {
             buttonsFrameLayout.setVisibility(View.VISIBLE);
             inputTextView.setVisibility(View.VISIBLE);
             outputTextView.setVisibility(View.VISIBLE);
