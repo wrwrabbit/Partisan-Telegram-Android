@@ -487,7 +487,7 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         actionBar.setAlpha(0.0f);
 
         ActionBarMenu menu = actionBar.createMenu();
-        searchItem = menu.addItem(0, R.drawable.ic_ab_search).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
+        searchItem = menu.addItem(0, R.drawable.outline_header_search).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
             @Override
             public void onSearchCollapse() {
                 if (searching) {
@@ -1291,7 +1291,7 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         }), true, dp(1.33f), dp(1)));
         playerLayout.addView(unsaveFromProfileTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 42, Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, 12, 12, 12, 12));
 
-        saveToProfileButton = new ButtonWithCounterView(context, resourcesProvider);
+        saveToProfileButton = new ButtonWithCounterView(context, resourcesProvider).setRound();
         SpannableStringBuilder sb = new SpannableStringBuilder();
         sb.append("+ ");
         sb.setSpan(new ColoredImageSpan(R.drawable.filled_track_add), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -2138,8 +2138,8 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
             final long dialogId = messageObject.getDialogId();
             final long docId = messageObject.getDocument() != null ? messageObject.getDocument().id : 0L;
             final boolean noforwards = (
-                dialogId < 0 && MessagesController.getInstance(currentAccount).isChatNoForwards(-dialogId) ||
-                MessagesController.getInstance(currentAccount).isChatNoForwards(messageObject.getChatId()) ||
+                dialogId < 0 && MessagesController.getInstance(currentAccount).isPeerNoForwards(dialogId) ||
+                MessagesController.getInstance(currentAccount).isPeerNoForwards(messageObject.getDialogId()) ||
                 messageObject.messageOwner.noforwards
             );
             if (noforwards != this.noforwards) {

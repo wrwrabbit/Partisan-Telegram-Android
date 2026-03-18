@@ -73,6 +73,7 @@ import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.ChatThemeBottomSheet;
+import org.telegram.ui.Components.FormattedDateSpan;
 import org.telegram.ui.Components.QuoteSpan;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.StickerSetBulletinLayout;
@@ -106,7 +107,9 @@ import java.util.regex.Pattern;
 
 @SuppressWarnings("unchecked")
 public class MediaDataController extends BaseController {
-    public final static String ATTACH_MENU_BOT_ANIMATED_ICON_KEY = "android_animated",
+    public final static String
+            ATTACH_MENU_BOT_ANIMATED_ICON_KEY = "android_animated",
+            ATTACH_MENU_BOT_ANIMATED_ICON_KEY_2 = "android_active_animated",
             ATTACH_MENU_BOT_STATIC_ICON_KEY = "default_static",
             ATTACH_MENU_BOT_SIDE_MENU_ICON_KEY = "android_side_menu_static",
             ATTACH_MENU_BOT_PLACEHOLDER_STATIC_KEY = "placeholder_static",
@@ -1813,9 +1816,9 @@ public class MediaDataController extends BaseController {
     }
 
     @Nullable
-    public static TLRPC.TL_attachMenuBotIcon getAnimatedAttachMenuBotIcon(@NonNull TLRPC.TL_attachMenuBot bot) {
+    public static TLRPC.TL_attachMenuBotIcon getAnimatedAttachMenuBotIcon(@NonNull TLRPC.TL_attachMenuBot bot, boolean selected) {
         for (TLRPC.TL_attachMenuBotIcon icon : bot.icons) {
-            if (icon.name.equals(ATTACH_MENU_BOT_ANIMATED_ICON_KEY)) {
+            if (icon.name.equals(selected ? ATTACH_MENU_BOT_ANIMATED_ICON_KEY_2 : ATTACH_MENU_BOT_ANIMATED_ICON_KEY)) {
                 return icon;
             }
         }
@@ -7326,6 +7329,33 @@ public class MediaDataController extends BaseController {
                 }
             }
 
+            FormattedDateSpan[] dateSpans = spannable.getSpans(0, message[0].length(), FormattedDateSpan.class);
+            if (dateSpans != null && dateSpans.length > 0) {
+                if (entities == null) {
+                    entities = new ArrayList<>();
+                }
+                for (int b = 0; b < dateSpans.length; ++b) {
+                    FormattedDateSpan span = dateSpans[b];
+                    if (span != null) {
+                        try {
+                            TLRPC.TL_messageEntityFormattedDate entity = new TLRPC.TL_messageEntityFormattedDate();
+                            entity.offset = spannable.getSpanStart(span);
+                            entity.length = Math.min(spannable.getSpanEnd(span), message[0].length()) - entity.offset;
+                            entity.relative = span.entity.relative;
+                            entity.short_time = span.entity.short_time;
+                            entity.long_time = span.entity.long_time;
+                            entity.long_date = span.entity.long_date;
+                            entity.short_date = span.entity.short_date;
+                            entity.day_of_week = span.entity.day_of_week;
+                            entity.date = span.entity.date;
+                            entities.add(entity);
+                        } catch (Exception e) {
+                            FileLog.e(e);
+                        }
+                    }
+                }
+            }
+
             if (spannable instanceof Spannable) {
                 Spannable s = (Spannable) spannable;
                 AndroidUtilities.addLinksSafe(s, Linkify.WEB_URLS, false, false);
@@ -7335,7 +7365,7 @@ public class MediaDataController extends BaseController {
                         entities = new ArrayList<>();
                     }
                     for (int b = 0; b < spansUrl.length; b++) {
-                        if (spansUrl[b] instanceof URLSpanReplacement || spansUrl[b] instanceof URLSpanUserMention) {
+                        if (spansUrl[b] instanceof URLSpanReplacement || spansUrl[b] instanceof URLSpanUserMention || spansUrl[b] instanceof FormattedDateSpan) {
                             continue;
                         }
                         TLRPC.TL_messageEntityUrl entity = new TLRPC.TL_messageEntityUrl();
@@ -8094,6 +8124,10 @@ public class MediaDataController extends BaseController {
     }
 
     public void loadBotKeyboard(MessagesStorage.TopicKey topicKey) {
+        loadBotKeyboard(topicKey, false);
+    }
+
+    public void loadBotKeyboard(MessagesStorage.TopicKey topicKey, boolean postNotificationIfNotFound) {
         TLRPC.Message keyboard = botKeyboards.get(topicKey);
         if (keyboard != null) {
             getNotificationCenter().postNotificationName(NotificationCenter.botKeyboardDidLoad, keyboard, topicKey);
@@ -8121,7 +8155,7 @@ public class MediaDataController extends BaseController {
                 }
                 cursor.dispose();
 
-                if (botKeyboard != null) {
+                if (botKeyboard != null || postNotificationIfNotFound) {
                     TLRPC.Message botKeyboardFinal = botKeyboard;
                     AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.botKeyboardDidLoad, botKeyboardFinal, topicKey));
                 }

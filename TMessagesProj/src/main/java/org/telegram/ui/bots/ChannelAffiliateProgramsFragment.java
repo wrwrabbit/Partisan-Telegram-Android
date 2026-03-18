@@ -576,7 +576,7 @@ public class ChannelAffiliateProgramsFragment extends GradientHeaderActivity imp
             static { setup(new Factory()); }
 
             @Override
-            public BotCell createView(Context context, int currentAccount, int classGuid, Theme.ResourcesProvider resourcesProvider) {
+            public BotCell createView(Context context, RecyclerListView listView, int currentAccount, int classGuid, Theme.ResourcesProvider resourcesProvider) {
                 return new BotCell(context, currentAccount, resourcesProvider);
             }
 
@@ -614,7 +614,7 @@ public class ChannelAffiliateProgramsFragment extends GradientHeaderActivity imp
             subtextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
             subtextView.setLinkTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueHeader, resourcesProvider));
             subtextView.setPadding(dp(4), 0, dp(4), 0);
-            addView(subtextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, 14 - 4, 20, 14 - 4, 0));
+            addView(subtextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, 14 - 4, 14, 14 - 4, 0));
         }
 
         public void set(CharSequence text, CharSequence subtext) {
@@ -626,7 +626,7 @@ public class ChannelAffiliateProgramsFragment extends GradientHeaderActivity imp
             static { setup(new Factory()); }
 
             @Override
-            public HeaderSortCell createView(Context context, int currentAccount, int classGuid, Theme.ResourcesProvider resourcesProvider) {
+            public HeaderSortCell createView(Context context, RecyclerListView listView, int currentAccount, int classGuid, Theme.ResourcesProvider resourcesProvider) {
                 return new HeaderSortCell(context, resourcesProvider);
             }
 

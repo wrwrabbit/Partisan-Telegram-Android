@@ -1,7 +1,6 @@
 package org.telegram.ui.Components.chat;
 
 import android.graphics.PointF;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.view.View;
 import android.view.ViewGroup;
@@ -70,7 +69,7 @@ public final class ViewPositionWatcher implements
 
         computeRectInParent(view, parentView, tmpRect);
         t.last.set(tmpRect);
-        t.hasLast = true;
+        // t.hasLast = true;
 
         ensureListening();
     }
@@ -192,7 +191,7 @@ public final class ViewPositionWatcher implements
      */
 
     public static boolean computeRectInParent(@NonNull View view,
-                                               @NonNull ViewGroup parentView,
+                                               @NonNull View parentView,
                                                @NonNull RectF out) {
         float left = 0f;
         float top = 0f;
@@ -206,7 +205,11 @@ public final class ViewPositionWatcher implements
             if (!(vp instanceof View)) {
                 return false; // parentView not found in hierarchy
             }
-            current = (View) vp;
+            View parent = (View) vp;
+            left -= parent.getScrollX();
+            top  -= parent.getScrollY();
+
+            current = parent;
         }
 
         if (current != parentView) {

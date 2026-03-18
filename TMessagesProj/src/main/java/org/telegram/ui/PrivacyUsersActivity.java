@@ -171,6 +171,8 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
         frameLayout.addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         listView = new RecyclerListView(context);
+        listView.setSections();
+        actionBar.setAdaptiveBackground(listView);
         listView.setItemSelectorColorProvider(position -> {
             if (position == deleteAllRow) {
                 return Theme.multAlpha(Theme.getColor(Theme.key_text_RedRegular), .12f);
@@ -314,13 +316,15 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
 
     private void updateRows() {
         rowCount = 0;
+        blockUserRow = -1;
         usersHeaderRow = -1;
         blockUserDetailRow = -1;
         deleteAllRow = -1;
         if (!blockedUsersActivity || getMessagesController().getTotalBlockedCount() >= 0) {
-            blockUserRow = rowCount++;
             if (currentType == TYPE_BLOCKED) {
                 blockUserDetailRow = rowCount++;
+            } else {
+                blockUserRow = rowCount++;
             }
 
             int count;
@@ -414,7 +418,6 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
             switch (viewType) {
                 case 0:
                     view = new ManageChatUserCell(mContext, 7, 6, true);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     ((ManageChatUserCell) view).setDelegate((cell, click) -> {
                         if (click) {
                             showUnblockAlert((Long) cell.getTag(), cell);
@@ -427,12 +430,10 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
                     break;
                 case 2:
                     view = new ManageChatTextCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case 3:
                 default:
                     HeaderCell headerCell = new HeaderCell(mContext, Theme.key_windowBackgroundWhiteBlueHeader, 21, 11, false);
-                    headerCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     headerCell.setHeight(43);
                     view = headerCell;
                     break;
@@ -441,7 +442,6 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
                     textCell.setText(LocaleController.getString(R.string.NotificationsDeleteAllException), false);
                     textCell.setColors(-1, Theme.key_text_RedRegular);
                     view = textCell;
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
             }
             return new RecyclerListView.Holder(view);
@@ -499,15 +499,9 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
                             privacyCell.setFixedSize(8);
                             privacyCell.setText(null);
                         }
-                        if (usersStartRow == -1) {
-                            privacyCell.setBackgroundDrawable(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
-                        } else {
-                            privacyCell.setBackgroundDrawable(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
-                        }
                     } else if (position == usersDetailRow) {
                         privacyCell.setFixedSize(12);
                         privacyCell.setText("");
-                        privacyCell.setBackgroundDrawable(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     }
                     break;
                 case 2:
@@ -569,7 +563,7 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
 
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{ManageChatUserCell.class, ManageChatTextCell.class, HeaderCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
 
-        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault));
+//        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault));
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_LISTGLOWCOLOR, null, null, null, null, Theme.key_actionBarDefault));
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_actionBarDefaultIcon));
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_TITLECOLOR, null, null, null, null, Theme.key_actionBarDefaultTitle));
@@ -602,5 +596,15 @@ public class PrivacyUsersActivity extends BaseFragment implements NotificationCe
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{ManageChatTextCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueIcon));
 
         return themeDescriptions;
+    }
+
+    @Override
+    public boolean isSupportEdgeToEdge() {
+        return true;
+    }
+    @Override
+    public void onInsets(int left, int top, int right, int bottom) {
+        listView.setPadding(0, 0, 0, bottom);
+        listView.setClipToPadding(false);
     }
 }

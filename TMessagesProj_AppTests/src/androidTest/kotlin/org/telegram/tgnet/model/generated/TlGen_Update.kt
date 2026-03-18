@@ -2267,4 +2267,44 @@ public sealed class TlGen_Update : TlGen_Object {
       public const val MAGIC: UInt = 0xDC58F31EU
     }
   }
+
+  public data class TL_updateEmojiGameInfo(
+    public val info: TlGen_messages_EmojiGameInfo,
+  ) : TlGen_Update() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      info.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0xFB9C547AU
+    }
+  }
+
+  public data object TL_updateStarGiftCraftFail : TlGen_Update() {
+    public const val MAGIC: UInt = 0xAC072444U
+
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+    }
+  }
+
+  public data class TL_updateChatParticipantRank(
+    public val chat_id: Long,
+    public val user_id: Long,
+    public val rank: String,
+    public val version: Int,
+  ) : TlGen_Update() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      stream.writeInt64(chat_id)
+      stream.writeInt64(user_id)
+      stream.writeString(rank)
+      stream.writeInt32(version)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0xBD8367B9U
+    }
+  }
 }
