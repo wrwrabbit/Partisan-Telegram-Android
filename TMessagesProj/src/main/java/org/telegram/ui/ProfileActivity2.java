@@ -522,9 +522,9 @@ public class ProfileActivity2 extends BaseFragment implements
                 }
             }
         } else if (chat != null) {
-            if (chatInfo != null && (!TextUtils.isEmpty(chatInfo.about) || chatInfo.location instanceof TLRPC.TL_channelLocation) || ChatObject.isPublic(chat)) {
+            if (chatInfo != null && (!TextUtils.isEmpty(chatInfo.getAbout(chat)) || chatInfo.location instanceof TLRPC.TL_channelLocation) || ChatObject.isPublic(chat)) {
                 if (chatInfo != null) {
-                    if (!TextUtils.isEmpty(chatInfo.about)) {
+                    if (!TextUtils.isEmpty(chatInfo.getAbout(chat))) {
 //                        channelInfoRow = rowCount++;
                     }
                     if (chatInfo.location instanceof TLRPC.TL_channelLocation) {

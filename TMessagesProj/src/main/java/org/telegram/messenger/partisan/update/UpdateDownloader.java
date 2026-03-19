@@ -22,14 +22,14 @@ public class UpdateDownloader implements NotificationCenter.NotificationCenterDe
 
     public void startUpdateDownloading() {
         log("startUpdateDownloading");
-        if (LaunchActivity.getUpdateAccountNum() != accountNum || SharedConfig.pendingPtgAppUpdate.message == null) {
+        if (SharedConfig.getUpdateAccountNum() != accountNum || SharedConfig.pendingPtgAppUpdate.message == null) {
             recheckUpdateAndStartDownloadAgain();
             return;
         } else {
             log("The pending update is correct");
         }
         MessageObject messageObject = new MessageObject(
-                LaunchActivity.getUpdateAccountNum(),
+                SharedConfig.getUpdateAccountNum(),
                 SharedConfig.pendingPtgAppUpdate.message,
                 (LongSparseArray<TLRPC.User>) null,
                 null,

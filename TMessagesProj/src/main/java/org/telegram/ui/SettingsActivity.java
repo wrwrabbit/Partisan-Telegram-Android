@@ -83,6 +83,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
+import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -649,7 +650,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                     Browser.openUrl(getContext(), getString(R.string.CheckPhoneNumberLearnMoreUrl));
                 }),
                 getString(R.string.CheckPhoneNumberNo), v -> {
-                    presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER));
+                    PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(this, () -> {
+                        presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE));
+                    });
                 },
                 replaceUnderstood(getString(R.string.CheckPhoneNumberYes2)), v -> {
                     getMessagesController().removeSuggestion(0, "VALIDATE_PHONE_NUMBER");
@@ -1499,7 +1502,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             } else if (which == 11) { // Voip audio effects
                 SharedConfig.toggleDisableVoiceAudioEffects();
             } else if (which == 12) { // Clean app update
-                SharedConfig.pendingAppUpdate = null;
+                SharedConfig.pendingPtgAppUpdate = null;
                 SharedConfig.saveConfig();
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
             } else if (which == 13) { // Reset suggestions

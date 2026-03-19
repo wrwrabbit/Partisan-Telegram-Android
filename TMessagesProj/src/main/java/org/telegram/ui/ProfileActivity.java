@@ -10800,7 +10800,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showId) {
                 chatIdRow = rowCount++;
             }
-
+            if (rowCount > 0) {
                 infoSectionRow = rowCount++;
             }
 

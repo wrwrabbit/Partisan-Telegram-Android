@@ -168,7 +168,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.DialogsAdapter;
 import org.telegram.ui.Adapters.DialogsSearchAdapter;
-import org.telegram.ui.Adapters.DrawerLayoutAdapter;
 import org.telegram.ui.Adapters.FiltersView;
 import org.telegram.ui.Cells.AccountSelectCell;
 import org.telegram.ui.Cells.ActiveGiftAuctionsHintCell;
@@ -749,8 +748,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
     private AnimatedStatusView animatedStatusView;
     public RightSlidingDialogContainer rightSlidingDialogContainer;
-
-    public BaseFragment passwordFragment = null;
 
     private static boolean olderPtgChecked;
     private static boolean ptgPermissionsChecked;
@@ -6947,10 +6944,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onResume() {
         super.onResume();
-        if (sideMenu != null) {
-            ((DrawerLayoutAdapter)sideMenu.getAdapter()).checkAccountChanges();
-        }
-
         if (dialogStoriesCell != null) {
             dialogStoriesCell.onResume();
         }
@@ -6982,11 +6975,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             tosAccepted = true;
         }
         final NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        if (passwordFragment != null) {
-            Utilities.globalQueue.postRunnable(new ShowPasswordFragmentRunnable(this, passwordFragment, 200), 200);
-            passwordFragment = null;
-            return;
-        } else if (tosAccepted && folderId == 0 && checkPermission && !onlySelect && Build.VERSION.SDK_INT >= 23) {
+        if (tosAccepted && folderId == 0 && checkPermission && !onlySelect && Build.VERSION.SDK_INT >= 23) {
             Activity activity = getParentActivity();
             if (activity != null) {
                 checkPermission = false;
@@ -7160,9 +7149,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         if (getMessagesStorage().fileProtectionEnabled()) {
             getMessagesController().sortDialogs(null);
-        }
-        if (SharedConfig.passcodeEnabled() != passcodeItemVisible) {
-            updatePasscodeButton();
         }
     }
 
@@ -9475,7 +9461,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         showDialog(builder.create());
                     } else {
                         EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(DialogObject.getEncryptedChatId(dialog.id));
-                        AlertsCreator.createClearOrDeleteDialogAlert(DialogsActivity.this, action == clear, chat, user, DialogObject.isEncryptedDialog(dialog.id), action == delete, encryptedGroup != null ? encryptedGroup.getInternalId() : null, false, false, (param) -> {
+                        AlertsCreator.createClearOrDeleteDialogAlert(DialogsActivity.this, action == clear, chat, user, DialogObject.isEncryptedDialog(dialog.id), action == delete, false, false, encryptedGroup != null ? encryptedGroup.getInternalId() : null, (param) -> {
                             hideActionMode(false);
                             if (action == clear && ChatObject.isChannel(chat) && (!chat.megagroup || ChatObject.isPublic(chat))) {
                                 getMessagesController().deleteDialog(selectedDialog, 2, param);
@@ -10807,16 +10793,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
             }
             SuggestClearDatabaseBottomSheet.dismissDialog();
-        } else if (id == NotificationCenter.appUpdateAvailable || id == NotificationCenter.appUpdateLoading) {
-            updateMenuButton(true);
-        } else if (id == NotificationCenter.fileLoaded || id == NotificationCenter.fileLoadFailed || id == NotificationCenter.fileLoadProgressChanged) {
-            String name = (String) args[0];
-            if (SharedConfig.isAppUpdateAvailable()) {
-                String fileName = FileLoader.getAttachFileName(SharedConfig.pendingPtgAppUpdate.document);
-                if (fileName.equals(name)) {
-                    updateMenuButton(true);
-                }
-            }
         } else if (id == NotificationCenter.onDatabaseMigration) {
             boolean startMigration = (boolean) args[0];
             if (fragmentView != null) {
@@ -10853,7 +10829,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             } catch (Exception ignored) {
             }
         } else if (id == NotificationCenter.fakePasscodeActivated) {
-            updateMenuButton(false);
             if (actionBar != null && actionBar.isSearchFieldVisible()) {
                 actionBar.closeSearchField();
             }
@@ -13911,7 +13886,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void checkUi_itemPasscodeVisibility() {
-        final float factor0 = SharedConfig.passcodeHash.isEmpty() ? 0 : 1;
+        final float factor0 = !SharedConfig.passcodeEnabled() ? 0 : 1;
         final float factor1 = 1f - animatorSearchVisible.getFloatValue();
         final float factor2 = 1f - getRightSlidingProgress();
         final float factor3 = 1f - animatorDoneButtonVisible.getFloatValue();

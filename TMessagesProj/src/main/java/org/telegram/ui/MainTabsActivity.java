@@ -686,7 +686,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         } else if (id == NotificationCenter.fileLoaded) {
             String path = (String) args[0];
             if (SharedConfig.isAppUpdateAvailable()) {
-                String name = FileLoader.getAttachFileName(SharedConfig.pendingAppUpdate.document);
+                String name = FileLoader.getAttachFileName(SharedConfig.pendingPtgAppUpdate.document);
                 if (name.equals(path) && updateLayout != null) {
                     updateLayout.updateAppUpdateViews(currentAccount, true);
                 }
@@ -694,10 +694,18 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         } else if (id == NotificationCenter.fileLoadFailed) {
             String path = (String) args[0];
             if (SharedConfig.isAppUpdateAvailable()) {
-                String name = FileLoader.getAttachFileName(SharedConfig.pendingAppUpdate.document);
+                String name = FileLoader.getAttachFileName(SharedConfig.pendingPtgAppUpdate.document);
                 if (name.equals(path) && updateLayout != null) {
                     updateLayout.updateAppUpdateViews(currentAccount, true);
                 }
+            }
+        } else if (id == NotificationCenter.fakePasscodeActivated) {
+            if (updateLayout != null) {
+                updateLayout.updateAppUpdateViews(currentAccount, false);
+            }
+        } else if (id == NotificationCenter.cacheClearedByPtg) {
+            if (updateLayout != null && updateLayout.isCancelIcon()) {
+                FileLoader.getInstance(SharedConfig.getUpdateAccountNum()).cancelLoadFile(SharedConfig.pendingPtgAppUpdate.document);
             }
         } else if (id == NotificationCenter.fileLoadProgressChanged) {
             if (updateLayout != null) {
@@ -746,6 +754,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoaded);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadProgressChanged);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadFailed);
+        if (updateLayout != null && updateLayout.isCancelIcon() && SharedConfig.pendingPtgAppUpdate != null && SharedConfig.getUpdateAccountNum() != currentAccount) {
+            NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoaded);
+            NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoadProgressChanged);
+            NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoadFailed);
+        }
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.cacheClearedByPtg);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.notificationsCountUpdated);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.callTabsVisibleToggled);
@@ -763,6 +778,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.fileLoaded);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.fileLoadProgressChanged);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.fileLoadFailed);
+        if (SharedConfig.pendingPtgAppUpdate != null && SharedConfig.getUpdateAccountNum() != currentAccount) {
+            NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoaded);
+            NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoadProgressChanged);
+            NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoadFailed);
+        }
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.cacheClearedByPtg);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.notificationsCountUpdated);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.callTabsVisibleToggled);

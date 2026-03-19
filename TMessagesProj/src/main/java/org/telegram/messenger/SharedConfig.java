@@ -1135,6 +1135,13 @@ public class SharedConfig {
         }
     }
 
+    public static int getUpdateAccountNum() {
+        if (SharedConfig.pendingPtgAppUpdate == null) {
+            return -1;
+        }
+        return SharedConfig.pendingPtgAppUpdate.accountNum;
+    }
+
     public static void increaseBadPasscodeTries() {
         badPasscodeTries++;
         if (badPasscodeTries >= 3) {
@@ -1339,7 +1346,7 @@ public class SharedConfig {
         if (FakePasscodeUtils.getActivatedFakePasscode() != null) {
             return FakePasscodeUtils.getActivatedFakePasscode().passcodeEnabled();
         } else {
-            return passcodeHash.length() != 0;
+            return !passcodeHash.isEmpty();
         }
     }
 

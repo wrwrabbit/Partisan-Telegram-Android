@@ -963,9 +963,6 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         fragmentContextView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 38, Gravity.TOP | Gravity.LEFT, 0, -36, 0, 0));
         contentView.addView(fragmentContextView);
 
-        fragmentContextView.setAdditionalContextView(fragmentLocationContextView);
-        fragmentLocationContextView.setAdditionalContextView(fragmentContextView);
-
         final FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT);
         contentView.addView(actionBar, layoutParams);
 
@@ -2240,7 +2237,7 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
     ValueAnimator slideBackTransitionAnimator;
 
     @Override
-    protected Animator getCustomSlideTransition(boolean topFragment, boolean backAnimation, float distanceToMove) {
+    public Animator getCustomSlideTransition(boolean topFragment, boolean backAnimation, float distanceToMove) {
         if (backAnimation) {
             slideBackTransitionAnimator = ValueAnimator.ofFloat(slideFragmentProgress, 1f);
             return slideBackTransitionAnimator;
@@ -2322,22 +2319,6 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         if (fragmentView != null) {
             fragmentView.invalidate();
         }
-    }
-
-    @Override
-    public void setProgressToDrawerOpened(float progress) {
-        if (SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW || isSlideBackTransition) {
-            return;
-        }
-        boolean drawerTransition = progress > 0;
-        if (drawerTransition != isDrawerTransition) {
-            isDrawerTransition = drawerTransition;
-            setFragmentIsSliding(isDrawerTransition);
-            if (fragmentView != null) {
-                fragmentView.requestLayout();
-            }
-        }
-        setSlideTransitionProgress(1f - progress);
     }
 }
 

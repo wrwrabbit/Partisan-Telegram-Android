@@ -2287,12 +2287,12 @@ public class AlertsCreator {
         d.show();
     }
 
-    public static void createClearOrDeleteDialogAlert(BaseFragment fragment, boolean clear, TLRPC.Chat chat, TLRPC.User user, boolean secret, boolean canDeleteHistory, Integer encryptedGroupId, MessagesStorage.BooleanCallback onProcessRunnable) {
-        createClearOrDeleteDialogAlert(fragment, clear, false, false, chat, user, secret, false, canDeleteHistory, encryptedGroupId, onProcessRunnable, null);
+    public static void createClearOrDeleteDialogAlert(BaseFragment fragment, boolean clear, TLRPC.Chat chat, TLRPC.User user, boolean secret, boolean forceDeleteForAll, boolean canDeleteHistory, Integer encryptedGroupId, MessagesStorage.BooleanCallback onProcessRunnable) {
+        createClearOrDeleteDialogAlert(fragment, clear, false, chat, user, secret, false, forceDeleteForAll, canDeleteHistory, encryptedGroupId, onProcessRunnable, null);
     }
 
-    public static void createClearOrDeleteDialogAlert(BaseFragment fragment, boolean clear, TLRPC.Chat chat, TLRPC.User user, boolean secret, boolean checkDeleteForAll, boolean canDeleteHistory, Integer encryptedGroupId, MessagesStorage.BooleanCallback onProcessRunnable, Theme.ResourcesProvider resourcesProvider) {
-        createClearOrDeleteDialogAlert(fragment, clear, chat != null && chat.creator, false, chat, user, secret, checkDeleteForAll, canDeleteHistory, encryptedGroupId, onProcessRunnable, resourcesProvider);
+    public static void createClearOrDeleteDialogAlert(BaseFragment fragment, boolean clear, TLRPC.Chat chat, TLRPC.User user, boolean secret, boolean checkDeleteForAll, boolean forceDeleteForAll, boolean canDeleteHistory, Integer encryptedGroupId, MessagesStorage.BooleanCallback onProcessRunnable) {
+        createClearOrDeleteDialogAlert(fragment, clear, chat != null && chat.creator, chat, user, secret, checkDeleteForAll, forceDeleteForAll, canDeleteHistory, encryptedGroupId, onProcessRunnable, null);
     }
 
     public static void createClearOrDeleteDialogAlert(BaseFragment fragment, boolean clear, TLRPC.Chat chat, TLRPC.User user, boolean secret, boolean canDeleteHistory, MessagesStorage.BooleanCallback onProcessRunnable) {
@@ -2311,10 +2311,10 @@ public class AlertsCreator {
         MessagesStorage.BooleanCallback onProcessRunnable,
         Theme.ResourcesProvider resourcesProvider
     ) {
-        createClearOrDeleteDialogAlert(fragment, clear, admin, second, chat, user, secret, checkDeleteForAll, canDeleteHistory, null, onProcessRunnable, resourcesProvider);
+        createClearOrDeleteDialogAlert(fragment, clear, second, chat, user, secret, checkDeleteForAll, forceDeleteForAll, canDeleteHistory, null, onProcessRunnable, resourcesProvider);
     }
 
-    public static void createClearOrDeleteDialogAlert(BaseFragment fragment, boolean clear, boolean admin, boolean second, TLRPC.Chat chat, TLRPC.User user, boolean secret, boolean checkDeleteForAll, boolean canDeleteHistory, Integer encryptedGroupId, MessagesStorage.BooleanCallback onProcessRunnable, Theme.ResourcesProvider resourcesProvider) {
+    public static void createClearOrDeleteDialogAlert(BaseFragment fragment, boolean clear, boolean second, TLRPC.Chat chat, TLRPC.User user, boolean secret, boolean checkDeleteForAll, boolean forceDeleteForAll, boolean canDeleteHistory, Integer encryptedGroupId, MessagesStorage.BooleanCallback onProcessRunnable, Theme.ResourcesProvider resourcesProvider) {
         if (fragment == null || fragment.getParentActivity() == null || (chat == null && user == null))
             return;
 
@@ -2434,11 +2434,11 @@ public class AlertsCreator {
                     cell[0].setText(getString(R.string.DeleteGroupForAll), "", false, false);
                 }
             } else if (clear) {
-                cell[0].setText(LocaleController.formatString(R.string.ClearHistoryOptionAlso, UserObject.getFirstName(user)), "", !FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.deleteMessagesForAllByDefault && !admin, false);
+                cell[0].setText(LocaleController.formatString(R.string.ClearHistoryOptionAlso, UserObject.getFirstName(user)), "", !FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.deleteMessagesForAllByDefault && !(chat != null && chat.creator), false);
             } else if (encryptedGroupId != null) {
                 cell[0].setText(LocaleController.getString(R.string.DeleteSecretGroupOptionForMembers), "", !FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.deleteMessagesForAllByDefault, false);
             } else {
-                cell[0].setText(LocaleController.formatString(R.string.DeleteMessagesOptionAlso, UserObject.getFirstName(user)), "", !FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.deleteMessagesForAllByDefault && !admin, false);
+                cell[0].setText(LocaleController.formatString(R.string.DeleteMessagesOptionAlso, UserObject.getFirstName(user)), "", !FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.deleteMessagesForAllByDefault && !(chat != null && chat.creator), false);
             }
             cell[0].setMultiline(true);
             cell[0].setPadding(LocaleController.isRTL ? dp(16) : dp(8), dp(10), LocaleController.isRTL ? dp(8) : dp(16), dp(10));

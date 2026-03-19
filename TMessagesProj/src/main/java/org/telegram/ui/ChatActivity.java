@@ -10940,7 +10940,7 @@ public class ChatActivity extends BaseFragment implements
             item.addSubItem(text_underline, stringBuilder);
         }
         item.addSubItem(text_link, LocaleController.getString(R.string.CreateLink));
-        if (currentEncryptedChat == null) {
+        if (currentEncryptedChatSingle == null) {
             item.addSubItem(text_date, LocaleController.getString(R.string.FormattedDate));
         }
         item.addSubItem(text_regular, LocaleController.getString(R.string.Regular));

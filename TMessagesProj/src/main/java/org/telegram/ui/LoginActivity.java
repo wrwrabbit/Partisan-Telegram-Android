@@ -1674,10 +1674,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     }
 
     private void needFinishActivity(boolean afterSignup, boolean showSetPasswordConfirm, int otherwiseRelogin) {
-        needFinishActivity(afterSignup, showSetPasswordConfirm, otherwiseRelogin, null);
-    }
-
-    private void needFinishActivity(boolean afterSignup, boolean showSetPasswordConfirm, int otherwiseRelogin, BaseFragment passwordFragment) {
         if (getParentActivity() != null) {
             AndroidUtilities.setLightStatusBar(getParentActivity().getWindow(), false);
         }
@@ -1695,9 +1691,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 });
                 pendingSwitchingAccount = false;
                 finishFragment();
-                if (passwordFragment != null) {
-                    Utilities.globalQueue.postRunnable(new ShowPasswordFragmentRunnable(this, passwordFragment, 200), 200);
-                }
             } else {
                 if (afterSignup && showSetPasswordConfirm) {
                     TwoStepVerificationSetupActivity twoStepVerification = new TwoStepVerificationSetupActivity(TwoStepVerificationSetupActivity.TYPE_INTRO, null);
@@ -1709,7 +1702,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     args.putBoolean("afterSignup", afterSignup);
                     MainTabsActivity mainTabsActivity = new MainTabsActivity();
                     mainTabsActivity.prepareDialogsActivity(args);
-                    dialogsActivity.passwordFragment = passwordFragment;
                     presentFragment(mainTabsActivity, true);
                 }
 

@@ -36,6 +36,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -416,7 +417,9 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         } else if (item.id == BUTTON_HOURS) {
             presentFragment(new OpeningHoursActivity());
         } else if (item.id == INFO_PHONE) {
-            presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER));
+            PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(this, () -> {
+                presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE));
+            });
         } else if (item.id == INFO_USERNAME) {
             presentFragment(new ChangeUsernameActivity());
         } else if (item.id == BUTTON_LOGOUT) {

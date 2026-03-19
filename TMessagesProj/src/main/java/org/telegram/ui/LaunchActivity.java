@@ -586,7 +586,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.shouldKillApp);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.shouldHideApp);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
-        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.cacheClearedByPtg);
         switchToAvailableAccountIfCurrentAccountIsHidden();
         if (actionBarLayout.getFragmentStack().isEmpty() && (layersActionBarLayout == null || layersActionBarLayout.getFragmentStack().isEmpty())) {
             if (!UserConfig.getInstance(currentAccount).isClientActivated()) {
@@ -1311,11 +1310,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.needShowPlayServicesAlert);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.fileLoaded);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.fileLoadFailed);
-            if (SharedConfig.pendingPtgAppUpdate != null && getUpdateAccountNum() != currentAccount) {
-                NotificationCenter.getInstance(getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoadProgressChanged);
-                NotificationCenter.getInstance(getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoaded);
-                NotificationCenter.getInstance(getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoadFailed);
-            }
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.historyImportProgressChanged);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.groupCallUpdated);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.stickersImportComplete);
@@ -1337,11 +1331,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadFailed);
         SecurityChecker.checkSecurityIssuesAndSave(this, currentAccount, false);
         Utilities.globalQueue.postRunnable(() -> new FileProtectionPostRestartCleaner().checkAndClean(), 1000);
-        if (updateLayout != null && updateLayout.isCancelIcon() && SharedConfig.pendingPtgAppUpdate != null && getUpdateAccountNum() != currentAccount) {
-            NotificationCenter.getInstance(getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoaded);
-            NotificationCenter.getInstance(getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoadProgressChanged);
-            NotificationCenter.getInstance(getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoadFailed);
-        }
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.unknownPartisanActionLinkOpened);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.historyImportProgressChanged);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.groupCallUpdated);
@@ -6471,11 +6460,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.hasNewContactsToImport);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.needShowPlayServicesAlert);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.fileLoaded);
-            if (SharedConfig.pendingPtgAppUpdate != null && getUpdateAccountNum() != currentAccount) {
-                NotificationCenter.getInstance(getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoaded);
-                NotificationCenter.getInstance(getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoadProgressChanged);
-                NotificationCenter.getInstance(getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoadFailed);
-            }
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.unknownPartisanActionLinkOpened);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.fileLoadFailed);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.historyImportProgressChanged);
@@ -6504,7 +6488,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.shouldKillApp);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.shouldHideApp);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
-        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.cacheClearedByPtg);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.tlSchemeParseException);
 
         if (onPowerSaverCallback != null) {
@@ -7630,14 +7613,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             }
         } else if (id == NotificationCenter.appDidLogoutByAction || id == NotificationCenter.accountHidingChanged) {
             switchToAvailableAccountIfCurrentAccountIsHidden();
-            if (drawerLayoutAdapter != null) {
-                drawerLayoutAdapter.notifyDataSetChanged();
-            }
         } else if (id == NotificationCenter.fakePasscodeActivated) {
             switchToAvailableAccountIfCurrentAccountIsHidden();
-            if (updateLayout != null) {
-                updateLayout.updateAppUpdateViews(currentAccount, false);
-            }
             if (FakePasscodeUtils.isFakePasscodeActivated()) {
                 Utilities.globalQueue.postRunnable(() -> {
                     List<BaseFragment> fragmentsStack = actionBarLayout.getFragmentStack();
@@ -7663,14 +7640,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             System.exit(0);
         } else if (id == NotificationCenter.shouldHideApp) {
             moveTaskToBack(true);
-        } else if (id == NotificationCenter.savedChannelsButtonStateChanged) {
-            if (sideMenu != null) {
-                sideMenu.getAdapter().notifyDataSetChanged();
-            }
-        } else if (id == NotificationCenter.cacheClearedByPtg) {
-            if (updateLayout != null && updateLayout.isCancelIcon()) {
-                FileLoader.getInstance(SharedConfig.pendingPtgAppUpdate.accountNum).cancelLoadFile(SharedConfig.pendingPtgAppUpdate.document);
-            }
         } else if (id == NotificationCenter.unknownPartisanActionLinkOpened) {
             showAlertDialog(AlertsCreator.createSimpleAlert(this, LocaleController.getString(R.string.UnknownPartisanLinkWarning)));
         } else if (id == NotificationCenter.tlSchemeParseException) {
@@ -8189,13 +8158,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             return;
         }
         visibleActionMode.finish();
-    }
-
-    public static int getUpdateAccountNum() {
-        if (SharedConfig.pendingPtgAppUpdate == null) {
-            return -1;
-        }
-        return SharedConfig.pendingPtgAppUpdate.accountNum;
     }
 
     @Override

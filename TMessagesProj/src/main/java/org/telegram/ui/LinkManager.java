@@ -43,6 +43,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
+import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -328,7 +329,9 @@ public class LinkManager {
             return true;
         }
         if ("change_number".equalsIgnoreCase(first)) { // open_settings = 5;
-            presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER), true);
+            PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(getLastFragment(), () -> {
+                presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE), true);
+            });
             return true;
         }
         if ("language".equalsIgnoreCase(first)) { // open_settings = 10;

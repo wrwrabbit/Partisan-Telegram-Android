@@ -140,14 +140,14 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
             createUpdateUI(currentAccount);
 
             String fileName = FileLoader.getAttachFileName(SharedConfig.pendingPtgAppUpdate.document);
-            File path = FileLoader.getInstance(LaunchActivity.getUpdateAccountNum()).getPathToAttach(SharedConfig.pendingPtgAppUpdate.document, true);
+            File path = FileLoader.getInstance(SharedConfig.getUpdateAccountNum()).getPathToAttach(SharedConfig.pendingPtgAppUpdate.document, true);
             boolean showSize;
             if (path.exists()) {
                 updateLayoutIcon.setIcon(MediaActionDrawable.ICON_UPDATE, true, animated);
                 setUpdateText(LocaleController.getString(R.string.AppUpdateNow), animated);
                 showSize = false;
             } else {
-                if (FileLoader.getInstance(LaunchActivity.getUpdateAccountNum()).isLoadingFile(fileName) || UpdateDownloader.isUpdateChecking) {
+                if (FileLoader.getInstance(SharedConfig.getUpdateAccountNum()).isLoadingFile(fileName) || UpdateDownloader.isUpdateChecking) {
                     updateLayoutIcon.setIcon(MediaActionDrawable.ICON_CANCEL, true, animated);
                     updateLayoutIcon.setProgress(0, false);
                     Float p = ImageLoader.getInstance().getFileProgress(fileName);
@@ -159,7 +159,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                     showSize = true;
                 }
             }
-            updateSizeTextView.setText(showSize ? AndroidUtilities.formatFileSize(SharedConfig.pendingAppUpdate.document.size) : null, animated);
+            updateSizeTextView.setText(showSize ? AndroidUtilities.formatFileSize(SharedConfig.pendingPtgAppUpdate.document.size) : null, animated);
             if (updateLayout.getTag() != null) {
                 return;
             }
