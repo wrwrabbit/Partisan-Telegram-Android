@@ -12086,25 +12086,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     otherItem.addSubItem(add_shortcut, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut));
                 }
                 if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-                    if (isBot && SharedConfig.allowRenameChat) {
-                        otherItem.addSubItem(edit_chat_name, R.drawable.floating_pencil, LocaleController.getString("EditChatName", R.string.EditChatName));
-                    }
-                    if (user.photo != null && SharedConfig.allowDisableAvatar) {
-                        otherItem.addSubItem(disable_avatar, R.drawable.disable_avatar, LocaleController.getString("DisableAvatar", R.string.DisableAvatar));
-                        otherItem.addSubItem(enable_avatar, R.drawable.msg_photos, LocaleController.getString("EnableAvatar", R.string.EnableAvatar));
-                        UserConfig.ChatInfoOverride item;
-                        boolean avatarEnabled = true;
-                        long correct_id = chatId != 0 ? chatId : userId;
-                        if (getUserConfig().chatInfoOverrides.containsKey(String.valueOf(correct_id))) {
-                            item = getUserConfig().chatInfoOverrides.get(String.valueOf(correct_id));
-                            avatarEnabled = item.avatarEnabled;
-                        }
-                        if (avatarEnabled) {
-                            otherItem.hideSubItem(enable_avatar);
-                        } else {
-                            otherItem.hideSubItem(disable_avatar);
-                        }
-                    }
+                    addMaskingButtons(isBot,
+                            user.photo != null,
+                            userId);
                 }
             }
         } else if (chatId != 0) {
@@ -12199,6 +12183,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         }
                     }
                 }
+                if (!FakePasscodeUtils.isFakePasscodeActivated() && topicId == 0) {
+                    addMaskingButtons(true,
+                            chat.photo != null && !(chat.photo instanceof TLRPC.TL_chatPhotoEmpty),
+                            chatId);
+                }
             } else {
                 if (chatInfo != null) {
                     if (ChatObject.canManageCalls(chat) && chatInfo.call == null) {
@@ -12224,27 +12213,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 otherItem.addSubItem(leave_group, R.drawable.msg_leave, LocaleController.getString(R.string.DeleteAndExit));
                 leaveAction = true;
-                if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-                    if (topicId == 0) {
-                        if (SharedConfig.allowRenameChat) {
-                            otherItem.addSubItem(edit_chat_name, R.drawable.floating_pencil, LocaleController.getString("EditChatName", R.string.EditChatName));
-                        }
-                        if (chat.photo != null && !(chat.photo instanceof TLRPC.TL_chatPhotoEmpty) && SharedConfig.allowDisableAvatar) {
-                            otherItem.addSubItem(disable_avatar, R.drawable.disable_avatar, LocaleController.getString("DisableAvatar", R.string.DisableAvatar));
-                            otherItem.addSubItem(enable_avatar, R.drawable.msg_photos, LocaleController.getString("EnableAvatar", R.string.EnableAvatar));
-                            UserConfig.ChatInfoOverride item;
-                            boolean avatarEnabled = true;
-                            if (getUserConfig().chatInfoOverrides.containsKey(String.valueOf(chatId))) {
-                                item = getUserConfig().chatInfoOverrides.get(String.valueOf(chatId));
-                                avatarEnabled = item.avatarEnabled;
-                            }
-                            if (avatarEnabled) {
-                                otherItem.hideSubItem(enable_avatar);
-                            } else {
-                                otherItem.hideSubItem(disable_avatar);
-                            }
-                        }
-                    }
+                if (!FakePasscodeUtils.isFakePasscodeActivated() && topicId == 0) {
+                    addMaskingButtons(true,
+                            chat.photo != null && !(chat.photo instanceof TLRPC.TL_chatPhotoEmpty),
+                            chatId);
                 }
             }
         }
@@ -12368,6 +12340,27 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             sharedMediaLayout.getSearchItem().requestLayout();
         }
         updateStoriesViewBounds(false);
+    }
+
+    private void addMaskingButtons(boolean allowRenameChat, boolean allowDisableAvatar, long dialogId) {
+        if (allowRenameChat && SharedConfig.allowRenameChat) {
+            otherItem.addSubItem(edit_chat_name, R.drawable.floating_pencil, getString(R.string.EditChatName));
+        }
+        if (allowDisableAvatar && SharedConfig.allowDisableAvatar) {
+            otherItem.addSubItem(disable_avatar, R.drawable.disable_avatar, getString(R.string.DisableAvatar));
+            otherItem.addSubItem(enable_avatar, R.drawable.msg_photos, getString(R.string.EnableAvatar));
+            UserConfig.ChatInfoOverride item;
+            boolean avatarEnabled = true;
+            if (getUserConfig().chatInfoOverrides.containsKey(String.valueOf(dialogId))) {
+                item = getUserConfig().chatInfoOverrides.get(String.valueOf(dialogId));
+                avatarEnabled = item.avatarEnabled;
+            }
+            if (avatarEnabled) {
+                otherItem.hideSubItem(enable_avatar);
+            } else {
+                otherItem.hideSubItem(disable_avatar);
+            }
+        }
     }
 
     private void createAutoDeleteItem(Context context) {
