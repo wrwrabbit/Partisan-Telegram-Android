@@ -13543,6 +13543,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 args.putLong("user_id", UserConfig.getInstance(currentAccount).getClientUserId());
                 presentFragment(new ChatActivity(args));
             });
+            if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels) {
+                io.add(R.drawable.menu_saved_channels, getString(R.string.SavedChannels), () -> {
+                    presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
+                });
+            }
             if (ApplicationLoader.applicationLoaderInstance != null) {
                 ApplicationLoader.applicationLoaderInstance.addItemOptions(io);
             }
