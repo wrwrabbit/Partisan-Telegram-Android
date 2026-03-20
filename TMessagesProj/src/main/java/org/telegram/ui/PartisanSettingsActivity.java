@@ -190,6 +190,8 @@ public class PartisanSettingsActivity extends BaseFragment {
         frameLayout.setTag(Theme.key_windowBackgroundGray);
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         listView = new RecyclerListView(context);
+        listView.setSections();
+        actionBar.setAdaptiveBackground(listView);
         listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false) {
             @Override
             public boolean supportsPredictiveItemAnimations() {
@@ -313,7 +315,8 @@ public class PartisanSettingsActivity extends BaseFragment {
                 SharedConfig.toggleIsConfirmDangerousActions();
                 ((TextCheckCell) view).setChecked(SharedConfig.confirmDangerousActions);
             } else if (position == verifiedRow) {
-                if (LocaleController.isRTL && x > AndroidUtilities.dp(76) || !LocaleController.isRTL && x < view.getMeasuredWidth() - AndroidUtilities.dp(76)) {
+                NotificationsCheckCell verifiedCheckCell = (NotificationsCheckCell) view;
+                if (!verifiedCheckCell.isCheckboxClicked(x)) {
                     List<VerificationStorage> storages = VerificationRepository.getInstance().getStorages();
                     if (storages.size() == 1) {
                         VerificationStorage storage = storages.get(0);
@@ -327,23 +330,23 @@ public class PartisanSettingsActivity extends BaseFragment {
                             VerificationRepository.getInstance().deleteStorage(storage.chatId);
                             VerificationRepository.getInstance().addStorage("Custom", username, -1);
                             VerificationUpdatesChecker.checkUpdate(currentAccount, true);
-                            NotificationsCheckCell cell = (NotificationsCheckCell) view;
                             boolean enabled = SharedConfig.additionalVerifiedBadges;
-                            cell.setTextAndValueAndCheck(LocaleController.getString(R.string.AdditionalVerifiedSetting), username, enabled, false);
+                            verifiedCheckCell.setTextAndValueAndCheck(LocaleController.getString(R.string.AdditionalVerifiedSetting), username, enabled, false);
                         };
                         template.negativeListener = (dlg, whichButton) -> {
                             SharedConfig.toggleAdditionalVerifiedBadges();
-                            ((NotificationsCheckCell) view).setChecked(SharedConfig.additionalVerifiedBadges);
+                            verifiedCheckCell.setChecked(SharedConfig.additionalVerifiedBadges);
                         };
                         AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
                         showDialog(dialog);
                     }
                 } else {
                     SharedConfig.toggleAdditionalVerifiedBadges();
-                    ((NotificationsCheckCell) view).setChecked(SharedConfig.additionalVerifiedBadges);
+                    verifiedCheckCell.setChecked(SharedConfig.additionalVerifiedBadges);
                 }
             } else if (position == fileProtectionRow) {
-                if (LocaleController.isRTL && x > AndroidUtilities.dp(76) || !LocaleController.isRTL && x < view.getMeasuredWidth() - AndroidUtilities.dp(76)) {
+                NotificationsCheckCell fileProtectionCheckCell = (NotificationsCheckCell) view;
+                if (!fileProtectionCheckCell.isCheckboxClicked(x)) {
                     presentFragment(new FileProtectionActivity());
                 } else {
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -480,21 +483,17 @@ public class PartisanSettingsActivity extends BaseFragment {
             switch (viewType) {
                 case 0:
                     view = new TextCheckCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case 2:
                     TextSettingsCell textCell = new TextSettingsCell(mContext);
-                    textCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     textCell.setCanDisable(true);
                     view = textCell;
                     break;
                 case 3:
                     view = new NotificationsCheckCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case 4:
                     NewFeatureTextSettingsCell newTextCell = new NewFeatureTextSettingsCell(mContext);
-                    newTextCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     newTextCell.setCanDisable(true);
                     view = newTextCell;
                     break;

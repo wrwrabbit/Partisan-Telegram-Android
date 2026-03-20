@@ -74,6 +74,8 @@ public class BadPasscodeAttemptsActivity extends BaseFragment {
         frameLayout.setTag(Theme.key_windowBackgroundGray);
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         listView = new RecyclerListView(context);
+        listView.setSections();
+        actionBar.setAdaptiveBackground(listView);
         listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
         listView.setVerticalScrollBarEnabled(true);
         listView.setItemAnimator(null);
@@ -122,7 +124,6 @@ public class BadPasscodeAttemptsActivity extends BaseFragment {
                 int index = SharedConfig.getBadPasscodeAttemptList().size() - 1 - position;
                 BadPasscodeAttempt attempt = SharedConfig.getBadPasscodeAttemptList().get(index);
                 cell.setBadPasscodeAttempt(attempt);
-                cell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
             } else if (holder.getItemViewType() == 1) {
                 TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
                 cell.setText(LocaleController.getString("NoBadPasscodeAttemts", R.string.NoBadPasscodeAttemts));
