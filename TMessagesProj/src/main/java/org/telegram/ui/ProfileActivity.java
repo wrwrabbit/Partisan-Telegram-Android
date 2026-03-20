@@ -320,11 +320,9 @@ import org.telegram.ui.bots.SetupEmojiStatusSheet;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
@@ -4518,7 +4516,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else if (position == clearLogsRow) {
                 FileLog.cleanupLogs();
             } else if (position == sendLogcatRow) {
-                sendLogcat();
+                org.telegram.messenger.partisan.Utils.sendLogcat(this);
             } else if (position == switchBackendRow) {
                 if (getParentActivity() == null) {
                     return;
@@ -12993,73 +12991,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     } else {
                         if (activity != null) {
                             Toast.makeText(activity, LocaleController.getString(R.string.ErrorOccurred), Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    private void sendLogcat() {
-        if (getParentActivity() == null) {
-            return;
-        }
-        AlertDialog progressDialog = new AlertDialog(getParentActivity(), 3);
-        progressDialog.setCanCancel(false);
-        progressDialog.show();
-        Utilities.globalQueue.postRunnable(() -> {
-            try {
-                File sdCard = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-                File dir = new File(sdCard.getAbsolutePath() + "/logs");
-
-                File logcatFile = new File(dir, "logcat.txt");
-                if (logcatFile.exists()) {
-                    logcatFile.delete();
-                }
-                boolean[] finished = new boolean[1];
-                try {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(logcatFile));
-                    String logcat = Utilities.readLogcat();
-                    writer.write(logcat);
-                    finished[0] = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                AndroidUtilities.runOnUIThread(() -> {
-                    try {
-                        progressDialog.dismiss();
-                    } catch (Exception ignore) {
-
-                    }
-                    if (finished[0]) {
-                        Uri uri;
-                        if (Build.VERSION.SDK_INT >= 24) {
-                            uri = FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", logcatFile);
-                        } else {
-                            uri = Uri.fromFile(logcatFile);
-                        }
-
-                        Intent i = new Intent(Intent.ACTION_SEND);
-                        if (Build.VERSION.SDK_INT >= 24) {
-                            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        }
-                        i.setType("message/rfc822");
-                        i.putExtra(Intent.EXTRA_EMAIL, "");
-                        i.putExtra(Intent.EXTRA_SUBJECT, "Logcat from " + LocaleController.getInstance().getFormatterStats().format(System.currentTimeMillis()));
-                        i.putExtra(Intent.EXTRA_STREAM, uri);
-                        if (getParentActivity() != null) {
-                            try {
-                                getParentActivity().startActivityForResult(Intent.createChooser(i, "Select email application."), 500);
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                        }
-                    } else {
-                        if (getParentActivity() != null) {
-                            Toast.makeText(getParentActivity(), LocaleController.getString("ErrorOccurred", R.string.ErrorOccurred), Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
