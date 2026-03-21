@@ -673,6 +673,23 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asShadow(null));
         }
 
+        if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && getUserConfig().showSecuritySuggestions) {
+            items.add(SuggestionCell.Factory.of(
+                getString(R.string.SecurityIssuesProfileSuggestionHeader),
+                getString(R.string.SecurityIssuesProfileSuggestionDetail),
+                getString(R.string.SecurityIssuesProfileSuggestionNo), v -> {
+                    presentFragment(new SecurityIssuesActivity());
+                },
+                getString(R.string.SecurityIssuesProfileSuggestionYes), v -> {
+                    getUserConfig().showSecuritySuggestions = false;
+                    getUserConfig().lastSecuritySuggestionsShow = System.currentTimeMillis();
+                    getUserConfig().saveConfig(false);
+                    listView.adapter.update(true);
+                }
+            ));
+            items.add(UItem.asShadow(null));
+        }
+
         if (accountNumbers.size() > 0) {
             items.add(UItem.asHeader(getString(R.string.SettingsAccounts)));
             for (int i = 0; i < accountNumbers.size(); ++i) {
