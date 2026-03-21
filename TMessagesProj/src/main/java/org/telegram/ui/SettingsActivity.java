@@ -527,7 +527,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         titleView.setText(UserObject.getUserName(user));
         final StringBuilder sb = new StringBuilder();
         if (user != null) {
-            sb.append(PhoneFormat.getInstance().format("+" + user.phone));
+            sb.append(PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumber(currentAccount, user.phone)));
         }
         final String username = UserObject.getPublicUsername(user);
         if (username != null) {
@@ -645,7 +645,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asShadow(null));
         } else if (suggestions.contains("VALIDATE_PHONE_NUMBER") && getUserConfig().getCurrentUser() != null) {
             items.add(SuggestionCell.Factory.of(
-                formatString(R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + getUserConfig().getCurrentUser().phone)),
+                formatString(R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumber(currentAccount, getUserConfig().getCurrentUser().phone))),
                 replaceSingleTag(getString(R.string.CheckPhoneNumberInfo), () -> {
                     Browser.openUrl(getContext(), getString(R.string.CheckPhoneNumberLearnMoreUrl));
                 }),

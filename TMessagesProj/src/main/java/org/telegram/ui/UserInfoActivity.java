@@ -225,7 +225,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         items.add(UItem.asHeader(getString(R.string.EditAccountInfoHeader)));
         if (user != null) {
             numberRow = items.size();
-            items.add(InfoCell.Factory.of(INFO_PHONE, R.drawable.menu_phone, PhoneFormat.getInstance().format("+" + user.phone), getString(R.string.TapToChangePhone), 0));
+            items.add(InfoCell.Factory.of(INFO_PHONE, R.drawable.menu_phone, PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumber(currentAccount, user.phone)), getString(R.string.TapToChangePhone), 0));
         }
         usernameRow = items.size();
         if (UserObject.getPublicUsername(user) != null) {
