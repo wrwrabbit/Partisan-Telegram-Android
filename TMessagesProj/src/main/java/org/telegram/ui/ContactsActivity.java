@@ -711,7 +711,7 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
                                 presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANNEL_CREATE));
                                 preferences.edit().putBoolean("channel_intro", true).commit();
                             }
-                        } else if (row == 4) {
+                        } else if (row == 3) {
                             presentFragment(new org.telegram.messenger.partisan.secretgroups.ui.EncryptedGroupCreateActivity(null), false);
                         }
                     }

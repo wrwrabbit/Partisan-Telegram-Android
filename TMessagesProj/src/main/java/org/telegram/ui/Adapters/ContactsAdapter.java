@@ -353,7 +353,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
         } else {
             if (section == 0) {
                 if (isEmpty) {
-                    return (includeSearch ? 1 : 0) + 2;
+                    return (includeSearch ? 1 : 0) + 2 + (!FakePasscodeUtils.isFakePasscodeActivated() ? 2 /*encrypted groups*/ : 0);
                 }
 
                 if (isAdmin) {
@@ -615,7 +615,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                             textCell.setTextAndValueAndColorfulIcon(getString(R.string.NewGroup), "", false, R.drawable.settings_group, 0xFF1CA5ED, 0xFF1488E1, false);
                         } else if (position == 1) {
                             textCell.setTextAndValueAndColorfulIcon(getString(R.string.NewChannel), "", false, R.drawable.settings_channel, 0xFF55CA47, 0xFF27B434, false);
-                        } else if (position == 4) {
+                        } else if (position == 3) {
                             textCell.setTextAndIcon(LocaleController.getString(R.string.NewEncryptedGroup), R.drawable.msg_groups, false);
                         }
                     }
@@ -708,7 +708,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                         return SHADOW_CELL;
                     }
                     if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-                        if (position == 3) {
+                        if (position == 4) {
                             return SHADOW_CELL;
                         } else if (position == 5) {
                             return isEmpty ? SHADOW_CELL : (sortType == SORT_TYPE_BY_NAME || sortType == SORT_TYPE_BY_TIME ? HEADER_CELL : GRAY_CELL);
