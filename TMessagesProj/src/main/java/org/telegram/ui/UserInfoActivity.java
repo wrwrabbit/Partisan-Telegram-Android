@@ -292,7 +292,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             items.add(UItem.asButton(BUTTON_LOCATION, R.drawable.msg_map, getString(R.string.EditProfileLocation)));
         }
         items.add(UItem.asShadow(-3, null));
-        final boolean hasAddAccount = UserConfig.getActivatedAccountsCount() < UserConfig.MAX_ACCOUNT_COUNT;
+        final boolean hasAddAccount = UserConfig.getActivatedAccountsCount() < UserConfig.getMaxAccountCountForCurrentFakePasscodeState();
         if (hasAddAccount) {
             addAccountRow = items.size();
             items.add(InfoCell.Factory.of(BUTTON_ADD_ACCOUNT, R.drawable.outline_add_account, getString(R.string.AddAccount), null, 0).accent());
@@ -354,8 +354,11 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
                     }
                 }
             }
+            if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+                freeAccounts = UserConfig.getFreeAccountsCountForCurrentFakePasscodeState();
+            }
             if (!UserConfig.hasPremiumOnAccounts()) {
-                freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
+                freeAccounts -= (UserConfig.getMaxAccountCountForCurrentFakePasscodeState() - UserConfig.getDefaultMaxAccountCountForCurrentFakePasscodeState());
             }
             if (freeAccounts > 0 && availableAccount != null) {
                 presentFragment(new LoginActivity(availableAccount));

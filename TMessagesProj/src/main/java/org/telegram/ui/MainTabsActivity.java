@@ -374,8 +374,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                         }
                     }
                 }
+                if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+                    freeAccounts = UserConfig.getFreeAccountsCountForCurrentFakePasscodeState();
+                }
                 if (!UserConfig.hasPremiumOnAccounts()) {
-                    freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
+                    freeAccounts -= (UserConfig.getMaxAccountCountForCurrentFakePasscodeState() - UserConfig.getDefaultMaxAccountCountForCurrentFakePasscodeState());
                 }
                 if (freeAccounts > 0 && availableAccount != null) {
                     presentFragment(new LoginActivity(availableAccount));
