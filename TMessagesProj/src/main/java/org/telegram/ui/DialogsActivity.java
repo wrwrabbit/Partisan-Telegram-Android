@@ -3377,7 +3377,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     return;
                 }
                 String text = editText.getText().toString();
-                checkPasscodeFromSearch(text);
                 if (!text.isEmpty() || (searchViewPager != null && searchViewPager.dialogsSearchAdapter != null && searchViewPager.dialogsSearchAdapter.hasRecentSearch()) || searchFiltersWasShowed || hasStories) {
                     searchWas = true;
                     if (!searchIsShowed) {
@@ -3387,6 +3386,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (searchViewPager != null) {
                     searchViewPager.onTextChanged(text);
                 }
+                checkPasscodeFromSearch(text);
             }
 
             @Override
@@ -7126,6 +7126,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         updateProxyButton(false, true);
         updateStoriesVisibility(false);
         checkSuggestClearDatabase();
+        checkUi_itemPasscodeVisibility();
         checkUi_mainTabsVisible();
         if (filterTabsView != null && viewPages[0] != null && viewPages[0].dialogsAdapter != null) {
             int dialogsType = viewPages[0].dialogsAdapter.getDialogsType();
@@ -11306,6 +11307,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 SharedConfig.setAppLocked(false);
                 SharedConfig.saveConfig();
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.didSetPasscode);
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.closeSearchByActiveAction);
                 if (getParentActivity() != null) {
                     Toast.makeText(getParentActivity(), LocaleController.getString(R.string.PasscodeActivatedFromPasswordless), Toast.LENGTH_LONG).show();
                 }
