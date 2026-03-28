@@ -748,4 +748,15 @@ public class Utils {
             }
         });
     }
+
+    public static void showAccountWillBeHiddenDialogIfNeeded(BaseFragment fragment) {
+        if (FakePasscodeUtils.autoAddHidingsToAllFakePasscodes() && !FakePasscodeUtils.isFakePasscodeActivated()) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
+            builder.setMessage(LocaleController.getString(R.string.AccountHiddenDescription));
+            builder.setTitle(LocaleController.getString(R.string.AccountHiddenTitle));
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+        }
+    }
 }

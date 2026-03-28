@@ -212,6 +212,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         Bulletin.addDelegate(this, delegate);
         Bulletin.addDelegate(contentView, delegate);
 
+        //org.telegram.messenger.partisan.Utils.showAccountWillBeHiddenDialogIfNeeded(this);
+
         showAccountChangeHint();
     }
 

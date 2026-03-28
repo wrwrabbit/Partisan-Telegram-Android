@@ -5386,14 +5386,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             FilesMigrationService.checkBottomSheet(this);
         }
-        if (FakePasscodeUtils.autoAddHidingsToAllFakePasscodes() && !FakePasscodeUtils.isFakePasscodeActivated()) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setMessage(LocaleController.getString("AccountHiddenDescription", R.string.AccountHiddenDescription));
-            builder.setTitle(LocaleController.getString("AccountHiddenTitle", R.string.AccountHiddenTitle));
-            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
-            AlertDialog alertDialog = builder.create();
-            showDialog(alertDialog);
-        }
         FakePasscodeUtils.cleanupHiddenAccountSystemNotifications();
         actionBar.setDrawBlurBackground(contentView);
 
@@ -7151,6 +7143,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (getMessagesStorage().fileProtectionEnabled()) {
             getMessagesController().sortDialogs(null);
         }
+        org.telegram.messenger.partisan.Utils.showAccountWillBeHiddenDialogIfNeeded(this);
     }
 
     private void checkOtherPtg() {
