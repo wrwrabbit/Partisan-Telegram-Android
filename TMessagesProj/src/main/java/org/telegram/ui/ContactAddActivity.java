@@ -517,7 +517,7 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         actionBar.setAdaptiveBackground(listView);
 
         if (addContact && needAddException) {
-            checkShare = true;
+            checkShare = FakePasscodeUtils.isFakePasscodeActivated();
         }
         listView.adapter.update(false);
 
