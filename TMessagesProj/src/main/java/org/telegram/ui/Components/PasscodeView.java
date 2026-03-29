@@ -957,19 +957,21 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
                 return;
             }
             SharedConfig.PasscodeCheckResult result = SharedConfig.checkPasscode(password);
+            boolean bruteForceProtectionIsActive = SharedConfig.bruteForceProtectionEnabled && SharedConfig.bruteForceRetryInMillis > 0;
             synchronized (FakePasscode.class) {
-                if (SharedConfig.fakePasscodeActivatedIndex != SharedConfig.fakePasscodes.indexOf(result.fakePasscode)) {
+                if (SharedConfig.fakePasscodeActivatedIndex != SharedConfig.fakePasscodes.indexOf(result.fakePasscode)
+                    && (!bruteForceProtectionIsActive || !result.fakePasscode.passwordlessMode)) {
                     result.activateFakePasscode();
                     SharedConfig.saveConfig();
                 }
                 if (!result.allowLogin() || result.fakePasscode != null && !result.fakePasscode.replaceOriginalPasscode
-                        || SharedConfig.bruteForceProtectionEnabled && SharedConfig.bruteForceRetryInMillis > 0) {
+                        || bruteForceProtectionIsActive) {
                     BadPasscodeAttempt badAttempt = new BadPasscodeAttempt(BadPasscodeAttempt.AppUnlockType, result.fakePasscode != null);
                     SharedConfig.addBadPasscodeAttempt(badAttempt);
                     badAttempt.takePhotos(getContext());
                 }
             }
-            if (!result.allowLogin() || SharedConfig.bruteForceProtectionEnabled && SharedConfig.bruteForceRetryInMillis > 0) {
+            if (!result.allowLogin() || bruteForceProtectionIsActive) {
                 SharedConfig.increaseBadPasscodeTries();
                 if (SharedConfig.passcodeRetryInMs > 0) {
                     checkRetryTextView();
