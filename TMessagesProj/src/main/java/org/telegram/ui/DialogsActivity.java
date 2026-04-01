@@ -13891,7 +13891,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         final float factor2 = 1f - getRightSlidingProgress();
         final float factor3 = 1f - animatorDoneButtonVisible.getFloatValue();
         final float factor = factor0 * factor1 * factor2 * factor3;
-        FragmentFloatingButton.setAnimatedVisibility(passcodeItem, factor);
+        final boolean forceHideLockButton = !SharedConfig.passcodeEnabled()
+                && FakePasscodeUtils.isFakePasscodeActivated()
+                && FakePasscodeUtils.getActivatedFakePasscode().passwordlessMode;
+        FragmentFloatingButton.setAnimatedVisibility(passcodeItem, forceHideLockButton ? 0 : factor);
     }
 
     private void checkUi_itemDownloadsVisibility() {
