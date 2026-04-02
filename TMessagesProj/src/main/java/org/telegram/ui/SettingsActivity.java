@@ -490,6 +490,27 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        collapseAccounts();
+    }
+
+    @Override
+    public void onBecomeFullyHidden() {
+        super.onBecomeFullyHidden();
+        collapseAccounts();
+    }
+
+    private void collapseAccounts() {
+        if (accountsExpanded) {
+            accountsExpanded = false;
+            if (listView != null) {
+                listView.adapter.update(false);
+            }
+        }
+    }
+
+    @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
 
@@ -605,6 +626,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     }
 
     private ArrayList<Integer> accountNumbers = new ArrayList<>();
+    private boolean accountsExpanded = false;
     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         if (searchItem.isSearchFieldVisible2()) {
             items.add(UItem.asSpace(ActionBar.getCurrentActionBarHeight()));
@@ -691,17 +713,22 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         }
 
         if (accountNumbers.size() > 0) {
-            items.add(UItem.asHeader(getString(R.string.SettingsAccounts)));
-            for (int i = 0; i < accountNumbers.size(); ++i) {
-                items.add(AccountCell.Factory.of(i, accountNumbers.get(i)));
-            }
+            final ArrayList<Integer> allAccountSlots = new ArrayList<>(accountNumbers);
             if (org.telegram.messenger.partisan.settings.TesterSettings.fillAccountSelectorWithDummies.get().get()) {
-                int dummyIndex = accountNumbers.size();
                 for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
                     if (!UserConfig.getInstance(a).isClientActivated()) {
-                        items.add(AccountCell.Factory.of(dummyIndex++, a));
+                        allAccountSlots.add(a);
                     }
                 }
+            }
+            final boolean needFold = allAccountSlots.size() > 4;
+            final int visibleCount = (!needFold || accountsExpanded) ? allAccountSlots.size() : 3;
+            items.add(UItem.asHeader(getString(R.string.SettingsAccounts)));
+            for (int i = 0; i < visibleCount; ++i) {
+                items.add(AccountCell.Factory.of(i, allAccountSlots.get(i)));
+            }
+            if (needFold && !accountsExpanded) {
+                items.add(SettingCell.Factory.of(101, 0xFF1CA5ED, 0xFF1488E1, R.drawable.msg_expand, getString(R.string.PremiumMore), null));
             }
             items.add(UItem.asShadow(null));
         }
@@ -912,6 +939,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 break;
             case 52:
                 presentFragment(new org.telegram.ui.TesterSettingsFragment());
+                break;
+            case 101:
+                accountsExpanded = true;
+                listView.adapter.update(true);
                 break;
             case 50:
                 presentFragment(new org.telegram.ui.SavedChannelsActivity(new android.os.Bundle()));

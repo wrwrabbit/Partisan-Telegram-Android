@@ -174,9 +174,13 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     private static final int INFO_USERNAME = 7;
     private static final int INFO_BIRTHDAY = 8;
     private static final int BUTTON_ADD_ACCOUNT = 9;
+
+    private static final int BUTTON_MORE_ACCOUNTS = 101;
+
     private static final int BUTTON_LOGOUT = 10;
 
     private final ArrayList<Integer> accountNumbers = new ArrayList<>();
+    private boolean accountsExpanded = false;
     private void updateAccounts() {
         accountNumbers.clear();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
@@ -301,8 +305,13 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             if (!hasAddAccount) {
                 items.add(UItem.asHeader(getString(R.string.SettingsAccounts)));
             }
-            for (int i = 0; i < accountNumbers.size(); ++i) {
+            final boolean needFold = accountNumbers.size() > 4;
+            final int visibleCount = (!needFold || accountsExpanded) ? accountNumbers.size() : 3;
+            for (int i = 0; i < visibleCount; ++i) {
                 items.add(SettingsActivity.AccountCell.Factory.of(i, accountNumbers.get(i)));
+            }
+            if (needFold && !accountsExpanded) {
+                items.add(UItem.asButton(BUTTON_MORE_ACCOUNTS, R.drawable.msg_expand, getString(R.string.PremiumMore)));
             }
             if (!UserConfig.hasPremiumOnAccounts()) {
                 final int moreAccounts = Math.max(0, UserConfig.getMaxAccountCount() - UserConfig.getActivatedAccountsCount());
@@ -364,6 +373,11 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
                 presentFragment(new LoginActivity(availableAccount));
             } else if (!UserConfig.hasPremiumOnAccounts()) {
                 showDialog(new LimitReachedBottomSheet(this, getContext(), TYPE_ACCOUNTS, currentAccount, null));
+            }
+        } else if (item.id == BUTTON_MORE_ACCOUNTS) {
+            accountsExpanded = true;
+            if (listView != null) {
+                listView.adapter.update(true);
             }
         } else if (item.instanceOf(SettingsActivity.AccountCell.Factory.class)) {
             final int account = item.intValue;
