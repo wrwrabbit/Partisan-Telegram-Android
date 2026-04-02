@@ -331,4 +331,6 @@
     <string name="ChangesWillBeAppliedToTheNextCall">Голас у бягучым званку застанецца без змен. Змены прымяняюцца толькі ў наступным званку.</string>
     <string name="CantSetupPasskeys">Немагчыма наладзіць ключы доступу</string>
     <string name="CantSetupPasskeysDescription">Партызанскі Тэлеграм не можа наладзіць ключы доступу. Выкарыстоўвайце для гэтага афіцыйнае прыкладанне.</string>
+    <string name="PartisanTelegramSettings">Налады Партызанскака Тэлеграма</string>
+    <string name="OtherPartisanSettings">Іншыя налады</string>
 </resources>

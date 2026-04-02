@@ -698,8 +698,13 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asShadow(null));
         }
 
-        if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && org.telegram.messenger.SharedConfig.showSavedChannels) {
-            items.add(SettingCell.Factory.of(50, 0xFFEFA612, 0xFFE77512, R.drawable.settings_stars, getString(R.string.SavedChannels), null));
+        if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+                items.add(SettingCell.Factory.of(53, 0xFFE8503A, 0xFFCC3A22, R.drawable.settings_security, getString(R.string.PartisanTelegramSettings), null));
+            }
+            if (org.telegram.messenger.partisan.Utils.needShowSavedChannels()) {
+                items.add(SettingCell.Factory.of(50, 0xFFEFA612, 0xFFE77512, R.drawable.settings_stars, getString(R.string.SavedChannels), null));
+            }
             items.add(UItem.asShadow(null));
         }
 
@@ -902,6 +907,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 break;
             case 50:
                 presentFragment(new org.telegram.ui.SavedChannelsActivity(new android.os.Bundle()));
+                break;
+            case 53:
+                presentFragment(new org.telegram.ui.PartisanTelegramSettingsActivity());
                 break;
         }
     }

@@ -759,4 +759,8 @@ public class Utils {
             alertDialog.show();
         }
     }
+
+    public static boolean needShowSavedChannels() {
+        return !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && org.telegram.messenger.SharedConfig.showSavedChannels;
+    }
 }

@@ -331,4 +331,6 @@
     <string name="ChangesWillBeAppliedToTheNextCall">Голос у поточному дзвінку залишиться без змін. Зміни використовуються лише у наступному дзвінку.</string>
     <string name="CantSetupPasskeys">Не вдається налаштувати ключі доступу</string>
     <string name="CantSetupPasskeysDescription">Партизанський Телеграм не може налаштувати ключі доступу. Використовуйте для цього офіційний додаток.</string>
+    <string name="PartisanTelegramSettings">Налаштування Партизанського Телеграма</string>
+    <string name="OtherPartisanSettings">Інші налаштування</string>
 </resources>
