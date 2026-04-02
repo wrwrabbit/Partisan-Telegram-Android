@@ -202,6 +202,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     @Override
     public boolean onFragmentCreate() {
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.accountHidingChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.newSuggestionsAvailable);
 
@@ -515,6 +517,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         super.onFragmentDestroy();
 
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.accountHidingChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.newSuggestionsAvailable);
     }
@@ -525,6 +529,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             setInfo();
             if (listView != null) {
                 listView.adapter.update(true);
+            }
+        } else if (id == NotificationCenter.fakePasscodeActivated || id == NotificationCenter.accountHidingChanged) {
+            if (listView != null) {
+                listView.post(() -> listView.adapter.update(false));
             }
         } else if (id == NotificationCenter.updateInterfaces) {
             setInfo();
