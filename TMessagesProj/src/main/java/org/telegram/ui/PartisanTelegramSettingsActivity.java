@@ -63,6 +63,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
     private int badPasscodePhotoFrontRow;
     private int badPasscodePhotoBackRow;
     private int badPasscodeMuteAudioRow;
+    private int badPasscodeDelimiterRow;
     private int securityIssuesRow;
     private int badPasscodeAttemptsDetailRow;
 
@@ -270,6 +271,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         badPasscodePhotoFrontRow = -1;
         badPasscodePhotoBackRow = -1;
         badPasscodeMuteAudioRow = -1;
+        badPasscodeDelimiterRow = -1;
         securityIssuesRow = -1;
         badPasscodeAttemptsDetailRow = -1;
         partisanSettingsRow = -1;
@@ -298,6 +300,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         if (SharedConfig.takePhotoWithBadPasscodeBack || SharedConfig.takePhotoWithBadPasscodeFront) {
             badPasscodeMuteAudioRow = rowCount++;
         }
+        badPasscodeDelimiterRow = rowCount++;
         securityIssuesRow = rowCount++;
         badPasscodeAttemptsDetailRow = rowCount++;
 
@@ -476,7 +479,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                 return VIEW_TYPE_INFO;
             } else if (position == fakePasscodesHeaderRow) {
                 return VIEW_TYPE_HEADER;
-            } else if (position == restoreFakePasscodeDelimiterRow) {
+            } else if (position == restoreFakePasscodeDelimiterRow || position == badPasscodeDelimiterRow) {
                 return VIEW_TYPE_SHADOW;
             }
             return VIEW_TYPE_CHECK;
