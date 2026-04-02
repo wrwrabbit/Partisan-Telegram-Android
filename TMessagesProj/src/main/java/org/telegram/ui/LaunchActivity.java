@@ -7628,6 +7628,15 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             // wait
                         }
                     }
+                    if (!fragmentsStack.isEmpty() && fragmentsStack.get(fragmentsStack.size() - 1) instanceof MainTabsActivity) {
+                        MainTabsActivity mainTabs = (MainTabsActivity) fragmentsStack.get(fragmentsStack.size() - 1);
+                        AndroidUtilities.runOnUIThread(() -> {
+                            if (mainTabs.viewPager != null && mainTabs.viewPager.getCurrentPosition() != 0) {
+                                mainTabs.viewPager.scrollToPosition(0 /* POSITION_CHATS */);
+                                mainTabs.selectTab(0 /* POSITION_CHATS */, false);
+                            }
+                        });
+                    }
                 });
             }
         } else if (id == NotificationCenter.shouldKillApp) {
