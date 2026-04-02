@@ -695,6 +695,14 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             for (int i = 0; i < accountNumbers.size(); ++i) {
                 items.add(AccountCell.Factory.of(i, accountNumbers.get(i)));
             }
+            if (org.telegram.messenger.partisan.settings.TesterSettings.fillAccountSelectorWithDummies.get().get()) {
+                int dummyIndex = accountNumbers.size();
+                for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                    if (!UserConfig.getInstance(a).isClientActivated()) {
+                        items.add(AccountCell.Factory.of(dummyIndex++, a));
+                    }
+                }
+            }
             items.add(UItem.asShadow(null));
         }
 

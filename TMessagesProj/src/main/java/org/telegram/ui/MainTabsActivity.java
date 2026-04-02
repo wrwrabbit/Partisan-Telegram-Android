@@ -403,6 +403,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 });
                 o.addView(btn, LayoutHelper.createLinear(230, 48));
             }
+            if (org.telegram.messenger.partisan.settings.TesterSettings.fillAccountSelectorWithDummies.get().get()) {
+                for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                    if (!UserConfig.getInstance(a).isClientActivated()) {
+                        o.addView(accountView(a, false), LayoutHelper.createLinear(230, 48));
+                    }
+                }
+            }
         }
 
         // o.addGap();
