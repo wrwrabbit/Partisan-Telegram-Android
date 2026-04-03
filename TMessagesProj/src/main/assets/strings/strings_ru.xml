@@ -126,6 +126,13 @@
     <string name="CutForeignAgentsText">Вырезать текст об иноагентах</string>
     <string name="CutForeignAgentsTextInfo">Если данная опция включена, из текста сообщений и постов будет вырезаться уведомление об иноагенте. Если текст постов отображается некорректно, отключите эту опцию. После переключения желательно очистить кэш.</string>
     <string name="PartisanSettingsInfo">Настройте другие опции приложения.</string>
+    <string name="SavedChannelsInChatList">В опциях в списке чатов</string>
+    <string name="SavedChannelsInChatListInfo">Показывает кнопку «Сохранённые каналы» в опциях списка чатов.</string>
+    <string name="SavedChannelsInSettings">В настройках</string>
+    <string name="SavedChannelsInSettingsInfo">Показывает пункт «Сохранённые каналы» на экране настроек.</string>
+    <string name="SavedChannelsAsTab">Заменить вкладку контактов</string>
+    <string name="SavedChannelsAsTabInfo">Заменяет вкладку «Контакты» на вкладку «Сохранённые каналы». Кнопка «Контакты» перемещается в меню списка чатов.</string>
+    <string name="MainTabsSavedChannels">Сохранённые</string>
     <string name="ClearSavedChannels">Очищать сохранённые каналы</string>
     <string name="OnScreenLockActionTitle">Действие при блокировке экрана</string>
     <string name="OnScreenLockActionInfo">Если выбрано \'Свернуть\', при разблокировке телефона откроется домашний экран. Если выбрано \'Закрыть\', приложение будет закрыто и удалено из списка открытых приложений.</string>

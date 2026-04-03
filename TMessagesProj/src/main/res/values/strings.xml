@@ -10657,6 +10657,13 @@
     <string name="ReactToMessagesInfo">Allow to react to messages. If this option is disabled, reactions can be viewed, but you cannot click it.</string>
     <string name="CutForeignAgentsText">Cut out text about foreign agents</string>
     <string name="CutForeignAgentsTextInfo">If this option is enabled, the notification about the foreign agent will be cut from the text of messages and posts. If the post text is displayed incorrectly, disable this option. It is advisable to clear the cache after switching.</string>
+    <string name="SavedChannelsInChatList">In chat list options</string>
+    <string name="SavedChannelsInChatListInfo">Shows a Saved Channels button in the chat list options.</string>
+    <string name="SavedChannelsInSettings">In settings</string>
+    <string name="SavedChannelsInSettingsInfo">Shows a Saved Channels item in the Settings screen.</string>
+    <string name="SavedChannelsAsTab">Replace contacts tab</string>
+    <string name="SavedChannelsAsTabInfo">Replaces the Contacts tab with a Saved Channels tab. The Contacts button moves to the chat list menu.</string>
+    <string name="MainTabsSavedChannels">Saved</string>
     <string name="ClearSavedChannels">Clear Saved Channels</string>
     <string name="OnScreenLockActionTitle">Action On Screen Lock</string>
     <string name="OnScreenLockActionInfo">If \'Hide\' is selected, the home screen will open when the phone is unlocked. If \'Close\' is selected, the application will be closed and removed from the list of recent applications.</string>

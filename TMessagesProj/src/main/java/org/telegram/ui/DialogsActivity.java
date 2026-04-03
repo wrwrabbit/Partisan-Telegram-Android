@@ -141,6 +141,7 @@ import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.ui.SavedChannelsSettings;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.messenger.utils.GradientProtectionDrawable;
 import org.telegram.messenger.utils.SearchTextWatcher;
@@ -13538,7 +13539,16 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 args.putLong("user_id", UserConfig.getInstance(currentAccount).getClientUserId());
                 presentFragment(new ChatActivity(args));
             });
-            if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels) {
+            if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
+                    && SavedChannelsSettings.showAsTab.getOrDefault()) {
+                io.add(R.drawable.tabs_contacts_24, getString(R.string.Contacts), () -> {
+                    Bundle args = new Bundle();
+                    args.putBoolean("needPhonebook", true);
+                    presentFragment(new ContactsActivity(args));
+                });
+            }
+            if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
+                    && SavedChannelsSettings.showInChatList.getOrDefault()) {
                 io.add(R.drawable.menu_saved_channels, getString(R.string.SavedChannels), () -> {
                     presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
                 });

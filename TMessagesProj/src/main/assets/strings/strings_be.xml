@@ -126,6 +126,13 @@
     <string name="ReactToMessagesInfo">Дазволіць рэагаваць на паведамленні. Калі гэтая опцыя адключана, рэакцыі можна будзе глядзець, але немагчыма будзе націснуць на іх.</string>
     <string name="CutForeignAgentsText">Выразаць тэкст пра іншаагентаў</string>
     <string name="CutForeignAgentsTextInfo">Калі дадзеная опцыя ўключаная, з тэксту паведамленняў і пастоў будзе выразацца апавяшчэнне аб іншаагенце. Калі тэкст пастоў адлюстроўваецца некарэктна, адключыце гэтую опцыю. Пасля пераключэння пажадана ачысціць кэш.</string>
+    <string name="SavedChannelsInChatList">У опцыях у спісе чатаў</string>
+    <string name="SavedChannelsInChatListInfo">Паказвае кнопку «Захаваныя каналы» ў опцыях спісу чатаў.</string>
+    <string name="SavedChannelsInSettings">У наладах</string>
+    <string name="SavedChannelsInSettingsInfo">Паказвае пункт «Захаваныя каналы» на экране налад.</string>
+    <string name="SavedChannelsAsTab">Замяніць укладку кантактаў</string>
+    <string name="SavedChannelsAsTabInfo">Замяняе ўкладку «Кантакты» на ўкладку «Захаваныя каналы». Кнопка «Кантакты» пераносіцца ў меню спісу чатаў.</string>
+    <string name="MainTabsSavedChannels">Захаваныя</string>
     <string name="ClearSavedChannels">Ачышчаць захаваныя каналы</string>
     <string name="OnScreenLockActionTitle">Дзеянне пры блакаваннi экрана</string>
     <string name="OnScreenLockActionInfo">Калі выбрана \'Згарнуць\', пры разблакіроўцы тэлефона адкрыецца хатні экран. Калі выбрана \'Закрыць\', прыкладанне будзе зачынена і выдалена са спісу адкрытых прыкладанняў. </string>

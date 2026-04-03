@@ -127,6 +127,13 @@
     <string name="ReactToMessagesInfo">Дозволити відправляти реакції на повідомлення. Якщо ця опція вимкнена, реакції неможливо відправити, але можна подивитися на них.</string>
     <string name="CutForeignAgentsText">Вирізати текст про російських іноагентів</string>
     <string name="CutForeignAgentsTextInfo">Якщо ця опція ввімкнена, з тексту повідомлень і постів буде видалятися примітка про те, що це ЗМІ-іноагент. Якщо текст постів зображається неправильно, вимкніть цю опцію. Після перемикання тумблера бажано очищати кеш.</string>
+    <string name="SavedChannelsInChatList">В опціях у списку чатів</string>
+    <string name="SavedChannelsInChatListInfo">Показує кнопку «Збережені канали» в опціях списку чатів.</string>
+    <string name="SavedChannelsInSettings">У налаштуваннях</string>
+    <string name="SavedChannelsInSettingsInfo">Показує пункт «Збережені канали» на екрані налаштувань.</string>
+    <string name="SavedChannelsAsTab">Замінити вкладку контактів</string>
+    <string name="SavedChannelsAsTabInfo">Замінює вкладку «Контакти» на вкладку «Збережені канали». Кнопка «Контакти» переміщується до меню списку чатів.</string>
+    <string name="MainTabsSavedChannels">Збережені</string>
     <string name="ClearSavedChannels">Очищати збережені канали</string>
     <string name="OnScreenLockActionTitle">Дії при блокуванні екрану</string>
     <string name="OnScreenLockActionInfo">Якщо вибрано \"Приховати\", домашній екран відкриється, якщо телефон розблоковано. У разі вибору \'Закрити\' додаток буде закрито і вилучено зі списку останніх програм.</string>

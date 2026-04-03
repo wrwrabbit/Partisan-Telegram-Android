@@ -58,8 +58,6 @@ import org.telegram.ui.DialogBuilder.DialogType;
 import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -260,34 +258,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                 SharedConfig.saveConfig();
                 ((TextCheckCell) view).setChecked(SharedConfig.showDeleteAfterRead);
             } else if (position == savedChannelsRow) {
-                DangerousSettingSwitcher switcher = new DangerousSettingSwitcher();
-                switcher.context = context;
-                switcher.view = view;
-                switcher.value = SharedConfig.showSavedChannels;
-                switcher.setValue = (value) -> {
-                    SharedConfig.showSavedChannels = value;
-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.savedChannelsButtonStateChanged);
-                };
-                switcher.isChanged = config -> {
-                    List<String> savedChannels = Arrays.asList(config.defaultChannels.split(","));
-
-                    if (savedChannels.size() != config.savedChannels.size() || !savedChannels.containsAll(config.savedChannels)) {
-                        return true;
-                    }
-                    return !savedChannels.equals(config.pinnedSavedChannels);
-                };
-                switcher.dangerousActionTitle = LocaleController.getString("ClearSavedChannelsTitle", R.string.ClearSavedChannelsTitle);
-                switcher.positiveButtonText = LocaleController.getString("ClearButton", R.string.ClearButton);
-                switcher.negativeButtonText = LocaleController.getString("NotClear", R.string.NotClear);
-                switcher.neutralButtonText = LocaleController.getString("Cancel", R.string.Cancel);
-                switcher.dangerousAction = accountInstance -> {
-                    UserConfig config = accountInstance.getUserConfig();
-                    List<String> savedChannels = Arrays.asList(config.defaultChannels.split(","));
-                    config.savedChannels = new HashSet<>(savedChannels);
-                    config.pinnedSavedChannels = new ArrayList<>(savedChannels);
-                    config.saveConfig(false);
-                };
-                switcher.switchSetting();
+                presentFragment(new org.telegram.messenger.partisan.ui.SavedChannelsSettingsFragment());
             } else if (position == reactionsRow) {
                 SharedConfig.allowReactions = !SharedConfig.allowReactions;
                 SharedConfig.saveConfig();
@@ -528,9 +499,6 @@ public class PartisanSettingsActivity extends BaseFragment {
                     } else if (position == deleteAfterReadRow) {
                         textCell.setTextAndCheck(LocaleController.getString("DeletingAfterRead", R.string.DeletingAfterRead),
                                 SharedConfig.showDeleteAfterRead, false);
-                    } else if (position == savedChannelsRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("SavedChannelsSetting", R.string.SavedChannelsSetting),
-                                SharedConfig.showSavedChannels, false);
                     } else if (position == reactionsRow) {
                         textCell.setTextAndCheck(LocaleController.getString("ReactToMessages", R.string.ReactToMessages),
                                 SharedConfig.allowReactions, false);
@@ -635,6 +603,11 @@ public class PartisanSettingsActivity extends BaseFragment {
                         textCell.setTextAndValue(LocaleController.getString(R.string.OnScreenLockActionTitle), value, true);
                     } else if (position == transferDataToOtherPtgRow) {
                         textCell.setText(LocaleController.getString(R.string.TransferDataToAnotherPtgButton), true);
+                    } else if (position == savedChannelsRow) {
+                        String value = SharedConfig.showSavedChannels
+                                ? LocaleController.getString(R.string.PasswordOn)
+                                : LocaleController.getString(R.string.PasswordOff);
+                        textCell.setTextAndValue(LocaleController.getString(R.string.SavedChannelsSetting), value, true);
                     }
                     textCell.setEnabled(isEnabled(holder));
                     break;
@@ -687,7 +660,7 @@ public class PartisanSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == versionRow || position == idRow || position == disableAvatarRow
                     || position == renameChatRow || position == deleteMyMessagesRow || position == deleteAfterReadRow
-                    || position == savedChannelsRow || position == reactionsRow || position == foreignAgentsRow
+                    || position == reactionsRow || position == foreignAgentsRow
                     || position == isClearAllDraftsOnScreenLockRow || position == showCallButtonRow
                     || position == isDeleteMessagesForAllByDefaultRow || position == marketIconsRow
                     || position == confirmDangerousActionRow) {
@@ -702,7 +675,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == confirmDangerousActionDetailRow || position == fileProtectionDetailRow
                     || position == voiceChangeDetailRow || position == transferDataToOtherPtgDetailRow) {
                 return 1;
-            } else if (position == onScreenLockActionRow|| position == transferDataToOtherPtgRow) {
+            } else if (position == onScreenLockActionRow || position == transferDataToOtherPtgRow || position == savedChannelsRow) {
                 return 2;
             } else if (position == verifiedRow || position == fileProtectionRow) {
                 return 3;

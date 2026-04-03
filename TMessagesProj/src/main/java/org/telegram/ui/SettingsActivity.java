@@ -204,6 +204,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.accountHidingChanged);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.newSuggestionsAvailable);
 
@@ -491,6 +492,12 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         return fragmentView = contentView;
     }
 
+    public void updateRows() {
+        if (listView != null) {
+            listView.adapter.update(false);
+        }
+    }
+
     @Override
     public void onPause() {
         super.onPause();
@@ -519,6 +526,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.fakePasscodeActivated);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.accountHidingChanged);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.newSuggestionsAvailable);
     }
@@ -530,7 +538,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             if (listView != null) {
                 listView.adapter.update(true);
             }
-        } else if (id == NotificationCenter.fakePasscodeActivated || id == NotificationCenter.accountHidingChanged) {
+        } else if (id == NotificationCenter.fakePasscodeActivated || id == NotificationCenter.accountHidingChanged
+                || id == NotificationCenter.savedChannelsButtonStateChanged) {
             if (listView != null) {
                 listView.post(() -> listView.adapter.update(false));
             }
@@ -745,7 +754,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
                 items.add(SettingCell.Factory.of(53, 0xFFE8503A, 0xFFCC3A22, R.drawable.settings_security, getString(R.string.PartisanTelegramSettings), null));
             }
-            if (org.telegram.messenger.partisan.Utils.needShowSavedChannels()) {
+            if (org.telegram.messenger.partisan.Utils.needShowSavedChannels()
+                    && org.telegram.messenger.partisan.ui.SavedChannelsSettings.showInSettings.getOrDefault()) {
                 items.add(SettingCell.Factory.of(50, 0xFFEFA612, 0xFFE77512, R.drawable.settings_stars, getString(R.string.SavedChannels), null));
             }
             items.add(UItem.asShadow(null));
