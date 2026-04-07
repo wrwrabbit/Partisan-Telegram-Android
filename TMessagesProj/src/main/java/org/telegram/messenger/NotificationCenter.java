@@ -361,6 +361,7 @@ public class NotificationCenter {
     public static final int shouldKillApp = totalEvents++;
     public static final int shouldHideApp = totalEvents++;
     public static final int dialogsUnreadReactionsCounterChanged = totalEvents++;
+    public static final int dialogsUnreadPollVotesCounterChanged = totalEvents++;
     public static final int onDatabaseOpened = totalEvents++;
     public static final int onDownloadingFilesChanged = totalEvents++;
     public static final int onActivityResultReceived = totalEvents++;
