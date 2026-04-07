@@ -15,6 +15,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -57,10 +58,12 @@ import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.utils.DebugRecordingCanvas;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ArticleViewer;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.DebugRecordingCanvasReplayFragment;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
@@ -607,6 +610,10 @@ public abstract class BaseFragment {
             }
         }
         return null;
+    }
+
+    public FrameLayout getBulletinLayoutContainer() {
+        return getLayoutContainer();
     }
 
     public boolean presentFragmentAsPreview(BaseFragment fragment) {
@@ -1407,5 +1414,11 @@ public abstract class BaseFragment {
 
     public void onInsets(int left, int top, int right, int bottom) {
 
+    }
+
+
+
+    protected void dumpCanvas() {
+        AndroidUtilities.dumpCanvas(fragmentView);
     }
 }
