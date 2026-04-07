@@ -2863,7 +2863,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             }
 
             @Override
-            public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars) {
+            public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars, Integer autoDeleteDelay) {
                 if (photos != null && !photos.isEmpty()) {
                     callback.run(new PollAttachedMediaGallery(photos.get(0)));
                 }
@@ -2881,7 +2881,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                 }
             }
         });
-        chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia, payStars) -> {
+        chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia, payStars, autoDeleteDelay) -> {
             if (audios != null && !audios.isEmpty()) {
                 callback.run(new PollAttachedMediaMusic(audios.get(0)));
             }

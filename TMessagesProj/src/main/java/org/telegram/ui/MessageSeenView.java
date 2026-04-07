@@ -402,6 +402,14 @@ public class MessageSeenView extends FrameLayout {
             setUser(object, date, false, null);
         }
 
+        public void setUser(TLObject object, int date, Integer accountNum) {
+            setUser(object, date, false, accountNum);
+        }
+
+        public void setUser(TLObject object, int date, boolean isVote) {
+            setUser(object, date, isVote, null);
+        }
+
         public void setUser(TLObject object, int date, boolean isVote, Integer accountNum) {
             this.object = object;
             updateStatus(false);
