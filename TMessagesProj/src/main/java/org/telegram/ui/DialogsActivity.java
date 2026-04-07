@@ -9394,6 +9394,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             if (saved) {
                 getUserConfig().saveConfig(true);
+                getNotificationCenter().postNotificationName(NotificationCenter.savedChannelAdded);
                 Toast.makeText(getParentActivity(), LocaleController.getString("Saved", R.string.Saved), Toast.LENGTH_SHORT).show();
             }
         }

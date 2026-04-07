@@ -4307,6 +4307,7 @@ public class ChatActivity extends BaseFragment implements
                     if (DialogObject.isChatDialog(did)) {
                         if (getUserConfig().saveChannel(getMessagesController().getChat(-did))) {
                             getUserConfig().saveConfig(true);
+                            getNotificationCenter().postNotificationName(NotificationCenter.savedChannelAdded);
                             Toast.makeText(getParentActivity(), LocaleController.getString("Saved", R.string.Saved), Toast.LENGTH_SHORT).show();
                         }
                     }

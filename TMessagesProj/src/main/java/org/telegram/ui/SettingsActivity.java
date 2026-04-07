@@ -964,7 +964,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 listView.adapter.update(true);
                 break;
             case 50:
-                presentFragment(new org.telegram.ui.SavedChannelsActivity(new android.os.Bundle()));
+                presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
                 break;
             case 53:
                 presentFragment(new org.telegram.ui.PartisanTelegramSettingsActivity());

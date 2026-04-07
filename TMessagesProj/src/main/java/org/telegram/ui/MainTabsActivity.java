@@ -1035,6 +1035,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         if (tabsView != null) {
             tabsView.invalidate();
         }
+        if (tabSavedChannels != null) {
+            tabSavedChannels.updateColorsLottie();
+        }
         if (tabs != null) {
             for (GlassTabView tabView : tabs) {
                 tabView.updateColorsLottie();
