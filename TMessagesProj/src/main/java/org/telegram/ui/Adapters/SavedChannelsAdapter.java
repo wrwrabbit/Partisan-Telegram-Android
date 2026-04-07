@@ -86,6 +86,9 @@ public class SavedChannelsAdapter extends RecyclerListView.SelectionAdapter impl
     private boolean chatLoading = false;
     android.util.LongSparseArray<ArrayList<MessageObject>> messageMap = new android.util.LongSparseArray<>();
 
+    private int pendingRefreshCount = 0;
+    private Runnable onRefreshComplete;
+
     private TLRPC.RequestPeerType requestPeerType;
     public boolean isEmpty;
 
@@ -832,6 +835,21 @@ public class SavedChannelsAdapter extends RecyclerListView.SelectionAdapter impl
         loadOtherChats();
     }
 
+    public void refreshChats(Runnable onComplete) {
+        if (chats.isEmpty()) {
+            if (onComplete != null) {
+                onComplete.run();
+            }
+            return;
+        }
+        pendingRefreshCount = chats.size();
+        onRefreshComplete = onComplete;
+        MessagesController controller = MessagesController.getInstance(currentAccount);
+        for (TLRPC.Chat chat : new ArrayList<>(chats)) {
+            controller.loadMessages(-chat.id, 0, false, 20, 0, 0, false, 0, 0, 2, 0, 0, 0, 0, 1, false);
+        }
+    }
+
     private boolean hasUnloadedChats() {
         Set<String> names = new HashSet<>(UserConfig.getInstance(currentAccount).savedChannels);
         MessagesController controller = MessagesController.getInstance(currentAccount);
@@ -961,6 +979,14 @@ public class SavedChannelsAdapter extends RecyclerListView.SelectionAdapter impl
             }
         }
         notifyItemChanged(findDialogPosition(dialogId));
+        if (pendingRefreshCount > 0) {
+            pendingRefreshCount--;
+            if (pendingRefreshCount == 0 && onRefreshComplete != null) {
+                Runnable callback = onRefreshComplete;
+                onRefreshComplete = null;
+                callback.run();
+            }
+        }
     }
 
     private void resolveUsername(String username) {

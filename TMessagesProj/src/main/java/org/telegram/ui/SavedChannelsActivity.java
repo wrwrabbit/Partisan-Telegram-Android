@@ -38,6 +38,7 @@ import android.util.Property;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
@@ -1422,6 +1423,12 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
             scrollToTop(true);
         });
 
+        ActionBarMenu menu = actionBar.createMenu();
+        if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+            refreshItem = menu.addItem(refresh, R.drawable.menu_browser_refresh);
+            refreshItem.setContentDescription(LocaleController.getString(R.string.Refresh));
+        }
+
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -1435,6 +1442,8 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
                     performSelectedDialogsAction(savedChannelsMainAdapter.getSelectedUserNames(), id);
                 } else if (id == delete) {
                     performSelectedDialogsAction(savedChannelsMainAdapter.getSelectedUserNames(), id);
+                } else if (id == refresh) {
+                    doRefresh();
                 }
             }
         });
@@ -1732,6 +1741,7 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
 
         if (savedChannelsMainAdapter != null) {
             savedChannelsMainAdapter.loadChats();
+            doRefresh();
         }
 
         topBubblesFadeView = new DialogsActivityTopBubblesFadeView(context);
@@ -2171,6 +2181,10 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         });
         updateVisibleRows(0, false);
         checkUi_mainTabsVisible();
+
+        if (savedChannelsMainAdapter != null && System.currentTimeMillis() - lastRefreshTime >= 60_000) {
+            doRefresh();
+        }
     }
 
     @Override
@@ -2680,10 +2694,14 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
 
     private static final int pin = 200;
     private static final int delete = 201;
+    private static final int refresh = 202;
     private static final String SAVED_CHANNEL_ACTION_MODE_TAG = "savedChannels";
 
     private ActionBarMenuItem pinItem;
     private ActionBarMenuItem deleteItem;
+    private ActionBarMenuItem refreshItem;
+    private ObjectAnimator refreshAnimator;
+    private long lastRefreshTime;
     private NumberTextView selectedDialogsCountTextView;
     private final ArrayList<View> actionModeViews = new ArrayList<>();
     private int canPinCount = 0;
@@ -3774,6 +3792,39 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         final boolean mainTabsVisible = (blurredView == null || blurredView.getBackground() == null || blurredView.getAlpha() < 0.01f || blurredView.getVisibility() == View.GONE);
         if (mainTabsActivityController != null) {
             mainTabsActivityController.setTabsVisible(mainTabsVisible);
+        }
+    }
+
+    private void doRefresh() {
+        if (savedChannelsMainAdapter == null || refreshAnimator != null) {
+            return;
+        }
+        lastRefreshTime = System.currentTimeMillis();
+        startRefreshAnimation();
+        savedChannelsMainAdapter.refreshChats(() -> AndroidUtilities.runOnUIThread(this::stopRefreshAnimation));
+    }
+
+    private void startRefreshAnimation() {
+        if (refreshItem == null || refreshItem.getIconView() == null) {
+            return;
+        }
+        if (refreshAnimator != null) {
+            return;
+        }
+        refreshAnimator = ObjectAnimator.ofFloat(refreshItem.getIconView(), "rotation", 0f, 360f);
+        refreshAnimator.setDuration(700);
+        refreshAnimator.setInterpolator(new LinearInterpolator());
+        refreshAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        refreshAnimator.start();
+    }
+
+    private void stopRefreshAnimation() {
+        if (refreshAnimator != null) {
+            refreshAnimator.cancel();
+            refreshAnimator = null;
+        }
+        if (refreshItem != null && refreshItem.getIconView() != null) {
+            refreshItem.getIconView().setRotation(0f);
         }
     }
 
