@@ -2512,7 +2512,6 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         deleteItem.setTextAndIcon(LocaleController.getString(R.string.Delete), R.drawable.msg_delete);
         deleteItem.setMinimumWidth(160);
         deleteItem.setOnClickListener(e -> {
-            performSelectedDialogsAction(savedChannelsMainAdapter.getSelectedUserNames(), delete);
             performSelectedDialogsAction(dialogUsernameArray, delete);
             finishPreviewFragment();
         });
@@ -2844,7 +2843,6 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
             return;
         }
         if (action == pin) {
-            performSelectedDialogsAction(savedChannelsMainAdapter.getSelectedUserNames(), action);
             if (savedChannelsMainAdapter != null) {
                 for (String userName : selectedUsernames) {
                     if (canPinCount != 0) {
