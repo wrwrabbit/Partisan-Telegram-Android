@@ -432,6 +432,7 @@ public class SharedConfig {
     public static boolean showSavedChannels;
     public static boolean allowReactions;
     public static boolean cutForeignAgentsText;
+    public static boolean protectPartisanSettings;
     public static int onScreenLockAction;
     public static boolean onScreenLockActionClearCache;
     public static boolean showSessionsTerminateActionWarning;
@@ -652,6 +653,7 @@ public class SharedConfig {
                 editor.putBoolean("showSavedChannels", showSavedChannels);
                 editor.putBoolean("allowReactions", allowReactions);
                 editor.putBoolean("cutForeignAgentsText", cutForeignAgentsText);
+                editor.putBoolean("protectPartisanSettings", protectPartisanSettings);
                 editor.putInt("onScreenLockAction", onScreenLockAction);
                 editor.putBoolean("onScreenLockActionClearCache", onScreenLockActionClearCache);
                 editor.putBoolean("showSessionsTerminateActionWarning", showSessionsTerminateActionWarning);
@@ -847,6 +849,7 @@ public class SharedConfig {
             showSavedChannels = preferences.getBoolean("showSavedChannels", true);
             allowReactions = preferences.getBoolean("allowReactions", true);
             cutForeignAgentsText = preferences.getBoolean("cutForeignAgentsText", true);
+            protectPartisanSettings = preferences.getBoolean("protectPartisanSettings", true);
             onScreenLockAction = preferences.getInt("onScreenLockAction", 0);
             onScreenLockActionClearCache = preferences.getBoolean("onScreenLockActionClearCache", false);
             showSessionsTerminateActionWarning = preferences.getBoolean("showSessionsTerminateActionWarning", true);

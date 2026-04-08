@@ -340,4 +340,8 @@
     <string name="CantSetupPasskeysDescription">Партызанскі Тэлеграм не можа наладзіць ключы доступу. Выкарыстоўвайце для гэтага афіцыйнае прыкладанне.</string>
     <string name="PartisanTelegramSettings">Налады Партызанскака Тэлеграма</string>
     <string name="OtherPartisanSettings">Іншыя налады</string>
+    <string name="ProtectPartisanSettings">Абараніць налады Партызанскага Тэлеграма</string>
+    <string name="ProtectPartisanSettingsInfo">Патрабаваць асноўны пароль для адкрыцця налад Партызанскага Тэлеграма.</string>
+    <string name="EnterMainPasscode">Увядзіце асноўны код блакіроўкі</string>
+    <string name="EnterMainPasscodeInfo">Увядзіце асноўны код блакіроўкі (не несапраўдны) для доступу да налад Партызанскага Тэлеграма.</string>
 </resources>

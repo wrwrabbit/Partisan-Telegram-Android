@@ -67,11 +67,20 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
     private int securityIssuesRow;
     private int badPasscodeAttemptsDetailRow;
 
+    private int protectPartisanSettingsRow;
+    private int protectPartisanSettingsDetailRow;
     private int partisanSettingsRow;
     private int partisanSettingsDetailRow;
 
     public PartisanTelegramSettingsActivity() {
         super();
+    }
+
+    public static BaseFragment checkLockAndCreateActivity() {
+        if (SharedConfig.protectPartisanSettings && SharedConfig.passcodeEnabled()) {
+            return new org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLockActivity();
+        }
+        return new PartisanTelegramSettingsActivity();
     }
 
     @Override
@@ -181,6 +190,10 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                         FakePasscodeActivity.TYPE_SETUP_FAKE_PASSCODE, newFakePasscode, true));
             } else if (position == restoreFakePasscodeRow) {
                 presentFragment(new FakePasscodeRestoreActivity());
+            } else if (position == protectPartisanSettingsRow) {
+                SharedConfig.protectPartisanSettings = !SharedConfig.protectPartisanSettings;
+                SharedConfig.saveConfig();
+                ((TextCheckCell) view).setChecked(SharedConfig.protectPartisanSettings);
             } else if (position == partisanSettingsRow) {
                 presentFragment(new PartisanSettingsActivity());
             }
@@ -274,6 +287,8 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         badPasscodeDelimiterRow = -1;
         securityIssuesRow = -1;
         badPasscodeAttemptsDetailRow = -1;
+        protectPartisanSettingsRow = -1;
+        protectPartisanSettingsDetailRow = -1;
         partisanSettingsRow = -1;
         partisanSettingsDetailRow = -1;
 
@@ -304,6 +319,8 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         securityIssuesRow = rowCount++;
         badPasscodeAttemptsDetailRow = rowCount++;
 
+        protectPartisanSettingsRow = rowCount++;
+        protectPartisanSettingsDetailRow = rowCount++;
         partisanSettingsRow = rowCount++;
         partisanSettingsDetailRow = rowCount++;
     }
@@ -334,6 +351,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                     || position == securityIssuesRow
                     || position == addFakePasscodeRow
                     || position == restoreFakePasscodeRow
+                    || position == protectPartisanSettingsRow
                     || position == partisanSettingsRow
                     || (firstFakePasscodeRow != -1 && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow);
         }
@@ -376,7 +394,9 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
             switch (holder.getItemViewType()) {
                 case VIEW_TYPE_CHECK: {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
-                    if (position == bruteForceProtectionRow) {
+                    if (position == protectPartisanSettingsRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ProtectPartisanSettings), SharedConfig.protectPartisanSettings, false);
+                    } else if (position == bruteForceProtectionRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.BruteForceProtection), SharedConfig.bruteForceProtectionEnabled, false);
                     } else if (position == clearCacheOnLockRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.ClearCacheOnLock), SharedConfig.clearCacheOnLock, false);
@@ -438,6 +458,10 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                         cell.setText(LocaleController.getString(R.string.BadPasscodeAttemptsInfo));
                         cell.setBackground(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                         cell.getTextView().setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
+                    } else if (position == protectPartisanSettingsDetailRow) {
+                        cell.setText(LocaleController.getString(R.string.ProtectPartisanSettingsInfo));
+                        cell.setBackground(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                        cell.getTextView().setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
                     } else if (position == partisanSettingsDetailRow) {
                         cell.setText(LocaleController.getString(R.string.PartisanSettingsInfo));
                         cell.setBackground(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
@@ -466,7 +490,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == bruteForceProtectionRow || position == clearCacheOnLockRow
                     || position == badPasscodePhotoFrontRow || position == badPasscodePhotoBackRow
-                    || position == badPasscodeMuteAudioRow) {
+                    || position == badPasscodeMuteAudioRow || position == protectPartisanSettingsRow) {
                 return VIEW_TYPE_CHECK;
             } else if ((firstFakePasscodeRow != -1 && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow)
                     || position == addFakePasscodeRow || position == restoreFakePasscodeRow
@@ -475,7 +499,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                 return VIEW_TYPE_SETTING;
             } else if (position == fakePasscodeDetailRow || position == bruteForceProtectionDetailRow
                     || position == clearCacheOnLockDetailRow || position == badPasscodeAttemptsDetailRow
-                    || position == partisanSettingsDetailRow) {
+                    || position == protectPartisanSettingsDetailRow || position == partisanSettingsDetailRow) {
                 return VIEW_TYPE_INFO;
             } else if (position == fakePasscodesHeaderRow) {
                 return VIEW_TYPE_HEADER;

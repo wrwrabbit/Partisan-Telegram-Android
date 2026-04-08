@@ -967,7 +967,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
                 break;
             case 53:
-                presentFragment(new org.telegram.ui.PartisanTelegramSettingsActivity());
+                presentFragment(org.telegram.ui.PartisanTelegramSettingsActivity.checkLockAndCreateActivity());
                 break;
         }
     }
