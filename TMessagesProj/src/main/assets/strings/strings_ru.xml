@@ -10,6 +10,8 @@
     <string name="ClearTelegramCacheOnFakeLogin">Очищать кэш Telegram</string>
     <string name="ClearProxiesOnFakeLogin">Очищать список прокси</string>
     <string name="AddFakePasscode">Добавить ложный код-пароль</string>
+    <string name="FakePasscodeNoMainPasscodeTitle">Хотите установить основной код-пароль?</string>
+    <string name="FakePasscodeNoMainPasscodeMessage">Ложный код-пароль не будет работать без основного код-пароля. Хотите сначала установить основной код-пароль?</string>
     <string name="LogOutOnFakeLogin">Выходить из аккаунта</string>
     <string name="DeleteFakePasscode">Удалить ложный код-пароль</string>
     <string name="ChangeFakePasscodeName">Изменить название</string>

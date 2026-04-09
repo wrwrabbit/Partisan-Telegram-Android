@@ -189,8 +189,10 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     private int disablePasscodeRow;
     private int rowCount;
 
-    TextCheckCell frontPhotoTextCell;
-    TextCheckCell backPhotoTextCell;
+    private TextCheckCell frontPhotoTextCell;
+    private TextCheckCell backPhotoTextCell;
+
+    public boolean returnToPreviousFragment;
 
     private ActionBarMenuItem otherItem;
 
@@ -1236,7 +1238,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
             animateSuccessAnimation(() -> {
                 getMediaDataController().buildShortcuts();
-                if (isFirst) {
+                if (isFirst && !returnToPreviousFragment) {
                     presentFragment(new PasscodeActivity(TYPE_MANAGE_CODE_SETTINGS), true);
                     if (openedSettings != null) {
                         AndroidUtilities.runOnUIThread(openedSettings);

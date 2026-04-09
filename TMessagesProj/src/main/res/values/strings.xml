@@ -10669,6 +10669,8 @@
     <string name="ClearProxiesOnFakeLogin">Clear Proxies</string>
     <string name="LogOutOnFakeLogin">Log out</string>
     <string name="AddFakePasscode">Add Fake Passcode</string>
+    <string name="FakePasscodeNoMainPasscodeTitle">Would You Like to Set the Main Passcode?</string>
+    <string name="FakePasscodeNoMainPasscodeMessage">The fake passcode will not work without the main passcode. Would you like to set up the main passcode first?</string>
     <string name="DeleteFakePasscode">Delete Fake Passcode</string>
     <string name="ChangeFakePasscodeName">Change Name</string>
     <string name="SendTelegramMessages">Send Telegram Messages</string>

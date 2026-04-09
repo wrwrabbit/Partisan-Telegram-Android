@@ -118,6 +118,8 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                         () -> SharedConfig.showHideDialogIsNotSafeWarning,
                         value -> SharedConfig.showHideDialogIsNotSafeWarning = value
                 ),
+                new ToggleItem(this, "Show No Main Passcode Warning", () -> SharedConfig.showFakePasscodeNoMainPasscodeWarning,
+                        value -> SharedConfig.showFakePasscodeNoMainPasscodeWarning = value),
                 new SimpleEditableDataItem(this, "Phone Override", TesterSettings.phoneOverride)
                         .addCondition(() -> SharedConfig.activatedTesterSettingType == 2),
                 new ButtonItem(this, "Reset Security Issues", view -> {

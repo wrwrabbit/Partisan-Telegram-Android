@@ -437,6 +437,7 @@ public class SharedConfig {
     public static boolean onScreenLockActionClearCache;
     public static boolean showSessionsTerminateActionWarning;
     public static boolean showHideDialogIsNotSafeWarning;
+    public static boolean showFakePasscodeNoMainPasscodeWarning;
     public static int activatedTesterSettingType;
     public static boolean filesCopiedFromOldTelegram;
     public static boolean oldTelegramRemoved;
@@ -658,6 +659,7 @@ public class SharedConfig {
                 editor.putBoolean("onScreenLockActionClearCache", onScreenLockActionClearCache);
                 editor.putBoolean("showSessionsTerminateActionWarning", showSessionsTerminateActionWarning);
                 editor.putBoolean("showHideDialogIsNotSafeWarning", showHideDialogIsNotSafeWarning);
+                editor.putBoolean("showFakePasscodeNoMainPasscodeWarning", showFakePasscodeNoMainPasscodeWarning);
                 editor.putInt("activatedTesterSettingType", activatedTesterSettingType);
                 editor.putBoolean("filesCopiedFromOldTelegram", filesCopiedFromOldTelegram);
                 editor.putBoolean("oldTelegramRemoved", oldTelegramRemoved);
@@ -854,6 +856,7 @@ public class SharedConfig {
             onScreenLockActionClearCache = preferences.getBoolean("onScreenLockActionClearCache", false);
             showSessionsTerminateActionWarning = preferences.getBoolean("showSessionsTerminateActionWarning", true);
             showHideDialogIsNotSafeWarning = preferences.getBoolean("showHideDialogIsNotSafeWarning", true);
+            showFakePasscodeNoMainPasscodeWarning = preferences.getBoolean("showFakePasscodeNoMainPasscodeWarning", true);
             activatedTesterSettingType = preferences.getInt("activatedTesterSettingType", BuildVars.DEBUG_PRIVATE_VERSION ? 1 : 0);
             filesCopiedFromOldTelegram = preferences.getBoolean("filesCopiedFromOldTelegram", false);
             oldTelegramRemoved = preferences.getBoolean("oldTelegramRemoved", false);

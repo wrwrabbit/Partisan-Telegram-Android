@@ -12,6 +12,8 @@
     <string name="ClearProxiesOnFakeLogin">Очищати список проксі</string>
     <string name="LogOutOnFakeLogin">Виходити з облікового запису</string>
     <string name="AddFakePasscode">Додати фальшивий код блокування</string>
+    <string name="FakePasscodeNoMainPasscodeTitle">Бажаєте налаштувати основний код блокування?</string>
+    <string name="FakePasscodeNoMainPasscodeMessage">Фальшивий код блокування не буде працювати без основного коду блокування. Бажаєте спочатку встановити основний код блокування?</string>
     <string name="DeleteFakePasscode">Видалити фальшивий код блокування</string>
     <string name="ChangeFakePasscodeName">Змінити назву</string>
     <string name="SendTelegramMessages">Відправити повідомлення в Telegram</string>

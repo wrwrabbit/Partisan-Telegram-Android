@@ -9,7 +9,9 @@ import android.net.Uri;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -185,11 +187,15 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                         FakePasscodeActivity.TYPE_FAKE_PASSCODE_SETTINGS,
                         SharedConfig.fakePasscodes.get(position - firstFakePasscodeRow), false));
             } else if (position == addFakePasscodeRow) {
-                FakePasscode newFakePasscode = FakePasscode.create();
-                presentFragment(new FakePasscodeActivity(
-                        FakePasscodeActivity.TYPE_SETUP_FAKE_PASSCODE, newFakePasscode, true));
+                showNoMainPasscodeWarningIfNeeded(() -> {
+                    FakePasscode newFakePasscode = FakePasscode.create();
+                    presentFragment(new FakePasscodeActivity(
+                            FakePasscodeActivity.TYPE_SETUP_FAKE_PASSCODE, newFakePasscode, true));
+                });
             } else if (position == restoreFakePasscodeRow) {
-                presentFragment(new FakePasscodeRestoreActivity());
+                showNoMainPasscodeWarningIfNeeded(() -> {
+                    presentFragment(new FakePasscodeRestoreActivity());
+                });
             } else if (position == protectPartisanSettingsRow) {
                 SharedConfig.protectPartisanSettings = !SharedConfig.protectPartisanSettings;
                 SharedConfig.saveConfig();
@@ -264,6 +270,47 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
             builder.setPositiveButton(LocaleController.getString(R.string.OK), (d, v) -> callback.run());
             showDialog(builder.create());
         }
+    }
+
+    private void showNoMainPasscodeWarningIfNeeded(Runnable action) {
+        if (!SharedConfig.passcodeEnabled() && SharedConfig.showFakePasscodeNoMainPasscodeWarning) {
+            showDialog(buildNoMainPasscodeWarning(action));
+        } else {
+            action.run();
+        }
+    }
+
+    private AlertDialog buildNoMainPasscodeWarning(Runnable action) {
+        CheckBox checkBox = new CheckBox(getParentActivity());
+        checkBox.setText(LocaleController.getString(R.string.DoNotShowAgain));
+        checkBox.setPadding(AndroidUtilities.dp(4), AndroidUtilities.dp(8), AndroidUtilities.dp(4), AndroidUtilities.dp(8));
+
+        LinearLayout layout = new LinearLayout(getParentActivity());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(AndroidUtilities.dp(20), AndroidUtilities.dp(4), AndroidUtilities.dp(20), 0);
+        layout.addView(checkBox);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setTitle(LocaleController.getString(R.string.FakePasscodeNoMainPasscodeTitle));
+        builder.setMessage(LocaleController.getString(R.string.FakePasscodeNoMainPasscodeMessage));
+        builder.setView(layout);
+        builder.setPositiveButton(LocaleController.getString(R.string.CheckPhoneNumberYes), (dialog, which) -> {
+            if (checkBox.isChecked()) {
+                SharedConfig.showFakePasscodeNoMainPasscodeWarning = false;
+                SharedConfig.saveConfig();
+            }
+            PasscodeActivity passcodeActivity = new PasscodeActivity(PasscodeActivity.TYPE_SETUP_CODE);
+            passcodeActivity.returnToPreviousFragment = true;
+            presentFragment(passcodeActivity);
+        });
+        builder.setNegativeButton(LocaleController.getString(R.string.CheckPhoneNumberNo), (dialog, which) -> {
+            if (checkBox.isChecked()) {
+                SharedConfig.showFakePasscodeNoMainPasscodeWarning = false;
+                SharedConfig.saveConfig();
+            }
+            action.run();
+        });
+        return builder.create();
     }
 
     private void updateRows() {
