@@ -9,6 +9,7 @@
 package org.telegram.ui.Adapters;
 
 import android.content.Context;
+import android.util.LongSparseArray;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -25,6 +26,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.SavedChannelsDataCache;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -84,7 +86,7 @@ public class SavedChannelsAdapter extends RecyclerListView.SelectionAdapter impl
     ArrayList<TLRPC.Chat> chats = new ArrayList<>();
     Set<String> failedLoadChats = new HashSet<>();
     private boolean chatLoading = false;
-    android.util.LongSparseArray<ArrayList<MessageObject>> messageMap = new android.util.LongSparseArray<>();
+    LongSparseArray<ArrayList<MessageObject>> messageMap = new LongSparseArray<>();
 
     private int pendingRefreshCount = 0;
     private Runnable onRefreshComplete;
@@ -887,7 +889,13 @@ public class SavedChannelsAdapter extends RecyclerListView.SelectionAdapter impl
     private void addChat(TLRPC.Chat chat) {
         int position = getInsertPosition(chats, chat);
         if (position < 0) {
-            MessagesController.getInstance(currentAccount).loadMessages(-chat.id, 0, false, 20, 0, 0, false, 0, 0, 2, 0, 0, 0, 0, 1, false);
+            SavedChannelsDataCache cache = SavedChannelsDataCache.getInstance(currentAccount);
+            ArrayList<MessageObject> cachedMessages = cache.messageMap.get(-chat.id);
+            if (cachedMessages != null) {
+                messageMap.put(-chat.id, new ArrayList<>(cachedMessages));
+            } else {
+                MessagesController.getInstance(currentAccount).loadMessages(-chat.id, 0, false, 20, 0, 0, false, 0, 0, 2, 0, 0, 0, 0, 1, false);
+            }
             int insertPosition = -(position + 1);
             chats.add(insertPosition, chat);
             updateList(null);
@@ -982,6 +990,10 @@ public class SavedChannelsAdapter extends RecyclerListView.SelectionAdapter impl
         if (pendingRefreshCount > 0) {
             pendingRefreshCount--;
             if (pendingRefreshCount == 0 && onRefreshComplete != null) {
+                SavedChannelsDataCache cache = SavedChannelsDataCache.getInstance(currentAccount);
+                for (int i = 0; i < messageMap.size(); i++) {
+                    cache.messageMap.put(messageMap.keyAt(i), new ArrayList<>(messageMap.valueAt(i)));
+                }
                 Runnable callback = onRefreshComplete;
                 onRefreshComplete = null;
                 callback.run();
@@ -1047,14 +1059,5 @@ public class SavedChannelsAdapter extends RecyclerListView.SelectionAdapter impl
 
     public ArrayList<TLRPC.Chat> getChats() {
         return chats;
-    }
-
-    public MessageObject getTopMessage(long dialogId) {
-        ArrayList<MessageObject> msgs = messageMap.get(dialogId);
-        return msgs != null && !msgs.isEmpty() ? msgs.get(0) : null;
-    }
-
-    public ArrayList<MessageObject> getGroupMessages(long dialogId) {
-        return messageMap.get(dialogId);
     }
 }

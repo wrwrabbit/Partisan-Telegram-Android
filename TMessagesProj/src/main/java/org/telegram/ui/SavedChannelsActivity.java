@@ -73,6 +73,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.SavedChannelsDataCache;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -1741,7 +1742,10 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
 
         if (savedChannelsMainAdapter != null) {
             savedChannelsMainAdapter.loadChats();
-            doRefresh();
+            long cachedRefreshTime = SavedChannelsDataCache.getInstance(currentAccount).lastRefreshTime;
+            if (cachedRefreshTime == 0 || System.currentTimeMillis() - cachedRefreshTime >= 60_000) {
+                doRefresh();
+            }
         }
 
         topBubblesFadeView = new DialogsActivityTopBubblesFadeView(context);
@@ -2182,7 +2186,7 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         updateVisibleRows(0, false);
         checkUi_mainTabsVisible();
 
-        if (savedChannelsMainAdapter != null && System.currentTimeMillis() - lastRefreshTime >= 60_000) {
+        if (savedChannelsMainAdapter != null && System.currentTimeMillis() - SavedChannelsDataCache.getInstance(currentAccount).lastRefreshTime >= 60_000) {
             doRefresh();
         }
     }
@@ -2701,7 +2705,6 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
     private ActionBarMenuItem deleteItem;
     private ActionBarMenuItem refreshItem;
     private ObjectAnimator refreshAnimator;
-    private long lastRefreshTime;
     private NumberTextView selectedDialogsCountTextView;
     private final ArrayList<View> actionModeViews = new ArrayList<>();
     private int canPinCount = 0;
@@ -3799,7 +3802,7 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         if (savedChannelsMainAdapter == null || refreshAnimator != null) {
             return;
         }
-        lastRefreshTime = System.currentTimeMillis();
+        SavedChannelsDataCache.getInstance(currentAccount).lastRefreshTime = System.currentTimeMillis();
         startRefreshAnimation();
         savedChannelsMainAdapter.refreshChats(() -> AndroidUtilities.runOnUIThread(this::stopRefreshAnimation));
     }
