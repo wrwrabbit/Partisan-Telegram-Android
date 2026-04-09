@@ -925,11 +925,11 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                                 username = chat.username;
                             } else if (object instanceof TLRPC.EncryptedChat) {
                                 TLRPC.EncryptedChat encryptedChat = (TLRPC.EncryptedChat) object;
-                                TLRPC.User currentUser = MessagesController.getInstance(currentAccount)
+                                TLRPC.User user = MessagesController.getInstance(currentAccount)
                                         .getUser(encryptedChat.user_id);
-                                String name = UserObject.getUserName(currentUser, currentAccount).toLowerCase();
+                                String name = UserObject.getUserName(user, currentAccount).toLowerCase();
                                 names[0] = name;
-                                username = currentUser.username;
+                                username = user != null ? user.username : null;
                             }
                             names[1] = LocaleController.getInstance().getTranslitString(names[0]);
                             if (names[0].equals(names[1])) {
