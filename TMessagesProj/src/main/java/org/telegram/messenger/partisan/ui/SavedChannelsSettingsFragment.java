@@ -6,6 +6,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,25 +56,25 @@ public class SavedChannelsSettingsFragment extends PartisanBaseFragment {
                         }),
                 new DescriptionItem(this, getString(R.string.SavedChannelsSettingInfo)),
                 new ToggleItem(this, getString(R.string.SavedChannelsInChatList),
-                        SavedChannelsSettings.showInChatList::getOrDefault,
+                        PartisanTelegramSettings.showInChatList::getOrDefault,
                         value -> {
-                            SavedChannelsSettings.showInChatList.set(value);
+                            PartisanTelegramSettings.showInChatList.set(value);
                             NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.savedChannelsButtonStateChanged);
                         })
                         .addEnabledCondition(() -> SharedConfig.showSavedChannels),
                 new DescriptionItem(this, getString(R.string.SavedChannelsInChatListInfo)),
                 new ToggleItem(this, getString(R.string.SavedChannelsInSettings),
-                        SavedChannelsSettings.showInSettings::getOrDefault,
+                        PartisanTelegramSettings.showInSettings::getOrDefault,
                         value -> {
-                            SavedChannelsSettings.showInSettings.set(value);
+                            PartisanTelegramSettings.showInSettings.set(value);
                             NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.savedChannelsButtonStateChanged);
                         })
                         .addEnabledCondition(() -> SharedConfig.showSavedChannels),
                 new DescriptionItem(this, getString(R.string.SavedChannelsInSettingsInfo)),
                 new ToggleItem(this, getString(R.string.SavedChannelsAsTab),
-                        SavedChannelsSettings.showAsTab::getOrDefault,
+                        PartisanTelegramSettings.showAsTab::getOrDefault,
                         value -> {
-                            SavedChannelsSettings.showAsTab.set(value);
+                            PartisanTelegramSettings.showAsTab.set(value);
                             NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.savedChannelsButtonStateChanged);
                         })
                         .addEnabledCondition(() -> SharedConfig.showSavedChannels),

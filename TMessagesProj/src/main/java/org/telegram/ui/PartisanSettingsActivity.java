@@ -34,7 +34,8 @@ import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
-import org.telegram.messenger.partisan.settings.TesterSettings;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettingsLocation;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
@@ -108,6 +109,8 @@ public class PartisanSettingsActivity extends BaseFragment {
     private int voiceChangeDetailRow;
     private int transferDataToOtherPtgRow;
     private int transferDataToOtherPtgDetailRow;
+    private int partisanTelegramSettingsPositionRow;
+    private int partisanTelegramSettingsPositionDetailRow;
 
     private class DangerousSettingSwitcher {
         public Context context;
@@ -333,6 +336,22 @@ public class PartisanSettingsActivity extends BaseFragment {
                 presentFragment(new VoiceChangeSettingsFragment());
             } else if (position == transferDataToOtherPtgRow) {
                 presentFragment(new AppMigrationActivity());
+            } else if (position == partisanTelegramSettingsPositionRow) {
+                String[] options = {
+                    LocaleController.getString(R.string.Settings),
+                    LocaleController.getString(R.string.PrivacySettings),
+                    LocaleController.getString(R.string.PartisanTelegramSettingsPositionDisabled)
+                };
+                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                builder.setTitle(LocaleController.getString(R.string.PartisanTelegramSettingsPosition));
+                builder.setItems(options, (dialog, which) -> {
+                    PartisanTelegramSettings.partisanTelegramSettingsLocation.set(PartisanTelegramSettingsLocation.values()[which]);
+                    org.telegram.messenger.NotificationCenter.getGlobalInstance().postNotificationName(org.telegram.messenger.NotificationCenter.partisanTelegramSettingsButtonStateChanged);
+                    if (listAdapter != null) {
+                        listAdapter.notifyDataSetChanged();
+                    }
+                });
+                showDialog(builder.create());
             }
         });
 
@@ -398,6 +417,8 @@ public class PartisanSettingsActivity extends BaseFragment {
             marketIconsRow = -1;
             marketIconsDetailRow = -1;
         }
+        partisanTelegramSettingsPositionRow = rowCount++;
+        partisanTelegramSettingsPositionDetailRow = rowCount++;
         verifiedRow = rowCount++;
         verifiedDetailRow = rowCount++;
     }
@@ -439,7 +460,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     && position != showCallButtonDetailRow && position != isDeleteMessagesForAllByDefaultDetailRow
                     && position != marketIconsDetailRow && position!= confirmDangerousActionDetailRow
                     && position != fileProtectionDetailRow && position != voiceChangeDetailRow
-                    && position != transferDataToOtherPtgDetailRow;
+                    && position != transferDataToOtherPtgDetailRow && position != partisanTelegramSettingsPositionDetailRow;
         }
 
         @Override
@@ -582,6 +603,9 @@ public class PartisanSettingsActivity extends BaseFragment {
                     } else if (position == transferDataToOtherPtgDetailRow) {
                         cell.setText(LocaleController.getString(R.string.TransferDataToOtherPtgInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                    } else if (position == partisanTelegramSettingsPositionDetailRow) {
+                        cell.setText(LocaleController.getString(R.string.PartisanTelegramSettingsPositionInfo));
+                        cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     }
                     break;
                 }
@@ -608,6 +632,14 @@ public class PartisanSettingsActivity extends BaseFragment {
                                 ? LocaleController.getString(R.string.PasswordOn)
                                 : LocaleController.getString(R.string.PasswordOff);
                         textCell.setTextAndValue(LocaleController.getString(R.string.SavedChannelsSetting), value, true);
+                    } else if (position == partisanTelegramSettingsPositionRow) {
+                        String[] positionOptions = {
+                            LocaleController.getString(R.string.Settings),
+                            LocaleController.getString(R.string.PrivacySettings),
+                            LocaleController.getString(R.string.PartisanTelegramSettingsPositionDisabled)
+                        };
+                        int pos = PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault().ordinal();
+                        textCell.setTextAndValue(LocaleController.getString(R.string.PartisanTelegramSettingsPosition), positionOptions[pos], false);
                     }
                     textCell.setEnabled(isEnabled(holder));
                     break;
@@ -673,9 +705,11 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == showCallButtonDetailRow || position == isDeleteMessagesForAllByDefaultDetailRow
                     || position == marketIconsDetailRow || position == verifiedDetailRow
                     || position == confirmDangerousActionDetailRow || position == fileProtectionDetailRow
-                    || position == voiceChangeDetailRow || position == transferDataToOtherPtgDetailRow) {
+                    || position == voiceChangeDetailRow || position == transferDataToOtherPtgDetailRow
+                    || position == partisanTelegramSettingsPositionDetailRow) {
                 return 1;
-            } else if (position == onScreenLockActionRow || position == transferDataToOtherPtgRow || position == savedChannelsRow) {
+            } else if (position == onScreenLockActionRow || position == transferDataToOtherPtgRow || position == savedChannelsRow
+                    || position == partisanTelegramSettingsPositionRow) {
                 return 2;
             } else if (position == verifiedRow || position == fileProtectionRow) {
                 return 3;

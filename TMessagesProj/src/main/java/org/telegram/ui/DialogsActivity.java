@@ -141,7 +141,7 @@ import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.ui.SavedChannelsSettings;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.messenger.utils.GradientProtectionDrawable;
 import org.telegram.messenger.utils.SearchTextWatcher;
@@ -205,7 +205,6 @@ import org.telegram.ui.Components.FragmentSearchField;
 import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.PermissionRequest;
 import org.telegram.ui.Components.UItem;
-import org.telegram.ui.Components.blur3.Blur3HashImpl;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.BlurredBackgroundWithFadeDrawable;
 import org.telegram.ui.Components.blur3.DownscaleScrollableNoiseSuppressor;
@@ -13571,7 +13570,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 presentFragment(new ChatActivity(args));
             });
             if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
-                    && SavedChannelsSettings.showAsTab.getOrDefault()) {
+                    && PartisanTelegramSettings.showAsTab.getOrDefault()) {
                 io.add(R.drawable.tabs_contacts_24, getString(R.string.Contacts), () -> {
                     Bundle args = new Bundle();
                     args.putBoolean("needPhonebook", true);
@@ -13579,7 +13578,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 });
             }
             if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
-                    && SavedChannelsSettings.showInChatList.getOrDefault()) {
+                    && PartisanTelegramSettings.showInChatList.getOrDefault()) {
                 io.add(R.drawable.menu_saved_channels, getString(R.string.SavedChannels), () -> {
                     presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
                 });

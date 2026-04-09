@@ -44,8 +44,8 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.settings.TesterSettings;
-import org.telegram.messenger.partisan.ui.SavedChannelsSettings;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
 import org.telegram.messenger.partisan.update.AppVersion;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -866,7 +866,7 @@ public class SharedConfig {
 
             TesterSettings.loadSettings();
             VoiceChangeSettings.loadSettings();
-            SavedChannelsSettings.loadSettings();
+            PartisanTelegramSettings.loadSettings();
 
             String authKeyString = preferences.getString("pushAuthKey", null);
             if (!TextUtils.isEmpty(authKeyString)) {

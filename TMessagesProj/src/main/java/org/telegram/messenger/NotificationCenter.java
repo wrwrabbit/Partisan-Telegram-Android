@@ -297,6 +297,7 @@ public class NotificationCenter {
     public static final int accountHidingChanged = totalEvents++;
     public static final int searchCleared = totalEvents++;
     public static final int savedChannelsButtonStateChanged = totalEvents++;
+    public static final int partisanTelegramSettingsButtonStateChanged = totalEvents++;
     public static final int savedChannelAdded = totalEvents++;
     public static final int telegramDataReceived = totalEvents++;
     public static final int telegramDataReceivingError = totalEvents++;

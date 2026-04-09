@@ -11002,4 +11002,10 @@
     <string name="ProtectPartisanSettingsInfo">Require the original passcode to open Partisan Telegram settings.</string>
     <string name="EnterMainPasscode">Enter main passcode</string>
     <string name="EnterMainPasscodeInfo">Enter the main passcode (not a fake one) to access Partisan Telegram settings.</string>
+    <string name="PartisanTelegramSettingsPosition">PTG Settings Location</string>
+    <string name="PartisanTelegramSettingsPositionInfo">Controls where the Partisan Telegram Settings are shown.</string>
+    <string name="PartisanTelegramSettingsPositionDisabled">Disabled</string>
+    <string name="PartisanTelegramSettingsPositionSettingsInfo">Partisan Telegram Settings are shown in the Settings screen.</string>
+    <string name="PartisanTelegramSettingsPositionPrivacyInfo">Partisan Telegram Settings Settings are shown in the Privacy &amp; Security screen.</string>
+    <string name="PartisanTelegramSettingsPositionDisabledInfo">Partisan Telegram settings are not shown anywhere. You can enable them again in Partisan settings.</string>
 </resources>

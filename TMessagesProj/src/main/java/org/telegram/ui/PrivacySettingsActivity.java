@@ -47,6 +47,8 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettingsLocation;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
@@ -93,6 +95,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     private int blockedRow;
     @Keep
     private int securityIssuesRow;
+    private int partisanSettingsRow;
     @Keep
     private int phoneNumberRow;
     @Keep
@@ -203,6 +206,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         getNotificationCenter().addObserver(this, NotificationCenter.blockedUsersDidLoad);
         getNotificationCenter().addObserver(this, NotificationCenter.didSetOrRemoveTwoStepPassword);
         getNotificationCenter().addObserver(this, NotificationCenter.didUpdateGlobalAutoDeleteTimer);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.partisanTelegramSettingsButtonStateChanged);
 
         getUserConfig().loadGlobalTTl();
 
@@ -235,6 +239,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         getNotificationCenter().removeObserver(this, NotificationCenter.blockedUsersDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.didSetOrRemoveTwoStepPassword);
         getNotificationCenter().removeObserver(this, NotificationCenter.didUpdateGlobalAutoDeleteTimer);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.partisanTelegramSettingsButtonStateChanged);
         boolean save = false;
         if (currentSync != newSync) {
             getUserConfig().syncContacts = newSync;
@@ -323,6 +328,8 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 presentFragment(new PrivacyUsersActivity());
             } else if (position == securityIssuesRow) {
                 presentFragment(new SecurityIssuesActivity());
+            } else if (position == partisanSettingsRow) {
+                presentFragment(org.telegram.ui.PartisanTelegramSettingsActivity.checkLockAndCreateActivity());
             } else if (position == sessionsRow) {
                 devicesActivityPreload.resetFragment();
                 presentFragment(devicesActivityPreload);
@@ -699,6 +706,8 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             if (listAdapter != null) {
                 listAdapter.notifyItemChanged(autoDeleteMesages);
             }
+        } else if (id == NotificationCenter.partisanTelegramSettingsButtonStateChanged) {
+            updateRows();
         }
     }
 
@@ -727,6 +736,12 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             securityIssuesRow = rowCount++;
         } else {
             securityIssuesRow = -1;
+        }
+        if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()
+                && PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == PartisanTelegramSettingsLocation.PRIVACY_AND_SECURITY) {
+            partisanSettingsRow = rowCount++;
+        } else {
+            partisanSettingsRow = -1;
         }
         if (currentPassword != null) {
             boolean hasEmail = currentPassword.login_email_pattern != null;
@@ -1028,7 +1043,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == securityIssuesRow || position == sessionsRow || position == secretWebpageRow || position == webSessionsRow ||
+            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == securityIssuesRow || position == partisanSettingsRow || position == sessionsRow || position == secretWebpageRow || position == webSessionsRow ||
                     position == groupsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_INVITE) ||
                     position == lastSeenRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_LASTSEEN) ||
                     position == callsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_CALLS) ||
@@ -1392,6 +1407,8 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     } else if (position == securityIssuesRow) {
                         value = Integer.toString(getUserConfig().getActiveSecurityIssues().size());
                         textCell2.setTextAndValueAndIcon(LocaleController.getString(R.string.SecurityIssuesTitle), value, true, R.drawable.msg2_policy, true);
+                    } else if (position == partisanSettingsRow) {
+                        textCell2.setTextAndValueAndIcon(LocaleController.getString(R.string.PartisanTelegramSettings), "", false, R.drawable.settings_security, true);
                     }
                     textCell2.setDrawLoading(showLoading, loadingLen, animated);
                     break;
@@ -1412,7 +1429,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 return 3;
             } else if (position == botsAndWebsitesShadowRow) {
                 return 4;
-            } else if (position == autoDeleteMesages || position == sessionsRow || position == emailLoginRow || position == passwordRow || position == passkeysRow || position == passcodeRow || position == blockedRow || position == securityIssuesRow) {
+            } else if (position == autoDeleteMesages || position == sessionsRow || position == emailLoginRow || position == passwordRow || position == passkeysRow || position == passcodeRow || position == blockedRow || position == securityIssuesRow || position == partisanSettingsRow) {
                 return 5;
             }
             return 0;

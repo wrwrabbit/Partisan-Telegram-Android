@@ -83,7 +83,6 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
-import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -206,6 +205,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.accountHidingChanged);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.partisanTelegramSettingsButtonStateChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.newSuggestionsAvailable);
 
@@ -528,6 +528,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.fakePasscodeActivated);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.accountHidingChanged);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.partisanTelegramSettingsButtonStateChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.newSuggestionsAvailable);
     }
@@ -540,7 +541,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 listView.adapter.update(true);
             }
         } else if (id == NotificationCenter.fakePasscodeActivated || id == NotificationCenter.accountHidingChanged
-                || id == NotificationCenter.savedChannelsButtonStateChanged) {
+                || id == NotificationCenter.savedChannelsButtonStateChanged
+                || id == NotificationCenter.partisanTelegramSettingsButtonStateChanged) {
             if (listView != null) {
                 listView.post(() -> listView.adapter.update(false));
             }
@@ -690,7 +692,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                     Browser.openUrl(getContext(), getString(R.string.CheckPhoneNumberLearnMoreUrl));
                 }),
                 getString(R.string.CheckPhoneNumberNo), v -> {
-                    PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(this, () -> {
+                        org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(this, () -> {
                         presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE));
                     });
                 },
@@ -752,11 +754,12 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         }
 
         if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
-            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()
+                    && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == org.telegram.messenger.partisan.settings.PartisanTelegramSettingsLocation.SETTINGS_ACTIVITY) {
                 items.add(SettingCell.Factory.of(53, 0xFFE8503A, 0xFFCC3A22, R.drawable.settings_security, getString(R.string.PartisanTelegramSettings), null));
             }
             if (org.telegram.messenger.partisan.Utils.needShowSavedChannels()
-                    && org.telegram.messenger.partisan.ui.SavedChannelsSettings.showInSettings.getOrDefault()) {
+                    && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showInSettings.getOrDefault()) {
                 items.add(SettingCell.Factory.of(50, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_saved_channels_star, getString(R.string.SavedChannels), null));
             }
             items.add(UItem.asShadow(null));
