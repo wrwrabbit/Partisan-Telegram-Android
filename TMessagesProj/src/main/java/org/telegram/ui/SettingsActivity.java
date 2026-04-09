@@ -757,7 +757,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             }
             if (org.telegram.messenger.partisan.Utils.needShowSavedChannels()
                     && org.telegram.messenger.partisan.ui.SavedChannelsSettings.showInSettings.getOrDefault()) {
-                items.add(SettingCell.Factory.of(50, 0xFFEFA612, 0xFFE77512, R.drawable.settings_stars, getString(R.string.SavedChannels), null));
+                items.add(SettingCell.Factory.of(50, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_saved_channels_star, getString(R.string.SavedChannels), null));
             }
             items.add(UItem.asShadow(null));
         }
