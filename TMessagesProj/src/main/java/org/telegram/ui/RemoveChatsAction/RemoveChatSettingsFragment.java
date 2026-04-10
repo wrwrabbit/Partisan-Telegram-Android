@@ -55,7 +55,6 @@ public class RemoveChatSettingsFragment extends BaseFragment {
 
     private final FakePasscode fakePasscode;
     private final RemoveChatsAction action;
-    int accountNum;
     private final List<Item> items;
     private final List<RemoveChatsAction.RemoveChatEntry> removeChatEntries = new ArrayList<>();
     private final boolean isNew;
@@ -84,7 +83,7 @@ public class RemoveChatSettingsFragment extends BaseFragment {
         this.action = action;
         this.items = new ArrayList<>(items);
         this.isNew = false;
-        this.accountNum = accountNum;
+        setCurrentAccount(accountNum);
     }
 
     @Override
@@ -442,11 +441,6 @@ public class RemoveChatSettingsFragment extends BaseFragment {
         if (button != null) {
             button.setTextColor(Theme.getColor(Theme.key_color_red));
         }
-    }
-
-    @Override
-    public AccountInstance getAccountInstance() {
-        return AccountInstance.getInstance(accountNum);
     }
 
     private CheckBoxSquareThreeState.State getState(Function<RemoveChatsAction.RemoveChatEntry, Boolean> getValue, Function<Item, OptionPermission> getPermission) {
