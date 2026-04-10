@@ -184,8 +184,8 @@ public class SecurityIssuesActivity extends BaseFragment implements Notification
             if (!config.isClientActivated()) {
                 continue;
             }
-            config.showSecuritySuggestions = !getUserConfig().getIgnoredSecurityIssues()
-                    .containsAll(getUserConfig().currentSecurityIssues)
+            config.showSecuritySuggestions = !config.getIgnoredSecurityIssues()
+                    .containsAll(config.currentSecurityIssues)
                     && oldShowSuggestionValues[a]; // true only if it was true when the activity started
             config.saveConfig(false);
         }
