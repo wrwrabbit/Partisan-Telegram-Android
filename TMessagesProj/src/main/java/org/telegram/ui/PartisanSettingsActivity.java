@@ -20,10 +20,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AccountInstance;
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
@@ -35,7 +33,7 @@ import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
-import org.telegram.messenger.partisan.settings.PartisanTelegramSettingsLocation;
+import org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLocationFragment;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
@@ -337,21 +335,7 @@ public class PartisanSettingsActivity extends BaseFragment {
             } else if (position == transferDataToOtherPtgRow) {
                 presentFragment(new AppMigrationActivity());
             } else if (position == partisanTelegramSettingsPositionRow) {
-                String[] options = {
-                    LocaleController.getString(R.string.Settings),
-                    LocaleController.getString(R.string.PrivacySettings),
-                    LocaleController.getString(R.string.PartisanTelegramSettingsPositionDisabled)
-                };
-                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setTitle(LocaleController.getString(R.string.PartisanTelegramSettingsPosition));
-                builder.setItems(options, (dialog, which) -> {
-                    PartisanTelegramSettings.partisanTelegramSettingsLocation.set(PartisanTelegramSettingsLocation.values()[which]);
-                    org.telegram.messenger.NotificationCenter.getGlobalInstance().postNotificationName(org.telegram.messenger.NotificationCenter.partisanTelegramSettingsButtonStateChanged);
-                    if (listAdapter != null) {
-                        listAdapter.notifyDataSetChanged();
-                    }
-                });
-                showDialog(builder.create());
+                presentFragment(new PartisanTelegramSettingsLocationFragment());
             }
         });
 
