@@ -194,7 +194,7 @@
     <string name="SecurityIssuesProfileSuggestionHeader">Проблемы с безопасностью</string>
     <string name="SecurityIssuesProfileSuggestionDetail">Мы нашли несколько проблем, которые могут подвергнуть Ваш аккаунт опасности. Хотите посмотреть на них?</string>
     <string name="SecurityIssuesProfileSuggestionYes">Закрыть</string>
-    <string name="SecurityIssuesProfileSuggestionNo">Посмотреть проблемы</string>
+    <string name="SecurityIssuesProfileSuggestionNo">Посмотреть</string>
     <string name="SecurityIssuesTitle">Проблемы безопасности</string>
     <string name="RootIssueTitle">Root</string>
     <string name="RootIssueText">Root может позволить злоумышленнику получить доступ к данным приложения (например, к сообщениям) без входа в него.</string>

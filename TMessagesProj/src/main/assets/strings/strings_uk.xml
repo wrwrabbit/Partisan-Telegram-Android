@@ -194,7 +194,7 @@
     <string name="SecurityIssuesProfileSuggestionHeader">Проблеми з безпеки</string>
     <string name="SecurityIssuesProfileSuggestionDetail">Ми знайшли кілька проблем, які можуть поставити під загрозу Ваш обліковий запис. Хочете подивитися на них?</string>
     <string name="SecurityIssuesProfileSuggestionYes">Закрити</string>
-    <string name="SecurityIssuesProfileSuggestionNo">Переглянути проблеми</string>
+    <string name="SecurityIssuesProfileSuggestionNo">Переглянути</string>
     <string name="SecurityIssuesTitle">Проблеми з безпеки</string>
     <string name="RootIssueTitle">Root</string>
     <string name="RootIssueText">Root може дозволити зловмиснику доступ до даних додатка (таких, як повідомлення) без входу в нього.</string>
