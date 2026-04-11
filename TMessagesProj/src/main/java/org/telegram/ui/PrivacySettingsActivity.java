@@ -1408,7 +1408,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                         value = Integer.toString(getUserConfig().getActiveSecurityIssues().size());
                         textCell2.setTextAndValueAndIcon(LocaleController.getString(R.string.SecurityIssuesTitle), value, true, R.drawable.msg2_policy, true);
                     } else if (position == partisanSettingsRow) {
-                        textCell2.setTextAndValueAndIcon(LocaleController.getString(R.string.PartisanTelegramSettings), "", false, R.drawable.settings_security, true);
+                        textCell2.setTextAndValueAndIcon(LocaleController.getString(R.string.PartisanTelegramSettings), "", false, R.drawable.settings_ptelegram_stroke, true);
                     }
                     textCell2.setDrawLoading(showLoading, loadingLen, animated);
                     break;

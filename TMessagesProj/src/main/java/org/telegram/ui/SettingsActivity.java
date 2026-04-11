@@ -756,7 +756,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
             if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()
                     && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == org.telegram.messenger.partisan.settings.PartisanTelegramSettingsLocation.SETTINGS_ACTIVITY) {
-                items.add(SettingCell.Factory.of(53, 0xFFE8503A, 0xFFCC3A22, R.drawable.settings_security, getString(R.string.PartisanTelegramSettings), null));
+                items.add(SettingCell.Factory.of(53, 0xFFE8503A, 0xFFCC3A22, R.drawable.settings_ptelegram_filled, getString(R.string.PartisanTelegramSettings), null));
             }
             if (org.telegram.messenger.partisan.Utils.needShowSavedChannels()
                     && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showInSettings.getOrDefault()) {

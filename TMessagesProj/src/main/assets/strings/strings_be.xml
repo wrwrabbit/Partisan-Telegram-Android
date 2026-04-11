@@ -340,7 +340,7 @@
     <string name="ChangesWillBeAppliedToTheNextCall">Голас у бягучым званку застанецца без змен. Змены прымяняюцца толькі ў наступным званку.</string>
     <string name="CantSetupPasskeys">Немагчыма наладзіць ключы доступу</string>
     <string name="CantSetupPasskeysDescription">Партызанскі Тэлеграм не можа наладзіць ключы доступу. Выкарыстоўвайце для гэтага афіцыйнае прыкладанне.</string>
-    <string name="PartisanTelegramSettings">Налады Партызанскака Тэлеграма</string>
+    <string name="PartisanTelegramSettings">Налады PTelegram</string>
     <string name="OtherPartisanSettings">Іншыя налады</string>
     <string name="ProtectPartisanSettings">Абараніць налады Партызанскага Тэлеграма</string>
     <string name="ProtectPartisanSettingsInfo">Патрабаваць асноўны пароль для адкрыцця налад Партызанскага Тэлеграма.</string>

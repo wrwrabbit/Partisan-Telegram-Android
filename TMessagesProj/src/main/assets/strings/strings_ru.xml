@@ -339,7 +339,7 @@
     <string name="ChangesWillBeAppliedToTheNextCall">Голос в текущем звонке останется без изменений. Изменения применятся только в следующем звонке.</string>
     <string name="CantSetupPasskeys">Невозможно настроить ключи доступа</string>
     <string name="CantSetupPasskeysDescription">Партизанский Телеграм не может настроить ключи доступа. Воспользуйтесь официальным приложением для этого.</string>
-    <string name="PartisanTelegramSettings">Настройки Партизанского Телеграма</string>
+    <string name="PartisanTelegramSettings">Настройки PTelegram</string>
     <string name="OtherPartisanSettings">Другие настройки</string>
     <string name="ProtectPartisanSettings">Защитить настройки Партизанского Телеграма</string>
     <string name="ProtectPartisanSettingsInfo">Требовать основной пароль для открытия настроек Партизанского Телеграма.</string>
