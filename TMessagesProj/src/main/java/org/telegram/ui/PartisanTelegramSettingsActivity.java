@@ -497,6 +497,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                             LocaleController.getString(R.string.PartisanTelegramSettingsPositionDisabled)
                         };
                         int pos = PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault().ordinal();
+                        textCell.ellipsizeValueInsteadOfText = true;
                         textCell.setTextAndValue(LocaleController.getString(R.string.PartisanTelegramSettingsPosition), positionOptions[pos], false);
                         textCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
                         textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));

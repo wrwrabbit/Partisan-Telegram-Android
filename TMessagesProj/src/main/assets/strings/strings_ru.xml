@@ -345,7 +345,7 @@
     <string name="ProtectPartisanSettingsInfo">Требовать основной пароль для открытия настроек Партизанского Телеграма.</string>
     <string name="EnterMainPasscode">Введите основной код-пароль</string>
     <string name="EnterMainPasscodeInfo">Введите основной код-пароль (не ложный) для доступа к настройкам Партизанского Телеграма.</string>
-    <string name="PartisanTelegramSettingsPosition">Позиция настроек ПТГ</string>
+    <string name="PartisanTelegramSettingsPosition">Локация настроек PTelegram</string>
     <string name="PartisanTelegramSettingsPositionInfo">Определяет, где отображается вход в настройки Партизанского Телеграма.</string>
     <string name="PartisanTelegramSettingsPositionDisabled">Отключено</string>
     <string name="PartisanTelegramSettingsPositionSettingsInfo">Настройки Партизанского Телеграма отображаются на экране Настроек.</string>

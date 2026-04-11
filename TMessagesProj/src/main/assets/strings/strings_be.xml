@@ -346,7 +346,7 @@
     <string name="ProtectPartisanSettingsInfo">Патрабаваць асноўны пароль для адкрыцця налад Партызанскага Тэлеграма.</string>
     <string name="EnterMainPasscode">Увядзіце асноўны код блакіроўкі</string>
     <string name="EnterMainPasscodeInfo">Увядзіце асноўны код блакіроўкі (не несапраўдны) для доступу да налад Партызанскага Тэлеграма.</string>
-    <string name="PartisanTelegramSettingsPosition">Пазіцыя налад ПТГ</string>
+    <string name="PartisanTelegramSettingsPosition">Лакацыя налад PTelegram</string>
     <string name="PartisanTelegramSettingsPositionInfo">Вызначае, дзе адлюстроўваецца ўваход у налады Партызанскага Тэлеграма.</string>
     <string name="PartisanTelegramSettingsPositionDisabled">Адключана</string>
     <string name="PartisanTelegramSettingsPositionSettingsInfo">Уваход у налады Партызанскага Тэлеграма адлюстроўваецца на экране Налад.</string>
