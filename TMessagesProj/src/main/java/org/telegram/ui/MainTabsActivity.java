@@ -305,7 +305,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             viewPager.scrollToPosition(POSITION_CONTACTS);
         });
         tabsView.addView(tabSavedChannels, 2);
-        checkUi_savedChannelsTabVisible(SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault(), false);
+        checkUi_savedChannelsTabVisible(SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault() && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated(), false);
 
         selectTab(viewPager.getCurrentPosition(), false);
 
@@ -582,7 +582,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     @Override
     protected BaseFragment createBaseFragmentAt(int position) {
         if (position == POSITION_CONTACTS) {
-            if (SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault()) {
+            if (SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault() && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
                 Bundle args = new Bundle();
                 args.putBoolean("hasMainTabs", true);
                 return new SavedChannelsActivity(args);
@@ -785,7 +785,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 dropFragmentAtPosition(POSITION_CALLS_OR_SETTINGS);
             }
         } else if (id == NotificationCenter.savedChannelsButtonStateChanged) {
-            final boolean savedChannelsTabVisible = SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault();
+            final boolean savedChannelsTabVisible = SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault() && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated();
             checkUi_savedChannelsTabVisible(savedChannelsTabVisible, true);
             if (viewPager != null && viewPager.getCurrentPosition() == POSITION_CONTACTS) {
                 viewPager.scrollToPosition(POSITION_CHATS);
