@@ -352,4 +352,5 @@
     <string name="PartisanTelegramSettingsPositionSettingsInfo">Уваход у налады Партызанскага Тэлеграма адлюстроўваецца на экране Налад.</string>
     <string name="PartisanTelegramSettingsPositionPrivacyInfo">Уваход у налады Партызанскага Тэлеграма адлюстроўваецца на экране Прыватнасці і бяспекі.</string>
     <string name="PartisanTelegramSettingsPositionDisabledInfo">Уваход у налады Партызанскага Тэлеграма нідзе не адлюстроўваецца. Вы можаце ўключыць іх зноў у Партызанскіх наладах.</string>
+    <string name="MoreAccounts">Яшчэ</string>
 </resources>

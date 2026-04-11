@@ -11008,4 +11008,5 @@
     <string name="PartisanTelegramSettingsPositionSettingsInfo">Partisan Telegram Settings are shown in the Settings screen.</string>
     <string name="PartisanTelegramSettingsPositionPrivacyInfo">Partisan Telegram Settings Settings are shown in the Privacy &amp; Security screen.</string>
     <string name="PartisanTelegramSettingsPositionDisabledInfo">Partisan Telegram settings are not shown anywhere. You can enable them again in Partisan settings.</string>
+    <string name="MoreAccounts">More</string>
 </resources>

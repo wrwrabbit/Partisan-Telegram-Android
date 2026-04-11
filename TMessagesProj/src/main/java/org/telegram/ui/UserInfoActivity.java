@@ -305,8 +305,8 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             if (!hasAddAccount) {
                 items.add(UItem.asHeader(getString(R.string.SettingsAccounts)));
             }
-            final boolean needFold = accountNumbers.size() > 4;
-            final int visibleCount = (!needFold || accountsExpanded) ? accountNumbers.size() : 3;
+            final boolean needFold = accountNumbers.size() > 3;
+            final int visibleCount = (!needFold || accountsExpanded) ? accountNumbers.size() : 2;
             for (int i = 0; i < visibleCount; ++i) {
                 items.add(SettingsActivity.AccountCell.Factory.of(i, accountNumbers.get(i)));
             }

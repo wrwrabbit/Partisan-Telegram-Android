@@ -351,4 +351,5 @@
     <string name="PartisanTelegramSettingsPositionSettingsInfo">Настройки Партизанского Телеграма отображаются на экране Настроек.</string>
     <string name="PartisanTelegramSettingsPositionPrivacyInfo">Настройки Партизанского Телеграма отображаются на экране Конфиденциальности и безопасности.</string>
     <string name="PartisanTelegramSettingsPositionDisabledInfo">Настройки Партизанского Телеграма нигде не отображаются. Вы можете включить их снова в Партизанских настройках.</string>
+    <string name="MoreAccounts">Ещё</string>
 </resources>

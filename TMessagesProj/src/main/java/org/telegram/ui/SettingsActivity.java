@@ -511,6 +511,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         collapseAccounts();
     }
 
+    private boolean accountsExpanded = false;
     private void collapseAccounts() {
         if (accountsExpanded) {
             accountsExpanded = false;
@@ -646,7 +647,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     }
 
     private ArrayList<Integer> accountNumbers = new ArrayList<>();
-    private boolean accountsExpanded = false;
     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         if (searchItem.isSearchFieldVisible2()) {
             items.add(UItem.asSpace(ActionBar.getCurrentActionBarHeight()));
@@ -741,14 +741,14 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                     }
                 }
             }
-            final boolean needFold = allAccountSlots.size() > 4;
-            final int visibleCount = (!needFold || accountsExpanded) ? allAccountSlots.size() : 3;
+            final boolean needFold = allAccountSlots.size() > 3;
+            final int visibleCount = (!needFold || accountsExpanded) ? allAccountSlots.size() : 2;
             items.add(UItem.asHeader(getString(R.string.SettingsAccounts)));
             for (int i = 0; i < visibleCount; ++i) {
                 items.add(AccountCell.Factory.of(i, allAccountSlots.get(i)));
             }
             if (needFold && !accountsExpanded) {
-                items.add(SettingCell.Factory.of(101, 0xFF1CA5ED, 0xFF1488E1, R.drawable.msg_expand, getString(R.string.PremiumMore), null));
+                items.add(SettingCell.Factory.of(101, 0xFF1CA5ED, 0xFF1488E1, R.drawable.msg_expand, getString(R.string.MoreAccounts), null));
             }
             items.add(UItem.asShadow(null));
         }
