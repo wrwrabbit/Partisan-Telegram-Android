@@ -2887,6 +2887,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         getNotificationCenter().addObserver(this, NotificationCenter.foldersHidingChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.dialogsHidingChanged);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.passwordlessModeActivated);
         getNotificationCenter().addObserver(this, NotificationCenter.searchCleared);
         getNotificationCenter().addObserver(this, NotificationCenter.onDatabaseReset);
         getNotificationCenter().addObserver(this, NotificationCenter.storiesUpdated);
@@ -3063,6 +3064,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         getNotificationCenter().removeObserver(this, NotificationCenter.foldersHidingChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogsHidingChanged);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.passwordlessModeActivated);
         getNotificationCenter().removeObserver(this, NotificationCenter.searchCleared);
         getNotificationCenter().removeObserver(this, NotificationCenter.onDatabaseReset);
         getNotificationCenter().removeObserver(this, NotificationCenter.storiesUpdated);
@@ -10857,6 +10859,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
                 updateFilterTabs(true, false);
             }
+        } else if (id == NotificationCenter.passwordlessModeActivated) {
+            checkUi_itemPasscodeVisibility();
         } else if (id == NotificationCenter.searchCleared) {
             if (searchViewPager != null && searchViewPager.dialogsSearchAdapter != null) {
                 searchViewPager.dialogsSearchAdapter.clearRecentSearch();
