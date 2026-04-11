@@ -342,7 +342,7 @@
     <string name="CantSetupPasskeysDescription">Партизанський Телеграм не може налаштувати ключі доступу. Використовуйте для цього офіційний додаток.</string>
     <string name="PartisanTelegramSettings">Налаштування PTelegram</string>
     <string name="OtherPartisanSettings">Інші налаштування</string>
-    <string name="ProtectPartisanSettings">Захистити налаштування Партизанського Телеграму</string>
+    <string name="ProtectPartisanSettings">Захистити налаштування PTelegram</string>
     <string name="ProtectPartisanSettingsInfo">Вимагати основний код блокування для відкриття налаштувань Партизанського Телеграму.</string>
     <string name="EnterMainPasscode">Введіть основний код блокування</string>
     <string name="EnterMainPasscodeInfo">Введіть основний код блокування (не фальшивий) для доступу до налаштувань Партизанського Телеграму.</string>

@@ -341,7 +341,7 @@
     <string name="CantSetupPasskeysDescription">Партизанский Телеграм не может настроить ключи доступа. Воспользуйтесь официальным приложением для этого.</string>
     <string name="PartisanTelegramSettings">Настройки PTelegram</string>
     <string name="OtherPartisanSettings">Другие настройки</string>
-    <string name="ProtectPartisanSettings">Защитить настройки Партизанского Телеграма</string>
+    <string name="ProtectPartisanSettings">Защитить настройки PTelegram</string>
     <string name="ProtectPartisanSettingsInfo">Требовать основной пароль для открытия настроек Партизанского Телеграма.</string>
     <string name="EnterMainPasscode">Введите основной код-пароль</string>
     <string name="EnterMainPasscodeInfo">Введите основной код-пароль (не ложный) для доступа к настройкам Партизанского Телеграма.</string>

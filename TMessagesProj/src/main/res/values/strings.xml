@@ -10998,7 +10998,7 @@
     <string name="CantSetupPasskeysDescription">Partisan Telegram cannot set up passkeys. Use the official app for this.</string>
     <string name="PartisanTelegramSettings">PTelegram Settings</string>
     <string name="OtherPartisanSettings">Other Settings</string>
-    <string name="ProtectPartisanSettings">Protect Partisan Telegram Settings</string>
+    <string name="ProtectPartisanSettings">Protect PTelegram Settings</string>
     <string name="ProtectPartisanSettingsInfo">Require the original passcode to open Partisan Telegram settings.</string>
     <string name="EnterMainPasscode">Enter main passcode</string>
     <string name="EnterMainPasscodeInfo">Enter the main passcode (not a fake one) to access Partisan Telegram settings.</string>
