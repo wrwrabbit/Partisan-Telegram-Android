@@ -354,4 +354,6 @@
     <string name="MoreAccounts">Ещё</string>
     <string name="BadPasscodeReaction">Реакция на неверный код-пароль</string>
     <string name="BadPasscodeReactionInfo">Настройте защиту от подбора код-пароля и фотографирование камерой при неверном вводе или посмотрите список неудачных попыток входа.</string>
+    <string name="InterfaceTweaks">Интерфейс</string>
+    <string name="InterfaceTweaksInfo">Настройте параметры отображения, поведение сообщений и реакций. Некоторые функции можно отключить, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
 </resources>

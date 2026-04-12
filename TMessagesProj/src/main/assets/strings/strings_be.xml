@@ -355,4 +355,6 @@
     <string name="MoreAccounts">Яшчэ</string>
     <string name="BadPasscodeReaction">Рэакцыя на няправільны код блакіроўкі</string>
     <string name="BadPasscodeReactionInfo">Наладзьце абарону ад падбору кода блакіроўкі і фатаграфаванне камерай пры няправільным уводзе або паглядзіце спіс няўдалых спроб уваходу.</string>
+    <string name="InterfaceTweaks">Інтэрфейс</string>
+    <string name="InterfaceTweaksInfo">Наладзьце параметры адлюстравання, паводзіны паведамленняў і рэакцый. Некаторыя функцыі можна адключыць, каб лепш замаскіраваць дадатак, калі несапраўдны код блакіроўкі не актываваны.</string>
 </resources>

@@ -11011,4 +11011,6 @@
     <string name="MoreAccounts">More</string>
     <string name="BadPasscodeReaction">Bad Passcode Reaction</string>
     <string name="BadPasscodeReactionInfo">Configure protection against passcode brute-force and camera capture on incorrect entry, or view the list of failed login attempts.</string>
+    <string name="InterfaceTweaks">Interface</string>
+    <string name="InterfaceTweaksInfo">Customize display options, message defaults, and reaction settings. Some features can be disabled to better disguise the app when a fake passcode is not active.</string>
 </resources>
