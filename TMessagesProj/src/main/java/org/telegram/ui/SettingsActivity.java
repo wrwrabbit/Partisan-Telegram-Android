@@ -720,7 +720,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 getString(R.string.SecurityIssuesProfileSuggestionHeader),
                 getString(R.string.SecurityIssuesProfileSuggestionDetail),
                 getString(R.string.SecurityIssuesProfileSuggestionNo), v -> {
-                    presentFragment(new SecurityIssuesActivity());
+                    presentFragment(new SecurityIssuesFragment());
                 },
                 getString(R.string.SecurityIssuesProfileSuggestionYes), v -> {
                     getUserConfig().showSecuritySuggestions = false;

@@ -327,7 +327,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             } else if (position == blockedRow) {
                 presentFragment(new PrivacyUsersActivity());
             } else if (position == securityIssuesRow) {
-                presentFragment(new SecurityIssuesActivity());
+                presentFragment(new SecurityIssuesFragment());
             } else if (position == partisanSettingsRow) {
                 presentFragment(org.telegram.ui.PartisanTelegramSettingsActivity.checkLockAndCreateActivity());
             } else if (position == sessionsRow) {

@@ -121,7 +121,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
             } else if (position == badPasscodeReactionRow) {
                 presentFragment(new org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment());
             } else if (position == securityIssuesRow) {
-                presentFragment(new SecurityIssuesActivity());
+                presentFragment(new SecurityIssuesFragment());
             } else if (firstFakePasscodeRow != -1
                     && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow) {
                 presentFragment(new FakePasscodeActivity(

@@ -276,7 +276,6 @@ import org.telegram.ui.Components.StickerEmptyView;
 import org.telegram.ui.Components.TagEditCell;
 import org.telegram.ui.Components.TimerDrawable;
 import org.telegram.ui.Components.TranslateAlert2;
-import org.telegram.ui.Components.TranslateAlert3;
 import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UndoView;
@@ -13310,7 +13309,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
                         @Override
                         protected void onNoClick(int type) {
-                            presentFragment(new SecurityIssuesActivity());
+                            presentFragment(new SecurityIssuesFragment());
                         }
                     };
                     break;
