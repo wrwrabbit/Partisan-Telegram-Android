@@ -11009,4 +11009,6 @@
     <string name="PartisanTelegramSettingsPositionPrivacyInfo">Partisan Telegram Settings Settings are shown in the Privacy &amp; Security screen.</string>
     <string name="PartisanTelegramSettingsPositionDisabledInfo">Partisan Telegram settings are not shown anywhere. You can enable them again in Partisan settings.</string>
     <string name="MoreAccounts">More</string>
+    <string name="BadPasscodeReaction">Bad Passcode Reaction</string>
+    <string name="BadPasscodeReactionInfo">Configure protection against passcode brute-force and camera capture on incorrect entry, or view the list of failed login attempts.</string>
 </resources>

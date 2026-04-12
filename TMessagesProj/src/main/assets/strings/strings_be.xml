@@ -353,4 +353,6 @@
     <string name="PartisanTelegramSettingsPositionPrivacyInfo">Уваход у налады Партызанскага Тэлеграма адлюстроўваецца на экране Прыватнасці і бяспекі.</string>
     <string name="PartisanTelegramSettingsPositionDisabledInfo">Уваход у налады Партызанскага Тэлеграма нідзе не адлюстроўваецца. Вы можаце ўключыць іх зноў у Партызанскіх наладах.</string>
     <string name="MoreAccounts">Яшчэ</string>
+    <string name="BadPasscodeReaction">Рэакцыя на няправільны код блакіроўкі</string>
+    <string name="BadPasscodeReactionInfo">Наладзьце абарону ад падбору кода блакіроўкі і фатаграфаванне камерай пры няправільным уводзе або паглядзіце спіс няўдалых спроб уваходу.</string>
 </resources>

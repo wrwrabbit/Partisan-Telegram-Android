@@ -352,4 +352,6 @@
     <string name="PartisanTelegramSettingsPositionPrivacyInfo">Настройки Партизанского Телеграма отображаются на экране Конфиденциальности и безопасности.</string>
     <string name="PartisanTelegramSettingsPositionDisabledInfo">Настройки Партизанского Телеграма нигде не отображаются. Вы можете включить их снова в Партизанских настройках.</string>
     <string name="MoreAccounts">Ещё</string>
+    <string name="BadPasscodeReaction">Реакция на неверный код-пароль</string>
+    <string name="BadPasscodeReactionInfo">Настройте защиту от подбора код-пароля и фотографирование камерой при неверном вводе или посмотрите список неудачных попыток входа.</string>
 </resources>

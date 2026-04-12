@@ -29,6 +29,8 @@ public class PartisanListAdapter extends RecyclerListView.SelectionAdapter {
         for (AbstractItem item : items) {
             if (item.needAddRow()) {
                 item.setPosition(rowCount++);
+            } else {
+                item.setPosition(-1);
             }
         }
     }
