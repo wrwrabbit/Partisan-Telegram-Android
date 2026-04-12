@@ -595,6 +595,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                 }
                 case 2: {
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
+                    textCell.ellipsizeValueInsteadOfText = true;
                     if (position == onScreenLockActionRow) {
                         String value = null;
                         switch (SharedConfig.onScreenLockAction) {
@@ -623,6 +624,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                             LocaleController.getString(R.string.PartisanTelegramSettingsPositionDisabled)
                         };
                         int pos = PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault().ordinal();
+                        textCell.ellipsizeValueInsteadOfText = true;
                         textCell.setTextAndValue(LocaleController.getString(R.string.PartisanTelegramSettingsPosition), positionOptions[pos], false);
                     }
                     textCell.setEnabled(isEnabled(holder));

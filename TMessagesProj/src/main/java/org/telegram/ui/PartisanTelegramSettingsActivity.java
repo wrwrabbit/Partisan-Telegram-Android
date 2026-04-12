@@ -326,6 +326,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                 }
                 case VIEW_TYPE_SETTING: {
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
+                    textCell.ellipsizeValueInsteadOfText = false;
                     if (firstFakePasscodeRow != -1 && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow) {
                         textCell.setText(SharedConfig.fakePasscodes.get(position - firstFakePasscodeRow).name, true);
                         textCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
