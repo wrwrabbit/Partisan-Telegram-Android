@@ -19060,6 +19060,8 @@ public class ChatActivity extends BaseFragment implements
             if (currentEncryptedChatSingle != null || isEncryptedGroup()) {
                 forAnyEncryptedChat(false, encryptedChat ->
                         avatarContainer.setTime(encryptedChat.ttl, animated)
+                , () ->
+                        avatarContainer.setTime(0, animated)
                 );
             } else if (userInfo != null) {
                 avatarContainer.setTime(userInfo.ttl_period, animated);
@@ -44578,10 +44580,14 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private void forAnyEncryptedChat(boolean onlyInitialized, Consumer<TLRPC.EncryptedChat> action) {
+        forAnyEncryptedChat(onlyInitialized, action, null);
+    }
+
+    private void forAnyEncryptedChat(boolean onlyInitialized, Consumer<TLRPC.EncryptedChat> action, Runnable onEmptyEncryptedGroupChats) {
         if (currentEncryptedChatSingle != null) {
             action.accept(currentEncryptedChatSingle);
         } else if (currentEncryptedGroup != null) {
-            getCurrentEncryptedChatList(onlyInitialized).stream().findAny().ifPresent(action);
+            getCurrentEncryptedChatList(onlyInitialized).stream().findAny().ifPresentOrElse(action, onEmptyEncryptedGroupChats);
         }
     }
 
