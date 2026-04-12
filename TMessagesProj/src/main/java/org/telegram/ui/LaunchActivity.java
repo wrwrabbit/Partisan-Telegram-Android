@@ -7635,7 +7635,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         MainTabsActivity mainTabs = (MainTabsActivity) fragmentsStack.get(fragmentsStack.size() - 1);
                         AndroidUtilities.runOnUIThread(() -> {
                             if (mainTabs.viewPager != null && mainTabs.viewPager.getCurrentPosition() != 0) {
-                                mainTabs.viewPager.scrollToPosition(0 /* POSITION_CHATS */);
+                                mainTabs.viewPager.setPosition(0 /* POSITION_CHATS */);
                                 mainTabs.selectTab(0 /* POSITION_CHATS */, false);
                             }
                         });
