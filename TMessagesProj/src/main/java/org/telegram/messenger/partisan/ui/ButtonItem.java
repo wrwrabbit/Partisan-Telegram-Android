@@ -31,13 +31,14 @@ public class ButtonItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new TextSettingsCell(context));
+        TextSettingsCell textCell = new TextSettingsCell(context);
+        textCell.setCanDisable(true);
+        return AbstractItem.initializeView(textCell);
     }
 
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
         TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
-        textCell.setCanDisable(true);
         if (getValue != null) {
             textCell.setTextAndValue(text, getValue.get(), true);
         } else {
