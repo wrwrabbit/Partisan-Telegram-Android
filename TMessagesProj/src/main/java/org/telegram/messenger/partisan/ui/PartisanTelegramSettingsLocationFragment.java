@@ -21,11 +21,11 @@ public class PartisanTelegramSettingsLocationFragment extends PartisanBaseFragme
     @Override
     protected AbstractItem[] createItems() {
         settingsItem = new RadioButtonItem(this,
-                getString(R.string.Settings),
+                getString(R.string.PartisanTelegramSettingsPositionMain),
                 () -> PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == PartisanTelegramSettingsLocation.SETTINGS_ACTIVITY,
                 () -> selectLocation(PartisanTelegramSettingsLocation.SETTINGS_ACTIVITY));
         privacyItem = new RadioButtonItem(this,
-                getString(R.string.PrivacySettings),
+                getString(R.string.PartisanTelegramSettingsPositionPrivacy),
                 () -> PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == PartisanTelegramSettingsLocation.PRIVACY_AND_SECURITY,
                 () -> selectLocation(PartisanTelegramSettingsLocation.PRIVACY_AND_SECURITY));
         disabledItem = new RadioButtonItem(this,

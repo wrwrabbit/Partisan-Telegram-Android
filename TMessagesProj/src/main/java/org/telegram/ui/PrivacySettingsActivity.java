@@ -95,7 +95,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     private int blockedRow;
     @Keep
     private int securityIssuesRow;
-    private int partisanSettingsRow;
+    private int ptelegramSettingsRow;
     @Keep
     private int phoneNumberRow;
     @Keep
@@ -328,7 +328,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 presentFragment(new PrivacyUsersActivity());
             } else if (position == securityIssuesRow) {
                 presentFragment(new SecurityIssuesFragment());
-            } else if (position == partisanSettingsRow) {
+            } else if (position == ptelegramSettingsRow) {
                 presentFragment(org.telegram.ui.PartisanTelegramSettingsActivity.checkLockAndCreateActivity());
             } else if (position == sessionsRow) {
                 devicesActivityPreload.resetFragment();
@@ -739,9 +739,9 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         }
         if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()
                 && PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == PartisanTelegramSettingsLocation.PRIVACY_AND_SECURITY) {
-            partisanSettingsRow = rowCount++;
+            ptelegramSettingsRow = rowCount++;
         } else {
-            partisanSettingsRow = -1;
+            ptelegramSettingsRow = -1;
         }
         if (currentPassword != null) {
             boolean hasEmail = currentPassword.login_email_pattern != null;
@@ -1043,7 +1043,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == securityIssuesRow || position == partisanSettingsRow || position == sessionsRow || position == secretWebpageRow || position == webSessionsRow ||
+            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == securityIssuesRow || position == ptelegramSettingsRow || position == sessionsRow || position == secretWebpageRow || position == webSessionsRow ||
                     position == groupsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_INVITE) ||
                     position == lastSeenRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_LASTSEEN) ||
                     position == callsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_CALLS) ||
@@ -1406,9 +1406,9 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                         textCell2.setTextAndValueAndIcon(getString("BlockedUsers", R.string.BlockedUsers), value, true, R.drawable.msg2_block2, true);
                     } else if (position == securityIssuesRow) {
                         value = Integer.toString(getUserConfig().getActiveSecurityIssues().size());
-                        textCell2.setTextAndValueAndIcon(LocaleController.getString(R.string.SecurityIssuesTitle), value, true, R.drawable.msg2_policy, true);
-                    } else if (position == partisanSettingsRow) {
-                        textCell2.setTextAndValueAndIcon(LocaleController.getString(R.string.PartisanTelegramSettings), "", false, R.drawable.settings_ptelegram_stroke, true);
+                        textCell2.setTextAndValueAndIcon(getString(R.string.SecurityIssuesTitle), value, true, R.drawable.msg2_policy, true);
+                    } else if (position == ptelegramSettingsRow) {
+                        textCell2.setTextAndValueAndIcon(getString(R.string.PartisanTelegramSettings), "", false, R.drawable.settings_ptelegram_stroke, true);
                     }
                     textCell2.setDrawLoading(showLoading, loadingLen, animated);
                     break;
@@ -1429,7 +1429,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 return 3;
             } else if (position == botsAndWebsitesShadowRow) {
                 return 4;
-            } else if (position == autoDeleteMesages || position == sessionsRow || position == emailLoginRow || position == passwordRow || position == passkeysRow || position == passcodeRow || position == blockedRow || position == securityIssuesRow || position == partisanSettingsRow) {
+            } else if (position == autoDeleteMesages || position == sessionsRow || position == emailLoginRow || position == passwordRow || position == passkeysRow || position == passcodeRow || position == blockedRow || position == securityIssuesRow || position == ptelegramSettingsRow) {
                 return 5;
             }
             return 0;
