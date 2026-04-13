@@ -387,14 +387,25 @@ public class PartisanSettingsActivity extends BaseFragment {
             idRow = -1;
             idDetailRow = -1;
         }
-        disableAvatarRow = rowCount++;
-        disableAvatarDetailRow = rowCount++;
-        renameChatRow = rowCount++;
-        renameChatDetailRow = rowCount++;
-        deleteMyMessagesRow = rowCount++;
-        deleteMyMessagesDetailRow = rowCount++;
-        deleteAfterReadRow = rowCount++;
-        deleteAfterReadDetailRow = rowCount++;
+        if (!ptelegramSettingsMode) {
+            disableAvatarRow = rowCount++;
+            disableAvatarDetailRow = rowCount++;
+            renameChatRow = rowCount++;
+            renameChatDetailRow = rowCount++;
+            deleteMyMessagesRow = rowCount++;
+            deleteMyMessagesDetailRow = rowCount++;
+            deleteAfterReadRow = rowCount++;
+            deleteAfterReadDetailRow = rowCount++;
+        } else {
+            disableAvatarRow = -1;
+            disableAvatarDetailRow = -1;
+            renameChatRow = -1;
+            renameChatDetailRow = -1;
+            deleteMyMessagesRow = -1;
+            deleteMyMessagesDetailRow = -1;
+            deleteAfterReadRow = -1;
+            deleteAfterReadDetailRow = -1;
+        }
         if (!ptelegramSettingsMode) {
             savedChannelsRow = rowCount++;
             savedChannelsDetailRow = rowCount++;
