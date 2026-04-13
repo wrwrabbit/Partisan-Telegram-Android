@@ -160,7 +160,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
             } else if (position == partisanTelegramSettingsPositionRow) {
                 presentFragment(new PartisanTelegramSettingsLocationFragment());
             } else if (position == partisanSettingsRow) {
-                presentFragment(new PartisanSettingsActivity());
+                presentFragment(new PartisanSettingsActivity(true));
             }
         });
 
