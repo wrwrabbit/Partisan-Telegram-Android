@@ -24,6 +24,7 @@ import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.CollapseTextCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCheckCell;
@@ -39,9 +40,14 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
 
     private int rowCount;
 
+    private static final int MAX_VISIBLE_FAKE_PASSCODES = 3;
+    private static final int MIN_FOLD_FAKE_PASSCODES = 5;
+    private boolean showAllFakePasscodes = false;
+
     private int fakePasscodesHeaderRow;
     private int firstFakePasscodeRow;
     private int lastFakePasscodeRow;
+    private int showMoreFakePasscodesRow;
     private int addFakePasscodeRow;
     private int restoreFakePasscodeDelimiterRow;
     private int restoreFakePasscodeRow;
@@ -126,6 +132,10 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                 presentFragment(new org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment());
             } else if (position == securityIssuesRow) {
                 presentFragment(new SecurityIssuesFragment());
+            } else if (position == showMoreFakePasscodesRow) {
+                showAllFakePasscodes = true;
+                updateRows();
+                listAdapter.notifyDataSetChanged();
             } else if (firstFakePasscodeRow != -1
                     && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow) {
                 presentFragment(new FakePasscodeActivity(
@@ -213,6 +223,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         fakePasscodesHeaderRow = -1;
         firstFakePasscodeRow = -1;
         lastFakePasscodeRow = -1;
+        showMoreFakePasscodesRow = -1;
         addFakePasscodeRow = -1;
         restoreFakePasscodeDelimiterRow = -1;
         restoreFakePasscodeRow = -1;
@@ -233,10 +244,17 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         partisanSettingsDetailRow = -1;
 
         fakePasscodesHeaderRow = rowCount++;
+        boolean needFoldFakePasscodes = SharedConfig.fakePasscodes.size() >= MIN_FOLD_FAKE_PASSCODES;
         if (!SharedConfig.fakePasscodes.isEmpty()) {
             firstFakePasscodeRow = rowCount;
-            lastFakePasscodeRow = firstFakePasscodeRow + SharedConfig.fakePasscodes.size() - 1;
+            int visibleCount = (!needFoldFakePasscodes || showAllFakePasscodes)
+                    ? SharedConfig.fakePasscodes.size()
+                    : MAX_VISIBLE_FAKE_PASSCODES;
+            lastFakePasscodeRow = firstFakePasscodeRow + visibleCount - 1;
             rowCount = lastFakePasscodeRow + 1;
+        }
+        if (needFoldFakePasscodes && !showAllFakePasscodes) {
+            showMoreFakePasscodesRow = rowCount++;
         }
         addFakePasscodeRow = rowCount++;
         restoreFakePasscodeDelimiterRow = rowCount++;
@@ -268,6 +286,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         private static final int VIEW_TYPE_INFO    = 2;
         private static final int VIEW_TYPE_HEADER  = 3;
         private static final int VIEW_TYPE_SHADOW  = 4;
+        private static final int VIEW_TYPE_MORE    = 5;
 
         private final Context mContext;
 
@@ -283,6 +302,7 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                     || position == securityIssuesRow
                     || position == addFakePasscodeRow
                     || position == restoreFakePasscodeRow
+                    || position == showMoreFakePasscodesRow
                     || position == protectPartisanSettingsRow
                     || position == partisanTelegramSettingsPositionRow
                     || position == interfaceTweaksRow
@@ -313,6 +333,10 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                     break;
                 case VIEW_TYPE_HEADER:
                     view = new HeaderCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case VIEW_TYPE_MORE:
+                    view = new CollapseTextCell(mContext, getResourceProvider());
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case VIEW_TYPE_SHADOW:
@@ -427,6 +451,12 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
                     sectionCell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider, getThemedColor(Theme.key_windowBackgroundGrayShadow)));
                     break;
                 }
+                case VIEW_TYPE_MORE: {
+                    CollapseTextCell collapseCell = (CollapseTextCell) holder.itemView;
+                    collapseCell.set(LocaleController.getString(R.string.MoreAccounts), true);
+                    collapseCell.setColor(Theme.key_windowBackgroundWhiteBlueText4);
+                    break;
+                }
             }
         }
 
@@ -434,6 +464,8 @@ public class PartisanTelegramSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == clearCacheOnLockRow || position == protectPartisanSettingsRow) {
                 return VIEW_TYPE_CHECK;
+            } else if (position == showMoreFakePasscodesRow) {
+                return VIEW_TYPE_MORE;
             } else if ((firstFakePasscodeRow != -1 && firstFakePasscodeRow <= position && position <= lastFakePasscodeRow)
                     || position == addFakePasscodeRow || position == restoreFakePasscodeRow
                     || position == badPasscodeReactionRow || position == securityIssuesRow
