@@ -99,6 +99,8 @@ public class PartisanSettingsActivity extends BaseFragment {
     private int transferDataToOtherPtgDetailRow;
     private int partisanTelegramSettingsPositionRow;
     private int partisanTelegramSettingsPositionDetailRow;
+    private int clearCacheOnLockRow;
+    private int clearCacheOnLockDetailRow;
 
     private class DangerousSettingSwitcher {
         public Context context;
@@ -266,6 +268,10 @@ public class PartisanSettingsActivity extends BaseFragment {
                 SharedConfig.saveConfig();
                 ((TextCheckCell) view).setChecked(SharedConfig.cutForeignAgentsText);
                 Utils.updateMessagesPreview();
+            } else if (position == clearCacheOnLockRow) {
+                SharedConfig.clearCacheOnLock = !SharedConfig.clearCacheOnLock;
+                SharedConfig.saveConfig();
+                ((TextCheckCell) view).setChecked(SharedConfig.clearCacheOnLock);
             } else if (position == onScreenLockActionRow) {
                 AlertsCreator.showOnScreenLockActionsAlert(this, getParentActivity(), () -> listAdapter.notifyItemChanged(onScreenLockActionRow), null);
             } else if (position == isClearAllDraftsOnScreenLockRow) {
@@ -358,8 +364,20 @@ public class PartisanSettingsActivity extends BaseFragment {
             transferDataToOtherPtgRow = -1;
             transferDataToOtherPtgDetailRow = -1;
         }
-        voiceChangeRow = rowCount++;
-        voiceChangeDetailRow = rowCount++;
+        if (ptelegramSettingsMode) {
+            clearCacheOnLockRow = rowCount++;
+            clearCacheOnLockDetailRow = rowCount++;
+        } else {
+            clearCacheOnLockRow = -1;
+            clearCacheOnLockDetailRow = -1;
+        }
+        if (!ptelegramSettingsMode) {
+            voiceChangeRow = rowCount++;
+            voiceChangeDetailRow = rowCount++;
+        } else {
+            voiceChangeRow = -1;
+            voiceChangeDetailRow = -1;
+        }
         fileProtectionRow = rowCount++;
         fileProtectionDetailRow = rowCount++;
         onScreenLockActionRow = rowCount++;
@@ -485,7 +503,8 @@ public class PartisanSettingsActivity extends BaseFragment {
                     && position != showCallButtonDetailRow && position != isDeleteMessagesForAllByDefaultDetailRow
                     && position != marketIconsDetailRow && position!= confirmDangerousActionDetailRow
                     && position != fileProtectionDetailRow && position != voiceChangeDetailRow
-                    && position != transferDataToOtherPtgDetailRow && position != partisanTelegramSettingsPositionDetailRow;
+                    && position != transferDataToOtherPtgDetailRow && position != partisanTelegramSettingsPositionDetailRow
+                    && position != clearCacheOnLockDetailRow;
         }
 
         @Override
@@ -566,6 +585,9 @@ public class PartisanSettingsActivity extends BaseFragment {
                     } else if (position == confirmDangerousActionRow) {
                         textCell.setTextAndCheck(LocaleController.getString("ConfirmDangerousAction", R.string.ConfirmDangerousAction),
                                 SharedConfig.confirmDangerousActions, false);
+                    } else if (position == clearCacheOnLockRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ClearCacheOnLock),
+                                SharedConfig.clearCacheOnLock, false);
                     }
                     break;
                 }
@@ -630,6 +652,9 @@ public class PartisanSettingsActivity extends BaseFragment {
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == partisanTelegramSettingsPositionDetailRow) {
                         cell.setText(LocaleController.getString(R.string.PartisanTelegramSettingsPositionInfo));
+                        cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                    } else if (position == clearCacheOnLockDetailRow) {
+                        cell.setText(LocaleController.getString(R.string.ClearCacheOnLockInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     }
                     break;
@@ -722,7 +747,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == reactionsRow || position == foreignAgentsRow
                     || position == isClearAllDraftsOnScreenLockRow || position == showCallButtonRow
                     || position == isDeleteMessagesForAllByDefaultRow || position == marketIconsRow
-                    || position == confirmDangerousActionRow) {
+                    || position == confirmDangerousActionRow || position == clearCacheOnLockRow) {
                 return 0;
             } else if (position == versionDetailRow || position == idDetailRow || position == disableAvatarDetailRow
                     || position == renameChatDetailRow || position == deleteMyMessagesDetailRow
@@ -733,7 +758,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == marketIconsDetailRow || position == verifiedDetailRow
                     || position == confirmDangerousActionDetailRow || position == fileProtectionDetailRow
                     || position == voiceChangeDetailRow || position == transferDataToOtherPtgDetailRow
-                    || position == partisanTelegramSettingsPositionDetailRow) {
+                    || position == partisanTelegramSettingsPositionDetailRow || position == clearCacheOnLockDetailRow) {
                 return 1;
             } else if (position == onScreenLockActionRow || position == transferDataToOtherPtgRow || position == savedChannelsRow
                     || position == partisanTelegramSettingsPositionRow) {

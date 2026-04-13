@@ -196,6 +196,7 @@
     <string name="SecurityIssuesProfileSuggestionYes">Закрити</string>
     <string name="SecurityIssuesProfileSuggestionNo">Переглянути</string>
     <string name="SecurityIssuesTitle">Проблеми з безпеки</string>
+    <string name="SecurityIssuesTitleInfo">Показує виявлені проблеми з безпекою у вашому обліковому записі, які можуть піддати ваші дані ризику.</string>
     <string name="RootIssueTitle">Root</string>
     <string name="RootIssueText">Root може дозволити зловмиснику доступ до даних додатка (таких, як повідомлення) без входу в нього.</string>
     <string name="UsbDebuggingIssueTitle">Налагодження USB</string>
