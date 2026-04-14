@@ -389,10 +389,6 @@ public class PartisanSettingsActivity extends BaseFragment {
             transferDataToOtherPtgRow = rowCount++;
             transferDataToOtherPtgDetailRow = rowCount++;
         }
-        if (ptelegramSettingsMode) {
-            clearCacheOnLockRow = rowCount++;
-            clearCacheOnLockDetailRow = rowCount++;
-        }
         if (!ptelegramSettingsMode) {
             voiceChangeRow = rowCount++;
             voiceChangeDetailRow = rowCount++;
@@ -401,6 +397,10 @@ public class PartisanSettingsActivity extends BaseFragment {
         fileProtectionDetailRow = rowCount++;
         onScreenLockActionRow = rowCount++;
         onScreenLockActionDetailRow = rowCount++;
+        if (ptelegramSettingsMode) {
+            clearCacheOnLockRow = rowCount++;
+            clearCacheOnLockDetailRow = rowCount++;
+        }
         if (!ptelegramSettingsMode) {
             confirmDangerousActionRow = rowCount++;
             confirmDangerousActionDetailRow = rowCount++;
