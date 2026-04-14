@@ -9,6 +9,7 @@ import java.util.function.Function;
 
 public enum ItemType {
     TOGGLE(ToggleItem::createView),
+    COMBINED_TOGGLE(CombinedToggleItem::createView),
     RADIO_BUTTON(RadioButtonItem::createView),
     BUTTON(ButtonItem::createView),
     BUTTON_WITH_ICON(ButtonWithIconItem::createView),

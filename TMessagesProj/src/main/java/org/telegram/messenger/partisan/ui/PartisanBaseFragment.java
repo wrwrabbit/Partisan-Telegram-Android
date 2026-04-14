@@ -53,7 +53,7 @@ public abstract class PartisanBaseFragment extends BaseFragment {
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listAdapter.setContext(context);
         listView.setAdapter(listAdapter);
-        listView.setOnItemClickListener(listAdapter::onItemClick);
+        listView.setOnItemClickListener(listAdapter::onItemClickExtended);
         return fragmentView;
     }
 

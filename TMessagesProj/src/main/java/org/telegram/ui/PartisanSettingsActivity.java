@@ -361,28 +361,41 @@ public class PartisanSettingsActivity extends BaseFragment {
 
     private void updateRows() {
         rowCount = 0;
+        versionRow = versionDetailRow = -1;
+        idRow = idDetailRow = -1;
+        disableAvatarRow = disableAvatarDetailRow = -1;
+        renameChatRow = renameChatDetailRow = -1;
+        deleteMyMessagesRow = deleteMyMessagesDetailRow = -1;
+        deleteAfterReadRow = deleteAfterReadDetailRow = -1;
+        savedChannelsRow = savedChannelsDetailRow = -1;
+        reactionsRow = reactionsDetailRow = -1;
+        foreignAgentsRow = foreignAgentsDetailRow = -1;
+        onScreenLockActionRow = onScreenLockActionDetailRow = -1;
+        isClearAllDraftsOnScreenLockRow = isClearAllDraftsOnScreenLockDetailRow = -1;
+        showCallButtonRow = showCallButtonDetailRow = -1;
+        isDeleteMessagesForAllByDefaultRow = isDeleteMessagesForAllByDefaultDetailRow = -1;
+        marketIconsRow = marketIconsDetailRow = -1;
+        verifiedRow = verifiedDetailRow = -1;
+        confirmDangerousActionRow = confirmDangerousActionDetailRow = -1;
+        fileProtectionRow = fileProtectionDetailRow = -1;
+        voiceChangeRow = voiceChangeDetailRow = -1;
+        transferDataToOtherPtgRow = transferDataToOtherPtgDetailRow = -1;
+        partisanTelegramSettingsPositionRow = partisanTelegramSettingsPositionDetailRow = -1;
+        clearCacheOnLockRow = clearCacheOnLockDetailRow = -1;
+        protectPtelegramSettingsRow = protectPtelegramSettingsDetailRow = -1;
 
         if (AppMigrator.isNewerPtgInstalled(ApplicationLoader.applicationContext, false)
                 || AppMigratorPreferences.isMigrationToMaskedPtg()) {
             transferDataToOtherPtgRow = rowCount++;
             transferDataToOtherPtgDetailRow = rowCount++;
-        } else {
-            transferDataToOtherPtgRow = -1;
-            transferDataToOtherPtgDetailRow = -1;
         }
         if (ptelegramSettingsMode) {
             clearCacheOnLockRow = rowCount++;
             clearCacheOnLockDetailRow = rowCount++;
-        } else {
-            clearCacheOnLockRow = -1;
-            clearCacheOnLockDetailRow = -1;
         }
         if (!ptelegramSettingsMode) {
             voiceChangeRow = rowCount++;
             voiceChangeDetailRow = rowCount++;
-        } else {
-            voiceChangeRow = -1;
-            voiceChangeDetailRow = -1;
         }
         fileProtectionRow = rowCount++;
         fileProtectionDetailRow = rowCount++;
@@ -393,23 +406,12 @@ public class PartisanSettingsActivity extends BaseFragment {
             confirmDangerousActionDetailRow = rowCount++;
             isDeleteMessagesForAllByDefaultRow = rowCount++;
             isDeleteMessagesForAllByDefaultDetailRow = rowCount++;
-        } else {
-            confirmDangerousActionRow = -1;
-            confirmDangerousActionDetailRow = -1;
-            isDeleteMessagesForAllByDefaultRow = -1;
-            isDeleteMessagesForAllByDefaultDetailRow = -1;
         }
-
         if (!ptelegramSettingsMode) {
             versionRow = rowCount++;
             versionDetailRow = rowCount++;
             idRow = rowCount++;
             idDetailRow = rowCount++;
-        } else {
-            versionRow = -1;
-            versionDetailRow = -1;
-            idRow = -1;
-            idDetailRow = -1;
         }
         if (!ptelegramSettingsMode) {
             disableAvatarRow = rowCount++;
@@ -420,15 +422,6 @@ public class PartisanSettingsActivity extends BaseFragment {
             deleteMyMessagesDetailRow = rowCount++;
             deleteAfterReadRow = rowCount++;
             deleteAfterReadDetailRow = rowCount++;
-        } else {
-            disableAvatarRow = -1;
-            disableAvatarDetailRow = -1;
-            renameChatRow = -1;
-            renameChatDetailRow = -1;
-            deleteMyMessagesRow = -1;
-            deleteMyMessagesDetailRow = -1;
-            deleteAfterReadRow = -1;
-            deleteAfterReadDetailRow = -1;
         }
         if (!ptelegramSettingsMode) {
             savedChannelsRow = rowCount++;
@@ -437,45 +430,28 @@ public class PartisanSettingsActivity extends BaseFragment {
             reactionsDetailRow = rowCount++;
             foreignAgentsRow = rowCount++;
             foreignAgentsDetailRow = rowCount++;
-        } else {
-            savedChannelsRow = -1;
-            savedChannelsDetailRow = -1;
-            reactionsRow = -1;
-            reactionsDetailRow = -1;
-            foreignAgentsRow = -1;
-            foreignAgentsDetailRow = -1;
         }
         isClearAllDraftsOnScreenLockRow = rowCount++;
         isClearAllDraftsOnScreenLockDetailRow = rowCount++;
         if (!ptelegramSettingsMode) {
             showCallButtonRow = rowCount++;
             showCallButtonDetailRow = rowCount++;
-        } else {
-            showCallButtonRow = -1;
-            showCallButtonDetailRow = -1;
         }
         if (ApplicationLoader.isRealBuildStandaloneBuild()) {
             marketIconsRow = rowCount++;
             marketIconsDetailRow = rowCount++;
-        } else {
-            marketIconsRow = -1;
-            marketIconsDetailRow = -1;
         }
         if (!ptelegramSettingsMode) {
             partisanTelegramSettingsPositionRow = rowCount++;
             partisanTelegramSettingsPositionDetailRow = rowCount++;
-        } else {
-            partisanTelegramSettingsPositionRow = -1;
-            partisanTelegramSettingsPositionDetailRow = -1;
         }
-        verifiedRow = rowCount++;
-        verifiedDetailRow = rowCount++;
+        if (!ptelegramSettingsMode) {
+            verifiedRow = rowCount++;
+            verifiedDetailRow = rowCount++;
+        }
         if (!ptelegramSettingsMode) {
             protectPtelegramSettingsRow = rowCount++;
             protectPtelegramSettingsDetailRow = rowCount++;
-        } else {
-            protectPtelegramSettingsRow = -1;
-            protectPtelegramSettingsDetailRow = -1;
         }
     }
 

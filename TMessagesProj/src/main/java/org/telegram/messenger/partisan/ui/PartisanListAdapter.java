@@ -71,11 +71,11 @@ public class PartisanListAdapter extends RecyclerListView.SelectionAdapter {
         doForItemAtPosition(holder.getAdapterPosition(), item -> item.onViewAttachedToWindow(holder));
     }
 
-    public void onItemClick(View view, int position) {
+    public void onItemClickExtended(View view, int position, float x, float y) {
         if (!view.isEnabled()) {
             return;
         }
-        doForItemAtPosition(position, item -> item.onClick(view));
+        doForItemAtPosition(position, item -> item.onClickExtended(view, x, y));
     }
 
     private void doForItemAtPosition(int position, Consumer<AbstractItem> action) {

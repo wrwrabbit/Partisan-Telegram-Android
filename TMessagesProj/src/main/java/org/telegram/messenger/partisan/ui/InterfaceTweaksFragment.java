@@ -6,7 +6,16 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.verification.VerificationRepository;
+import org.telegram.messenger.partisan.verification.VerificationStorage;
+import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.Components.EditTextCaption;
+import org.telegram.ui.DialogBuilder.DialogTemplate;
+import org.telegram.ui.DialogBuilder.DialogType;
+import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
+
+import java.util.List;
 
 public class InterfaceTweaksFragment extends PartisanBaseFragment {
 
@@ -28,6 +37,7 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
             SharedConfig.allowRenameChat,
             SharedConfig.showDeleteMyMessages,
             SharedConfig.showDeleteAfterRead,
+            SharedConfig.additionalVerifiedBadges,
         };
         int enabled = 0;
         for (boolean toggleValue : toggleValues) {
@@ -41,27 +51,6 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
     @Override
     protected AbstractItem[] createItems() {
         return new AbstractItem[]{
-                new ToggleItem(this,
-                        getString(R.string.ShowVersion),
-                        () -> SharedConfig.showVersion,
-                        newValue -> {
-                            SharedConfig.showVersion = newValue;
-                            SharedConfig.saveConfig();
-                        }),
-                new DescriptionItem(this, getString(R.string.ShowVersionInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ShowId),
-                        () -> SharedConfig.showId,
-                        newValue -> {
-                            SharedConfig.showId = newValue;
-                            SharedConfig.saveConfig();
-                        }),
-                new DescriptionItem(this, getString(R.string.ShowIdInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ShowCallButton),
-                        () -> SharedConfig.showCallButton,
-                        newValue -> SharedConfig.toggleShowCallButton()),
-                new DescriptionItem(this, getString(R.string.ShowCallButtonInfo)),
                 new ButtonItem(this,
                         getString(R.string.SavedChannelsSetting),
                         () -> SharedConfig.showSavedChannels
@@ -69,6 +58,47 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                                 : getString(R.string.PasswordOff),
                         v -> presentFragment(new SavedChannelsSettingsFragment())),
                 new DescriptionItem(this, getString(R.string.SavedChannelsSettingInfo)),
+                new CombinedToggleItem(this,
+                        getString(R.string.AdditionalVerifiedSetting),
+                        () -> {
+                            List<VerificationStorage> storages = VerificationRepository.getInstance().getStorages();
+                            return storages.size() == 1 ? storages.get(0).chatUsername : "";
+                        },
+                        () -> SharedConfig.additionalVerifiedBadges,
+                        cell -> {
+                            SharedConfig.toggleAdditionalVerifiedBadges();
+                            cell.setChecked(SharedConfig.additionalVerifiedBadges);
+                        },
+                        cell -> {
+                            List<VerificationStorage> storages = VerificationRepository.getInstance().getStorages();
+                            if (storages.size() == 1) {
+                                VerificationStorage storage = storages.get(0);
+                                DialogTemplate template = new DialogTemplate();
+                                template.type = DialogType.ONLY_SAVE;
+                                template.title = getString(R.string.VerificationChannelUsername);
+                                template.addEditTemplate(storage.chatUsername, getString(R.string.VerificationChannelUsername), true);
+                                template.positiveListener = views -> {
+                                    String username = ((EditTextCaption) views.get(0)).getText().toString();
+                                    username = Utils.removeUsernamePrefixed(username);
+                                    VerificationRepository.getInstance().deleteStorage(storage.chatId);
+                                    VerificationRepository.getInstance().addStorage("Custom", username, -1);
+                                    VerificationUpdatesChecker.checkUpdate(currentAccount, true);
+                                    cell.setTextAndValueAndCheck(getString(R.string.AdditionalVerifiedSetting), username, SharedConfig.additionalVerifiedBadges, false);
+                                };
+                                template.negativeListener = (dlg, whichButton) -> {
+                                    SharedConfig.toggleAdditionalVerifiedBadges();
+                                    cell.setChecked(SharedConfig.additionalVerifiedBadges);
+                                };
+                                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
+                                showDialog(dialog);
+                            }
+                        }),
+                new DescriptionItem(this, getString(R.string.AdditionalVerifiedSettingInfo)),
+                new ToggleItem(this,
+                        getString(R.string.ConfirmDangerousAction),
+                        () -> SharedConfig.confirmDangerousActions,
+                        newValue -> SharedConfig.toggleIsConfirmDangerousActions()),
+                new DescriptionItem(this, getString(R.string.ConfirmDangerousActionInfo)),
                 new ToggleItem(this,
                         getString(R.string.ReactToMessages),
                         () -> SharedConfig.allowReactions,
@@ -77,6 +107,11 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                             SharedConfig.saveConfig();
                         }),
                 new DescriptionItem(this, getString(R.string.ReactToMessagesInfo)),
+                new ToggleItem(this,
+                        getString(R.string.ShowCallButton),
+                        () -> SharedConfig.showCallButton,
+                        newValue -> SharedConfig.toggleShowCallButton()),
+                new DescriptionItem(this, getString(R.string.ShowCallButtonInfo)),
                 new ToggleItem(this,
                         getString(R.string.CutForeignAgentsText),
                         () -> SharedConfig.cutForeignAgentsText,
@@ -91,21 +126,6 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                         () -> SharedConfig.deleteMessagesForAllByDefault,
                         newValue -> SharedConfig.toggleIsDeleteMsgForAll()),
                 new DescriptionItem(this, getString(R.string.IsDeleteMessagesForAllByDefaultInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ConfirmDangerousAction),
-                        () -> SharedConfig.confirmDangerousActions,
-                        newValue -> SharedConfig.toggleIsConfirmDangerousActions()),
-                new DescriptionItem(this, getString(R.string.ConfirmDangerousActionInfo)),
-                new ToggleItem(this,
-                        getString(R.string.AvatarDisabling),
-                        () -> SharedConfig.allowDisableAvatar,
-                        this::onAllowDisableAvatarChanged),
-                new DescriptionItem(this, getString(R.string.AvatarDisablingInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ChatRenaming),
-                        () -> SharedConfig.allowRenameChat,
-                        this::onAllowRenameChatChanged),
-                new DescriptionItem(this, getString(R.string.ChatRenamingInfo)),
                 new ToggleItem(this,
                         getString(R.string.DeletingMyMessages),
                         () -> SharedConfig.showDeleteMyMessages,
@@ -122,6 +142,32 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                             SharedConfig.saveConfig();
                         }),
                 new DescriptionItem(this, getString(R.string.DeletingAfterReadInfo)),
+                new ToggleItem(this,
+                        getString(R.string.AvatarDisabling),
+                        () -> SharedConfig.allowDisableAvatar,
+                        this::onAllowDisableAvatarChanged),
+                new DescriptionItem(this, getString(R.string.AvatarDisablingInfo)),
+                new ToggleItem(this,
+                        getString(R.string.ChatRenaming),
+                        () -> SharedConfig.allowRenameChat,
+                        this::onAllowRenameChatChanged),
+                new DescriptionItem(this, getString(R.string.ChatRenamingInfo)),
+                new ToggleItem(this,
+                        getString(R.string.ShowId),
+                        () -> SharedConfig.showId,
+                        newValue -> {
+                            SharedConfig.showId = newValue;
+                            SharedConfig.saveConfig();
+                        }),
+                new DescriptionItem(this, getString(R.string.ShowIdInfo)),
+                new ToggleItem(this,
+                        getString(R.string.ShowVersion),
+                        () -> SharedConfig.showVersion,
+                        newValue -> {
+                            SharedConfig.showVersion = newValue;
+                            SharedConfig.saveConfig();
+                        }),
+                new DescriptionItem(this, getString(R.string.ShowVersionInfo)),
         };
     }
 

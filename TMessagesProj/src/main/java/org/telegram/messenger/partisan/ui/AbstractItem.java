@@ -83,6 +83,10 @@ public abstract class AbstractItem {
         view.setEnabled(enabled);
     }
 
+    public void onClickExtended(View view, float x, float y) {
+        onClick(view);
+    }
+
     protected abstract void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position);
     public abstract void onClick(View view);
     protected abstract boolean isEnabledInternal();
