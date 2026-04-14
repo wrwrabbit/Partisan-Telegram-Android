@@ -128,12 +128,12 @@
     <string name="CutForeignAgentsText">Вырезать текст об иноагентах</string>
     <string name="CutForeignAgentsTextInfo">Если данная опция включена, из текста сообщений и постов будет вырезаться уведомление об иноагенте. Если текст постов отображается некорректно, отключите эту опцию. После переключения желательно очистить кэш.</string>
     <string name="PartisanSettingsInfo">Настройте другие опции приложения.</string>
-    <string name="SavedChannelsInChatList">В опциях в списке чатов</string>
-    <string name="SavedChannelsInChatListInfo">Показывает кнопку «Сохранённые каналы» в опциях списка чатов.</string>
-    <string name="SavedChannelsInSettings">В настройках</string>
-    <string name="SavedChannelsInSettingsInfo">Показывает пункт «Сохранённые каналы» на экране настроек.</string>
+    <string name="SavedChannelsInChatList">В меню «⋮» в списке чатов</string>
+    <string name="SavedChannelsInChatListInfo">Показывает кнопку «Сохранённые каналы» в меню «⋮» списка чатов.</string>
+    <string name="SavedChannelsInSettings">В основных настройках</string>
+    <string name="SavedChannelsInSettingsInfo">Показывает пункт «Сохранённые каналы» на экране основных настроек.</string>
     <string name="SavedChannelsAsTab">Заменить вкладку контактов</string>
-    <string name="SavedChannelsAsTabInfo">Заменяет вкладку «Контакты» на вкладку «Сохранённые каналы». Кнопка «Контакты» перемещается в меню списка чатов.</string>
+    <string name="SavedChannelsAsTabInfo">Заменяет вкладку «Контакты» на главном экране на вкладку «Сохранённые каналы». Кнопка «Контакты» перемещается в меню списка чатов.</string>
     <string name="MainTabsSavedChannels">Сохранённые</string>
     <string name="ClearSavedChannels">Очищать сохранённые каналы</string>
     <string name="OnScreenLockActionTitle">Действие при блокировке экрана</string>
@@ -357,6 +357,6 @@
     <string name="MoreAccounts">Ещё</string>
     <string name="BadPasscodeReaction">Реакция на неверный код-пароль</string>
     <string name="BadPasscodeReactionInfo">Настройте защиту от подбора код-пароля и фотографирование камерой при неверном вводе или посмотрите список неудачных попыток входа.</string>
-    <string name="InterfaceTweaks">Интерфейс</string>
-    <string name="InterfaceTweaksInfo">Настройте параметры отображения, поведение сообщений и реакций. Некоторые функции можно отключить, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
+    <string name="InterfaceTweaks">Дополнительные функции</string>
+    <string name="InterfaceTweaksInfo">Включите дополнительные функции Партизанского Телеграма или отключите их, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
 </resources>

@@ -128,12 +128,12 @@
     <string name="ReactToMessagesInfo">Дазволіць рэагаваць на паведамленні. Калі гэтая опцыя адключана, рэакцыі можна будзе глядзець, але немагчыма будзе націснуць на іх.</string>
     <string name="CutForeignAgentsText">Выразаць тэкст пра іншаагентаў</string>
     <string name="CutForeignAgentsTextInfo">Калі дадзеная опцыя ўключаная, з тэксту паведамленняў і пастоў будзе выразацца апавяшчэнне аб іншаагенце. Калі тэкст пастоў адлюстроўваецца некарэктна, адключыце гэтую опцыю. Пасля пераключэння пажадана ачысціць кэш.</string>
-    <string name="SavedChannelsInChatList">У опцыях у спісе чатаў</string>
-    <string name="SavedChannelsInChatListInfo">Паказвае кнопку «Захаваныя каналы» ў опцыях спісу чатаў.</string>
-    <string name="SavedChannelsInSettings">У наладах</string>
-    <string name="SavedChannelsInSettingsInfo">Паказвае пункт «Захаваныя каналы» на экране налад.</string>
+    <string name="SavedChannelsInChatList">У меню «⋮» у спісе чатаў</string>
+    <string name="SavedChannelsInChatListInfo">Паказвае кнопку «Захаваныя каналы» ў меню «⋮» спісу чатаў.</string>
+    <string name="SavedChannelsInSettings">У асноўных наладах</string>
+    <string name="SavedChannelsInSettingsInfo">Паказвае пункт «Захаваныя каналы» на экране асноўных налад.</string>
     <string name="SavedChannelsAsTab">Замяніць укладку кантактаў</string>
-    <string name="SavedChannelsAsTabInfo">Замяняе ўкладку «Кантакты» на ўкладку «Захаваныя каналы». Кнопка «Кантакты» пераносіцца ў меню спісу чатаў.</string>
+    <string name="SavedChannelsAsTabInfo">Замяняе ўкладку «Кантакты» на галоўным экране на ўкладку «Захаваныя каналы». Кнопка «Кантакты» пераносіцца ў меню спісу чатаў.</string>
     <string name="MainTabsSavedChannels">Захаваныя</string>
     <string name="ClearSavedChannels">Ачышчаць захаваныя каналы</string>
     <string name="OnScreenLockActionTitle">Дзеянне пры блакаваннi экрана</string>
@@ -358,6 +358,6 @@
     <string name="MoreAccounts">Яшчэ</string>
     <string name="BadPasscodeReaction">Рэакцыя на няправільны код блакіроўкі</string>
     <string name="BadPasscodeReactionInfo">Наладзьце абарону ад падбору кода блакіроўкі і фатаграфаванне камерай пры няправільным уводзе або паглядзіце спіс няўдалых спроб уваходу.</string>
-    <string name="InterfaceTweaks">Інтэрфейс</string>
-    <string name="InterfaceTweaksInfo">Наладзьце параметры адлюстравання, паводзіны паведамленняў і рэакцый. Некаторыя функцыі можна адключыць, каб лепш замаскіраваць дадатак, калі несапраўдны код блакіроўкі не актываваны.</string>
+    <string name="InterfaceTweaks">Дадатковыя функцыі</string>
+    <string name="InterfaceTweaksInfo">Уключыце дадатковыя функцыі Партызанскага Тэлеграма або адключыце іх, каб лепш замаскіраваць дадатак, калі несапраўдны код блакіроўкі не актываваны.</string>
 </resources>
