@@ -196,7 +196,7 @@
     <string name="SecurityIssuesProfileSuggestionYes">Закрыть</string>
     <string name="SecurityIssuesProfileSuggestionNo">Посмотреть</string>
     <string name="SecurityIssuesTitle">Проблемы безопасности</string>
-    <string name="SecurityIssuesTitleInfo">Показывает обнаруженные проблемы безопасности в вашем аккаунте, которые могут подвергнуть ваши данные риску.</string>
+    <string name="SecurityIssuesInfo">Показывает обнаруженные проблемы безопасности в вашем аккаунте или в приложении.</string>
     <string name="RootIssueTitle">Root</string>
     <string name="RootIssueText">Root может позволить злоумышленнику получить доступ к данным приложения (например, к сообщениям) без входа в него.</string>
     <string name="UsbDebuggingIssueTitle">USB отладка</string>

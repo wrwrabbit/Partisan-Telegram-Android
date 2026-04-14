@@ -46,7 +46,7 @@ public class SimpleEditableDataItem extends AbstractItem {
 
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
-        ((TextSettingsCell) holder.itemView).setTextAndValue(text, getCellValue.get(), true);
+        ((TextSettingsCell) holder.itemView).setTextAndValue(text, getCellValue.get(), drawDivider);
     }
 
     @Override

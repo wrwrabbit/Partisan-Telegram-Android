@@ -27,7 +27,7 @@ public class ReadOnlyDataItem extends AbstractItem {
 
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
-        ((TextSettingsCell) holder.itemView).setTextAndValue(text, getValue.get(), true);
+        ((TextSettingsCell) holder.itemView).setTextAndValue(text, getValue.get(), drawDivider);
     }
 
     @Override

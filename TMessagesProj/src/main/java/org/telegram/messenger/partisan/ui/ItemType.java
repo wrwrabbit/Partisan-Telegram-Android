@@ -18,7 +18,8 @@ public enum ItemType {
     HEADER(HeaderItem::createView),
     DESCRIPTION(DescriptionItem::createView),
     DELIMITER(DelimiterItem::createView),
-    RECORD(RecordItem::createView);
+    RECORD(RecordItem::createView),
+    COLLAPSE(CollapseItem::createView);
 
     private final Function<Context, View> viewConstructor;
 

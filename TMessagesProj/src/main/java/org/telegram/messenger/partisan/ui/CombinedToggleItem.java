@@ -36,7 +36,7 @@ public class CombinedToggleItem extends AbstractItem {
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
         NotificationsCheckCell cell = (NotificationsCheckCell) holder.itemView;
-        cell.setTextAndValueAndCheck(text, getValue.get(), isChecked.get(), false);
+        cell.setTextAndValueAndCheck(text, getValue.get(), isChecked.get(), drawDivider);
     }
 
     @Override

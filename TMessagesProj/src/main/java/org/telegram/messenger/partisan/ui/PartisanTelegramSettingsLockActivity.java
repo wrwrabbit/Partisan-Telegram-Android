@@ -43,7 +43,7 @@ import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.TextViewSwitcher;
 import org.telegram.ui.Components.TransformableLoginButtonView;
 import org.telegram.ui.Components.VerticalPositionAutoAnimator;
-import org.telegram.ui.PartisanTelegramSettingsActivity;
+import org.telegram.ui.PTelegramSettingsFragment;
 
 public class PartisanTelegramSettingsLockActivity extends BaseFragment {
 
@@ -342,7 +342,7 @@ public class PartisanTelegramSettingsLockActivity extends BaseFragment {
         }
         keyboardView.setEditText(null);
 
-        animateSuccessAnimation(() -> presentFragment(new PartisanTelegramSettingsActivity(), true));
+        animateSuccessAnimation(() -> presentFragment(new PTelegramSettingsFragment(), true));
     }
 
     private void clearInput() {

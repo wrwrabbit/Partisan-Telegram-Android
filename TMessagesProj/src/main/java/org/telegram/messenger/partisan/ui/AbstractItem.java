@@ -16,9 +16,15 @@ public abstract class AbstractItem {
     private Supplier<Boolean> condition = null;
     private Supplier<Boolean> enabledCondition = null;
 
+    protected boolean drawDivider;
+
     protected AbstractItem(BaseFragment fragment, int viewType) {
         this.fragment = fragment;
         this.viewType = viewType;
+    }
+
+    public void setDrawDivider(boolean drawDivider) {
+        this.drawDivider = drawDivider;
     }
 
     public int getPosition() {

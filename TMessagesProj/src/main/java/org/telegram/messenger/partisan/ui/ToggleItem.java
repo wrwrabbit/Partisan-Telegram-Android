@@ -36,7 +36,7 @@ public class ToggleItem extends AbstractItem {
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
         TextCheckCell textCell = (TextCheckCell) holder.itemView;
         textCell.setEnabled(isEnabled(), null);
-        textCell.setTextAndCheck(text, getValue.get(), true);
+        textCell.setTextAndCheck(text, getValue.get(), drawDivider);
     }
 
     @Override

@@ -10853,7 +10853,7 @@
     <string name="SecurityIssuesProfileSuggestionYes">Close</string>
     <string name="SecurityIssuesProfileSuggestionNo">View Issues</string>
     <string name="SecurityIssuesTitle">Security Issues</string>
-    <string name="SecurityIssuesTitleInfo">Shows detected security issues in your account that may put your data at risk.</string>
+    <string name="SecurityIssuesInfo">Shows detected security issues in your account or in the app.</string>
     <string name="RootIssueTitle">Root</string>
     <string name="RootIssueText">Root can allow an attacker to access application data (such as messages) without logging into it.</string>
     <string name="UsbDebuggingIssueTitle">USB Debugging</string>

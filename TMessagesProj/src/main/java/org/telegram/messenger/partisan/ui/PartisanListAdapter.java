@@ -33,6 +33,29 @@ public class PartisanListAdapter extends RecyclerListView.SelectionAdapter {
                 item.setPosition(-1);
             }
         }
+        for (int i = 0; i < items.length; i++) {
+            if (items[i].getPosition() == -1) {
+                continue;
+            }
+            AbstractItem next = findNextVisible(i + 1);
+            items[i].setDrawDivider(needsDivider(next));
+        }
+    }
+
+    private AbstractItem findNextVisible(int startIndex) {
+        for (int i = startIndex; i < items.length; i++) {
+            if (items[i].getPosition() != -1) {
+                return items[i];
+            }
+        }
+        return null;
+    }
+
+    private boolean needsDivider(AbstractItem next) {
+        return next != null
+                && !(next instanceof DescriptionItem)
+                && !(next instanceof DelimiterItem)
+                && !(next instanceof HeaderItem);
     }
 
     @Override

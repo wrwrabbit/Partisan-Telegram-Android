@@ -29,7 +29,7 @@ public class ButtonWithIconItem extends AbstractItem {
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
         TextCell textCell = (TextCell) holder.itemView;
-        textCell.setTextAndIcon(text, iconResId, true);
+        textCell.setTextAndIcon(text, iconResId, drawDivider);
     }
 
     @Override
