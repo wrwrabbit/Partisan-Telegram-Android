@@ -101,6 +101,8 @@ public class PartisanSettingsActivity extends BaseFragment {
     private int partisanTelegramSettingsPositionDetailRow;
     private int clearCacheOnLockRow;
     private int clearCacheOnLockDetailRow;
+    private int protectPtelegramSettingsRow;
+    private int protectPtelegramSettingsDetailRow;
 
     private class DangerousSettingSwitcher {
         public Context context;
@@ -339,6 +341,10 @@ public class PartisanSettingsActivity extends BaseFragment {
                 presentFragment(new AppMigrationActivity());
             } else if (position == partisanTelegramSettingsPositionRow) {
                 presentFragment(new PartisanTelegramSettingsLocationFragment());
+            } else if (position == protectPtelegramSettingsRow) {
+                SharedConfig.protectPtelegramSettings = !SharedConfig.protectPtelegramSettings;
+                SharedConfig.saveConfig();
+                ((TextCheckCell) view).setChecked(SharedConfig.protectPtelegramSettings);
             }
         });
 
@@ -464,6 +470,13 @@ public class PartisanSettingsActivity extends BaseFragment {
         }
         verifiedRow = rowCount++;
         verifiedDetailRow = rowCount++;
+        if (!ptelegramSettingsMode) {
+            protectPtelegramSettingsRow = rowCount++;
+            protectPtelegramSettingsDetailRow = rowCount++;
+        } else {
+            protectPtelegramSettingsRow = -1;
+            protectPtelegramSettingsDetailRow = -1;
+        }
     }
 
     private static boolean fileProtectionEnabledForAnyAccount() {
@@ -504,7 +517,8 @@ public class PartisanSettingsActivity extends BaseFragment {
                     && position != marketIconsDetailRow && position!= confirmDangerousActionDetailRow
                     && position != fileProtectionDetailRow && position != voiceChangeDetailRow
                     && position != transferDataToOtherPtgDetailRow && position != partisanTelegramSettingsPositionDetailRow
-                    && position != clearCacheOnLockDetailRow;
+                    && position != clearCacheOnLockDetailRow
+                    && position != protectPtelegramSettingsDetailRow;
         }
 
         @Override
@@ -588,6 +602,9 @@ public class PartisanSettingsActivity extends BaseFragment {
                     } else if (position == clearCacheOnLockRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.ClearCacheOnLock),
                                 SharedConfig.clearCacheOnLock, false);
+                    } else if (position == protectPtelegramSettingsRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ProtectPartisanSettings),
+                                SharedConfig.protectPtelegramSettings, false);
                     }
                     break;
                 }
@@ -655,6 +672,9 @@ public class PartisanSettingsActivity extends BaseFragment {
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == clearCacheOnLockDetailRow) {
                         cell.setText(LocaleController.getString(R.string.ClearCacheOnLockInfo));
+                        cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                    } else if (position == protectPtelegramSettingsDetailRow) {
+                        cell.setText(LocaleController.getString(R.string.ProtectPartisanSettingsInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     }
                     break;
@@ -747,7 +767,8 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == reactionsRow || position == foreignAgentsRow
                     || position == isClearAllDraftsOnScreenLockRow || position == showCallButtonRow
                     || position == isDeleteMessagesForAllByDefaultRow || position == marketIconsRow
-                    || position == confirmDangerousActionRow || position == clearCacheOnLockRow) {
+                    || position == confirmDangerousActionRow || position == clearCacheOnLockRow
+                    || position == protectPtelegramSettingsRow) {
                 return 0;
             } else if (position == versionDetailRow || position == idDetailRow || position == disableAvatarDetailRow
                     || position == renameChatDetailRow || position == deleteMyMessagesDetailRow
@@ -758,7 +779,8 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == marketIconsDetailRow || position == verifiedDetailRow
                     || position == confirmDangerousActionDetailRow || position == fileProtectionDetailRow
                     || position == voiceChangeDetailRow || position == transferDataToOtherPtgDetailRow
-                    || position == partisanTelegramSettingsPositionDetailRow || position == clearCacheOnLockDetailRow) {
+                    || position == partisanTelegramSettingsPositionDetailRow || position == clearCacheOnLockDetailRow
+                    || position == protectPtelegramSettingsDetailRow) {
                 return 1;
             } else if (position == onScreenLockActionRow || position == transferDataToOtherPtgRow || position == savedChannelsRow
                     || position == partisanTelegramSettingsPositionRow) {
