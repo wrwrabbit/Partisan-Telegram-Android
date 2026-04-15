@@ -18,6 +18,10 @@ public class EnumSetting<T extends Enum<T>> extends Setting<T> {
     @Override
     public void load() {
         String valueName = getLocalPreferences().getString(key, defaultValue.name());
-        this.value = Enum.valueOf(clazz, valueName);
+        try {
+            this.value = Enum.valueOf(clazz, valueName);
+        } catch (IllegalArgumentException e) {
+            this.value = defaultValue;
+        }
     }
 }

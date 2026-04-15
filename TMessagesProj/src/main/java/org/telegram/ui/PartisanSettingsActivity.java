@@ -682,8 +682,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     } else if (position == partisanTelegramSettingsPositionRow) {
                         String[] positionOptions = {
                             LocaleController.getString(R.string.Settings),
-                            LocaleController.getString(R.string.PrivacySettings),
-                            LocaleController.getString(R.string.PartisanTelegramSettingsPositionDisabled)
+                            LocaleController.getString(R.string.PrivacySettings)
                         };
                         int pos = PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault().ordinal();
                         textCell.ellipsizeValueInsteadOfText = true;

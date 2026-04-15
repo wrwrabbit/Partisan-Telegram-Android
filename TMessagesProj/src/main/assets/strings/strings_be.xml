@@ -349,12 +349,10 @@
     <string name="EnterMainPasscodeInfo">Увядзіце асноўны код блакіроўкі (не несапраўдны) для доступу да налад Партызанскага Тэлеграма.</string>
     <string name="PartisanTelegramSettingsPosition">Лакацыя налад PTelegram</string>
     <string name="PartisanTelegramSettingsPositionInfo">Вызначае, дзе адлюстроўваецца ўваход у налады Партызанскага Тэлеграма.</string>
-    <string name="PartisanTelegramSettingsPositionDisabled">Адключана (класічнае)</string>
     <string name="PartisanTelegramSettingsPositionMain">Асноўныя налады</string>
     <string name="PartisanTelegramSettingsPositionPrivacy">Налады прыватнасці і бяспекі</string>
     <string name="PartisanTelegramSettingsPositionSettingsInfo">Уваход у налады Партызанскага Тэлеграма адлюстроўваецца на экране Асноўных налад.</string>
     <string name="PartisanTelegramSettingsPositionPrivacyInfo">Уваход у налады Партызанскага Тэлеграма адлюстроўваецца на экране Налад прыватнасці і бяспекі.</string>
-    <string name="PartisanTelegramSettingsPositionDisabledInfo">Меню Партызанскага Тэлеграма нідзе не адлюстроўваецца. Усе налады застаюцца даступнымі ў сваіх зыходных месцах, напрыклад, у наладах кода блакіроўкі. Вы можаце ўключыць меню зноў у Партызанскіх наладах.</string>
     <string name="MoreAccounts">Яшчэ</string>
     <string name="BadPasscodeReaction">Рэакцыя на няправільны код блакіроўкі</string>
     <string name="BadPasscodeReactionInfo">Наладзьце абарону ад падбору кода блакіроўкі і фатаграфаванне камерай пры няправільным уводзе або паглядзіце спіс няўдалых спроб уваходу.</string>

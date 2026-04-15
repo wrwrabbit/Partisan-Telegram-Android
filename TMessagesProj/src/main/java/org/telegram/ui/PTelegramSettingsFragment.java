@@ -125,8 +125,7 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
                         () -> {
                             String[] positionOptions = {
                                     getString(R.string.Settings),
-                                    getString(R.string.PrivacySettings),
-                                    getString(R.string.PartisanTelegramSettingsPositionDisabled)
+                                    getString(R.string.PrivacySettings)
                             };
                             return positionOptions[PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault().ordinal()];
                         },

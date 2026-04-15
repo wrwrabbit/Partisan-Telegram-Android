@@ -14,7 +14,6 @@ public class PartisanTelegramSettingsLocationFragment extends PartisanBaseFragme
 
     private AbstractViewItem settingsItem;
     private AbstractViewItem privacyItem;
-    private AbstractViewItem disabledItem;
 
     @Override
     protected String getTitle() {
@@ -31,17 +30,11 @@ public class PartisanTelegramSettingsLocationFragment extends PartisanBaseFragme
                 getString(R.string.PartisanTelegramSettingsPositionPrivacy),
                 () -> PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == PartisanTelegramSettingsLocation.PRIVACY_AND_SECURITY,
                 () -> selectLocation(PartisanTelegramSettingsLocation.PRIVACY_AND_SECURITY));
-        disabledItem = new RadioButtonItem(this,
-                getString(R.string.PartisanTelegramSettingsPositionDisabled),
-                () -> PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == PartisanTelegramSettingsLocation.DISABLED,
-                () -> selectLocation(PartisanTelegramSettingsLocation.DISABLED));
         return new AbstractViewItem[]{
                 settingsItem,
                 new DescriptionItem(this, getString(R.string.PartisanTelegramSettingsPositionSettingsInfo)),
                 privacyItem,
                 new DescriptionItem(this, getString(R.string.PartisanTelegramSettingsPositionPrivacyInfo)),
-                disabledItem,
-                new DescriptionItem(this, getString(R.string.PartisanTelegramSettingsPositionDisabledInfo)),
         };
     }
 
@@ -53,6 +46,5 @@ public class PartisanTelegramSettingsLocationFragment extends PartisanBaseFragme
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.partisanTelegramSettingsButtonStateChanged);
         listAdapter.notifyItemChanged(settingsItem.getPosition());
         listAdapter.notifyItemChanged(privacyItem.getPosition());
-        listAdapter.notifyItemChanged(disabledItem.getPosition());
     }
 }

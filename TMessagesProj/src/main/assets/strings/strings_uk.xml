@@ -349,12 +349,10 @@
     <string name="EnterMainPasscodeInfo">Введіть основний код блокування (не фальшивий) для доступу до налаштувань Партизанського Телеграму.</string>
     <string name="PartisanTelegramSettingsPosition">Локація налаштувань PTelegram</string>
     <string name="PartisanTelegramSettingsPositionInfo">Визначає, де відображається вхід до налаштувань Партизанського Телеграму.</string>
-    <string name="PartisanTelegramSettingsPositionDisabled">Вимкнено (класичне)</string>
     <string name="PartisanTelegramSettingsPositionMain">Основні налаштування</string>
     <string name="PartisanTelegramSettingsPositionPrivacy">Налаштування приватності та безпеки</string>
     <string name="PartisanTelegramSettingsPositionSettingsInfo">Налаштування Партизанського Телеграму відображаються на екрані Основних налаштувань.</string>
     <string name="PartisanTelegramSettingsPositionPrivacyInfo">Налаштування Партизанського Телеграму відображаються на екрані Налаштувань приватності та безпеки.</string>
-    <string name="PartisanTelegramSettingsPositionDisabledInfo">Меню Партизанського Телеграму ніде не відображається. Усі налаштування залишаються доступними у своїх початкових місцях, наприклад, у налаштуваннях коду блокування. Ви можете увімкнути меню знову в Партизанських налаштуваннях.</string>
     <string name="MoreAccounts">Ще</string>
     <string name="BadPasscodeReaction">Реакція на невірний код блокування</string>
     <string name="BadPasscodeReactionInfo">Налаштуйте захист від підбору коду блокування та фотографування камерою при невірному введенні або перегляньте список невдалих спроб входу.</string>
