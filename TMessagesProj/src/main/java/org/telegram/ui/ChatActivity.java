@@ -29880,7 +29880,7 @@ public class ChatActivity extends BaseFragment implements
                                 if (messageObject2 == null || messageObject2.getId() == 0) {
                                     continue;
                                 }
-                                if ((!messageObject2.isOut() || messageObject2.messageOwner.from_scheduled) && messageObject != null && messageObject.isUnread()) {
+                                if ((!messageObject2.isOut() || messageObject2.messageOwner.from_scheduled) && messageObject != null && messageObject.isUnread() && !isSavedChannel) {
                                     ignore = true;
                                     messageId = 0;
                                 }
