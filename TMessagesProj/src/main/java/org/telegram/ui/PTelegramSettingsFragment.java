@@ -5,6 +5,8 @@ import static org.telegram.messenger.LocaleController.getString;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 
+import java.util.function.Supplier;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -40,9 +42,17 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
 
     public static BaseFragment checkLockAndCreateActivity() {
         if (SharedConfig.protectPtelegramSettings && SharedConfig.passcodeEnabled()) {
-            return new org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLockActivity();
+            return new org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLockActivity(PTelegramSettingsFragment::new);
         }
         return new PTelegramSettingsFragment();
+    }
+
+    public static BaseFragment checkLockAndCreate(Supplier<BaseFragment> fragmentFactory) {
+        if (SharedConfig.protectPtelegramSettings && SharedConfig.passcodeEnabled()) {
+            org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLockActivity lockActivity = new org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLockActivity(fragmentFactory);
+            return lockActivity;
+        }
+        return fragmentFactory.get();
     }
 
     @Override

@@ -43,9 +43,16 @@ import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.TextViewSwitcher;
 import org.telegram.ui.Components.TransformableLoginButtonView;
 import org.telegram.ui.Components.VerticalPositionAutoAnimator;
-import org.telegram.ui.PTelegramSettingsFragment;
+
+import java.util.function.Supplier;
 
 public class PartisanTelegramSettingsLockActivity extends BaseFragment {
+
+    private final Supplier<BaseFragment> nextFragmentFactory;
+
+    public PartisanTelegramSettingsLockActivity(Supplier<BaseFragment> nextFragmentFactory) {
+        this.nextFragmentFactory = nextFragmentFactory;
+    }
 
     private RLottieImageView lockImageView;
     private TextViewSwitcher descriptionTextSwitcher;
@@ -342,7 +349,7 @@ public class PartisanTelegramSettingsLockActivity extends BaseFragment {
         }
         keyboardView.setEditText(null);
 
-        animateSuccessAnimation(() -> presentFragment(new PTelegramSettingsFragment(), true));
+        animateSuccessAnimation(() -> presentFragment(nextFragmentFactory.get(), true));
     }
 
     private void clearInput() {
