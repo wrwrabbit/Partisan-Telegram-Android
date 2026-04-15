@@ -29853,7 +29853,7 @@ public class ChatActivity extends BaseFragment implements
                         }
                     }
                     int position = chatLayoutManager.findFirstVisibleItemPosition();
-                    if (position != 0 && !sponsoredMessageFound) {
+                    if ((position != 0 || isSavedChannel) && !sponsoredMessageFound) {
                         RecyclerListView.Holder holder = (RecyclerListView.Holder) chatListView.findViewHolderForAdapterPosition(position);
                         if (holder != null) {
                             int mid = 0;
