@@ -6,6 +6,11 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
+import org.telegram.messenger.partisan.ui.items.ButtonItem;
+import org.telegram.messenger.partisan.ui.items.CombinedToggleItem;
+import org.telegram.messenger.partisan.ui.items.DescriptionItem;
+import org.telegram.messenger.partisan.ui.items.ToggleItem;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
@@ -49,8 +54,8 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
     }
 
     @Override
-    protected AbstractItem[] createItems() {
-        return new AbstractItem[]{
+    protected AbstractViewItem[] createItems() {
+        return new AbstractViewItem[]{
                 new ButtonItem(this,
                         getString(R.string.SavedChannelsSetting),
                         () -> SharedConfig.showSavedChannels

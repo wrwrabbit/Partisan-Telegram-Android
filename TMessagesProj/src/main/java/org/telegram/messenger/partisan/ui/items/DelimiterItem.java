@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -10,13 +10,13 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ShadowSectionCell;
 
-public class DelimiterItem extends AbstractItem {
+public class DelimiterItem extends AbstractViewItem {
     public DelimiterItem(BaseFragment fragment) {
         super(fragment, ItemType.DELIMITER.ordinal());
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new ShadowSectionCell(context));
+        return AbstractViewItem.initializeView(new ShadowSectionCell(context));
     }
 
     @Override

@@ -9,6 +9,7 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import org.telegram.messenger.R;
+import org.telegram.messenger.partisan.ui.items.AbstractSourceItem;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -69,10 +70,11 @@ public abstract class PartisanBaseFragment extends BaseFragment {
     public void onResume() {
         super.onResume();
         if (listAdapter != null) {
-            listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
+            listAdapter.updateRows();
+            listAdapter.notifyDataSetChanged();
         }
     }
 
-    protected abstract AbstractItem[] createItems();
+    protected abstract AbstractSourceItem[] createItems();
     protected abstract String getTitle();
 }

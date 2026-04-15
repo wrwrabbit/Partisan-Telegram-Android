@@ -22,16 +22,16 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.settings.TesterSettings;
-import org.telegram.messenger.partisan.ui.AbstractItem;
-import org.telegram.messenger.partisan.ui.ButtonItem;
-import org.telegram.messenger.partisan.ui.ButtonWithIconItem;
-import org.telegram.messenger.partisan.ui.DelimiterItem;
-import org.telegram.messenger.partisan.ui.DescriptionItem;
-import org.telegram.messenger.partisan.ui.HeaderItem;
+import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
+import org.telegram.messenger.partisan.ui.items.ButtonItem;
+import org.telegram.messenger.partisan.ui.items.ButtonWithIconItem;
+import org.telegram.messenger.partisan.ui.items.DelimiterItem;
+import org.telegram.messenger.partisan.ui.items.DescriptionItem;
+import org.telegram.messenger.partisan.ui.items.HeaderItem;
 import org.telegram.messenger.partisan.ui.PartisanBaseFragment;
-import org.telegram.messenger.partisan.ui.RadioButtonItem;
-import org.telegram.messenger.partisan.ui.ToggleItem;
-import org.telegram.messenger.partisan.ui.ValuesSlideChooseItem;
+import org.telegram.messenger.partisan.ui.items.RadioButtonItem;
+import org.telegram.messenger.partisan.ui.items.ToggleItem;
+import org.telegram.messenger.partisan.ui.items.ValuesSlideChooseItem;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.Cells.TextCell;
@@ -48,13 +48,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
-    private AbstractItem aggressiveChangeLevelItem;
-    private AbstractItem moderateChangeLevelItem;
-    private AbstractItem recordItem;
-    private AbstractItem playOriginalItem;
-    private AbstractItem playChangedItem;
-    private AbstractItem enableForIndividualAccountsItem;
-    private AbstractItem benchmarkItem;
+    private AbstractViewItem aggressiveChangeLevelItem;
+    private AbstractViewItem moderateChangeLevelItem;
+    private AbstractViewItem recordItem;
+    private AbstractViewItem playOriginalItem;
+    private AbstractViewItem playChangedItem;
+    private AbstractViewItem enableForIndividualAccountsItem;
+    private AbstractViewItem benchmarkItem;
 
     private AudioRecord audioRecorder = null;
     private VoiceChanger voiceChanger = null;
@@ -77,8 +77,8 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
     }
 
     @Override
-    protected AbstractItem[] createItems() {
-        return new AbstractItem[]{
+    protected AbstractViewItem[] createItems() {
+        return new AbstractViewItem[]{
                 new ToggleItem(this, getString(R.string.Enable), VoiceChangeSettings.voiceChangeEnabled::getOrDefault, value -> {
                     VoiceChangeSettings.voiceChangeEnabled.set(value);
                     if (VoiceChangeSettings.areSettingsEmpty()) {

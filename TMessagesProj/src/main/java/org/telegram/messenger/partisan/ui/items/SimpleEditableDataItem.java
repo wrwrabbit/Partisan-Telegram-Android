@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.view.View;
 
@@ -16,7 +16,7 @@ import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class SimpleEditableDataItem extends AbstractItem {
+public class SimpleEditableDataItem extends AbstractViewItem {
     private final String text;
     private final Supplier<String> getValue;
     private final Consumer<String> setValue;

@@ -6,12 +6,15 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettingsLocation;
+import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
+import org.telegram.messenger.partisan.ui.items.DescriptionItem;
+import org.telegram.messenger.partisan.ui.items.RadioButtonItem;
 
 public class PartisanTelegramSettingsLocationFragment extends PartisanBaseFragment {
 
-    private AbstractItem settingsItem;
-    private AbstractItem privacyItem;
-    private AbstractItem disabledItem;
+    private AbstractViewItem settingsItem;
+    private AbstractViewItem privacyItem;
+    private AbstractViewItem disabledItem;
 
     @Override
     protected String getTitle() {
@@ -19,7 +22,7 @@ public class PartisanTelegramSettingsLocationFragment extends PartisanBaseFragme
     }
 
     @Override
-    protected AbstractItem[] createItems() {
+    protected AbstractViewItem[] createItems() {
         settingsItem = new RadioButtonItem(this,
                 getString(R.string.PartisanTelegramSettingsPositionMain),
                 () -> PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == PartisanTelegramSettingsLocation.SETTINGS_ACTIVITY,
@@ -32,7 +35,7 @@ public class PartisanTelegramSettingsLocationFragment extends PartisanBaseFragme
                 getString(R.string.PartisanTelegramSettingsPositionDisabled),
                 () -> PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == PartisanTelegramSettingsLocation.DISABLED,
                 () -> selectLocation(PartisanTelegramSettingsLocation.DISABLED));
-        return new AbstractItem[]{
+        return new AbstractViewItem[]{
                 settingsItem,
                 new DescriptionItem(this, getString(R.string.PartisanTelegramSettingsPositionSettingsInfo)),
                 privacyItem,

@@ -7,6 +7,9 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
+import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
+import org.telegram.messenger.partisan.ui.items.DescriptionItem;
+import org.telegram.messenger.partisan.ui.items.ToggleItem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,8 +24,8 @@ public class SavedChannelsSettingsFragment extends PartisanBaseFragment {
     }
 
     @Override
-    protected AbstractItem[] createItems() {
-        return new AbstractItem[]{
+    protected AbstractViewItem[] createItems() {
+        return new AbstractViewItem[]{
                 new ToggleItem(this, getString(R.string.Enable),
                         () -> SharedConfig.showSavedChannels,
                         value -> {

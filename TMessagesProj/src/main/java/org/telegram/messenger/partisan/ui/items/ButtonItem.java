@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -12,7 +12,7 @@ import org.telegram.ui.Cells.TextSettingsCell;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class ButtonItem extends AbstractItem {
+public class ButtonItem extends AbstractViewItem {
     private final String text;
     private final Consumer<View> onClick;
     private final Supplier<String> getValue;
@@ -46,7 +46,7 @@ public class ButtonItem extends AbstractItem {
     public static View createView(Context context) {
         TextSettingsCell textCell = new TextSettingsCell(context);
         textCell.setCanDisable(true);
-        return AbstractItem.initializeView(textCell);
+        return AbstractViewItem.initializeView(textCell);
     }
 
     @Override

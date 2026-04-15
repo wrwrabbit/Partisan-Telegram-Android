@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;

@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -10,7 +10,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 
-public class DescriptionItem extends AbstractItem {
+public class DescriptionItem extends AbstractViewItem {
     private final String text;
 
     public DescriptionItem(BaseFragment fragment, String text) {

@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -13,7 +13,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class SeekBarItem extends AbstractItem {
+public class SeekBarItem extends AbstractViewItem {
     private final Supplier<Float> getValue;
     private final Consumer<Float> setValue;
     private final double startValue;
@@ -38,7 +38,7 @@ public class SeekBarItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new SeekBarCell(context));
+        return AbstractViewItem.initializeView(new SeekBarCell(context));
     }
 
     @Override

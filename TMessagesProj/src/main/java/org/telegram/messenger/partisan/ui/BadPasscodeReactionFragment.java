@@ -17,6 +17,10 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
+import org.telegram.messenger.partisan.ui.items.ButtonItem;
+import org.telegram.messenger.partisan.ui.items.DescriptionItem;
+import org.telegram.messenger.partisan.ui.items.ToggleItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BadPasscodeAttemptsActivity;
@@ -30,8 +34,8 @@ public class BadPasscodeReactionFragment extends PartisanBaseFragment {
     }
 
     @Override
-    protected AbstractItem[] createItems() {
-        return new AbstractItem[]{
+    protected AbstractViewItem[] createItems() {
+        return new AbstractViewItem[]{
                 new ToggleItem(this,
                         getString(R.string.BruteForceProtection),
                         () -> SharedConfig.bruteForceProtectionEnabled,

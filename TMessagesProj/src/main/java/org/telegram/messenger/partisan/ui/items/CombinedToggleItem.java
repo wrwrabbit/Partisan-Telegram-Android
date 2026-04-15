@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -11,7 +11,7 @@ import org.telegram.ui.Cells.NotificationsCheckCell;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class CombinedToggleItem extends AbstractItem {
+public class CombinedToggleItem extends AbstractViewItem {
     private final String text;
     private final Supplier<String> getValue;
     private final Supplier<Boolean> isChecked;
@@ -19,8 +19,8 @@ public class CombinedToggleItem extends AbstractItem {
     private final Consumer<NotificationsCheckCell> onRowClick;
 
     public CombinedToggleItem(BaseFragment fragment, String text, Supplier<String> getValue,
-                               Supplier<Boolean> isChecked, Consumer<NotificationsCheckCell> onCheckboxClick,
-                               Consumer<NotificationsCheckCell> onRowClick) {
+                              Supplier<Boolean> isChecked, Consumer<NotificationsCheckCell> onCheckboxClick,
+                              Consumer<NotificationsCheckCell> onRowClick) {
         super(fragment, ItemType.COMBINED_TOGGLE.ordinal());
         this.text = text;
         this.getValue = getValue;
@@ -30,7 +30,7 @@ public class CombinedToggleItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new NotificationsCheckCell(context));
+        return AbstractViewItem.initializeView(new NotificationsCheckCell(context));
     }
 
     @Override

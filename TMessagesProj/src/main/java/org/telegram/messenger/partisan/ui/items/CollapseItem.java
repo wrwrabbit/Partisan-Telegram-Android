@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -9,7 +9,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.CollapseTextCell;
 
-public class CollapseItem extends AbstractItem {
+public class CollapseItem extends AbstractViewItem {
     private final String text;
     private final Runnable onClick;
 
@@ -21,7 +21,7 @@ public class CollapseItem extends AbstractItem {
 
     public static View createView(Context context) {
         CollapseTextCell cell = new CollapseTextCell(context, null);
-        return AbstractItem.initializeView(cell);
+        return AbstractViewItem.initializeView(cell);
     }
 
     @Override

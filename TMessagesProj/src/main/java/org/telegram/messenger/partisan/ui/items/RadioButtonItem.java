@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -10,7 +10,7 @@ import org.telegram.ui.Cells.SimpleRadioButtonCell;
 
 import java.util.function.Supplier;
 
-public class RadioButtonItem extends AbstractItem {
+public class RadioButtonItem extends AbstractViewItem {
     private final String text;
     private final Supplier<Boolean> getValue;
     private final Runnable setValue;
@@ -23,7 +23,7 @@ public class RadioButtonItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new SimpleRadioButtonCell(context));
+        return AbstractViewItem.initializeView(new SimpleRadioButtonCell(context));
     }
 
     @Override
