@@ -31,6 +31,7 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
 
     public static String getEnabledSummary() {
         boolean[] toggleValues = {
+            SharedConfig.showSavedChannels,
             SharedConfig.showVersion,
             SharedConfig.showId,
             SharedConfig.showCallButton,
