@@ -1,0 +1,75 @@
+package org.telegram.messenger.partisan.ui.items;
+
+import android.content.Context;
+import android.view.View;
+
+import androidx.recyclerview.widget.RecyclerView;
+
+import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.TextSettingsCell;
+
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+public class ButtonItem extends AbstractViewItem {
+    private final String text;
+    private final Consumer<View> onClick;
+    private final Supplier<String> getValue;
+    private int themeKey = -1;
+    private boolean ellipsizeValue;
+
+    public ButtonItem(BaseFragment fragment, String text, Consumer<View> onClick) {
+        super(fragment, ItemType.BUTTON.ordinal());
+        this.text = text;
+        this.getValue = null;
+        this.onClick = onClick;
+    }
+
+    public ButtonItem(BaseFragment fragment, String text, Supplier<String> getValue, Consumer<View> onClick) {
+        super(fragment, ItemType.BUTTON.ordinal());
+        this.text = text;
+        this.getValue = getValue;
+        this.onClick = onClick;
+    }
+
+    public ButtonItem withThemeKey(int themeKey) {
+        this.themeKey = themeKey;
+        return this;
+    }
+
+    public ButtonItem withEllipsizeValue() {
+        this.ellipsizeValue = true;
+        return this;
+    }
+
+    public static View createView(Context context) {
+        TextSettingsCell textCell = new TextSettingsCell(context);
+        textCell.setCanDisable(true);
+        return AbstractViewItem.initializeView(textCell);
+    }
+
+    @Override
+    public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
+        TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
+        textCell.ellipsizeValueInsteadOfText = ellipsizeValue;
+        if (getValue != null) {
+            textCell.setTextAndValue(text, getValue.get(), drawDivider);
+        } else {
+            textCell.setText(text, drawDivider);
+        }
+        int colorKey = themeKey != -1 ? themeKey : Theme.key_windowBackgroundWhiteBlackText;
+        textCell.setTag(colorKey);
+        textCell.setTextColor(Theme.getColor(colorKey));
+    }
+
+    @Override
+    public void onClick(View view) {
+        onClick.accept(view);
+    }
+
+    @Override
+    public boolean isEnabledInternal() {
+        return true;
+    }
+}

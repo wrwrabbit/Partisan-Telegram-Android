@@ -60,9 +60,12 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
+import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Reactions.ReactionImageHolder;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
+import org.telegram.ui.FilterCreateActivity;
 import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.StatisticActivity;
 import org.telegram.ui.Stories.bots.BotPreviewsEditContainer;
 import org.telegram.ui.Stories.recorder.DraftsController;
@@ -2263,6 +2266,13 @@ public class StoriesController {
                     editStory.id = entry.editStoryId;
                     editStory.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
 
+                    editStory.flags |= TLObject.FLAG_4;
+                    if (entry.audioDocument != null) {
+                        editStory.music = entry.audioDocument;
+                    } else {
+                        editStory.music = new TLRPC.TL_inputDocumentEmpty();
+                    }
+
                     if (media != null && entry.editedMedia) {
                         editStory.flags |= 1;
                         editStory.media = media;
@@ -2324,6 +2334,11 @@ public class StoriesController {
                     sendStory.pinned = entry.pinned;
                     sendStory.noforwards = !entry.allowScreenshots;
                     sendStory.albums = entry.albums != null ? new ArrayList<>(entry.albums) : null;
+
+                    if (entry.audioDocument != null) {
+                        sendStory.flags |= TLObject.FLAG_9;
+                        sendStory.music = entry.audioDocument;
+                    }
 
                     if (entry.caption != null) {
                         sendStory.flags |= 3;
@@ -4472,6 +4487,12 @@ public class StoriesController {
                             .setMessage(getString(R.string.LiveStoryAlreadyStreaming))
                             .setPositiveButton(getString(R.string.OK), null)
                             .show();
+                    }
+                    consumer.accept(false);
+                } else if (err.text.equalsIgnoreCase("PREMIUM_ACCOUNT_REQUIRED")) {
+                    BaseFragment lastFragment = LaunchActivity.getLastFragment();
+                    if (showLimitsBottomSheet && lastFragment != null) {
+                        lastFragment.showDialog(new PremiumFeatureBottomSheet(lastFragment, PremiumPreviewFragment.PREMIUM_FEATURE_STORIES, true));
                     }
                     consumer.accept(false);
                 } else {

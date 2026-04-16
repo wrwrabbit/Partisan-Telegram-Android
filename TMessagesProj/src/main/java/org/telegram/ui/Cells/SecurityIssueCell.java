@@ -80,7 +80,7 @@ public abstract class SecurityIssueCell extends LinearLayout {
         horizontalLayout.addView(closeButton, LayoutHelper.createLinear(48, 48, 0.0f, Gravity.END | Gravity.TOP, 0, 0, 0, 0));
 
         fixButton = new TextView(context);
-        fixButton.setBackground(Theme.AdaptiveRipple.filledRectByKey(Theme.key_featuredStickers_addButton, 4));
+        fixButton.setBackground(Theme.AdaptiveRipple.filledRectByKey(Theme.key_featuredStickers_addButton, 24));
         fixButton.setLines(1);
         fixButton.setSingleLine(true);
         fixButton.setGravity(Gravity.CENTER_HORIZONTAL);

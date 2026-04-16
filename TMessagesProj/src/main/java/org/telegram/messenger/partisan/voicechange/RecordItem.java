@@ -8,14 +8,14 @@ import android.view.View;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.R;
-import org.telegram.messenger.partisan.ui.AbstractItem;
-import org.telegram.messenger.partisan.ui.ItemType;
+import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
+import org.telegram.messenger.partisan.ui.items.ItemType;
 import org.telegram.ui.ActionBar.BaseFragment;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class RecordItem extends AbstractItem {
+public class RecordItem extends AbstractViewItem {
     private final Supplier<Boolean> isRecording;
     private final Consumer<View> onClick;
 
@@ -26,7 +26,7 @@ public class RecordItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new RecordTextCell(context));
+        return AbstractViewItem.initializeView(new RecordTextCell(context));
     }
 
     @Override

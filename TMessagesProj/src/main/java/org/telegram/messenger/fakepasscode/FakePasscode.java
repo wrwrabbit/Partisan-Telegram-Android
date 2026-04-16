@@ -368,6 +368,9 @@ public class FakePasscode {
             SharedConfig.setAppLocked(false);
             SharedConfig.isWaitingForPasscodeEnter = false;
             SharedConfig.saveConfig();
+            AndroidUtilities.runOnUIThread(() -> {
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.passwordlessModeActivated);
+            });
         }
         if (changed) {
             MediaDataController.getInstance(UserConfig.selectedAccount).buildShortcuts();
@@ -378,7 +381,7 @@ public class FakePasscode {
     }
 
     public boolean passcodeEnabled() {
-        return passcodeHash.length() != 0 && !passwordDisabled;
+        return !passcodeHash.isEmpty() && !passwordDisabled;
     }
 
     public boolean hasReplaceOriginalPasscodeIncompatibleSettings() {

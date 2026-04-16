@@ -43,7 +43,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils;
-import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -80,7 +79,6 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
     private int containerHeight;
 
     TelegramMessageAction action;
-    int accountNum;
 
     private boolean searchWas;
     private boolean searching;
@@ -192,7 +190,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
     public FakePasscodeTelegramMessagesActivity(TelegramMessageAction action, int accountNum) {
         super();
         this.action = action;
-        this.accountNum = accountNum;
+        setCurrentAccount(accountNum);
     }
 
     @Override
@@ -200,7 +198,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
         getNotificationCenter().addObserver(this, NotificationCenter.contactsDidLoad);
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().addObserver(this, NotificationCenter.chatDidCreated);
-        if (Utils.loadAllDialogs(accountNum)) {
+        if (Utils.loadAllDialogs(currentAccount)) {
             getNotificationCenter().addObserver(this, NotificationCenter.dialogsNeedReload);
         }
         return super.onFragmentCreate();
@@ -568,7 +566,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
         } else if (id == NotificationCenter.chatDidCreated) {
             removeSelfFromStack();
         } else if (id == NotificationCenter.dialogsNeedReload) {
-            if (!Utils.loadAllDialogs(accountNum)) {
+            if (!Utils.loadAllDialogs(currentAccount)) {
                 if (emptyView != null) {
                     emptyView.showTextView();
                 }
@@ -582,7 +580,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
 
     @Override
     public AccountInstance getAccountInstance() {
-        return AccountInstance.getInstance(accountNum);
+        return AccountInstance.getInstance(currentAccount);
     }
 
     @Keep
@@ -817,8 +815,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                                 objectUserName = ((TLRPC.Chat) object).username;
                             } else if (object instanceof TLRPC.EncryptedChat) {
                                 TLRPC.EncryptedChat encryptedChat = (TLRPC.EncryptedChat) object;
-                                TLRPC.User currentUser = MessagesController.getInstance(currentAccount)
-                                        .getUser(encryptedChat.user_id);
+                                TLRPC.User currentUser = getMessagesController().getUser(encryptedChat.user_id);
                                 objectUserName = currentUser.username;
                             }
                             name = searchResultNames.get(position);
@@ -930,11 +927,10 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                                 username = chat.username;
                             } else if (object instanceof TLRPC.EncryptedChat) {
                                 TLRPC.EncryptedChat encryptedChat = (TLRPC.EncryptedChat) object;
-                                TLRPC.User currentUser = MessagesController.getInstance(currentAccount)
-                                        .getUser(encryptedChat.user_id);
-                                String name = UserObject.getUserName(currentUser, currentAccount).toLowerCase();
+                                TLRPC.User user = getMessagesController().getUser(encryptedChat.user_id);
+                                String name = UserObject.getUserName(user, currentAccount).toLowerCase();
                                 names[0] = name;
-                                username = currentUser.username;
+                                username = user != null ? user.username : null;
                             }
                             names[1] = LocaleController.getInstance().getTranslitString(names[0]);
                             if (names[0].equals(names[1])) {
@@ -964,9 +960,8 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                                             resultArrayNames.add(AndroidUtilities.generateSearchName(getUserConfig().getChatTitleOverride(chat), null, q));
                                         } else if (object instanceof TLRPC.EncryptedChat) {
                                             TLRPC.EncryptedChat encryptedChat = (TLRPC.EncryptedChat) object;
-                                            TLRPC.User currentUser = MessagesController.getInstance(currentAccount)
-                                                    .getUser(encryptedChat.user_id);
-                                            String title = UserConfig.getChatTitleOverride(accountNum, encryptedChat.id, UserObject.getUserName(currentUser, currentAccount));
+                                            TLRPC.User currentUser = getMessagesController().getUser(encryptedChat.user_id);
+                                            String title = UserConfig.getChatTitleOverride(currentAccount, encryptedChat.id, UserObject.getUserName(currentUser, currentAccount));
                                             resultArrayNames.add(AndroidUtilities.generateSearchName(title, null, q));
                                         }
                                     } else {

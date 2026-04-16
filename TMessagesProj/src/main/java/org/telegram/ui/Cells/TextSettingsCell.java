@@ -53,6 +53,10 @@ public class TextSettingsCell extends FrameLayout {
     private int padding;
 
     private boolean incrementLoadingProgress;
+
+    public boolean ellipsizeValueInsteadOfText;
+    private CharSequence valueText;
+
     private float loadingProgress;
     private float drawLoadingProgress;
     private int loadingSize;
@@ -141,6 +145,25 @@ public class TextSettingsCell extends FrameLayout {
             valueBackupImageView.measure(MeasureSpec.makeMeasureSpec(valueBackupImageView.getLayoutParams().height, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(valueBackupImageView.getLayoutParams().width, MeasureSpec.EXACTLY));
             if (betterLayout) width -= valueBackupImageView.getMeasuredWidth() + AndroidUtilities.dp(8);
         }
+        if (ellipsizeValueInsteadOfText) {
+            textView.measure(MeasureSpec.makeMeasureSpec(availableWidth, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(getMeasuredHeight(), MeasureSpec.EXACTLY));
+            int textWidth = textView.getMeasuredWidth();
+            if (valueTextView.getVisibility() == VISIBLE && valueText != null) {
+                int valueMaxWidth = Math.max(0, availableWidth - textWidth - AndroidUtilities.dp(8));
+                CharSequence ellipsized = android.text.TextUtils.ellipsize(valueText, valueTextView.getPaint(), valueMaxWidth, android.text.TextUtils.TruncateAt.END);
+                valueTextView.setText(ellipsized, false);
+                valueTextView.measure(MeasureSpec.makeMeasureSpec(valueMaxWidth, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(getMeasuredHeight(), MeasureSpec.EXACTLY));
+                if (valueImageView.getVisibility() == VISIBLE) {
+                    MarginLayoutParams params = (MarginLayoutParams) valueImageView.getLayoutParams();
+                    if (LocaleController.isRTL) {
+                        params.leftMargin = AndroidUtilities.dp(padding + 4) + valueTextView.getMeasuredWidth();
+                    } else {
+                        params.rightMargin = AndroidUtilities.dp(padding + 4) + valueTextView.getMeasuredWidth();
+                    }
+                }
+            }
+            return;
+        }
         if (valueTextView.getVisibility() == VISIBLE) {
             valueTextView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(getMeasuredHeight(), MeasureSpec.EXACTLY));
             if (betterLayout) {
@@ -205,6 +228,7 @@ public class TextSettingsCell extends FrameLayout {
 
     public void setTextAndValue(CharSequence text, CharSequence value, boolean animated, boolean divider) {
         textView.setText(text);
+        valueText = value;
         valueImageView.setVisibility(INVISIBLE);
         if (value != null) {
             valueTextView.setText(value, animated);
@@ -228,6 +252,10 @@ public class TextSettingsCell extends FrameLayout {
         }
         needDivider = divider;
         setWillNotDraw(!divider);
+    }
+
+    public void setValue(CharSequence value, boolean animated) {
+        valueTextView.setText(value, animated);
     }
 
     public void setIcon(int resId) {

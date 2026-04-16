@@ -17,6 +17,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
+import androidx.annotation.NonNull;
+
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -42,7 +44,7 @@ public class BubbleActivity extends BasePermissionsActivity implements INavigati
     public static BubbleActivity instance;
 
     private boolean finished;
-    private ArrayList<BaseFragment> mainFragmentsStack = new ArrayList<>();
+    private final ArrayList<BaseFragment> mainFragmentsStack = new ArrayList<>();
 
     private PasscodeView passcodeView;
     public INavigationLayout actionBarLayout;
@@ -89,7 +91,6 @@ public class BubbleActivity extends BasePermissionsActivity implements INavigati
         actionBarLayout.setRemoveActionBarExtraHeight(true);
 
         drawerLayoutContainer = new DrawerLayoutContainer(this);
-        drawerLayoutContainer.setAllowOpenDrawer(false, false);
         setContentView(drawerLayoutContainer, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         RelativeLayout launchLayout = new RelativeLayout(this);
@@ -126,14 +127,12 @@ public class BubbleActivity extends BasePermissionsActivity implements INavigati
         }
         passcodeView.onShow(true, false);
         SharedConfig.isWaitingForPasscodeEnter = true;
-        drawerLayoutContainer.setAllowOpenDrawer(false, false);
         passcodeView.setDelegate(view -> {
             SharedConfig.isWaitingForPasscodeEnter = false;
             if (passcodeSaveIntent != null) {
                 handleIntent(passcodeSaveIntent, passcodeSaveIntentIsNew, passcodeSaveIntentIsRestore, true, passcodeSaveIntentAccount, passcodeSaveIntentState);
                 passcodeSaveIntent = null;
             }
-            drawerLayoutContainer.setAllowOpenDrawer(true, false);
             actionBarLayout.showLastFragment();
 
             NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.passcodeDismissed, view);
@@ -243,18 +242,18 @@ public class BubbleActivity extends BasePermissionsActivity implements INavigati
         if (editorView != null) {
             editorView.onActivityResult(requestCode, resultCode, data);
         }
-        if (actionBarLayout.getFragmentStack().size() != 0) {
+        if (!actionBarLayout.getFragmentStack().isEmpty()) {
             BaseFragment fragment = actionBarLayout.getFragmentStack().get(actionBarLayout.getFragmentStack().size() - 1);
             fragment.onActivityResultFragment(requestCode, resultCode, data);
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (!checkPermissionsResult(requestCode, permissions, grantResults)) return;
 
-        if (actionBarLayout.getFragmentStack().size() != 0) {
+        if (!actionBarLayout.getFragmentStack().isEmpty()) {
             BaseFragment fragment = actionBarLayout.getFragmentStack().get(actionBarLayout.getFragmentStack().size() - 1);
             fragment.onRequestPermissionsResultFragment(requestCode, permissions, grantResults);
         }
@@ -328,7 +327,7 @@ public class BubbleActivity extends BasePermissionsActivity implements INavigati
     }
 
     @Override
-    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+    public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
         AndroidUtilities.checkDisplaySize(this, newConfig);
         AndroidUtilities.setPreferredMaxRefreshRate(getWindow());
         super.onConfigurationChanged(newConfig);
@@ -346,8 +345,6 @@ public class BubbleActivity extends BasePermissionsActivity implements INavigati
         }
         if (PhotoViewer.getInstance().isVisible()) {
             PhotoViewer.getInstance().closePhoto(true, false);
-        } else if (drawerLayoutContainer.isDrawerOpened()) {
-            drawerLayoutContainer.closeDrawer(false);
         } else {
             actionBarLayout.onBackPressed();
         }
