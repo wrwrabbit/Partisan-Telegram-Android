@@ -246,6 +246,7 @@ public class SharedConfig {
     public static byte[] pushAuthKeyId;
     public static boolean forceForumTabs;
     public static boolean fastWallpaperDisabled;
+    public static boolean frameMetricsEnabled;
 
     public static String directShareHash;
 
@@ -355,6 +356,9 @@ public class SharedConfig {
     public static int emojiInteractionsHintCount;
     public static int dayNightThemeSwitchHintCount;
     public static int callEncryptionHintDisplayedCount;
+    public static boolean shadowsInSections;
+    public static boolean debugViewMetrics;
+    public static boolean photoHighQualityDefault;
 
     public static UpdateData pendingPtgAppUpdate;
     public static long lastUpdateCheckTime;
@@ -386,8 +390,6 @@ public class SharedConfig {
     public static int fastScrollHintCount = 3;
     public static boolean dontAskManageStorage;
     public static boolean multipleReactionsPromoShowed;
-
-    public static boolean translateChats = true;
 
     public static boolean isFloatingDebugActive;
     public static LiteMode liteMode;
@@ -921,6 +923,7 @@ public class SharedConfig {
             useSystemBoldFont = preferences.getBoolean("useSystemBoldFont", false);
             forceForumTabs = preferences.getBoolean("forceForumTabs", false);
             fastWallpaperDisabled = preferences.getBoolean("fastWallpaperDisabled", false);
+            frameMetricsEnabled = preferences.getBoolean("frameMetricsEnabled", false);
             if (useSystemBoldFont) {
                 AndroidUtilities.mediumTypeface = null;
             }
@@ -993,6 +996,9 @@ public class SharedConfig {
             multipleReactionsPromoShowed = preferences.getBoolean("multipleReactionsPromoShowed", false);
             callEncryptionHintDisplayedCount = preferences.getInt("callEncryptionHintDisplayedCount", 0);
             debugVideoQualities = preferences.getBoolean("debugVideoQualities", false);
+            shadowsInSections = preferences.getBoolean("shadowsInSections", false);
+            debugViewMetrics = preferences.getBoolean("debugViewMetrics", false);
+            photoHighQualityDefault = preferences.getBoolean("photoHighQualityDefault", false);
 
             loadDebugConfig(preferences);
 
@@ -1129,6 +1135,13 @@ public class SharedConfig {
                 FileLog.e(e);
             }
         }
+    }
+
+    public static int getUpdateAccountNum() {
+        if (SharedConfig.pendingPtgAppUpdate == null) {
+            return -1;
+        }
+        return SharedConfig.pendingPtgAppUpdate.accountNum;
     }
 
     public static void increaseBadPasscodeTries() {
@@ -1335,7 +1348,7 @@ public class SharedConfig {
         if (FakePasscodeUtils.getActivatedFakePasscode() != null) {
             return FakePasscodeUtils.getActivatedFakePasscode().passcodeEnabled();
         } else {
-            return passcodeHash.length() != 0;
+            return !passcodeHash.isEmpty();
         }
     }
 
@@ -1644,6 +1657,14 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("fastWallpaperDisabled", fastWallpaperDisabled);
+        editor.apply();
+    }
+
+    public static void toggleFrameMetricsEnabled() {
+        frameMetricsEnabled = !frameMetricsEnabled;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("frameMetricsEnabled", frameMetricsEnabled);
         editor.apply();
     }
 

@@ -75,7 +75,6 @@ import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.FlickerLoadingView;
-import org.telegram.ui.Components.GroupCreateDividerItemDecoration;
 import org.telegram.ui.Components.GroupCreateSpan;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
@@ -96,7 +95,6 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
     private RecyclerListView listView;
     private StickerEmptyView emptyView;
     private GroupCreateAdapter adapter;
-    private GroupCreateDividerItemDecoration itemDecoration;
     private AnimatorSet currentDoneButtonAnimation;
     private ImageView floatingButton;
     private boolean doneButtonVisible;
@@ -659,7 +657,6 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                         searching = true;
                         searchWas = true;
                         adapter.setSearching(true);
-                        itemDecoration.setSearching(true);
                         listView.setFastScrollVisible(false);
                         listView.setVerticalScrollBarEnabled(true);
                     }
@@ -695,7 +692,6 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         listView.setLayoutManager(linearLayoutManager);
         listView.setVerticalScrollBarEnabled(false);
         listView.setVerticalScrollbarPosition(LocaleController.isRTL ? View.SCROLLBAR_POSITION_LEFT : View.SCROLLBAR_POSITION_RIGHT);
-        listView.addItemDecoration(itemDecoration = new GroupCreateDividerItemDecoration());
         frameLayout.addView(listView);
         listView.setOnItemClickListener((view, position) -> {
             if (view instanceof GroupCreateUserCell) {
@@ -994,7 +990,6 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
     private void closeSearch() {
         searching = false;
         searchWas = false;
-        itemDecoration.setSearching(false);
         adapter.setSearching(false);
         adapter.searchDialogs(null);
         listView.setFastScrollVisible(true);

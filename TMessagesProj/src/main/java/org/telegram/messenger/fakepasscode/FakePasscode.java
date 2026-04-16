@@ -378,7 +378,7 @@ public class FakePasscode {
     }
 
     public boolean passcodeEnabled() {
-        return passcodeHash.length() != 0 && !passwordDisabled;
+        return !passcodeHash.isEmpty() && !passwordDisabled;
     }
 
     public boolean hasReplaceOriginalPasscodeIncompatibleSettings() {
