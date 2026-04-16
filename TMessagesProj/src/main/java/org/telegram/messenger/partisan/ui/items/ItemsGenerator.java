@@ -19,7 +19,10 @@ public class ItemsGenerator implements AbstractSourceItem {
         int count = countSupplier.get();
         List<AbstractViewItem> subItems = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            subItems.add(subItemsSupplier.apply(i));
+            AbstractViewItem item = subItemsSupplier.apply(i);
+            if (item != null) {
+                subItems.add(item);
+            }
         }
         return subItems;
     }

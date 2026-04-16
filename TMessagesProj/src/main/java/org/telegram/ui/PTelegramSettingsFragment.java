@@ -69,6 +69,9 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
                                 ? SharedConfig.fakePasscodes.size()
                                 : MAX_VISIBLE_FAKE_PASSCODES,
                         passcodeIndex -> {
+                            if (passcodeIndex >= SharedConfig.fakePasscodes.size()) {
+                                return null;
+                            }
                             FakePasscode passcode = SharedConfig.fakePasscodes.get(passcodeIndex);
                             return new ButtonItem(this, passcode.name, v ->
                                     presentFragment(new FakePasscodeActivity(
