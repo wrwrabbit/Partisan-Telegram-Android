@@ -889,13 +889,8 @@ public class UserConfig extends BaseController {
 
     public static int getUsedAccountCountForCurrentFakePasscodeState() {
         int usedAccounts = 0;
-        Integer availableAccount = null;
         for (int a = UserConfig.MAX_ACCOUNT_COUNT - 1; a >= 0; a--) {
-            if (!UserConfig.getInstance(a).isClientActivated()) {
-                if (availableAccount == null) {
-                    availableAccount = a;
-                }
-            } else if (!FakePasscodeUtils.isHideAccount(a)) {
+            if (!FakePasscodeUtils.isHideAccount(a)) {
                 usedAccounts++;
             }
         }

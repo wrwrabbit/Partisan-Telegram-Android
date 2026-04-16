@@ -23,6 +23,7 @@ import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
+import org.telegram.messenger.partisan.ui.DangerousSettingSwitcher;
 import org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLocationFragment;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
@@ -104,54 +105,6 @@ public class PartisanSettingsActivity extends BaseFragment {
     private int protectPtelegramSettingsRow;
     private int protectPtelegramSettingsDetailRow;
 
-    private class DangerousSettingSwitcher {
-        public Context context;
-        public View view;
-        public boolean value;
-        public Consumer<Boolean> setValue;
-        public Consumer<AccountInstance> dangerousAction;
-        public Function<UserConfig, Boolean> isChanged;
-        public String dangerousActionTitle;
-        public String positiveButtonText;
-        public String negativeButtonText;
-        public String neutralButtonText;
-
-        public void switchSetting() {
-            if (context == null || !value || !isChangedSetting(isChanged)) {
-                changeSetting(value);
-            } else {
-                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
-                builder.setMessage(dangerousActionTitle);
-                builder.setPositiveButton(positiveButtonText, (dialog, which) -> changeSetting(true));
-                builder.setNegativeButton(negativeButtonText, (dialog, which) -> changeSetting(false));
-                builder.setNeutralButton(neutralButtonText, null);
-                showDialog(builder.create());
-            }
-        }
-
-        private void changeSetting(boolean runDangerousAction) {
-            setValue.accept(!value);
-            SharedConfig.saveConfig();
-            ((TextCheckCell) view).setChecked(!value);
-            if (runDangerousAction) {
-                Utils.foreachActivatedAccountInstance(dangerousAction);
-            }
-        }
-
-        private boolean isChangedSetting(Function<UserConfig, Boolean> isChanged) {
-            for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-                UserConfig config = UserConfig.getInstance(a);
-                if (config.isClientActivated()) {
-                    if (isChanged.apply(config)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
     private final boolean ptelegramSettingsMode;
 
     public PartisanSettingsActivity() {
@@ -217,8 +170,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                 ((TextCheckCell) view).setChecked(SharedConfig.showId);
             } else if (position == disableAvatarRow) {
                 DangerousSettingSwitcher switcher = new DangerousSettingSwitcher();
-                switcher.context = context;
-                switcher.view = view;
+                switcher.fragment = this;
                 switcher.value = SharedConfig.allowDisableAvatar;
                 switcher.setValue = v -> SharedConfig.allowDisableAvatar = v;
                 switcher.isChanged = c -> c.chatInfoOverrides.values().stream().anyMatch(o -> !o.avatarEnabled);
@@ -226,6 +178,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                 switcher.positiveButtonText = LocaleController.getString("Reset", R.string.Reset);
                 switcher.negativeButtonText = LocaleController.getString("NotReset", R.string.NotReset);
                 switcher.neutralButtonText = LocaleController.getString("Cancel", R.string.Cancel);
+                switcher.onSettingChanged = () -> listAdapter.notifyItemChanged(position);
                 switcher.dangerousAction = accountInstance -> {
                     for (UserConfig.ChatInfoOverride override : accountInstance.getUserConfig().chatInfoOverrides.values()) {
                         override.avatarEnabled = true;
@@ -235,8 +188,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                 switcher.switchSetting();
             } else if (position == renameChatRow) {
                 DangerousSettingSwitcher switcher = new DangerousSettingSwitcher();
-                switcher.context = context;
-                switcher.view = view;
+                switcher.fragment = this;
                 switcher.value = SharedConfig.allowRenameChat;
                 switcher.setValue = v -> SharedConfig.allowRenameChat = v;
                 switcher.isChanged = c -> c.chatInfoOverrides.values().stream().anyMatch(o -> o.title != null);
@@ -244,6 +196,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                 switcher.positiveButtonText = LocaleController.getString("Reset", R.string.Reset);
                 switcher.negativeButtonText = LocaleController.getString("NotReset", R.string.NotReset);
                 switcher.neutralButtonText = LocaleController.getString("Cancel", R.string.Cancel);
+                switcher.onSettingChanged = () -> listAdapter.notifyItemChanged(position);
                 switcher.dangerousAction = accountInstance -> {
                     for (UserConfig.ChatInfoOverride override : accountInstance.getUserConfig().chatInfoOverrides.values()) {
                         override.title = null;

@@ -167,6 +167,7 @@ import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.settings.TesterSettings;
+import org.telegram.messenger.partisan.ui.PTelegramSettingsFragment;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
