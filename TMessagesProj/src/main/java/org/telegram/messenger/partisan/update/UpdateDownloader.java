@@ -28,7 +28,7 @@ public class UpdateDownloader implements NotificationCenter.NotificationCenterDe
     public void startUpdateDownloading() {
         log("startUpdateDownloading");
         if (SharedConfig.getUpdateAccountNum() != accountNum || SharedConfig.pendingPtgAppUpdate.message == null) {
-            log("Update account: " + LaunchActivity.getUpdateAccountNum()
+            log("Update account: " + SharedConfig.getUpdateAccountNum()
                     + ", current account: " + accountNum
                     + ", message: " + (SharedConfig.pendingPtgAppUpdate.message == null ? "NULL" : "NOT NULL"));
             recheckUpdateAndStartDownloadAgain();
