@@ -1,4 +1,4 @@
-package org.telegram.ui;
+package org.telegram.messenger.partisan.ui;
 
 import static org.telegram.messenger.LocaleController.getString;
 
@@ -19,9 +19,6 @@ import org.telegram.messenger.partisan.ui.items.CollapseItem;
 import org.telegram.messenger.partisan.ui.items.DelimiterItem;
 import org.telegram.messenger.partisan.ui.items.DescriptionItem;
 import org.telegram.messenger.partisan.ui.items.HeaderItem;
-import org.telegram.messenger.partisan.ui.InterfaceTweaksFragment;
-import org.telegram.messenger.partisan.ui.PartisanBaseFragment;
-import org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLocationFragment;
 import org.telegram.messenger.partisan.ui.items.ItemsGenerator;
 import org.telegram.messenger.partisan.ui.items.ToggleItem;
 import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
@@ -29,6 +26,11 @@ import org.telegram.messenger.partisan.voicechange.VoiceChangeSettingsFragment;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.FakePasscodeActivity;
+import org.telegram.ui.FakePasscodeRestoreActivity;
+import org.telegram.ui.PartisanSettingsActivity;
+import org.telegram.ui.PasscodeActivity;
+import org.telegram.ui.SecurityIssuesFragment;
 
 public class PTelegramSettingsFragment extends PartisanBaseFragment {
 
@@ -69,6 +71,9 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
                                 ? SharedConfig.fakePasscodes.size()
                                 : MAX_VISIBLE_FAKE_PASSCODES,
                         passcodeIndex -> {
+                            if (passcodeIndex >= SharedConfig.fakePasscodes.size()) {
+                                return null;
+                            }
                             FakePasscode passcode = SharedConfig.fakePasscodes.get(passcodeIndex);
                             return new ButtonItem(this, passcode.name, v ->
                                     presentFragment(new FakePasscodeActivity(

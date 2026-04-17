@@ -65,7 +65,6 @@ import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.capture.IBlur3Capture;
 import org.telegram.ui.Components.blur3.utils.Blur3Utils;
-import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilteredSearchView;
 import org.telegram.ui.PremiumPreviewFragment;
@@ -140,7 +139,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     int currentAccount = UserConfig.selectedAccount;
 
     private boolean lastSearchScrolledToTop;
-    BaseFragment parent;
+    DialogsActivity parent;
 
     String lastSearchString;
     private FilteredSearchView.Delegate filteredSearchViewDelegate;
@@ -158,7 +157,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     private final int folderId;
     int animateFromCount = 0;
 
-    public SearchViewPager(Context context, BaseFragment fragment, int type, int initialDialogsType, int folderId, ChatPreviewDelegate chatPreviewDelegate) {
+    public SearchViewPager(Context context, DialogsActivity fragment, int type, int initialDialogsType, int folderId, ChatPreviewDelegate chatPreviewDelegate) {
         super(context);
         this.folderId = folderId;
         parent = fragment;
@@ -172,7 +171,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
         itemAnimator.setMoveInterpolator(new OvershootInterpolator(1.1f));
         itemAnimator.setTranslationInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
 
-        dialogsSearchAdapter = new DialogsSearchAdapter(context, fragment instanceof DialogsActivity ? (DialogsActivity) fragment : null, type, initialDialogsType, itemAnimator, fragment instanceof DialogsActivity && ((DialogsActivity) fragment).getAllowGlobalSearch(), null) {
+        dialogsSearchAdapter = new DialogsSearchAdapter(context, fragment, type, initialDialogsType, itemAnimator, fragment.getAllowGlobalSearch(), null) {
             @Override
             public void notifyDataSetChanged() {
                 int itemCount = getCurrentItemCount();
@@ -265,7 +264,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             }
         };
         if (initialDialogsType == DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER) {
-            ArrayList<TLRPC.Dialog> dialogs = fragment instanceof DialogsActivity ? ((DialogsActivity) fragment).getDialogsArray(currentAccount, initialDialogsType, folderId, true) : new ArrayList<>();
+            ArrayList<TLRPC.Dialog> dialogs = fragment.getDialogsArray(currentAccount, initialDialogsType, folderId, true);
             ArrayList<Long> dialogIds = new ArrayList<>();
             for (int i = 0; i < dialogs.size(); ++i) {
                 dialogIds.add(dialogs.get(i).id);
@@ -839,7 +838,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             // actionMode.setBackgroundColor(Color.TRANSPARENT);
             // actionMode.drawBlur = false;
 
-            if ((parent instanceof DialogsActivity && ((DialogsActivity) parent).hasMainTabs)) {
+            if (parent.hasMainTabs) {
                 actionModeCloseView = new ImageView(getContext());
                 actionModeCloseView.setScaleType(ImageView.ScaleType.CENTER);
                 actionModeCloseView.setImageDrawable(new BackDrawable(true));
@@ -853,7 +852,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             selectedMessagesCountTextView.setTextSize(18);
             selectedMessagesCountTextView.setTypeface(AndroidUtilities.bold());
             selectedMessagesCountTextView.setTextColor(Theme.getColor(Theme.key_actionBarActionModeDefaultIcon));
-            actionMode.addView(selectedMessagesCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, (parent instanceof DialogsActivity && ((DialogsActivity) parent).hasMainTabs) ? 18 : 72, 0, 0, 0));
+            actionMode.addView(selectedMessagesCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, parent.hasMainTabs ? 18 : 72, 0, 0, 0));
             selectedMessagesCountTextView.setOnTouchListener((v, event) -> true);
 
             speedItem = actionMode.addItemWithWidth(speedItemId, R.drawable.avd_speed, AndroidUtilities.dp(54), getString(R.string.AccDescrPremiumSpeed));
@@ -864,7 +863,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
         }
         if (selectedMessagesCountTextView != null) {
             boolean isForumSearch = dialogsSearchAdapter != null && dialogsSearchAdapter.delegate != null && dialogsSearchAdapter.delegate.getSearchForumDialogId() != 0;
-            ((MarginLayoutParams) selectedMessagesCountTextView.getLayoutParams()).leftMargin = AndroidUtilities.dp(((parent instanceof DialogsActivity && ((DialogsActivity) parent).hasMainTabs) ? 18 : 72) + (isForumSearch ? 56 : 0));
+            ((MarginLayoutParams) selectedMessagesCountTextView.getLayoutParams()).leftMargin = AndroidUtilities.dp((parent.hasMainTabs ? 18 : 72) + (isForumSearch ? 56 : 0));
             selectedMessagesCountTextView.setLayoutParams(selectedMessagesCountTextView.getLayoutParams());
         }
         if (parent.getActionBar().getBackButton() != null && parent.getActionBar().getBackButton().getDrawable() instanceof MenuDrawable) {
