@@ -141,6 +141,7 @@ import org.telegram.messenger.partisan.appmigration.AppMigrator;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.messenger.utils.GradientProtectionDrawable;
 import org.telegram.messenger.utils.SearchTextWatcher;
@@ -204,7 +205,6 @@ import org.telegram.ui.Components.FragmentSearchField;
 import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.PermissionRequest;
 import org.telegram.ui.Components.UItem;
-import org.telegram.ui.Components.blur3.Blur3HashImpl;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.BlurredBackgroundWithFadeDrawable;
 import org.telegram.ui.Components.blur3.DownscaleScrollableNoiseSuppressor;
@@ -2887,6 +2887,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         getNotificationCenter().addObserver(this, NotificationCenter.foldersHidingChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.dialogsHidingChanged);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.passwordlessModeActivated);
         getNotificationCenter().addObserver(this, NotificationCenter.searchCleared);
         getNotificationCenter().addObserver(this, NotificationCenter.onDatabaseReset);
         getNotificationCenter().addObserver(this, NotificationCenter.storiesUpdated);
@@ -3063,6 +3064,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         getNotificationCenter().removeObserver(this, NotificationCenter.foldersHidingChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogsHidingChanged);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.passwordlessModeActivated);
         getNotificationCenter().removeObserver(this, NotificationCenter.searchCleared);
         getNotificationCenter().removeObserver(this, NotificationCenter.onDatabaseReset);
         getNotificationCenter().removeObserver(this, NotificationCenter.storiesUpdated);
@@ -3397,7 +3399,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     return;
                 }
                 String text = editText.getText().toString();
-                checkPasscodeFromSearch(text);
                 if (!text.isEmpty() || (searchViewPager != null && searchViewPager.dialogsSearchAdapter != null && searchViewPager.dialogsSearchAdapter.hasRecentSearch()) || searchFiltersWasShowed || hasStories) {
                     searchWas = true;
                     if (!searchIsShowed) {
@@ -3407,6 +3408,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (searchViewPager != null) {
                     searchViewPager.onTextChanged(text);
                 }
+                checkPasscodeFromSearch(text);
             }
 
             @Override
@@ -5406,14 +5408,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             FilesMigrationService.checkBottomSheet(this);
         }
-        if (FakePasscodeUtils.autoAddHidingsToAllFakePasscodes() && !FakePasscodeUtils.isFakePasscodeActivated()) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setMessage(LocaleController.getString("AccountHiddenDescription", R.string.AccountHiddenDescription));
-            builder.setTitle(LocaleController.getString("AccountHiddenTitle", R.string.AccountHiddenTitle));
-            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
-            AlertDialog alertDialog = builder.create();
-            showDialog(alertDialog);
-        }
         FakePasscodeUtils.cleanupHiddenAccountSystemNotifications();
         actionBar.setDrawBlurBackground(contentView);
 
@@ -7146,6 +7140,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         updateProxyButton(false, true);
         updateStoriesVisibility(false);
         checkSuggestClearDatabase();
+        checkUi_itemPasscodeVisibility();
         checkUi_mainTabsVisible();
         if (filterTabsView != null && viewPages[0] != null && viewPages[0].dialogsAdapter != null) {
             int dialogsType = viewPages[0].dialogsAdapter.getDialogsType();
@@ -7170,6 +7165,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (getMessagesStorage().fileProtectionEnabled()) {
             getMessagesController().sortDialogs(null);
         }
+        org.telegram.messenger.partisan.Utils.showAccountWillBeHiddenDialogIfNeeded(this);
     }
 
     private void checkOtherPtg() {
@@ -9399,6 +9395,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             if (saved) {
                 getUserConfig().saveConfig(true);
+                getNotificationCenter().postNotificationName(NotificationCenter.savedChannelAdded);
                 Toast.makeText(getParentActivity(), LocaleController.getString("Saved", R.string.Saved), Toast.LENGTH_SHORT).show();
             }
         }
@@ -10862,6 +10859,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
                 updateFilterTabs(true, false);
             }
+        } else if (id == NotificationCenter.passwordlessModeActivated) {
+            checkUi_itemPasscodeVisibility();
         } else if (id == NotificationCenter.searchCleared) {
             if (searchViewPager != null && searchViewPager.dialogsSearchAdapter != null) {
                 searchViewPager.dialogsSearchAdapter.clearRecentSearch();
@@ -11331,6 +11330,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 SharedConfig.setAppLocked(false);
                 SharedConfig.saveConfig();
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.didSetPasscode);
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.closeSearchByActiveAction);
                 if (getParentActivity() != null) {
                     Toast.makeText(getParentActivity(), LocaleController.getString(R.string.PasscodeActivatedFromPasswordless), Toast.LENGTH_LONG).show();
                 }
@@ -13573,6 +13573,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 args.putLong("user_id", UserConfig.getInstance(currentAccount).getClientUserId());
                 presentFragment(new ChatActivity(args));
             });
+            if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
+                    && PartisanTelegramSettings.showAsTab.getOrDefault()) {
+                io.add(R.drawable.tabs_contacts_24, getString(R.string.Contacts), () -> {
+                    Bundle args = new Bundle();
+                    args.putBoolean("needPhonebook", true);
+                    presentFragment(new ContactsActivity(args));
+                });
+            }
+            if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
+                    && PartisanTelegramSettings.showInChatList.getOrDefault()) {
+                io.add(R.drawable.menu_saved_channels, getString(R.string.SavedChannels), () -> {
+                    presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
+                });
+            }
             if (ApplicationLoader.applicationLoaderInstance != null) {
                 ApplicationLoader.applicationLoaderInstance.addItemOptions(io);
             }
@@ -13924,7 +13938,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         final float factor2 = 1f - getRightSlidingProgress();
         final float factor3 = 1f - animatorDoneButtonVisible.getFloatValue();
         final float factor = factor0 * factor1 * factor2 * factor3;
-        FragmentFloatingButton.setAnimatedVisibility(passcodeItem, factor);
+        final boolean forceHideLockButton = !SharedConfig.passcodeEnabled()
+                && FakePasscodeUtils.isFakePasscodeActivated()
+                && FakePasscodeUtils.getActivatedFakePasscode().passwordlessMode;
+        FragmentFloatingButton.setAnimatedVisibility(passcodeItem, forceHideLockButton ? 0 : factor);
     }
 
     private void checkUi_itemDownloadsVisibility() {

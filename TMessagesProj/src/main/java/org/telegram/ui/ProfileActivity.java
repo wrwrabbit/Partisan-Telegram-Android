@@ -167,6 +167,7 @@ import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
 import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.settings.TesterSettings;
+import org.telegram.messenger.partisan.ui.PTelegramSettingsFragment;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
@@ -276,7 +277,6 @@ import org.telegram.ui.Components.StickerEmptyView;
 import org.telegram.ui.Components.TagEditCell;
 import org.telegram.ui.Components.TimerDrawable;
 import org.telegram.ui.Components.TranslateAlert2;
-import org.telegram.ui.Components.TranslateAlert3;
 import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UndoView;
@@ -321,11 +321,9 @@ import org.telegram.ui.bots.SetupEmojiStatusSheet;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
@@ -4522,7 +4520,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else if (position == clearLogsRow) {
                 FileLog.cleanupLogs();
             } else if (position == sendLogcatRow) {
-                sendLogcat();
+                org.telegram.messenger.partisan.Utils.sendLogcat(this);
             } else if (position == switchBackendRow) {
                 if (getParentActivity() == null) {
                     return;
@@ -12108,25 +12106,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     otherItem.addSubItem(add_shortcut, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut));
                 }
                 if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-                    if (isBot && SharedConfig.allowRenameChat) {
-                        otherItem.addSubItem(edit_chat_name, R.drawable.floating_pencil, LocaleController.getString("EditChatName", R.string.EditChatName));
-                    }
-                    if (user.photo != null && SharedConfig.allowDisableAvatar) {
-                        otherItem.addSubItem(disable_avatar, R.drawable.disable_avatar, LocaleController.getString("DisableAvatar", R.string.DisableAvatar));
-                        otherItem.addSubItem(enable_avatar, R.drawable.msg_photos, LocaleController.getString("EnableAvatar", R.string.EnableAvatar));
-                        UserConfig.ChatInfoOverride item;
-                        boolean avatarEnabled = true;
-                        long correct_id = chatId != 0 ? chatId : userId;
-                        if (getUserConfig().chatInfoOverrides.containsKey(String.valueOf(correct_id))) {
-                            item = getUserConfig().chatInfoOverrides.get(String.valueOf(correct_id));
-                            avatarEnabled = item.avatarEnabled;
-                        }
-                        if (avatarEnabled) {
-                            otherItem.hideSubItem(enable_avatar);
-                        } else {
-                            otherItem.hideSubItem(disable_avatar);
-                        }
-                    }
+                    addMaskingButtons(isBot,
+                            user.photo != null,
+                            userId);
                 }
             }
         } else if (chatId != 0) {
@@ -12221,6 +12203,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         }
                     }
                 }
+                if (!FakePasscodeUtils.isFakePasscodeActivated() && topicId == 0) {
+                    addMaskingButtons(true,
+                            chat.photo != null && !(chat.photo instanceof TLRPC.TL_chatPhotoEmpty),
+                            chatId);
+                }
             } else {
                 if (chatInfo != null) {
                     if (ChatObject.canManageCalls(chat) && chatInfo.call == null) {
@@ -12246,27 +12233,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 otherItem.addSubItem(leave_group, R.drawable.msg_leave, LocaleController.getString(R.string.DeleteAndExit));
                 leaveAction = true;
-                if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-                    if (topicId == 0) {
-                        if (SharedConfig.allowRenameChat) {
-                            otherItem.addSubItem(edit_chat_name, R.drawable.floating_pencil, LocaleController.getString("EditChatName", R.string.EditChatName));
-                        }
-                        if (chat.photo != null && !(chat.photo instanceof TLRPC.TL_chatPhotoEmpty) && SharedConfig.allowDisableAvatar) {
-                            otherItem.addSubItem(disable_avatar, R.drawable.disable_avatar, LocaleController.getString("DisableAvatar", R.string.DisableAvatar));
-                            otherItem.addSubItem(enable_avatar, R.drawable.msg_photos, LocaleController.getString("EnableAvatar", R.string.EnableAvatar));
-                            UserConfig.ChatInfoOverride item;
-                            boolean avatarEnabled = true;
-                            if (getUserConfig().chatInfoOverrides.containsKey(String.valueOf(chatId))) {
-                                item = getUserConfig().chatInfoOverrides.get(String.valueOf(chatId));
-                                avatarEnabled = item.avatarEnabled;
-                            }
-                            if (avatarEnabled) {
-                                otherItem.hideSubItem(enable_avatar);
-                            } else {
-                                otherItem.hideSubItem(disable_avatar);
-                            }
-                        }
-                    }
+                if (!FakePasscodeUtils.isFakePasscodeActivated() && topicId == 0) {
+                    addMaskingButtons(true,
+                            chat.photo != null && !(chat.photo instanceof TLRPC.TL_chatPhotoEmpty),
+                            chatId);
                 }
             }
         }
@@ -12390,6 +12360,27 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             sharedMediaLayout.getSearchItem().requestLayout();
         }
         updateStoriesViewBounds(false);
+    }
+
+    private void addMaskingButtons(boolean allowRenameChat, boolean allowDisableAvatar, long dialogId) {
+        if (allowRenameChat && SharedConfig.allowRenameChat) {
+            otherItem.addSubItem(edit_chat_name, R.drawable.floating_pencil, getString(R.string.EditChatName));
+        }
+        if (allowDisableAvatar && SharedConfig.allowDisableAvatar) {
+            otherItem.addSubItem(disable_avatar, R.drawable.disable_avatar, getString(R.string.DisableAvatar));
+            otherItem.addSubItem(enable_avatar, R.drawable.msg_photos, getString(R.string.EnableAvatar));
+            UserConfig.ChatInfoOverride item;
+            boolean avatarEnabled = true;
+            if (getUserConfig().chatInfoOverrides.containsKey(String.valueOf(dialogId))) {
+                item = getUserConfig().chatInfoOverrides.get(String.valueOf(dialogId));
+                avatarEnabled = item.avatarEnabled;
+            }
+            if (avatarEnabled) {
+                otherItem.hideSubItem(enable_avatar);
+            } else {
+                otherItem.hideSubItem(disable_avatar);
+            }
+        }
     }
 
     private void createAutoDeleteItem(Context context) {
@@ -13031,73 +13022,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         });
     }
 
-    private void sendLogcat() {
-        if (getParentActivity() == null) {
-            return;
-        }
-        AlertDialog progressDialog = new AlertDialog(getParentActivity(), 3);
-        progressDialog.setCanCancel(false);
-        progressDialog.show();
-        Utilities.globalQueue.postRunnable(() -> {
-            try {
-                File sdCard = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-                File dir = new File(sdCard.getAbsolutePath() + "/logs");
-
-                File logcatFile = new File(dir, "logcat.txt");
-                if (logcatFile.exists()) {
-                    logcatFile.delete();
-                }
-                boolean[] finished = new boolean[1];
-                try {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(logcatFile));
-                    String logcat = Utilities.readLogcat();
-                    writer.write(logcat);
-                    finished[0] = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                AndroidUtilities.runOnUIThread(() -> {
-                    try {
-                        progressDialog.dismiss();
-                    } catch (Exception ignore) {
-
-                    }
-                    if (finished[0]) {
-                        Uri uri;
-                        if (Build.VERSION.SDK_INT >= 24) {
-                            uri = FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", logcatFile);
-                        } else {
-                            uri = Uri.fromFile(logcatFile);
-                        }
-
-                        Intent i = new Intent(Intent.ACTION_SEND);
-                        if (Build.VERSION.SDK_INT >= 24) {
-                            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        }
-                        i.setType("message/rfc822");
-                        i.putExtra(Intent.EXTRA_EMAIL, "");
-                        i.putExtra(Intent.EXTRA_SUBJECT, "Logcat from " + LocaleController.getInstance().getFormatterStats().format(System.currentTimeMillis()));
-                        i.putExtra(Intent.EXTRA_STREAM, uri);
-                        if (getParentActivity() != null) {
-                            try {
-                                getParentActivity().startActivityForResult(Intent.createChooser(i, "Select email application."), 500);
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                        }
-                    } else {
-                        if (getParentActivity() != null) {
-                            Toast.makeText(getParentActivity(), LocaleController.getString("ErrorOccurred", R.string.ErrorOccurred), Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
     private void showTesterPasswordDialog() {
         AlertDialog.Builder alert = new AlertDialog.Builder(getParentActivity());
         final EditTextCaption editText = new EditTextCaption(getParentActivity(), null);
@@ -13386,7 +13310,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
                         @Override
                         protected void onNoClick(int type) {
-                            presentFragment(new SecurityIssuesActivity());
+                            presentFragment(new SecurityIssuesFragment());
                         }
                     };
                     break;
@@ -14843,6 +14767,44 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         f.presentFragment(set);
                         set.scrollToType(LiteModeSettingsActivity.SWITCH_TYPE_SMOOTH_TRANSITIONS);
                     }).withLink("tg://settings/power-saving/transitions"),
+
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10000, getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreateActivity())) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10001, getString(R.string.AddFakePasscode), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(() -> {
+                        org.telegram.messenger.fakepasscode.FakePasscode newFakePasscode = org.telegram.messenger.fakepasscode.FakePasscode.create();
+                        return new FakePasscodeActivity(FakePasscodeActivity.TYPE_SETUP_FAKE_PASSCODE, newFakePasscode, true);
+                    }))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10002, getString(R.string.FakePasscodeRestore), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(FakePasscodeRestoreActivity::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10003, getString(R.string.BadPasscodeReaction), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10004, getString(R.string.VoiceChange), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.voicechange.VoiceChangeSettingsFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10005, getString(R.string.InterfaceTweaks), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10006, getString(R.string.SecurityIssuesTitle), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(SecurityIssuesFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10007, getString(R.string.OtherSettings), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(() -> new PartisanSettingsActivity(true)))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10008, getString(R.string.ProtectPartisanSettings), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreateActivity())) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10009, getString(R.string.PartisanTelegramSettingsPosition), getString(R.string.PartisanTelegramSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLocationFragment::new))) : null,
+
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10010, getString(R.string.SavedChannelsSetting), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.SavedChannelsSettingsFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10011, getString(R.string.AdditionalVerifiedSetting), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10012, getString(R.string.ConfirmDangerousAction), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10013, getString(R.string.ReactToMessages), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10014, getString(R.string.ShowCallButton), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10015, getString(R.string.CutForeignAgentsText), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10016, getString(R.string.IsDeleteMessagesForAllByDefault), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10017, getString(R.string.DeletingMyMessages), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10018, getString(R.string.DeletingAfterRead), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10019, getString(R.string.AvatarDisabling), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10020, getString(R.string.ChatRenaming), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10021, getString(R.string.ShowId), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10022, getString(R.string.ShowVersion), null, getString(R.string.PartisanTelegramSettings), getString(R.string.InterfaceTweaks), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.InterfaceTweaksFragment::new))) : null,
+
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10023, getString(R.string.BruteForceProtection), null, getString(R.string.PartisanTelegramSettings), getString(R.string.BadPasscodeReaction), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10024, getString(R.string.BadPasscodeAttempts), null, getString(R.string.PartisanTelegramSettings), getString(R.string.BadPasscodeReaction), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(BadPasscodeAttemptsActivity::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10025, getString(R.string.TakePhotoWithFrontCamera), null, getString(R.string.PartisanTelegramSettings), getString(R.string.BadPasscodeReaction), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10026, getString(R.string.TakePhotoWithBackCamera), null, getString(R.string.PartisanTelegramSettings), getString(R.string.BadPasscodeReaction), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment::new))) : null,
+
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10027, getString(R.string.FileProtection), null, getString(R.string.PartisanTelegramSettings), getString(R.string.OtherSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(org.telegram.messenger.partisan.fileprotection.FileProtectionActivity::new))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10028, getString(R.string.OnScreenLockActionTitle), null, getString(R.string.PartisanTelegramSettings), getString(R.string.OtherSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(() -> new PartisanSettingsActivity(true)))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10029, getString(R.string.ClearCacheOnLock), null, getString(R.string.PartisanTelegramSettings), getString(R.string.OtherSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(() -> new PartisanSettingsActivity(true)))) : null,
+                    !FakePasscodeUtils.isFakePasscodeActivated() ? new SearchResult(10030, getString(R.string.IsClearAllDraftsOnScreenLock), null, getString(R.string.PartisanTelegramSettings), getString(R.string.OtherSettings), R.drawable.settings_ptelegram_filled, () -> f.presentFragment(PTelegramSettingsFragment.checkLockAndCreate(() -> new PartisanSettingsActivity(true)))) : null,
 
                     new SearchResult(400, getString(R.string.Language), R.drawable.msg2_language, () -> f.presentFragment(new LanguageSelectActivity())).withLink("tg://settings/language"),
                     new SearchResult(405, getString(R.string.ShowTranslateButton), getString(R.string.Language), R.drawable.msg2_language, () -> f.presentFragment(new LanguageSelectActivity())).withLink("tg://settings/language/show-button"),

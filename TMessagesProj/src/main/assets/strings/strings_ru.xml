@@ -10,6 +10,8 @@
     <string name="ClearTelegramCacheOnFakeLogin">Очищать кэш Telegram</string>
     <string name="ClearProxiesOnFakeLogin">Очищать список прокси</string>
     <string name="AddFakePasscode">Добавить ложный код-пароль</string>
+    <string name="FakePasscodeNoMainPasscodeTitle">Хотите установить основной код-пароль?</string>
+    <string name="FakePasscodeNoMainPasscodeMessage">Ложный код-пароль не будет работать без основного код-пароля. Хотите сначала установить основной код-пароль?</string>
     <string name="LogOutOnFakeLogin">Выходить из аккаунта</string>
     <string name="DeleteFakePasscode">Удалить ложный код-пароль</string>
     <string name="ChangeFakePasscodeName">Изменить название</string>
@@ -126,6 +128,13 @@
     <string name="CutForeignAgentsText">Вырезать текст об иноагентах</string>
     <string name="CutForeignAgentsTextInfo">Если данная опция включена, из текста сообщений и постов будет вырезаться уведомление об иноагенте. Если текст постов отображается некорректно, отключите эту опцию. После переключения желательно очистить кэш.</string>
     <string name="PartisanSettingsInfo">Настройте другие опции приложения.</string>
+    <string name="SavedChannelsInChatList">В меню «⋮» в списке чатов</string>
+    <string name="SavedChannelsInChatListInfo">Показывает кнопку «Сохранённые каналы» в меню «⋮» списка чатов.</string>
+    <string name="SavedChannelsInSettings">В основных настройках</string>
+    <string name="SavedChannelsInSettingsInfo">Показывает пункт «Сохранённые каналы» на экране основных настроек.</string>
+    <string name="SavedChannelsAsTab">Заменить вкладку контактов</string>
+    <string name="SavedChannelsAsTabInfo">Заменяет вкладку «Контакты» на главном экране на вкладку «Сохранённые каналы». Кнопка «Контакты» перемещается в меню списка чатов.</string>
+    <string name="MainTabsSavedChannels">Сохранённые</string>
     <string name="ClearSavedChannels">Очищать сохранённые каналы</string>
     <string name="OnScreenLockActionTitle">Действие при блокировке экрана</string>
     <string name="OnScreenLockActionInfo">Если выбрано \'Свернуть\', при разблокировке телефона откроется домашний экран. Если выбрано \'Закрыть\', приложение будет закрыто и удалено из списка открытых приложений.</string>
@@ -185,8 +194,9 @@
     <string name="SecurityIssuesProfileSuggestionHeader">Проблемы с безопасностью</string>
     <string name="SecurityIssuesProfileSuggestionDetail">Мы нашли несколько проблем, которые могут подвергнуть Ваш аккаунт опасности. Хотите посмотреть на них?</string>
     <string name="SecurityIssuesProfileSuggestionYes">Закрыть</string>
-    <string name="SecurityIssuesProfileSuggestionNo">Посмотреть проблемы</string>
+    <string name="SecurityIssuesProfileSuggestionNo">Посмотреть</string>
     <string name="SecurityIssuesTitle">Проблемы безопасности</string>
+    <string name="SecurityIssuesInfo">Показывает обнаруженные проблемы безопасности в вашем аккаунте или в приложении.</string>
     <string name="RootIssueTitle">Root</string>
     <string name="RootIssueText">Root может позволить злоумышленнику получить доступ к данным приложения (например, к сообщениям) без входа в него.</string>
     <string name="UsbDebuggingIssueTitle">USB отладка</string>
@@ -330,4 +340,21 @@
     <string name="ChangesWillBeAppliedToTheNextCall">Голос в текущем звонке останется без изменений. Изменения применятся только в следующем звонке.</string>
     <string name="CantSetupPasskeys">Невозможно настроить ключи доступа</string>
     <string name="CantSetupPasskeysDescription">Партизанский Телеграм не может настроить ключи доступа. Воспользуйтесь официальным приложением для этого.</string>
+    <string name="PartisanTelegramSettings">Настройки PTelegram</string>
+    <string name="OtherPartisanSettings">Другие настройки</string>
+    <string name="ProtectPartisanSettings">Защитить настройки PTelegram</string>
+    <string name="ProtectPartisanSettingsInfo">Требовать основной пароль для открытия настроек PTelegram.</string>
+    <string name="EnterMainPasscode">Введите основной код-пароль</string>
+    <string name="EnterMainPasscodeInfo">Введите основной код-пароль (не ложный) для доступа к настройкам PTelegram.</string>
+    <string name="PartisanTelegramSettingsPosition">Локация настроек PTelegram</string>
+    <string name="PartisanTelegramSettingsPositionInfo">Определяет, где отображается вход в настройки PTelegram.</string>
+    <string name="PartisanTelegramSettingsPositionMain">Основные настройки</string>
+    <string name="PartisanTelegramSettingsPositionPrivacy">Настройки конфиденциальности</string>
+    <string name="PartisanTelegramSettingsPositionSettingsInfo">Настройки PTelegram отображаются на экране Основных настроек.</string>
+    <string name="PartisanTelegramSettingsPositionPrivacyInfo">Настройки PTelegram отображаются на экране Настроек конфиденциальности.</string>
+    <string name="MoreAccounts">Ещё</string>
+    <string name="BadPasscodeReaction">Реакция на неверный код-пароль</string>
+    <string name="BadPasscodeReactionInfo">Настройте защиту от подбора код-пароля и фотографирование камерой при неверном вводе или посмотрите список неудачных попыток входа.</string>
+    <string name="InterfaceTweaks">Дополнительные функции</string>
+    <string name="InterfaceTweaksInfo">Включите дополнительные функции Партизанского Телеграма или отключите их, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
 </resources>

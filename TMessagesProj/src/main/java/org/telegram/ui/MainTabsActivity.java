@@ -97,6 +97,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
     private IUpdateLayout updateLayout;
     private boolean dropCallsFragmentAfterPageScroll;
+    private boolean dropContactsFragmentAfterPageScroll;
 
     private UpdateLayoutWrapper updateLayoutWrapper;
     private FrameLayout tabsViewWrapper;
@@ -214,6 +215,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         Bulletin.addDelegate(this, delegate);
         Bulletin.addDelegate(contentView, delegate);
 
+        //org.telegram.messenger.partisan.Utils.showAccountWillBeHiddenDialogIfNeeded(this);
+
         showAccountChangeHint();
     }
 
@@ -286,6 +289,24 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         }
         checkUi_callTabVisible(getUserConfig().showCallsTab, false);
 
+        tabSavedChannels = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.STAR, R.string.MainTabsSavedChannels);
+        tabSavedChannels.setOnClickListener(v -> {
+            if (viewPager.isManualScrolling() || viewPager.isTouch()) {
+                return;
+            }
+            if (viewPager.getCurrentPosition() == POSITION_CONTACTS) {
+                final BaseFragment fragment = getCurrentVisibleFragment();
+                if (fragment instanceof TabFragmentDelegate) {
+                    ((TabFragmentDelegate) fragment).onParentScrollToTop();
+                }
+                return;
+            }
+            selectTab(POSITION_CONTACTS, true);
+            viewPager.scrollToPosition(POSITION_CONTACTS);
+        });
+        tabsView.addView(tabSavedChannels, 2);
+        checkUi_savedChannelsTabVisible(SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault() && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated(), false);
+
         selectTab(viewPager.getCurrentPosition(), false);
 
         iBlur3SourceColor.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
@@ -350,7 +371,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
         accountNumbers.clear();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated()) {
+            if (UserConfig.getInstance(a).isClientActivated() && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideAccount(a)) {
                 accountNumbers.add(a);
             }
         }
@@ -378,8 +399,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                         }
                     }
                 }
+                if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+                    freeAccounts = UserConfig.getFreeAccountsCountForCurrentFakePasscodeState();
+                }
                 if (!UserConfig.hasPremiumOnAccounts()) {
-                    freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
+                    freeAccounts -= (UserConfig.getMaxAccountCountForCurrentFakePasscodeState() - UserConfig.getDefaultMaxAccountCountForCurrentFakePasscodeState());
                 }
                 if (freeAccounts > 0 && availableAccount != null) {
                     presentFragment(new LoginActivity(availableAccount));
@@ -406,6 +430,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                     }
                 });
                 o.addView(btn, LayoutHelper.createLinear(230, 48));
+            }
+            if (org.telegram.messenger.partisan.settings.TesterSettings.fillAccountSelectorWithDummies.get().get()) {
+                for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                    if (!UserConfig.getInstance(a).isClientActivated()) {
+                        o.addView(accountView(a, false), LayoutHelper.createLinear(230, 48));
+                    }
+                }
             }
         }
 
@@ -481,6 +512,10 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 dropFragmentAtPosition(POSITION_CALLS_OR_SETTINGS);
                 dropCallsFragmentAfterPageScroll = false;
             }
+            if (currentPosition != POSITION_CONTACTS && dropContactsFragmentAfterPageScroll) {
+                dropFragmentAtPosition(POSITION_CONTACTS);
+                dropContactsFragmentAfterPageScroll = false;
+            }
             if (currentPosition != POSITION_PROFILE) {
                 dropFragmentAtPosition(POSITION_PROFILE);
             }
@@ -547,6 +582,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     @Override
     protected BaseFragment createBaseFragmentAt(int position) {
         if (position == POSITION_CONTACTS) {
+            if (SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault() && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+                Bundle args = new Bundle();
+                args.putBoolean("hasMainTabs", true);
+                return new SavedChannelsActivity(args);
+            }
             Bundle args = new Bundle();
             args.putBoolean("needPhonebook", true);
             args.putBoolean("needFinishFragment", false);
@@ -586,11 +626,15 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     /* */
 
     public GlassTabView[] tabs;
+    private GlassTabView tabSavedChannels;
 
     public void selectTab(int position, boolean animated) {
         for (int a = 0; a < tabs.length; a++) {
             GlassTabView tab = tabs[a];
             tab.setSelected(indexToPosition(a) == position, animated);
+        }
+        if (tabSavedChannels != null) {
+            tabSavedChannels.setSelected(position == POSITION_CONTACTS, animated);
         }
     }
 
@@ -599,6 +643,10 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             final int position = indexToPosition(index);
             final float visibility = Math.max(0, 1f - Math.abs(position - animatedPosition));
             tabs[index].setGestureSelectedOverride(visibility, allow);
+        }
+        if (tabSavedChannels != null) {
+            final float visibility = Math.max(0, 1f - Math.abs(POSITION_CONTACTS - animatedPosition));
+            tabSavedChannels.setGestureSelectedOverride(visibility, allow);
         }
         tabsView.invalidate();
     }
@@ -736,6 +784,16 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             } else {
                 dropFragmentAtPosition(POSITION_CALLS_OR_SETTINGS);
             }
+        } else if (id == NotificationCenter.savedChannelsButtonStateChanged) {
+            final boolean savedChannelsTabVisible = SharedConfig.showSavedChannels && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showAsTab.getOrDefault() && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated();
+            checkUi_savedChannelsTabVisible(savedChannelsTabVisible, true);
+            if (viewPager != null && viewPager.getCurrentPosition() == POSITION_CONTACTS) {
+                viewPager.scrollToPosition(POSITION_CHATS);
+                selectTab(POSITION_CHATS, true);
+                dropContactsFragmentAfterPageScroll = true;
+            } else {
+                dropFragmentAtPosition(POSITION_CONTACTS);
+            }
         } else if (id == NotificationCenter.mainUserInfoChanged) {
             if (tabs != null && tabs[INDEX_PROFILE] != null) {
                 tabs[INDEX_PROFILE].updateUserAvatar(currentAccount);
@@ -756,6 +814,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).addObserver(this, NotificationCenter.fileLoadFailed);
         }
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.cacheClearedByPtg);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.notificationsCountUpdated);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
@@ -780,6 +839,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).removeObserver(this, NotificationCenter.fileLoadFailed);
         }
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.cacheClearedByPtg);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.notificationsCountUpdated);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
@@ -838,6 +898,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         if (tabsView != null) {
             tabsView.setViewVisible(tabs[INDEX_SETTINGS], !callTabsVisible, animated);
             tabsView.setViewVisible(tabs[INDEX_CALLS], callTabsVisible, animated);
+        }
+    }
+
+    private void checkUi_savedChannelsTabVisible(boolean savedChannelsTabVisible, boolean animated) {
+        if (tabsView != null && tabSavedChannels != null) {
+            tabsView.setViewVisible(tabs[INDEX_CONTACTS], !savedChannelsTabVisible, animated);
+            tabsView.setViewVisible(tabSavedChannels, savedChannelsTabVisible, animated);
         }
     }
 
@@ -967,6 +1034,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         }
         if (tabsView != null) {
             tabsView.invalidate();
+        }
+        if (tabSavedChannels != null) {
+            tabSavedChannels.updateColorsLottie();
         }
         if (tabs != null) {
             for (GlassTabView tabView : tabs) {

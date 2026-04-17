@@ -7621,16 +7621,24 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (FakePasscodeUtils.isFakePasscodeActivated()) {
                 Utilities.globalQueue.postRunnable(() -> {
                     List<BaseFragment> fragmentsStack = actionBarLayout.getFragmentStack();
-                    if (fragmentsStack.stream().noneMatch(f -> f instanceof DialogsActivity)) {
+                    if (fragmentsStack.stream().noneMatch(f -> f instanceof MainTabsActivity)) {
                         return;
                     }
-                    while (!fragmentsStack.isEmpty() && (!(fragmentsStack.get(fragmentsStack.size() - 1) instanceof DialogsActivity)
-                            || fragmentsStack.stream().filter(f -> f instanceof DialogsActivity).count() > 1)) {
+                    while (!fragmentsStack.isEmpty() && (!(fragmentsStack.get(fragmentsStack.size() - 1) instanceof MainTabsActivity))) {
                         int count = fragmentsStack.size();
                         AndroidUtilities.runOnUIThread(() -> fragmentsStack.get(fragmentsStack.size() - 1).finishFragment(false));
                         while(count == fragmentsStack.size()) {
                             // wait
                         }
+                    }
+                    if (!fragmentsStack.isEmpty() && fragmentsStack.get(fragmentsStack.size() - 1) instanceof MainTabsActivity) {
+                        MainTabsActivity mainTabs = (MainTabsActivity) fragmentsStack.get(fragmentsStack.size() - 1);
+                        AndroidUtilities.runOnUIThread(() -> {
+                            if (mainTabs.viewPager != null && mainTabs.viewPager.getCurrentPosition() != 0) {
+                                mainTabs.viewPager.setPosition(0 /* POSITION_CHATS */);
+                                mainTabs.selectTab(0 /* POSITION_CHATS */, false);
+                            }
+                        });
                     }
                 });
             }

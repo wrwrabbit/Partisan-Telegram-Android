@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -10,7 +10,7 @@ import org.telegram.ui.Cells.TextCell;
 
 import java.util.function.Consumer;
 
-public class ButtonWithIconItem extends AbstractItem {
+public class ButtonWithIconItem extends AbstractViewItem {
     private final String text;
     private final Integer iconResId;
     private final Consumer<View> onClick;
@@ -23,13 +23,13 @@ public class ButtonWithIconItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new TextCell(context));
+        return AbstractViewItem.initializeView(new TextCell(context));
     }
 
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
         TextCell textCell = (TextCell) holder.itemView;
-        textCell.setTextAndIcon(text, iconResId, true);
+        textCell.setTextAndIcon(text, iconResId, drawDivider);
     }
 
     @Override

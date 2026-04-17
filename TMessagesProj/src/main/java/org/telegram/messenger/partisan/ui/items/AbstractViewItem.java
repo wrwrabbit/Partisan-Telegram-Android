@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.view.View;
 
@@ -7,18 +7,31 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Supplier;
 
-public abstract class AbstractItem {
+public abstract class AbstractViewItem implements AbstractSourceItem {
     private int position = -1;
     private final int viewType;
     protected final BaseFragment fragment;
     private Supplier<Boolean> condition = null;
     private Supplier<Boolean> enabledCondition = null;
 
-    protected AbstractItem(BaseFragment fragment, int viewType) {
+    protected boolean drawDivider;
+
+    protected AbstractViewItem(BaseFragment fragment, int viewType) {
         this.fragment = fragment;
         this.viewType = viewType;
+    }
+
+    @Override
+    public List<AbstractViewItem> generateViewItems() {
+        return Collections.singletonList(this);
+    }
+
+    public void setDrawDivider(boolean drawDivider) {
+        this.drawDivider = drawDivider;
     }
 
     public int getPosition() {
@@ -37,12 +50,12 @@ public abstract class AbstractItem {
         return viewType;
     }
 
-    public AbstractItem addCondition(Supplier<Boolean> condition) {
+    public AbstractViewItem addCondition(Supplier<Boolean> condition) {
         this.condition = condition;
         return this;
     }
 
-    public AbstractItem addEnabledCondition(Supplier<Boolean> enabledCondition) {
+    public AbstractViewItem addEnabledCondition(Supplier<Boolean> enabledCondition) {
         this.enabledCondition = enabledCondition;
         return this;
     }
@@ -81,6 +94,10 @@ public abstract class AbstractItem {
 
     protected void setEnabled(View view, boolean enabled) {
         view.setEnabled(enabled);
+    }
+
+    public void onClickExtended(View view, float x, float y) {
+        onClick(view);
     }
 
     protected abstract void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position);

@@ -871,17 +871,7 @@ public class UserConfig extends BaseController {
     }
 
     public static Integer getAccountIndexForLoginIfPossible() {
-        int usedAccounts = 0;
-        Integer availableAccount = null;
-        for (int a = UserConfig.MAX_ACCOUNT_COUNT - 1; a >= 0; a--) {
-            if (!UserConfig.getInstance(a).isClientActivated()) {
-                if (availableAccount == null) {
-                    availableAccount = a;
-                }
-            } else if (!FakePasscodeUtils.isHideAccount(a)) {
-                usedAccounts++;
-            }
-        }
+        int usedAccounts = getUsedAccountCountForCurrentFakePasscodeState();
         int maxAccountCount;
         if (!FakePasscodeUtils.isFakePasscodeActivated()) {
             maxAccountCount = UserConfig.MAX_ACCOUNT_COUNT;
@@ -891,9 +881,48 @@ public class UserConfig extends BaseController {
             maxAccountCount = UserConfig.getMaxAccountCount();
         }
         if (usedAccounts < maxAccountCount) {
-            return availableAccount;
+            return getAvailableAccountIndex();
         } else {
             return null;
+        }
+    }
+
+    public static int getUsedAccountCountForCurrentFakePasscodeState() {
+        int usedAccounts = 0;
+        for (int a = UserConfig.MAX_ACCOUNT_COUNT - 1; a >= 0; a--) {
+            if (!FakePasscodeUtils.isHideAccount(a)) {
+                usedAccounts++;
+            }
+        }
+        return usedAccounts;
+    }
+
+    private static Integer getAvailableAccountIndex() {
+        for (int a = UserConfig.MAX_ACCOUNT_COUNT - 1; a >= 0; a--) {
+            if (!UserConfig.getInstance(a).isClientActivated()) {
+                return a;
+            }
+        }
+        return null;
+    }
+
+    public static int getFreeAccountsCountForCurrentFakePasscodeState() {
+        return getMaxAccountCountForCurrentFakePasscodeState() - getUsedAccountCountForCurrentFakePasscodeState();
+    }
+
+    public static int getMaxAccountCountForCurrentFakePasscodeState() {
+        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+            return UserConfig.MAX_ACCOUNT_COUNT;
+        } else {
+            return UserConfig.FAKE_PASSCODE_MAX_PREMIUM_ACCOUNT_COUNT;
+        }
+    }
+
+    public static int getDefaultMaxAccountCountForCurrentFakePasscodeState() {
+        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+            return UserConfig.MAX_ACCOUNT_DEFAULT_COUNT;
+        } else {
+            return UserConfig.FAKE_PASSCODE_MAX_ACCOUNT_COUNT;
         }
     }
 

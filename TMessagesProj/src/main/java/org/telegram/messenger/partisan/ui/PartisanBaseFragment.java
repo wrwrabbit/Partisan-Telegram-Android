@@ -9,6 +9,7 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import org.telegram.messenger.R;
+import org.telegram.messenger.partisan.ui.items.AbstractSourceItem;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -39,6 +40,8 @@ public abstract class PartisanBaseFragment extends BaseFragment {
         frameLayout.setTag(Theme.key_windowBackgroundGray);
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         listView = new RecyclerListView(context);
+        listView.setSections();
+        actionBar.setAdaptiveBackground(listView);
         listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false) {
             @Override
             public boolean supportsPredictiveItemAnimations() {
@@ -51,7 +54,7 @@ public abstract class PartisanBaseFragment extends BaseFragment {
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listAdapter.setContext(context);
         listView.setAdapter(listAdapter);
-        listView.setOnItemClickListener(listAdapter::onItemClick);
+        listView.setOnItemClickListener(listAdapter::onItemClickExtended);
         return fragmentView;
     }
 
@@ -67,10 +70,11 @@ public abstract class PartisanBaseFragment extends BaseFragment {
     public void onResume() {
         super.onResume();
         if (listAdapter != null) {
-            listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
+            listAdapter.updateRows();
+            listAdapter.notifyDataSetChanged();
         }
     }
 
-    protected abstract AbstractItem[] createItems();
+    protected abstract AbstractSourceItem[] createItems();
     protected abstract String getTitle();
 }

@@ -16,7 +16,13 @@ import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.widget.LinearLayout;
 
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.widget.Toast;
+
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -41,6 +47,8 @@ import org.telegram.messenger.fakepasscode.FilteredArrayList;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.CacheControlActivity;
 import org.telegram.ui.Cells.CheckBoxUserCell;
@@ -49,7 +57,9 @@ import org.telegram.ui.web.BrowserHistory;
 import org.telegram.ui.web.WebBrowserSettings;
 import org.telegram.ui.web.WebMetadataCache;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -674,5 +684,83 @@ public class Utils {
             }
         }
         return linearLayout;
+    }
+
+    public static void sendLogcat(BaseFragment fragment) {
+        if (fragment.getParentActivity() == null) {
+            return;
+        }
+        AlertDialog progressDialog = new AlertDialog(fragment.getParentActivity(), 3);
+        progressDialog.setCanCancel(false);
+        progressDialog.show();
+        Utilities.globalQueue.postRunnable(() -> {
+            try {
+                File sdCard = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+                File dir = new File(sdCard.getAbsolutePath() + "/logs");
+                File logcatFile = new File(dir, "logcat.txt");
+                if (logcatFile.exists()) {
+                    logcatFile.delete();
+                }
+                boolean[] finished = new boolean[1];
+                try {
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(logcatFile));
+                    writer.write(Utilities.readLogcat());
+                    writer.close();
+                    finished[0] = true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                AndroidUtilities.runOnUIThread(() -> {
+                    try {
+                        progressDialog.dismiss();
+                    } catch (Exception ignore) {
+                    }
+                    if (finished[0]) {
+                        Uri uri;
+                        if (Build.VERSION.SDK_INT >= 24) {
+                            uri = FileProvider.getUriForFile(fragment.getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", logcatFile);
+                        } else {
+                            uri = Uri.fromFile(logcatFile);
+                        }
+                        Intent i = new Intent(Intent.ACTION_SEND);
+                        if (Build.VERSION.SDK_INT >= 24) {
+                            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        }
+                        i.setType("message/rfc822");
+                        i.putExtra(Intent.EXTRA_EMAIL, "");
+                        i.putExtra(Intent.EXTRA_SUBJECT, "Logcat from " + LocaleController.getInstance().getFormatterStats().format(System.currentTimeMillis()));
+                        i.putExtra(Intent.EXTRA_STREAM, uri);
+                        if (fragment.getParentActivity() != null) {
+                            try {
+                                fragment.getParentActivity().startActivityForResult(Intent.createChooser(i, "Select email application."), 500);
+                            } catch (Exception e) {
+                                FileLog.e(e);
+                            }
+                        }
+                    } else {
+                        if (fragment.getParentActivity() != null) {
+                            Toast.makeText(fragment.getParentActivity(), LocaleController.getString(R.string.ErrorOccurred), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public static void showAccountWillBeHiddenDialogIfNeeded(BaseFragment fragment) {
+        if (FakePasscodeUtils.autoAddHidingsToAllFakePasscodes() && !FakePasscodeUtils.isFakePasscodeActivated()) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
+            builder.setMessage(LocaleController.getString(R.string.AccountHiddenDescription));
+            builder.setTitle(LocaleController.getString(R.string.AccountHiddenTitle));
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+        }
+    }
+
+    public static boolean needShowSavedChannels() {
+        return !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && org.telegram.messenger.SharedConfig.showSavedChannels;
     }
 }

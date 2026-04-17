@@ -11223,7 +11223,10 @@ public class MessagesStorage extends BaseController {
             result = action.accept(cursor);
         } catch (Exception e) {
             checkSQLException(e);
-            PartisanLog.handleException(e);
+            if (e.getMessage() != null && !e.getMessage().contains("no such table: enc_group_inner_chats")
+                    && !e.getMessage().contains("no such table: partisan_version")) { // these exceptions are ok
+                PartisanLog.handleException(e);
+            }
         }
         if (cursor != null) {
             cursor.dispose();

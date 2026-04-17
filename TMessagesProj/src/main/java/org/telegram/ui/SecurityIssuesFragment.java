@@ -9,17 +9,11 @@
 package org.telegram.ui;
 
 import android.content.Context;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.Toast;
 
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
@@ -36,6 +30,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.SecurityIssueCell;
+import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -44,13 +39,12 @@ import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class SecurityIssuesActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
+public class SecurityIssuesFragment extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
     private ListAdapter listAdapter;
     private RecyclerListView listView;
@@ -59,7 +53,7 @@ public class SecurityIssuesActivity extends BaseFragment implements Notification
 
     private final static int reset_issues = 1;
 
-    public SecurityIssuesActivity() {
+    public SecurityIssuesFragment() {
         super();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             UserConfig config = UserConfig.getInstance(a);
@@ -127,6 +121,8 @@ public class SecurityIssuesActivity extends BaseFragment implements Notification
         frameLayout.setTag(Theme.key_windowBackgroundGray);
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         listView = new RecyclerListView(context);
+        listView.setSections();
+        actionBar.setAdaptiveBackground(listView);
         listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false) {
             @Override
             public boolean supportsPredictiveItemAnimations() {
@@ -184,8 +180,8 @@ public class SecurityIssuesActivity extends BaseFragment implements Notification
             if (!config.isClientActivated()) {
                 continue;
             }
-            config.showSecuritySuggestions = !getUserConfig().getIgnoredSecurityIssues()
-                    .containsAll(getUserConfig().currentSecurityIssues)
+            config.showSecuritySuggestions = !config.getIgnoredSecurityIssues()
+                    .containsAll(config.currentSecurityIssues)
                     && oldShowSuggestionValues[a]; // true only if it was true when the activity started
             config.saveConfig(false);
         }
@@ -211,6 +207,9 @@ public class SecurityIssuesActivity extends BaseFragment implements Notification
         private List<SecurityIssue> securityIssues;
         private Context mContext;
 
+        private static final int VIEW_TYPE_ISSUE = 0;
+        private static final int VIEW_TYPE_SHADOW = 1;
+
         public ListAdapter(Context context) {
             mContext = context;
             updateIssues();
@@ -228,73 +227,79 @@ public class SecurityIssuesActivity extends BaseFragment implements Notification
 
         @Override
         public int getItemCount() {
-            return securityIssues.size();
+            int count = securityIssues.size();
+            return count == 0 ? 0 : count * 2 - 1;
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            return position % 2 == 0 ? VIEW_TYPE_ISSUE : VIEW_TYPE_SHADOW;
         }
 
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view;
-            switch (viewType) {
-                case 0:
-                default:
-                    view = new SecurityIssueCell(mContext) {
-                        @Override
-                        protected void onCloseClick() {
-                            if (currentIssue.isGlobal()) {
-                                SharedConfig.ignoredSecurityIssues.add(currentIssue);
-                            } else {
-                                getUserConfig().ignoredSecurityIssues.add(currentIssue);
-                            }
-                            updateShowSuggestion();
-                            getUserConfig().saveConfig(false);
-                            int issueIndex = ListAdapter.this.securityIssues.indexOf(currentIssue);
-                            ListAdapter.this.securityIssues.remove(currentIssue);
-                            ListAdapter.this.notifyItemRemoved(issueIndex);
-                            checkResetIssuesItemVisibility();
+            if (viewType == VIEW_TYPE_SHADOW) {
+                view = new ShadowSectionCell(mContext);
+            } else {
+                view = new SecurityIssueCell(mContext) {
+                    @Override
+                    protected void onCloseClick() {
+                        if (currentIssue.isGlobal()) {
+                            SharedConfig.ignoredSecurityIssues.add(currentIssue);
+                        } else {
+                            getUserConfig().ignoredSecurityIssues.add(currentIssue);
                         }
+                        updateShowSuggestion();
+                        getUserConfig().saveConfig(false);
+                        removeIssue(currentIssue);
+                        checkResetIssuesItemVisibility();
+                    }
 
-                        @Override
-                        protected void onFixClick() {
-                            if (currentIssue == SecurityIssue.PRIVACY) {
-                                PrivacyChecker.fix(currentAccount, SecurityIssuesActivity.this::showPrivacyErrorAlert, () -> fixed(currentIssue));
-                            } else if (currentIssue == SecurityIssue.TWO_STEP_VERIFICATION) {
-                                TwoStepVerificationSetupActivity twoStepVerification = new TwoStepVerificationSetupActivity(TwoStepVerificationSetupActivity.TYPE_INTRO, null);
-                                twoStepVerification.setFromRegistration(false);
-                                twoStepVerification.returnToSecurityIssuesActivity = true;
-                                presentFragment(twoStepVerification, false);
-                            }
+                    @Override
+                    protected void onFixClick() {
+                        if (currentIssue == SecurityIssue.PRIVACY) {
+                            PrivacyChecker.fix(currentAccount, SecurityIssuesFragment.this::showPrivacyErrorAlert, () -> fixed(currentIssue));
+                        } else if (currentIssue == SecurityIssue.TWO_STEP_VERIFICATION) {
+                            TwoStepVerificationSetupActivity twoStepVerification = new TwoStepVerificationSetupActivity(TwoStepVerificationSetupActivity.TYPE_INTRO, null);
+                            twoStepVerification.setFromRegistration(false);
+                            twoStepVerification.returnToSecurityIssuesActivity = true;
+                            presentFragment(twoStepVerification, false);
                         }
-                    };
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-                    break;
+                    }
+                };
+                view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
             }
             return new RecyclerListView.Holder(view);
         }
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            switch (holder.getItemViewType()) {
-                case 0: {
-                    SecurityIssueCell securityCell = (SecurityIssueCell) holder.itemView;
-                    securityCell.setIssue(securityIssues.get(position), position != securityIssues.size() - 1);
-                    securityCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
-                    break;
-                }
+            if (holder.getItemViewType() == VIEW_TYPE_ISSUE) {
+                SecurityIssueCell securityCell = (SecurityIssueCell) holder.itemView;
+                securityCell.setIssue(securityIssues.get(position / 2), false);
+                securityCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
             }
         }
 
-        @Override
-        public int getItemViewType(int position) {
-            return 0;
+        private void removeIssue(SecurityIssue issue) {
+            int issueIndex = securityIssues.indexOf(issue);
+            securityIssues.remove(issueIndex);
+            int recyclerPosition = issueIndex * 2;
+            if (securityIssues.isEmpty()) {
+                notifyItemRemoved(recyclerPosition);
+            } else if (issueIndex == 0) {
+                notifyItemRangeRemoved(recyclerPosition, 2);
+            } else {
+                notifyItemRangeRemoved(recyclerPosition - 1, 2);
+            }
         }
 
         private void fixed(SecurityIssue issue) {
             getUserConfig().currentSecurityIssues.remove(issue);
             updateShowSuggestion();
             getUserConfig().saveConfig(false);
-            int index = securityIssues.indexOf(issue);
-            securityIssues.remove(issue);
-            notifyItemRemoved(index);
+            removeIssue(issue);
             showFixed();
         }
     }
@@ -328,7 +333,7 @@ public class SecurityIssuesActivity extends BaseFragment implements Notification
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{TextSettingsCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText7));
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextSettingsCell.class}, new String[]{"valueTextView"}, null, null, null, Theme.key_windowBackgroundWhiteValueText));
 
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow));
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class, org.telegram.ui.Cells.ShadowSectionCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow));
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText4));
 
         return themeDescriptions;

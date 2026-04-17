@@ -4307,6 +4307,7 @@ public class ChatActivity extends BaseFragment implements
                     if (DialogObject.isChatDialog(did)) {
                         if (getUserConfig().saveChannel(getMessagesController().getChat(-did))) {
                             getUserConfig().saveConfig(true);
+                            getNotificationCenter().postNotificationName(NotificationCenter.savedChannelAdded);
                             Toast.makeText(getParentActivity(), LocaleController.getString("Saved", R.string.Saved), Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -19059,6 +19060,8 @@ public class ChatActivity extends BaseFragment implements
             if (currentEncryptedChatSingle != null || isEncryptedGroup()) {
                 forAnyEncryptedChat(false, encryptedChat ->
                         avatarContainer.setTime(encryptedChat.ttl, animated)
+                , () ->
+                        avatarContainer.setTime(0, animated)
                 );
             } else if (userInfo != null) {
                 avatarContainer.setTime(userInfo.ttl_period, animated);
@@ -29850,7 +29853,7 @@ public class ChatActivity extends BaseFragment implements
                         }
                     }
                     int position = chatLayoutManager.findFirstVisibleItemPosition();
-                    if (position != 0 && !sponsoredMessageFound) {
+                    if ((position != 0 || isSavedChannel) && !sponsoredMessageFound) {
                         RecyclerListView.Holder holder = (RecyclerListView.Holder) chatListView.findViewHolderForAdapterPosition(position);
                         if (holder != null) {
                             int mid = 0;
@@ -29877,7 +29880,7 @@ public class ChatActivity extends BaseFragment implements
                                 if (messageObject2 == null || messageObject2.getId() == 0) {
                                     continue;
                                 }
-                                if ((!messageObject2.isOut() || messageObject2.messageOwner.from_scheduled) && messageObject != null && messageObject.isUnread()) {
+                                if ((!messageObject2.isOut() || messageObject2.messageOwner.from_scheduled) && messageObject != null && messageObject.isUnread() && !isSavedChannel) {
                                     ignore = true;
                                     messageId = 0;
                                 }
@@ -44577,10 +44580,14 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private void forAnyEncryptedChat(boolean onlyInitialized, Consumer<TLRPC.EncryptedChat> action) {
+        forAnyEncryptedChat(onlyInitialized, action, null);
+    }
+
+    private void forAnyEncryptedChat(boolean onlyInitialized, Consumer<TLRPC.EncryptedChat> action, Runnable onEmptyEncryptedGroupChats) {
         if (currentEncryptedChatSingle != null) {
             action.accept(currentEncryptedChatSingle);
         } else if (currentEncryptedGroup != null) {
-            getCurrentEncryptedChatList(onlyInitialized).stream().findAny().ifPresent(action);
+            getCurrentEncryptedChatList(onlyInitialized).stream().findAny().ifPresentOrElse(action, onEmptyEncryptedGroupChats);
         }
     }
 

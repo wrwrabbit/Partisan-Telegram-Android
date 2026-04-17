@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -12,7 +12,7 @@ import org.telegram.ui.Cells.TextCheckCell;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class ToggleItem extends AbstractItem {
+public class ToggleItem extends AbstractViewItem {
     private final String text;
     private final Supplier<Boolean> getValue;
     private final Consumer<Boolean> setValue;
@@ -29,14 +29,14 @@ public class ToggleItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new TextCheckCell(context));
+        return AbstractViewItem.initializeView(new TextCheckCell(context));
     }
 
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
         TextCheckCell textCell = (TextCheckCell) holder.itemView;
         textCell.setEnabled(isEnabled(), null);
-        textCell.setTextAndCheck(text, getValue.get(), true);
+        textCell.setTextAndCheck(text, getValue.get(), drawDivider);
     }
 
     @Override

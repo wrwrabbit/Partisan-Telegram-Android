@@ -10669,6 +10669,8 @@
     <string name="ClearProxiesOnFakeLogin">Clear Proxies</string>
     <string name="LogOutOnFakeLogin">Log out</string>
     <string name="AddFakePasscode">Add Fake Passcode</string>
+    <string name="FakePasscodeNoMainPasscodeTitle">Would You Like to Set the Main Passcode?</string>
+    <string name="FakePasscodeNoMainPasscodeMessage">The fake passcode will not work without the main passcode. Would you like to set up the main passcode first?</string>
     <string name="DeleteFakePasscode">Delete Fake Passcode</string>
     <string name="ChangeFakePasscodeName">Change Name</string>
     <string name="SendTelegramMessages">Send Telegram Messages</string>
@@ -10784,6 +10786,13 @@
     <string name="ReactToMessagesInfo">Allow to react to messages. If this option is disabled, reactions can be viewed, but you cannot click it.</string>
     <string name="CutForeignAgentsText">Cut out text about foreign agents</string>
     <string name="CutForeignAgentsTextInfo">If this option is enabled, the notification about the foreign agent will be cut from the text of messages and posts. If the post text is displayed incorrectly, disable this option. It is advisable to clear the cache after switching.</string>
+    <string name="SavedChannelsInChatList">In the «⋮» menu in the chat list</string>
+    <string name="SavedChannelsInChatListInfo">Shows a Saved Channels button in the «⋮» menu of the chat list.</string>
+    <string name="SavedChannelsInSettings">In main settings</string>
+    <string name="SavedChannelsInSettingsInfo">Shows a Saved Channels item in the main Settings screen.</string>
+    <string name="SavedChannelsAsTab">Replace contacts tab</string>
+    <string name="SavedChannelsAsTabInfo">Replaces the Contacts tab on the main screen with a Saved Channels tab. The Contacts button moves to the chat list menu.</string>
+    <string name="MainTabsSavedChannels">Saved</string>
     <string name="ClearSavedChannels">Clear Saved Channels</string>
     <string name="OnScreenLockActionTitle">Action On Screen Lock</string>
     <string name="OnScreenLockActionInfo">If \'Hide\' is selected, the home screen will open when the phone is unlocked. If \'Close\' is selected, the application will be closed and removed from the list of recent applications.</string>
@@ -10844,6 +10853,7 @@
     <string name="SecurityIssuesProfileSuggestionYes">Close</string>
     <string name="SecurityIssuesProfileSuggestionNo">View Issues</string>
     <string name="SecurityIssuesTitle">Security Issues</string>
+    <string name="SecurityIssuesInfo">Shows detected security issues in your account or in the app.</string>
     <string name="RootIssueTitle">Root</string>
     <string name="RootIssueText">Root can allow an attacker to access application data (such as messages) without logging into it.</string>
     <string name="UsbDebuggingIssueTitle">USB Debugging</string>
@@ -10987,4 +10997,21 @@
     <string name="ChangesWillBeAppliedToTheNextCall">The voice in the current call will remain unchanged. Changes will only be applied to the next call.</string>
     <string name="CantSetupPasskeys">Cannot Set Up Passkeys</string>
     <string name="CantSetupPasskeysDescription">Partisan Telegram cannot set up passkeys. Use the official app for this.</string>
+    <string name="PartisanTelegramSettings">PTelegram Settings</string>
+    <string name="OtherPartisanSettings">Other Settings</string>
+    <string name="ProtectPartisanSettings">Protect PTelegram Settings</string>
+    <string name="ProtectPartisanSettingsInfo">Require the original passcode to open PTelegram settings.</string>
+    <string name="EnterMainPasscode">Enter main passcode</string>
+    <string name="EnterMainPasscodeInfo">Enter the main passcode (not a fake one) to access PTelegram settings.</string>
+    <string name="PartisanTelegramSettingsPosition">Location of PTelegram Settings</string>
+    <string name="PartisanTelegramSettingsPositionInfo">Controls where the PTelegram Settings are shown.</string>
+    <string name="PartisanTelegramSettingsPositionMain">Main Settings</string>
+    <string name="PartisanTelegramSettingsPositionPrivacy">Privacy &amp; Security Settings</string>
+    <string name="PartisanTelegramSettingsPositionSettingsInfo">PTelegram Settings are shown in the Main Settings screen.</string>
+    <string name="PartisanTelegramSettingsPositionPrivacyInfo">PTelegram Settings are shown in the Privacy &amp; Security Settings screen.</string>
+    <string name="MoreAccounts">More</string>
+    <string name="BadPasscodeReaction">Bad Passcode Reaction</string>
+    <string name="BadPasscodeReactionInfo">Configure protection against passcode brute-force and camera capture on incorrect entry, or view the list of failed login attempts.</string>
+    <string name="InterfaceTweaks">Additional Features</string>
+    <string name="InterfaceTweaksInfo">Enable additional Partisan Telegram features or disable them to better disguise the app when a fake passcode is not active.</string>
 </resources>

@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.view.View;
 
@@ -9,7 +9,7 @@ import org.telegram.ui.Cells.TextSettingsCell;
 
 import java.util.function.Supplier;
 
-public class ReadOnlyDataItem extends AbstractItem {
+public class ReadOnlyDataItem extends AbstractViewItem {
     private final String text;
     private final Supplier<String> getValue;
     private Runnable onClick;
@@ -27,7 +27,7 @@ public class ReadOnlyDataItem extends AbstractItem {
 
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
-        ((TextSettingsCell) holder.itemView).setTextAndValue(text, getValue.get(), true);
+        ((TextSettingsCell) holder.itemView).setTextAndValue(text, getValue.get(), drawDivider);
     }
 
     @Override

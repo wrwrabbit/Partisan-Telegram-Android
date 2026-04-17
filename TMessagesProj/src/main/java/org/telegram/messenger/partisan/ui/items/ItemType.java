@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -9,6 +9,7 @@ import java.util.function.Function;
 
 public enum ItemType {
     TOGGLE(ToggleItem::createView),
+    COMBINED_TOGGLE(CombinedToggleItem::createView),
     RADIO_BUTTON(RadioButtonItem::createView),
     BUTTON(ButtonItem::createView),
     BUTTON_WITH_ICON(ButtonWithIconItem::createView),
@@ -17,7 +18,8 @@ public enum ItemType {
     HEADER(HeaderItem::createView),
     DESCRIPTION(DescriptionItem::createView),
     DELIMITER(DelimiterItem::createView),
-    RECORD(RecordItem::createView);
+    RECORD(RecordItem::createView),
+    COLLAPSE(CollapseItem::createView);
 
     private final Function<Context, View> viewConstructor;
 

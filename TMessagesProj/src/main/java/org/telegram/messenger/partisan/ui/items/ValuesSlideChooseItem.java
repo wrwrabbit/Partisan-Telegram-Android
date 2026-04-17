@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -11,7 +11,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class ValuesSlideChooseItem extends AbstractItem {
+public class ValuesSlideChooseItem extends AbstractViewItem {
     private final String[] options;
     private final Supplier<Integer> getValue;
     private final Consumer<Integer> setValue;
@@ -24,7 +24,7 @@ public class ValuesSlideChooseItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new PartisanSlideChooseView(context));
+        return AbstractViewItem.initializeView(new PartisanSlideChooseView(context));
     }
 
     @Override

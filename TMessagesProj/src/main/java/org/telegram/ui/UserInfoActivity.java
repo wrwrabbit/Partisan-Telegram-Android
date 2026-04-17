@@ -174,13 +174,17 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     private static final int INFO_USERNAME = 7;
     private static final int INFO_BIRTHDAY = 8;
     private static final int BUTTON_ADD_ACCOUNT = 9;
+
+    private static final int BUTTON_MORE_ACCOUNTS = 101;
+
     private static final int BUTTON_LOGOUT = 10;
 
     private final ArrayList<Integer> accountNumbers = new ArrayList<>();
+    private boolean accountsExpanded = false;
     private void updateAccounts() {
         accountNumbers.clear();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated() && currentAccount != a) {
+            if (UserConfig.getInstance(a).isClientActivated() && currentAccount != a && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideAccount(a)) {
                 accountNumbers.add(a);
             }
         }
@@ -225,7 +229,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         items.add(UItem.asHeader(getString(R.string.EditAccountInfoHeader)));
         if (user != null) {
             numberRow = items.size();
-            items.add(InfoCell.Factory.of(INFO_PHONE, R.drawable.menu_phone, PhoneFormat.getInstance().format("+" + user.phone), getString(R.string.TapToChangePhone), 0));
+            items.add(InfoCell.Factory.of(INFO_PHONE, R.drawable.menu_phone, PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumber(currentAccount, user.phone)), getString(R.string.TapToChangePhone), 0));
         }
         usernameRow = items.size();
         if (UserObject.getPublicUsername(user) != null) {
@@ -292,7 +296,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             items.add(UItem.asButton(BUTTON_LOCATION, R.drawable.msg_map, getString(R.string.EditProfileLocation)));
         }
         items.add(UItem.asShadow(-3, null));
-        final boolean hasAddAccount = UserConfig.getActivatedAccountsCount() < UserConfig.MAX_ACCOUNT_COUNT;
+        final boolean hasAddAccount = UserConfig.getActivatedAccountsCount() < UserConfig.getMaxAccountCountForCurrentFakePasscodeState();
         if (hasAddAccount) {
             addAccountRow = items.size();
             items.add(InfoCell.Factory.of(BUTTON_ADD_ACCOUNT, R.drawable.outline_add_account, getString(R.string.AddAccount), null, 0).accent());
@@ -301,8 +305,13 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             if (!hasAddAccount) {
                 items.add(UItem.asHeader(getString(R.string.SettingsAccounts)));
             }
-            for (int i = 0; i < accountNumbers.size(); ++i) {
+            final boolean needFold = accountNumbers.size() > 3;
+            final int visibleCount = (!needFold || accountsExpanded) ? accountNumbers.size() : 2;
+            for (int i = 0; i < visibleCount; ++i) {
                 items.add(SettingsActivity.AccountCell.Factory.of(i, accountNumbers.get(i)));
+            }
+            if (needFold && !accountsExpanded) {
+                items.add(UItem.asButton(BUTTON_MORE_ACCOUNTS, R.drawable.msg_expand, getString(R.string.PremiumMore)));
             }
             if (!UserConfig.hasPremiumOnAccounts()) {
                 final int moreAccounts = Math.max(0, UserConfig.getMaxAccountCount() - UserConfig.getActivatedAccountsCount());
@@ -354,13 +363,21 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
                     }
                 }
             }
+            if (org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+                freeAccounts = UserConfig.getFreeAccountsCountForCurrentFakePasscodeState();
+            }
             if (!UserConfig.hasPremiumOnAccounts()) {
-                freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
+                freeAccounts -= (UserConfig.getMaxAccountCountForCurrentFakePasscodeState() - UserConfig.getDefaultMaxAccountCountForCurrentFakePasscodeState());
             }
             if (freeAccounts > 0 && availableAccount != null) {
                 presentFragment(new LoginActivity(availableAccount));
             } else if (!UserConfig.hasPremiumOnAccounts()) {
                 showDialog(new LimitReachedBottomSheet(this, getContext(), TYPE_ACCOUNTS, currentAccount, null));
+            }
+        } else if (item.id == BUTTON_MORE_ACCOUNTS) {
+            accountsExpanded = true;
+            if (listView != null) {
+                listView.adapter.update(true);
             }
         } else if (item.instanceOf(SettingsActivity.AccountCell.Factory.class)) {
             final int account = item.intValue;

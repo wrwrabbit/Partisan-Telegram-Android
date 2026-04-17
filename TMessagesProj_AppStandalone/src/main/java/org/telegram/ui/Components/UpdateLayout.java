@@ -136,7 +136,7 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
         if (sideMenuContainer == null) {
             return;
         }
-        if (SharedConfig.isAppUpdateAvailable()) {
+        if (SharedConfig.isAppUpdateAvailable() && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
             createUpdateUI(currentAccount);
 
             String fileName = FileLoader.getAttachFileName(SharedConfig.pendingPtgAppUpdate.document);
@@ -180,13 +180,13 @@ public class UpdateLayout extends IUpdateLayout implements NotificationCenter.No
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         if (updateLayout.getTag() == null) {
-                            updateLayout.setVisibility(View.INVISIBLE);
+                            updateLayout.setVisibility(View.GONE);
                         }
                     }
                 }).setDuration(180).start();
             } else {
                 updateLayout.setTranslationY(dp(44));
-                updateLayout.setVisibility(View.INVISIBLE);
+                updateLayout.setVisibility(View.GONE);
             }
         }
     }

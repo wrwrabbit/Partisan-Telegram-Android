@@ -29,7 +29,6 @@ import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -81,7 +80,6 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
 
     private final FakePasscode fakePasscode;
     private final RemoveChatsAction action;
-    protected int accountNum;
 
     private boolean searchWas;
     private boolean searching;
@@ -206,7 +204,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         super();
         this.fakePasscode = fakePasscode;
         this.action = action;
-        this.accountNum = accountNum;
+        setCurrentAccount(accountNum);
     }
 
     @Override
@@ -214,7 +212,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         getNotificationCenter().addObserver(this, NotificationCenter.contactsDidLoad);
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().addObserver(this, NotificationCenter.chatDidCreated);
-        if (Utils.loadAllDialogs(accountNum)) {
+        if (Utils.loadAllDialogs(currentAccount)) {
             getNotificationCenter().addObserver(this, NotificationCenter.dialogsNeedReload);
         }
         return super.onFragmentCreate();
@@ -253,7 +251,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
                     hideActionMode(true);
                     updateHint();
                 } else if (id == add || id == edit) {
-                    presentFragment(new RemoveChatSettingsFragment(fakePasscode, action, adapter.getSelectedItems(), accountNum));
+                    presentFragment(new RemoveChatSettingsFragment(fakePasscode, action, adapter.getSelectedItems(), currentAccount));
                     adapter.clearSelection();
                     adapter.notifyDataSetChanged();
                     hideActionMode(true);
@@ -484,7 +482,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
                     if (editText.length() > 0) {
                         editText.setText(null);
                     }
-                    presentFragment(new RemoveChatSettingsFragment(fakePasscode, action, items, accountNum));
+                    presentFragment(new RemoveChatSettingsFragment(fakePasscode, action, items, currentAccount));
                 }
             }
         }
@@ -547,7 +545,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         } else if (id == NotificationCenter.chatDidCreated) {
             removeSelfFromStack();
         } else if (id == NotificationCenter.dialogsNeedReload) {
-            if (Utils.getAllDialogs(currentAccount).size() > 10_000 || !Utils.loadAllDialogs(accountNum)) {
+            if (Utils.getAllDialogs(currentAccount).size() > 10_000 || !Utils.loadAllDialogs(currentAccount)) {
                 if (emptyView != null) {
                     emptyView.showTextView();
                 }
@@ -571,11 +569,6 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
                 ((ChatRemoveCell) child).update();
             }
         }
-    }
-
-    @Override
-    public AccountInstance getAccountInstance() {
-        return AccountInstance.getInstance(accountNum);
     }
 
     @Keep
@@ -752,7 +745,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
                 if (id != null && getEncryptedGroupUtils().isInnerEncryptedGroupChat(id)) {
                     continue;
                 }
-                Item item = Item.tryCreateItemById(accountNum, action, id);
+                Item item = Item.tryCreateItemById(currentAccount, action, id);
                 if (item != null) {
                     items.add(item);
                 }
@@ -806,7 +799,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
             switch (viewType) {
                 default:
                 case 1:
-                    view = new ChatRemoveCell(context, accountNum);
+                    view = new ChatRemoveCell(context, currentAccount);
                     break;
             }
             return new RecyclerListView.Holder(view);
@@ -915,7 +908,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
             }
             hideActionMode(true);
             updateHint();
-            presentFragment(new RemoveChatSettingsFragment(fakePasscode, action, Collections.singleton(item), accountNum));
+            presentFragment(new RemoveChatSettingsFragment(fakePasscode, action, Collections.singleton(item), currentAccount));
         }
 
         public void select(int position) {

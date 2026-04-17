@@ -44,6 +44,7 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
 import org.telegram.messenger.partisan.update.AppVersion;
@@ -431,10 +432,12 @@ public class SharedConfig {
     public static boolean showSavedChannels;
     public static boolean allowReactions;
     public static boolean cutForeignAgentsText;
+    public static boolean protectPtelegramSettings;
     public static int onScreenLockAction;
     public static boolean onScreenLockActionClearCache;
     public static boolean showSessionsTerminateActionWarning;
     public static boolean showHideDialogIsNotSafeWarning;
+    public static boolean showFakePasscodeNoMainPasscodeWarning;
     public static int activatedTesterSettingType;
     public static boolean filesCopiedFromOldTelegram;
     public static boolean oldTelegramRemoved;
@@ -651,10 +654,12 @@ public class SharedConfig {
                 editor.putBoolean("showSavedChannels", showSavedChannels);
                 editor.putBoolean("allowReactions", allowReactions);
                 editor.putBoolean("cutForeignAgentsText", cutForeignAgentsText);
+                editor.putBoolean("protectPtelegramSettings", protectPtelegramSettings);
                 editor.putInt("onScreenLockAction", onScreenLockAction);
                 editor.putBoolean("onScreenLockActionClearCache", onScreenLockActionClearCache);
                 editor.putBoolean("showSessionsTerminateActionWarning", showSessionsTerminateActionWarning);
                 editor.putBoolean("showHideDialogIsNotSafeWarning", showHideDialogIsNotSafeWarning);
+                editor.putBoolean("showFakePasscodeNoMainPasscodeWarning", showFakePasscodeNoMainPasscodeWarning);
                 editor.putInt("activatedTesterSettingType", activatedTesterSettingType);
                 editor.putBoolean("filesCopiedFromOldTelegram", filesCopiedFromOldTelegram);
                 editor.putBoolean("oldTelegramRemoved", oldTelegramRemoved);
@@ -846,10 +851,12 @@ public class SharedConfig {
             showSavedChannels = preferences.getBoolean("showSavedChannels", true);
             allowReactions = preferences.getBoolean("allowReactions", true);
             cutForeignAgentsText = preferences.getBoolean("cutForeignAgentsText", true);
+            protectPtelegramSettings = preferences.getBoolean("protectPtelegramSettings", true);
             onScreenLockAction = preferences.getInt("onScreenLockAction", 0);
             onScreenLockActionClearCache = preferences.getBoolean("onScreenLockActionClearCache", false);
             showSessionsTerminateActionWarning = preferences.getBoolean("showSessionsTerminateActionWarning", true);
             showHideDialogIsNotSafeWarning = preferences.getBoolean("showHideDialogIsNotSafeWarning", true);
+            showFakePasscodeNoMainPasscodeWarning = preferences.getBoolean("showFakePasscodeNoMainPasscodeWarning", true);
             activatedTesterSettingType = preferences.getInt("activatedTesterSettingType", BuildVars.DEBUG_PRIVATE_VERSION ? 1 : 0);
             filesCopiedFromOldTelegram = preferences.getBoolean("filesCopiedFromOldTelegram", false);
             oldTelegramRemoved = preferences.getBoolean("oldTelegramRemoved", false);
@@ -859,6 +866,7 @@ public class SharedConfig {
 
             TesterSettings.loadSettings();
             VoiceChangeSettings.loadSettings();
+            PartisanTelegramSettings.loadSettings();
 
             String authKeyString = preferences.getString("pushAuthKey", null);
             if (!TextUtils.isEmpty(authKeyString)) {

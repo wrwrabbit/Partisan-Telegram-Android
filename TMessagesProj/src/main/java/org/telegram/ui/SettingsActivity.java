@@ -83,7 +83,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
-import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
+import org.telegram.messenger.partisan.ui.PTelegramSettingsFragment;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -203,6 +203,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     @Override
     public boolean onFragmentCreate() {
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.accountHidingChanged);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.partisanTelegramSettingsButtonStateChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.newSuggestionsAvailable);
 
@@ -490,11 +494,43 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         return fragmentView = contentView;
     }
 
+    public void updateRows() {
+        if (listView != null) {
+            listView.adapter.update(false);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        collapseAccounts();
+    }
+
+    @Override
+    public void onBecomeFullyHidden() {
+        super.onBecomeFullyHidden();
+        collapseAccounts();
+    }
+
+    private boolean accountsExpanded = false;
+    private void collapseAccounts() {
+        if (accountsExpanded) {
+            accountsExpanded = false;
+            if (listView != null) {
+                listView.adapter.update(false);
+            }
+        }
+    }
+
     @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
 
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.fakePasscodeActivated);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.accountHidingChanged);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.savedChannelsButtonStateChanged);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.partisanTelegramSettingsButtonStateChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.newSuggestionsAvailable);
     }
@@ -505,6 +541,12 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             setInfo();
             if (listView != null) {
                 listView.adapter.update(true);
+            }
+        } else if (id == NotificationCenter.fakePasscodeActivated || id == NotificationCenter.accountHidingChanged
+                || id == NotificationCenter.savedChannelsButtonStateChanged
+                || id == NotificationCenter.partisanTelegramSettingsButtonStateChanged) {
+            if (listView != null) {
+                listView.post(() -> listView.adapter.update(false));
             }
         } else if (id == NotificationCenter.updateInterfaces) {
             setInfo();
@@ -528,7 +570,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         titleView.setText(UserObject.getUserName(user));
         final StringBuilder sb = new StringBuilder();
         if (user != null) {
-            sb.append(PhoneFormat.getInstance().format("+" + user.phone));
+            sb.append(PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumber(currentAccount, user.phone)));
         }
         final String username = UserObject.getPublicUsername(user);
         if (username != null) {
@@ -617,7 +659,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
         accountNumbers.clear();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated() && currentAccount != a) {
+            if (UserConfig.getInstance(a).isClientActivated() && currentAccount != a && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isHideAccount(a)) {
                 accountNumbers.add(a);
             }
         }
@@ -646,12 +688,12 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asShadow(null));
         } else if (suggestions.contains("VALIDATE_PHONE_NUMBER") && getUserConfig().getCurrentUser() != null) {
             items.add(SuggestionCell.Factory.of(
-                formatString(R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + getUserConfig().getCurrentUser().phone)),
+                formatString(R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumber(currentAccount, getUserConfig().getCurrentUser().phone))),
                 replaceSingleTag(getString(R.string.CheckPhoneNumberInfo), () -> {
                     Browser.openUrl(getContext(), getString(R.string.CheckPhoneNumberLearnMoreUrl));
                 }),
                 getString(R.string.CheckPhoneNumberNo), v -> {
-                    PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(this, () -> {
+                        org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showCantChangePhoneNumberDialogIfNeeded(this, () -> {
                         presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER_FAKE_PASSCODE));
                     });
                 },
@@ -674,10 +716,52 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asShadow(null));
         }
 
+        if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && getUserConfig().showSecuritySuggestions) {
+            items.add(SuggestionCell.Factory.of(
+                getString(R.string.SecurityIssuesProfileSuggestionHeader),
+                getString(R.string.SecurityIssuesProfileSuggestionDetail),
+                getString(R.string.SecurityIssuesProfileSuggestionNo), v -> {
+                    presentFragment(new SecurityIssuesFragment());
+                },
+                getString(R.string.SecurityIssuesProfileSuggestionYes), v -> {
+                    getUserConfig().showSecuritySuggestions = false;
+                    getUserConfig().lastSecuritySuggestionsShow = System.currentTimeMillis();
+                    getUserConfig().saveConfig(false);
+                    listView.adapter.update(true);
+                }
+            ));
+            items.add(UItem.asShadow(null));
+        }
+
         if (accountNumbers.size() > 0) {
+            final ArrayList<Integer> allAccountSlots = new ArrayList<>(accountNumbers);
+            if (org.telegram.messenger.partisan.settings.TesterSettings.fillAccountSelectorWithDummies.get().get()) {
+                for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                    if (!UserConfig.getInstance(a).isClientActivated()) {
+                        allAccountSlots.add(a);
+                    }
+                }
+            }
+            final boolean needFold = allAccountSlots.size() > 3;
+            final int visibleCount = (!needFold || accountsExpanded) ? allAccountSlots.size() : 2;
             items.add(UItem.asHeader(getString(R.string.SettingsAccounts)));
-            for (int i = 0; i < accountNumbers.size(); ++i) {
-                items.add(AccountCell.Factory.of(i, accountNumbers.get(i)));
+            for (int i = 0; i < visibleCount; ++i) {
+                items.add(AccountCell.Factory.of(i, allAccountSlots.get(i)));
+            }
+            if (needFold && !accountsExpanded) {
+                items.add(SettingCell.Factory.of(101, 0xFF1CA5ED, 0xFF1488E1, R.drawable.msg_expand, getString(R.string.MoreAccounts), null));
+            }
+            items.add(UItem.asShadow(null));
+        }
+
+        if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()
+                    && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.partisanTelegramSettingsLocation.getOrDefault() == org.telegram.messenger.partisan.settings.PartisanTelegramSettingsLocation.SETTINGS_ACTIVITY) {
+                items.add(SettingCell.Factory.of(53, 0xFFE8503A, 0xFFCC3A22, R.drawable.settings_ptelegram_filled, getString(R.string.PartisanTelegramSettings), null));
+            }
+            if (org.telegram.messenger.partisan.Utils.needShowSavedChannels()
+                    && org.telegram.messenger.partisan.settings.PartisanTelegramSettings.showInSettings.getOrDefault()) {
+                items.add(SettingCell.Factory.of(50, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_saved_channels_star, getString(R.string.SavedChannels), null));
             }
             items.add(UItem.asShadow(null));
         }
@@ -737,12 +821,25 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         items.add(SettingCell.Factory.of(23, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.settings_features, getString(R.string.TelegramFeatures)));
         items.add(SettingCell.Factory.of(19, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_policy, getString(R.string.PrivacyPolicy)));
 
-        if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION) {
+        if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION || org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
             items.add(UItem.asShadow(null));
             items.add(UItem.asHeader(getString(R.string.SettingsDebug)));
-            items.add(SettingCell.Factory.of(20, 0xFF55CA47, 0xFF27B434, 0, getString(R.string.DebugSendLogs)));
-            items.add(SettingCell.Factory.of(21, 0xFF55CA47, 0xFF27B434, 0, getString(R.string.DebugSendLastLogs)));
-            items.add(SettingCell.Factory.of(22, 0xFFF45255, 0xFFDF3955, 0, getString(R.string.DebugClearLogs)));
+            boolean showTesterSettings = org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()
+                    && (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() || org.telegram.messenger.partisan.settings.TesterSettings.showTesterSettingsWithFakePasscode.get().orElse(false));
+            if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION) {
+                items.add(SettingCell.Factory.of(20, 0xFF55CA47, 0xFF27B434, 0, getString(R.string.DebugSendLogs)));
+                items.add(SettingCell.Factory.of(21, 0xFF55CA47, 0xFF27B434, 0, getString(R.string.DebugSendLastLogs)));
+                items.add(SettingCell.Factory.of(22, 0xFFF45255, 0xFFDF3955, 0, getString(R.string.DebugClearLogs)));
+                if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
+                    items.add(SettingCell.Factory.of(51, 0xFF55CA47, 0xFF27B434, 0, getString(R.string.DebugSendLogcat)));
+                }
+                if (showTesterSettings) {
+                    items.add(UItem.asShadow(null));
+                }
+            }
+            if (showTesterSettings) {
+                items.add(SettingCell.Factory.of(52, 0xFF55CA47, 0xFF27B434, 0, "Tester Settings"));
+            }
         }
 
         items.add(UItem.asCustomShadow(versionView));
@@ -859,6 +956,23 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 }
                 break;
             }
+
+            case 51:
+                org.telegram.messenger.partisan.Utils.sendLogcat(this);
+                break;
+            case 52:
+                presentFragment(new org.telegram.ui.TesterSettingsFragment());
+                break;
+            case 101:
+                accountsExpanded = true;
+                listView.adapter.update(true);
+                break;
+            case 50:
+                presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
+                break;
+            case 53:
+                presentFragment(PTelegramSettingsFragment.checkLockAndCreateActivity());
+                break;
         }
     }
 
@@ -912,7 +1026,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                     }
                     break;
             }
-            return formatString(R.string.TelegramVersion, String.format(Locale.US, "v%s (%d)\n%s", pInfo.versionName, code, abi));
+            String versionString = formatString(R.string.TelegramVersion, String.format(Locale.US, "v%s (%d)\n%s", pInfo.versionName, code, abi));
+            if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showVersion) {
+                versionString += "\nPTelegram version " + org.telegram.messenger.partisan.PartisanVersion.PARTISAN_VERSION_STRING + " (" + org.telegram.messenger.partisan.PartisanVersion.PARTISAN_BUILD_VERSION + ")";
+            }
+            return versionString;
         } catch (Exception e) {
             FileLog.e(e);
         }
@@ -1424,6 +1542,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 (SharedConfig.frameMetricsEnabled ? "hide frame metrics" : "show frame metrics"),
                 BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.shadowsInSections ? "disable shadows in settings" : "enable shadows in settings") : null,
                 BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.debugViewMetrics ? "disable debug view metrics" : "enable debug view metrics") : null,
+                !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() ? "Enter tester settings password" : null
         };
 
         builder.setItems(items, (dialog, which) -> {
@@ -1731,10 +1850,28 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             } else if (which == 41) {
                 final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
                 prefs.edit().putBoolean("debugViewMetrics", SharedConfig.debugViewMetrics = !SharedConfig.debugViewMetrics).apply();
+            } else if (which == items.length - 1) {
+                showTesterPasswordDialog();
             }
         });
         builder.setNegativeButton(getString(R.string.Cancel), null);
         showDialog(builder.create());
+    }
+
+    private void showTesterPasswordDialog() {
+        org.telegram.ui.ActionBar.AlertDialog.Builder alert = new org.telegram.ui.ActionBar.AlertDialog.Builder(getParentActivity());
+        final org.telegram.ui.Components.EditTextCaption editText = new org.telegram.ui.Components.EditTextCaption(getParentActivity(), null);
+        editText.setTextColor(getThemedColor(Theme.key_chat_messagePanelText));
+        editText.setHintColor(getThemedColor(Theme.key_chat_messagePanelHint));
+        editText.setHintTextColor(getThemedColor(Theme.key_chat_messagePanelHint));
+        editText.setCursorColor(getThemedColor(Theme.key_chat_messagePanelCursor));
+        alert.setTitle("Enter tester settings password");
+        alert.setView(editText);
+        alert.setPositiveButton(getString(R.string.Done), (dlg, which) -> {
+            org.telegram.messenger.partisan.settings.TesterSettings.checkTesterSettingsPassword(editText.getText().toString());
+            listView.adapter.update(true);
+        });
+        showDialog(alert.create());
     }
 
     private void listCodecs(String type, StringBuilder info) {

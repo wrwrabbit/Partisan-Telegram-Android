@@ -1,4 +1,4 @@
-package org.telegram.messenger.partisan.ui;
+package org.telegram.messenger.partisan.ui.items;
 
 import android.content.Context;
 import android.view.View;
@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Cells.HeaderCell;
 
-public class HeaderItem extends AbstractItem {
+public class HeaderItem extends AbstractViewItem {
     private final String text;
 
     public HeaderItem(BaseFragment fragment, String text) {
@@ -17,7 +17,7 @@ public class HeaderItem extends AbstractItem {
     }
 
     public static View createView(Context context) {
-        return AbstractItem.initializeView(new HeaderCell(context));
+        return AbstractViewItem.initializeView(new HeaderCell(context));
     }
 
     @Override

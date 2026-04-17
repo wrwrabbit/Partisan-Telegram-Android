@@ -98,7 +98,7 @@ public class UpdateLayout extends IUpdateLayout {
         if (sideMenuContainer == null) {
             return;
         }
-        if (ApplicationLoader.applicationLoaderInstance.getUpdate() != null) {
+        if (ApplicationLoader.applicationLoaderInstance.getUpdate() != null && !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
             createUpdateUI(currentAccount);
             File file = ApplicationLoader.applicationLoaderInstance.getDownloadedUpdateFile();
             if (file != null && file.exists()) {
@@ -133,13 +133,13 @@ public class UpdateLayout extends IUpdateLayout {
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         if (updateLayout.getTag() == null) {
-                            updateLayout.setVisibility(View.INVISIBLE);
+                            updateLayout.setVisibility(View.GONE);
                         }
                     }
                 }).setDuration(180).start();
             } else {
                 updateLayout.setTranslationY(dp(44));
-                updateLayout.setVisibility(View.INVISIBLE);
+                updateLayout.setVisibility(View.GONE);
             }
         }
     }
