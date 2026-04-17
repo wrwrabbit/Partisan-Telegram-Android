@@ -321,7 +321,9 @@ public class PartisanTelegramSettingsLockActivity extends BaseFragment {
 
         if (SharedConfig.passcodeRetryInMs > 0) {
             int value = Math.max(1, (int) Math.ceil(SharedConfig.passcodeRetryInMs / 1000.0));
-            Toast.makeText(getParentActivity(), LocaleController.formatString(R.string.TooManyTries, LocaleController.formatPluralString("Seconds", value)), Toast.LENGTH_SHORT).show();
+            if (getParentActivity() != null) {
+                Toast.makeText(getParentActivity(), LocaleController.formatString(R.string.TooManyTries, LocaleController.formatPluralString("Seconds", value)), Toast.LENGTH_SHORT).show();
+            }
             clearInput();
             onPasscodeError();
             return;

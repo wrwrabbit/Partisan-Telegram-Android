@@ -17,6 +17,7 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils;
 import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
 import org.telegram.messenger.partisan.ui.items.ButtonItem;
 import org.telegram.messenger.partisan.ui.items.DescriptionItem;
@@ -51,11 +52,13 @@ public class BadPasscodeReactionFragment extends PartisanBaseFragment {
                 new ToggleItem(this,
                         getString(R.string.TakePhotoWithFrontCamera),
                         () -> SharedConfig.takePhotoWithBadPasscodeFront,
-                        newValue -> toggleCameraPhoto(newValue, true)),
+                        newValue -> toggleCameraPhoto(newValue, true))
+                        .addCondition(() -> MaskedPtgUtils.hasPermission(getContext(), Manifest.permission.CAMERA)),
                 new ToggleItem(this,
                         getString(R.string.TakePhotoWithBackCamera),
                         () -> SharedConfig.takePhotoWithBadPasscodeBack,
-                        newValue -> toggleCameraPhoto(newValue, false)),
+                        newValue -> toggleCameraPhoto(newValue, false))
+                        .addCondition(() -> MaskedPtgUtils.hasPermission(getContext(), Manifest.permission.CAMERA)),
                 new ToggleItem(this,
                         getString(R.string.MuteAudioWhenTakingPhoto),
                         () -> SharedConfig.takePhotoMuteAudio,
@@ -63,7 +66,8 @@ public class BadPasscodeReactionFragment extends PartisanBaseFragment {
                             SharedConfig.takePhotoMuteAudio = newValue;
                             SharedConfig.saveConfig();
                         })
-                        .addCondition(() -> SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack),
+                        .addCondition(() -> MaskedPtgUtils.hasPermission(getContext(), Manifest.permission.CAMERA)
+                                && (SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack)),
                 new DescriptionItem(this, getString(R.string.BadPasscodeAttemptsInfo)),
         };
     }
