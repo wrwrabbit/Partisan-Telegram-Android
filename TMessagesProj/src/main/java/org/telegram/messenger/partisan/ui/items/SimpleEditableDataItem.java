@@ -24,7 +24,7 @@ public class SimpleEditableDataItem extends AbstractViewItem {
     private boolean multiline = false;
 
     public SimpleEditableDataItem(BaseFragment fragment, String text, StringSetting setting) {
-        this(fragment, text, () -> setting.get().get(), setting::set);
+        this(fragment, text, () -> setting.getOrDefault(), setting::set);
     }
 
     public SimpleEditableDataItem(BaseFragment fragment, String text, Supplier<String> getValue, Consumer<String> setValue) {
