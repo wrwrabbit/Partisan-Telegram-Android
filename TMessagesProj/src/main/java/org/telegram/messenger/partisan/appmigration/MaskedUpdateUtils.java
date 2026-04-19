@@ -158,7 +158,6 @@ public class MaskedUpdateUtils {
             args.putLong("user_id", MaskedMigratorHelper.MASKING_BOT_ID);
             LaunchActivity launchActivity = (LaunchActivity) context;
             launchActivity.presentFragment(new ChatActivity(args));
-            launchActivity.drawerLayoutContainer.closeDrawer();
         } else if (context instanceof ContextThemeWrapper) {
             presentChatActivity(((ContextThemeWrapper)context).getBaseContext());
         }

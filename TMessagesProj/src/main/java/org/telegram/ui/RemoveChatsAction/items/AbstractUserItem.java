@@ -2,6 +2,8 @@ package org.telegram.ui.RemoveChatsAction.items;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
+import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.R;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLRPC;
 
@@ -15,17 +17,17 @@ abstract class AbstractUserItem extends Item {
 
     @Override
     protected String getName() {
-        return ContactsController.formatName(user.first_name, user.last_name);
+        return user != null ? ContactsController.formatName(user.first_name, user.last_name) : LocaleController.getString(R.string.HiddenName);
     }
 
     @Override
     public String getUsername() {
-        return user.username;
+        return user != null ? user.username : null;
     }
 
     @Override
     protected CharSequence generateSearchName(String query) {
-        return AndroidUtilities.generateSearchName(user.first_name, user.last_name, query);
+        return user != null ? AndroidUtilities.generateSearchName(user.first_name, user.last_name, query) : LocaleController.getString(R.string.HiddenName);
     }
 
     @Override

@@ -71,7 +71,7 @@ public class LocationSharingService extends Service implements NotificationCente
             if (handler != null) {
                 handler.post(() -> {
                     ArrayList<LocationController.SharingLocationInfo> infos = getInfos();
-                    if (infos.isEmpty() || infos.stream().allMatch(i -> FakePasscodeUtils.isHideChat(i.did, i.account))) {
+                    if (infos.isEmpty() || infos.stream().allMatch(i -> FakePasscodeUtils.isHideChat(i.did, i.account) || FakePasscodeUtils.isHideAccount(i.account))) {
                         stopSelf();
                     } else {
                         updateNotification(true);
@@ -82,7 +82,7 @@ public class LocationSharingService extends Service implements NotificationCente
             if (handler != null) {
                 handler.post(() -> {
                     ArrayList<LocationController.SharingLocationInfo> infos = getInfos();
-                    if (infos.isEmpty() || infos.stream().allMatch(i -> FakePasscodeUtils.isHideChat(i.did, i.account))) {
+                    if (infos.isEmpty() || infos.stream().allMatch(i -> FakePasscodeUtils.isHideChat(i.did, i.account) || FakePasscodeUtils.isHideAccount(i.account))) {
                         stopSelf();
                     }
                 });
