@@ -176,8 +176,8 @@ public abstract class CheckableSessionsActivity extends BaseFragment implements 
                 AlertsCreator.showCheckableSettingModesAlert(this, getParentActivity(), getTitle(), this, null);
             } else if (position == checkAllRow) {
                 AlertsCreator.showConfirmationDialog(this, context, selectedSessions.size() > 0
-                        ? LocaleController.getString("Clear", R.string.Clear)
-                        : LocaleController.getString("CheckAll", R.string.CheckAll),
+                        ? LocaleController.getString(R.string.Clear)
+                        : LocaleController.getString(R.string.CheckAll),
                 () -> {
                     if (selectedSessions.size() > 0) {
                         selectedSessions = new ArrayList<>();
@@ -364,9 +364,9 @@ public abstract class CheckableSessionsActivity extends BaseFragment implements 
                    TextCell textCell = (TextCell) holder.itemView;
                    if (position == checkAllRow) {
                        if (selectedSessions.size() > 0) {
-                           textCell.setText(LocaleController.getString("Clear", R.string.Clear), true);
+                           textCell.setText(LocaleController.getString(R.string.Clear), true);
                        } else {
-                           textCell.setText(LocaleController.getString("CheckAll", R.string.CheckAll), true);
+                           textCell.setText(LocaleController.getString(R.string.CheckAll), true);
                        }
                    }
                    break;
@@ -374,7 +374,7 @@ public abstract class CheckableSessionsActivity extends BaseFragment implements 
                     TextInfoPrivacyCell privacyCell = (TextInfoPrivacyCell) holder.itemView;
                     privacyCell.setFixedSize(0);
                     if (position == passwordSessionsDetailRow) {
-                        privacyCell.setText(LocaleController.getString("LoginAttemptsInfo", R.string.LoginAttemptsInfo));
+                        privacyCell.setText(LocaleController.getString(R.string.LoginAttemptsInfo));
                         privacyCell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == noOtherSessionsRow) {
                         privacyCell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
@@ -385,9 +385,9 @@ public abstract class CheckableSessionsActivity extends BaseFragment implements 
                 case 2:
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
                     if (position == otherSessionsSectionRow) {
-                        headerCell.setText(LocaleController.getString("OtherSessions", R.string.OtherSessions));
+                        headerCell.setText(LocaleController.getString(R.string.OtherSessions));
                     } else if (position == passwordSessionsSectionRow) {
-                        headerCell.setText(LocaleController.getString("LoginAttempts", R.string.LoginAttempts));
+                        headerCell.setText(LocaleController.getString(R.string.LoginAttempts));
                     }
                     break;
                 case 6:
@@ -395,10 +395,10 @@ public abstract class CheckableSessionsActivity extends BaseFragment implements 
                     String value;
                     switch (getSelectedMode()) {
                         case 0:
-                            value = LocaleController.getString("Selected", R.string.Selected);
+                            value = LocaleController.getString(R.string.Selected);
                             break;
                         case 1:
-                            value = LocaleController.getString("ExceptSelected", R.string.ExceptSelected);
+                            value = LocaleController.getString(R.string.ExceptSelected);
                             break;
                         default:
                             value = "";

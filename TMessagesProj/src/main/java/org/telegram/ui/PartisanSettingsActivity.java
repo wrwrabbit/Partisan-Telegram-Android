@@ -174,10 +174,10 @@ public class PartisanSettingsActivity extends BaseFragment {
                 switcher.value = SharedConfig.allowDisableAvatar;
                 switcher.setValue = v -> SharedConfig.allowDisableAvatar = v;
                 switcher.isChanged = c -> c.chatInfoOverrides.values().stream().anyMatch(o -> !o.avatarEnabled);
-                switcher.dangerousActionTitle = LocaleController.getString("ResetChangedAvatarsTitle", R.string.ResetChangedAvatarsTitle);
-                switcher.positiveButtonText = LocaleController.getString("Reset", R.string.Reset);
-                switcher.negativeButtonText = LocaleController.getString("NotReset", R.string.NotReset);
-                switcher.neutralButtonText = LocaleController.getString("Cancel", R.string.Cancel);
+                switcher.dangerousActionTitle = LocaleController.getString(R.string.ResetChangedAvatarsTitle);
+                switcher.positiveButtonText = LocaleController.getString(R.string.Reset);
+                switcher.negativeButtonText = LocaleController.getString(R.string.NotReset);
+                switcher.neutralButtonText = LocaleController.getString(R.string.Cancel);
                 switcher.onSettingChanged = () -> listAdapter.notifyItemChanged(position);
                 switcher.dangerousAction = accountInstance -> {
                     for (UserConfig.ChatInfoOverride override : accountInstance.getUserConfig().chatInfoOverrides.values()) {
@@ -192,10 +192,10 @@ public class PartisanSettingsActivity extends BaseFragment {
                 switcher.value = SharedConfig.allowRenameChat;
                 switcher.setValue = v -> SharedConfig.allowRenameChat = v;
                 switcher.isChanged = c -> c.chatInfoOverrides.values().stream().anyMatch(o -> o.title != null);
-                switcher.dangerousActionTitle = LocaleController.getString("ResetChangedTitlesTitle", R.string.ResetChangedTitlesTitle);
-                switcher.positiveButtonText = LocaleController.getString("Reset", R.string.Reset);
-                switcher.negativeButtonText = LocaleController.getString("NotReset", R.string.NotReset);
-                switcher.neutralButtonText = LocaleController.getString("Cancel", R.string.Cancel);
+                switcher.dangerousActionTitle = LocaleController.getString(R.string.ResetChangedTitlesTitle);
+                switcher.positiveButtonText = LocaleController.getString(R.string.Reset);
+                switcher.negativeButtonText = LocaleController.getString(R.string.NotReset);
+                switcher.neutralButtonText = LocaleController.getString(R.string.Cancel);
                 switcher.onSettingChanged = () -> listAdapter.notifyItemChanged(position);
                 switcher.dangerousAction = accountInstance -> {
                     for (UserConfig.ChatInfoOverride override : accountInstance.getUserConfig().chatInfoOverrides.values()) {
@@ -284,7 +284,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialogInterface, i) -> {
                         new FileProtectionSwitcher(this).changeForAllAccounts(!fileProtectionEnabledForAnyAccount());
                     });
-                    builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+                    builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                     AlertDialog dialog = builder.create();
                     showDialog(dialog);
                 }
@@ -490,43 +490,43 @@ public class PartisanSettingsActivity extends BaseFragment {
                 case 0: {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
                     if (position == versionRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("ShowVersion", R.string.ShowVersion),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ShowVersion),
                                 SharedConfig.showVersion, true);
                     } else if (position == idRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("ShowId", R.string.ShowId),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ShowId),
                                 SharedConfig.showId, true);
                     } else if (position == disableAvatarRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("AvatarDisabling", R.string.AvatarDisabling),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.AvatarDisabling),
                                 SharedConfig.allowDisableAvatar, true);
                     } else if (position == renameChatRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("ChatRenaming", R.string.ChatRenaming),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ChatRenaming),
                                 SharedConfig.allowRenameChat, true);
                     } else if (position == deleteMyMessagesRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("DeletingMyMessages", R.string.DeletingMyMessages),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.DeletingMyMessages),
                                 SharedConfig.showDeleteMyMessages, true);
                     } else if (position == deleteAfterReadRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("DeletingAfterRead", R.string.DeletingAfterRead),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.DeletingAfterRead),
                                 SharedConfig.showDeleteAfterRead, false);
                     } else if (position == reactionsRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("ReactToMessages", R.string.ReactToMessages),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ReactToMessages),
                                 SharedConfig.allowReactions, false);
                     } else if (position == foreignAgentsRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("CutForeignAgentsText", R.string.CutForeignAgentsText),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.CutForeignAgentsText),
                                 SharedConfig.cutForeignAgentsText, false);
                     }  else if (position == isClearAllDraftsOnScreenLockRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("IsClearAllDraftsOnScreenLock", R.string.IsClearAllDraftsOnScreenLock),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.IsClearAllDraftsOnScreenLock),
                                 SharedConfig.clearAllDraftsOnScreenLock, false);
                     }  else if (position == showCallButtonRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("ShowCallButton", R.string.ShowCallButton),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ShowCallButton),
                                 SharedConfig.showCallButton, false);
                     }  else if (position == isDeleteMessagesForAllByDefaultRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("IsDeleteMessagesForAllByDefault", R.string.IsDeleteMessagesForAllByDefault),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.IsDeleteMessagesForAllByDefault),
                                 SharedConfig.deleteMessagesForAllByDefault, false);
                     }  else if (position == marketIconsRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.MarketIcons),
                                 SharedConfig.marketIcons, false);
                     } else if (position == confirmDangerousActionRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("ConfirmDangerousAction", R.string.ConfirmDangerousAction),
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.ConfirmDangerousAction),
                                 SharedConfig.confirmDangerousActions, false);
                     } else if (position == clearCacheOnLockRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.ClearCacheOnLock),
@@ -540,43 +540,43 @@ public class PartisanSettingsActivity extends BaseFragment {
                 case 1: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
                     if (position == versionDetailRow) {
-                        cell.setText(LocaleController.getString("ShowVersionInfo", R.string.ShowVersionInfo));
+                        cell.setText(LocaleController.getString(R.string.ShowVersionInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == idDetailRow) {
-                        cell.setText(LocaleController.getString("ShowIdInfo", R.string.ShowIdInfo));
+                        cell.setText(LocaleController.getString(R.string.ShowIdInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == disableAvatarDetailRow) {
-                        cell.setText(LocaleController.getString("AvatarDisablingInfo", R.string.AvatarDisablingInfo));
+                        cell.setText(LocaleController.getString(R.string.AvatarDisablingInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == renameChatDetailRow) {
-                        cell.setText(LocaleController.getString("ChatRenamingInfo", R.string.ChatRenamingInfo));
+                        cell.setText(LocaleController.getString(R.string.ChatRenamingInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == deleteMyMessagesDetailRow) {
-                        cell.setText(LocaleController.getString("DeletingMyMessagesInfo", R.string.DeletingMyMessagesInfo));
+                        cell.setText(LocaleController.getString(R.string.DeletingMyMessagesInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == deleteAfterReadDetailRow) {
-                        cell.setText(LocaleController.getString("DeletingAfterReadInfo", R.string.DeletingAfterReadInfo));
+                        cell.setText(LocaleController.getString(R.string.DeletingAfterReadInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == savedChannelsDetailRow) {
-                        cell.setText(LocaleController.getString("SavedChannelsSettingInfo", R.string.SavedChannelsSettingInfo));
+                        cell.setText(LocaleController.getString(R.string.SavedChannelsSettingInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == reactionsDetailRow) {
-                        cell.setText(LocaleController.getString("ReactToMessagesInfo", R.string.ReactToMessagesInfo));
+                        cell.setText(LocaleController.getString(R.string.ReactToMessagesInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == foreignAgentsDetailRow) {
-                        cell.setText(LocaleController.getString("CutForeignAgentsTextInfo", R.string.CutForeignAgentsTextInfo));
+                        cell.setText(LocaleController.getString(R.string.CutForeignAgentsTextInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == onScreenLockActionDetailRow) {
-                        cell.setText(LocaleController.getString("OnScreenLockActionInfo", R.string.OnScreenLockActionInfo));
+                        cell.setText(LocaleController.getString(R.string.OnScreenLockActionInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == isClearAllDraftsOnScreenLockDetailRow) {
-                        cell.setText(LocaleController.getString("IsClearAllDraftsOnScreenLockInfo", R.string.IsClearAllDraftsOnScreenLockInfo));
+                        cell.setText(LocaleController.getString(R.string.IsClearAllDraftsOnScreenLockInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == showCallButtonDetailRow) {
-                        cell.setText(LocaleController.getString("ShowCallButtonInfo", R.string.ShowCallButtonInfo));
+                        cell.setText(LocaleController.getString(R.string.ShowCallButtonInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == isDeleteMessagesForAllByDefaultDetailRow) {
-                        cell.setText(LocaleController.getString("IsDeleteMessagesForAllByDefaultInfo", R.string.IsDeleteMessagesForAllByDefaultInfo));
+                        cell.setText(LocaleController.getString(R.string.IsDeleteMessagesForAllByDefaultInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == marketIconsDetailRow) {
                         cell.setText(LocaleController.getString(R.string.MarketIconsInfo));
@@ -615,13 +615,13 @@ public class PartisanSettingsActivity extends BaseFragment {
                         String value = null;
                         switch (SharedConfig.onScreenLockAction) {
                             case 0:
-                                value = LocaleController.getString("OnScreenLockActionNothing", R.string.OnScreenLockActionNothing);
+                                value = LocaleController.getString(R.string.OnScreenLockActionNothing);
                                 break;
                             case 1:
-                                value = LocaleController.getString("OnScreenLockActionHide", R.string.OnScreenLockActionHide);
+                                value = LocaleController.getString(R.string.OnScreenLockActionHide);
                                 break;
                             case 2:
-                                value = LocaleController.getString("OnScreenLockActionClose", R.string.OnScreenLockActionClose);
+                                value = LocaleController.getString(R.string.OnScreenLockActionClose);
                                 break;
                         }
                         textCell.setTextAndValue(LocaleController.getString(R.string.OnScreenLockActionTitle), value, true);

@@ -161,7 +161,7 @@ public class SendMessageChatCell extends FrameLayout {
         if (currentObject instanceof TLRPC.User) {
             TLRPC.User currentUser = (TLRPC.User) currentObject;
             if (UserObject.isUserSelf(currentUser)) {
-                nameTextView.setText(LocaleController.getString("SavedMessages", R.string.SavedMessages), true);
+                nameTextView.setText(LocaleController.getString(R.string.SavedMessages), true);
                 avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_SAVED);
                 avatarImageView.setImage(null, "50_50", avatarDrawable, currentUser);
                 ((LayoutParams) nameLayout.getLayoutParams()).topMargin = AndroidUtilities.dp(19);

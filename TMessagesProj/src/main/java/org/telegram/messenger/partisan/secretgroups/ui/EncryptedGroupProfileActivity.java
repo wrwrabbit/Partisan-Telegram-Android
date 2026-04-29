@@ -127,13 +127,13 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
             if (position == idRow) {
                 final String chatIdStr = String.valueOf(encryptedGroup.getExternalId());
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setItems(new CharSequence[]{LocaleController.getString("Copy", R.string.Copy)}, (dialogInterface, i) -> {
+                builder.setItems(new CharSequence[]{LocaleController.getString(R.string.Copy)}, (dialogInterface, i) -> {
                     if (i == 0) {
                         try {
                             android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
                             android.content.ClipData clip = android.content.ClipData.newPlainText("label", chatIdStr);
                             clipboard.setPrimaryClip(clip);
-                            BulletinFactory.of(this).createCopyBulletin(LocaleController.getString("IdCopied", R.string.IdCopied)).show();
+                            BulletinFactory.of(this).createCopyBulletin(LocaleController.getString(R.string.IdCopied)).show();
                         } catch (Exception e) {
                             FileLog.e(e);
                         }

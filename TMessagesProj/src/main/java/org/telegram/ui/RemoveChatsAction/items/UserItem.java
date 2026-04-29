@@ -29,9 +29,9 @@ class UserItem extends AbstractUserItem {
     @Override
     public String getAlternativeName() {
         if (UserObject.isReplyUser(user)) {
-            return LocaleController.getString("RepliesTitle", R.string.RepliesTitle);
+            return LocaleController.getString(R.string.RepliesTitle);
         } else if (user.self) {
-            return LocaleController.getString("SavedMessages", R.string.SavedMessages);
+            return LocaleController.getString(R.string.SavedMessages);
         } else {
             return null;
         }

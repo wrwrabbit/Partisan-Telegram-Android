@@ -24,10 +24,10 @@ public class SessionsToTerminateActivity extends CheckableSessionsActivity {
     public View createView(Context context) {
         if (SharedConfig.showSessionsTerminateActionWarning) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setTitle(LocaleController.getString("TerminateOtherSessionsWarningTitle", R.string.TerminateOtherSessionsWarningTitle));
-            builder.setMessage(LocaleController.getString("TerminateOtherSessionsWarningMessage", R.string.TerminateOtherSessionsWarningMessage));
-            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
-            builder.setNegativeButton(LocaleController.getString("DoNotShowAgain", R.string.DoNotShowAgain), (dialog, whichButton) -> {
+            builder.setTitle(LocaleController.getString(R.string.TerminateOtherSessionsWarningTitle));
+            builder.setMessage(LocaleController.getString(R.string.TerminateOtherSessionsWarningMessage));
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+            builder.setNegativeButton(LocaleController.getString(R.string.DoNotShowAgain), (dialog, whichButton) -> {
                 SharedConfig.showSessionsTerminateActionWarning = false;
                 SharedConfig.saveConfig();
             });
@@ -48,7 +48,7 @@ public class SessionsToTerminateActivity extends CheckableSessionsActivity {
 
     @Override
     protected String getTitle() {
-        return LocaleController.getString("SessionsToTerminate", R.string.SessionsToTerminate);
+        return LocaleController.getString(R.string.SessionsToTerminate);
     }
 
     @Override

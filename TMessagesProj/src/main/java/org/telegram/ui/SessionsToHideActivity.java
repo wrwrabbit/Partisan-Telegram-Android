@@ -26,7 +26,7 @@ public class SessionsToHideActivity extends CheckableSessionsActivity {
 
     @Override
     protected String getTitle() {
-        return LocaleController.getString("SessionsToHide", R.string.SessionsToHide);
+        return LocaleController.getString(R.string.SessionsToHide);
     }
 
     @Override

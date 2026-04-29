@@ -48,7 +48,7 @@ public class EditTemplate implements ViewTemplate {
         if (view instanceof EditTextCaption && view.getVisibility() == View.VISIBLE) {
             EditTextCaption edit = (EditTextCaption)view;
             if (edit.getText().toString().isEmpty()) {
-                edit.setError(name + " " + LocaleController.getString("CannotBeEmpty", R.string.CannotBeEmpty));
+                edit.setError(name + " " + LocaleController.getString(R.string.CannotBeEmpty));
                 return false;
             }
         }
