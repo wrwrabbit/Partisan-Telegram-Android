@@ -26,6 +26,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import androidx.annotation.NonNull;
 import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -44,6 +45,7 @@ import org.telegram.ui.Cells.GroupCreateUserCell;
 
 public class GroupCreateSpan extends View {
 
+    private String countryIso2;
     private long uid;
     private String key;
     public boolean isFlag;
@@ -211,6 +213,7 @@ public class GroupCreateSpan extends View {
             avatarDrawable.setColor(Theme.multAlpha(Theme.getColor(Theme.key_text_RedRegular, resourcesProvider), 0.7f));
             avatarDrawable.setDrawAvatarBackground(drawAvatarBackground = false);
             uid = country.default_name.hashCode();
+            countryIso2 = country.iso2;
             imageLocation = null;
             imageParent = null;
         } else {
@@ -275,6 +278,10 @@ public class GroupCreateSpan extends View {
         backPaint.setColor(back);
     }
 
+    public String getCountryIso2() {
+        return countryIso2;
+    }
+
     public boolean isDeleting() {
         return deleting;
     }
@@ -318,7 +325,7 @@ public class GroupCreateSpan extends View {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         if (deleting && progress != 1.0f || !deleting && progress != 0.0f) {
             long newTime = System.currentTimeMillis();
             long dt = newTime - lastUpdateTime;
@@ -371,7 +378,7 @@ public class GroupCreateSpan extends View {
     public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
         super.onInitializeAccessibilityNodeInfo(info);
         info.setText(nameLayout.getText());
-        if (isDeleting() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        if (isDeleting())
             info.addAction(new AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK.getId(), LocaleController.getString(R.string.Delete)));
     }
 }
