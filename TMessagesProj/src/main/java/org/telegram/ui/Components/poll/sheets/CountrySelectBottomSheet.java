@@ -143,7 +143,7 @@ public class CountrySelectBottomSheet extends BottomSheetWithRecyclerListView im
                             replaceTags(formatString(R.string.PollV2YouCanAddXCountriesOnly, maxCountriesCount))).show();
                         return;
                     }
-                    final GroupCreateSpan span = new GroupCreateSpan(context, country);
+                    final GroupCreateSpan span = new GroupCreateSpan(context, country, currentAccount);
                     span.setOnClickListener(CountrySelectBottomSheet.this::onSpanClick);
                     spansContainer.addSpan(span);
                     selectedCountries.put(country.iso2, span);
@@ -324,7 +324,7 @@ public class CountrySelectBottomSheet extends BottomSheetWithRecyclerListView im
                 for (String c : countriesToSelect) {
                     TLRPC.TL_help_country country = findCountry(c);
                     if (country != null) {
-                        final GroupCreateSpan span = new GroupCreateSpan(getContext(), country);
+                        final GroupCreateSpan span = new GroupCreateSpan(getContext(), country, currentAccount);
                         span.setOnClickListener(CountrySelectBottomSheet.this::onSpanClick);
                         spansContainer.addSpan(span);
                         selectedCountries.put(country.iso2, span);

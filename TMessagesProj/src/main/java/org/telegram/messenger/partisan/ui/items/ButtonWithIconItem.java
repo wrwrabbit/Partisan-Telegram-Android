@@ -46,6 +46,5 @@ public class ButtonWithIconItem extends AbstractViewItem {
     public void setEnabled(View view, boolean enabled) {
         TextCell textCell = (TextCell) view;
         textCell.setEnabled(isEnabled());
-        textCell.showEnabledAlpha(!isEnabled());
     }
 }

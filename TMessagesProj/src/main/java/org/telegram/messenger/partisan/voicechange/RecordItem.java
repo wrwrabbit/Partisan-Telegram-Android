@@ -55,6 +55,5 @@ public class RecordItem extends AbstractViewItem {
     protected void setEnabled(View view, boolean enabled) {
         RecordTextCell recordCell = (RecordTextCell) view;
         recordCell.setEnabled(isEnabled());
-        recordCell.showEnabledAlpha(!isEnabled());
     }
 }

@@ -491,7 +491,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
             VectorAvatarThumbDrawable drawable = new VectorAvatarThumbDrawable(vectorImageMarkup, isPremium, vectorType);
             setImageBitmap(drawable);
         } else {
-            ImageLocation location = ImageLocation.getForUserOrChat(object, ImageLocation.TYPE_SMALL, currentAccount);
+            ImageLocation location = ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_SMALL);
             String filter;
             if (!big) {
                 location = ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_SMALL);
@@ -508,7 +508,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
                     if (strippedBitmap != null) {
                         setImage(location, filter, strippedBitmap, null, parentObject, 0);
                     } else if (hasStripped) {
-                        setImage(location, filter, ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_STRIPPED, currentAccount), "50_50_b", avatarDrawable, parentObject, 0);
+                        setImage(location, filter, ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_STRIPPED), "50_50_b", avatarDrawable, parentObject, 0);
                     } else {
                         setImage(location, filter, avatarDrawable, null, parentObject, 0);
                     }

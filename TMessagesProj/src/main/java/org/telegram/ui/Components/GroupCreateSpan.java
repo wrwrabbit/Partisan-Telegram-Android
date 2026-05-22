@@ -193,7 +193,7 @@ public class GroupCreateSpan extends View {
                 if ((index = firstName.indexOf(' ')) >= 0) {
                     firstName = firstName.substring(0, index);
                 }
-                imageLocation = ImageLocation.getForUserOrChat(user, ImageLocation.TYPE_SMALL, currentAccount);
+                imageLocation = ImageLocation.getForUserOrChat(currentAccount, user, ImageLocation.TYPE_SMALL);
                 imageParent = user;
             }
         } else if (object instanceof TLRPC.Chat) {
@@ -201,7 +201,7 @@ public class GroupCreateSpan extends View {
             avatarDrawable.setInfo(currentAccount, chat);
             uid = -chat.id;
             firstName = UserConfig.getChatTitleOverride(currentAccount, chat);
-            imageLocation = ImageLocation.getForUserOrChat(chat, ImageLocation.TYPE_SMALL, currentAccount);
+            imageLocation = ImageLocation.getForUserOrChat(currentAccount, chat, ImageLocation.TYPE_SMALL);
             imageParent = chat;
         } else if (object instanceof TLRPC.TL_help_country) {
             TLRPC.TL_help_country country = (TLRPC.TL_help_country) object;

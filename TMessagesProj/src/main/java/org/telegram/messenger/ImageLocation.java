@@ -247,7 +247,7 @@ public class ImageLocation {
         return getForChat(UserConfig.selectedAccount, chat, type);
     }
     public static ImageLocation getForChat(int currentAccount, TLRPC.Chat chat, int type) {
-        if (chat == null || chat.photo == null) {
+        if (chat == null || chat.photo == null || !UserConfig.isAvatarEnabled(currentAccount, chat.id)) {
             return null;
         }
 
