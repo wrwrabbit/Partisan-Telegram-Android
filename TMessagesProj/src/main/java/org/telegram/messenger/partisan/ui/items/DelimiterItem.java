@@ -21,7 +21,7 @@ public class DelimiterItem extends AbstractViewItem {
 
     @Override
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
-        holder.itemView.setBackground(Theme.getThemedDrawable(fragment.getContext(), R.drawable.greydivider, fragment.getThemedColor(Theme.key_windowBackgroundGrayShadow)));
+        holder.itemView.setBackground(Theme.getThemedDrawable(fragment.getContext(), R.drawable.transparent, fragment.getThemedColor(Theme.key_windowBackgroundGrayShadow)));
     }
 
     @Override
