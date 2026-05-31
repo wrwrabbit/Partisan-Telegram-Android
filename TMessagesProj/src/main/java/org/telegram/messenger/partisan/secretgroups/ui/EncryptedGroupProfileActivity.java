@@ -16,6 +16,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChatState;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
@@ -144,7 +145,8 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                 Bundle args = new Bundle();
                 int index = positionToChatIndex(position);
                 TLRPC.User user = getUser(index);
-                if (user == null) {
+                InnerEncryptedChat innerChat = getInnerChat(index);
+                if (user == null || innerChat != null && innerChat.isInState(InnerEncryptedChatState.CANCELLED)) {
                     return;
                 }
                 args.putLong("user_id", user.id);
