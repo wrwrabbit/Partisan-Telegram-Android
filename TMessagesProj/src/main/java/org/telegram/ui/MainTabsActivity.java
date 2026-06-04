@@ -558,12 +558,16 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         final ShapeDrawable bg = Theme.createRoundRectDrawable(dp(28), getThemedColor(Theme.key_windowBackgroundWhite));
         bg.getPaint().setShadowLayer(dp(6), 0, dp(1), Theme.multAlpha(0xFF000000, 0.15f));
         o.setScrimViewBackground(bg);
+        o.setOnDismiss(() -> accountSelectorOptions = null);
         o.show();
+        accountSelectorOptions = o;
 
         HintsController.Hint.AccountSwitchHint.doNotShowAgain();
 
         return true;
     }
+
+    private ItemOptions accountSelectorOptions;
 
     public LinearLayout accountView(int account, boolean selected) {
         final LinearLayout btn = new LinearLayout(getContext());
@@ -874,6 +878,10 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 }
             }
         } else if (id == NotificationCenter.fakePasscodeActivated) {
+            if (accountSelectorOptions != null) {
+                accountSelectorOptions.dismiss();
+                accountSelectorOptions = null;
+            }
             if (updateLayout != null) {
                 updateLayout.updateAppUpdateViews(currentAccount, false);
             }
