@@ -18272,7 +18272,7 @@ public class MessagesStorage extends BaseController {
             for (int a = 0; a < searchResults.size(); a++) {
                 DialogsSearchAdapter.DialogSearchResult dialogSearchResult = searchResults.get(a);
                 resultArray.add(dialogSearchResult.object);
-                resultArrayNames.add(dialogSearchResult.name);
+                resultArrayNames.add(dialogSearchResult.object instanceof TLRPC.Chat ? getUserConfig().getChatTitleOverride((TLRPC.Chat)dialogSearchResult.object) : dialogSearchResult.name);
             }
 
             if (dialogsType != DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO && dialogsType != DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER && dialogsType != DialogsActivity.DIALOGS_TYPE_GROUPS_ONLY && dialogsType != DialogsActivity.DIALOGS_TYPE_CHANNELS_ONLY) {
