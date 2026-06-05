@@ -491,7 +491,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
             VectorAvatarThumbDrawable drawable = new VectorAvatarThumbDrawable(vectorImageMarkup, isPremium, vectorType);
             setImageBitmap(drawable);
         } else {
-            ImageLocation location = ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_SMALL);
+            ImageLocation location;
             String filter;
             if (!big) {
                 location = ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_SMALL);
