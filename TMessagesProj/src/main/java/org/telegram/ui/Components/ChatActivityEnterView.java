@@ -5055,7 +5055,8 @@ public class ChatActivityEnterView extends FrameLayout implements
         MessagesController messagesController = accountInstance.getMessagesController();
         TLRPC.Chat chat = messagesController.getChat(-dialog_id);
         TLRPC.User user = messagesController.getUser(dialog_id);
-        return RemoveAfterReadingMessages.isShowDeleteAfterReadButton(user, chat, parentFragment.isEncryptedGroup());
+        return RemoveAfterReadingMessages.isShowDeleteAfterReadButton(user, chat, parentFragment.isEncryptedGroup())
+                && videoToSendMessageObject == null;
     }
 
     private void createBotCommandsMenuContainer() {
