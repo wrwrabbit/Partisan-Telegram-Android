@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -146,7 +147,8 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                 int index = positionToChatIndex(position);
                 TLRPC.User user = getUser(index);
                 InnerEncryptedChat innerChat = getInnerChat(index);
-                if (user == null || innerChat != null && innerChat.isInState(InnerEncryptedChatState.CANCELLED)) {
+                if (user == null || innerChat != null && innerChat.isInState(InnerEncryptedChatState.CANCELLED)
+                        || getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(getDialogId(index))) == null) {
                     return;
                 }
                 args.putLong("user_id", user.id);
@@ -185,14 +187,14 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     }
 
     private InnerEncryptedChat getInnerChat(int index) {
-        if (index >= encryptedGroup.getInnerChats().size()) {
+        if (index < 0 || index >= encryptedGroup.getInnerChats().size()) {
             return null;
         }
         return encryptedGroup.getInnerChats().get(index);
     }
 
     private long getDialogId(int index) {
-        if (index >= encryptedGroup.getInnerChats().size()) {
+        if (index < 0 || index >= encryptedGroup.getInnerChats().size()) {
             return 0;
         }
         return encryptedGroup.getInnerChats().get(index).getDialogId().orElse(0L);
