@@ -11176,4 +11176,6 @@
     <string name="BadPasscodeReactionInfo">Configure protection against passcode brute-force and camera capture on incorrect entry, or view the list of failed login attempts.</string>
     <string name="InterfaceTweaks">Additional Features</string>
     <string name="InterfaceTweaksInfo">Enable additional Partisan Telegram features or disable them to better disguise the app when a fake passcode is not active.</string>
+    <string name="OriginalPasscode">Original Passcode</string>
+    <string name="OriginalPasscodeInfo">Set up or change the original (real) passcode lock for the application.</string>
 </resources>

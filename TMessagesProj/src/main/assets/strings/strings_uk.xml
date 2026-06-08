@@ -358,4 +358,6 @@
     <string name="BadPasscodeReactionInfo">Налаштуйте захист від підбору коду блокування та фотографування камерою при невірному введенні або перегляньте список невдалих спроб входу.</string>
     <string name="InterfaceTweaks">Додаткові функції</string>
     <string name="InterfaceTweaksInfo">Увімкніть додаткові функції Партизанського Телеграму або вимкніть їх, щоб краще замаскувати додаток, коли фальшивий код блокування не активовано.</string>
+    <string name="OriginalPasscode">Оригінальний код блокування</string>
+    <string name="OriginalPasscodeInfo">Встановіть або змініть оригінальний (справжній) код блокування додатку.</string>
 </resources>
