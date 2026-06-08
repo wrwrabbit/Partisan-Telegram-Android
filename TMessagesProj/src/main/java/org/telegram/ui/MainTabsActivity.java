@@ -879,7 +879,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             }
         } else if (id == NotificationCenter.fakePasscodeActivated) {
             if (accountSelectorOptions != null) {
-                accountSelectorOptions.dismiss();
+                accountSelectorOptions.dismiss(false);
                 accountSelectorOptions = null;
             }
             if (updateLayout != null) {

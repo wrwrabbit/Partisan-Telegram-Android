@@ -1596,12 +1596,16 @@ public class ItemOptions {
     }
 
     public void dismiss() {
+        dismiss(true);
+    }
+
+    public void dismiss(boolean animated) {
         if (dontDismiss) {
             dontDismiss = false;
             return;
         }
         if (actionBarPopupWindow != null) {
-            actionBarPopupWindow.dismiss();
+            actionBarPopupWindow.dismiss(animated);
         } else if (dismissListener != null) {
             dismissListener.run();
         }
