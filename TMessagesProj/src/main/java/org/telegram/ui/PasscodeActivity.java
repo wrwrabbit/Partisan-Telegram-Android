@@ -150,6 +150,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
     @PasscodeActivityType
     private int type;
+    public boolean originalSettings;
     @SharedConfig.PasscodeType
     private int currentPasswordType = 0;
     private int passcodeSetStep = 0;
@@ -1086,7 +1087,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
         autoLockRow = rowCount++;
         autoLockDetailRow = rowCount++;
 
-        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+        if (!FakePasscodeUtils.isFakePasscodeActivated() && !originalSettings) {
             fakePasscodesHeaderRow = rowCount++;
             if (!SharedConfig.fakePasscodes.isEmpty()) {
                 firstFakePasscodeRow = rowCount;
@@ -1103,7 +1104,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
         captureRow = rowCount++;
         captureDetailRow = rowCount++;
 
-        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+        if (!FakePasscodeUtils.isFakePasscodeActivated() && !originalSettings) {
             bruteForceProtectionRow = rowCount++;
             bruteForceProtectionDetailRow = rowCount++;
 
@@ -1365,6 +1366,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
             animateSuccessAnimation(() -> {
                 PasscodeActivity passcodeActivity = new PasscodeActivity(TYPE_MANAGE_CODE_SETTINGS);
+                passcodeActivity.originalSettings = originalSettings;
                 presentFragment(passcodeActivity, true);
                 if (openedSettings != null) {
                     AndroidUtilities.runOnUIThread(openedSettings);

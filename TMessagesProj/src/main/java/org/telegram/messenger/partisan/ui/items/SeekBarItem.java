@@ -21,11 +21,11 @@ public class SeekBarItem extends AbstractViewItem {
     private final double step;
 
     public SeekBarItem(BaseFragment fragment, FloatSetting setting, double startValue, double endValue, double step) {
-        this(fragment, () -> setting.get().get(), setting::set, startValue, endValue, step);
+        this(fragment, setting::getOrDefault, setting::set, startValue, endValue, step);
     }
 
     public SeekBarItem(BaseFragment fragment, IntSetting setting, double startValue, double endValue, double step) {
-        this(fragment, () -> (float)setting.get().get(), val -> setting.set((int)(float)val), startValue, endValue, step);
+        this(fragment, () -> (float)setting.getOrDefault(), val -> setting.set((int)(float)val), startValue, endValue, step);
     }
 
     public SeekBarItem(BaseFragment fragment, Supplier<Float> getValue, Consumer<Float> setValue, double startValue, double endValue, double step) {
