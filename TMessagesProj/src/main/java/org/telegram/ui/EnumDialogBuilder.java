@@ -34,7 +34,7 @@ public class EnumDialogBuilder {
                 onClick.accept(which);
             });
         }
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         return builder.create();
     }
 }

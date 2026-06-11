@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.CollapseTextCell;
+import org.telegram.ui.Components.RecyclerListView;
 
 public class CollapseItem extends AbstractViewItem {
     private final String text;
@@ -21,6 +22,7 @@ public class CollapseItem extends AbstractViewItem {
 
     public static View createView(Context context) {
         CollapseTextCell cell = new CollapseTextCell(context, null);
+        cell.setTag(RecyclerListView.TAG_FORCE_SECTION);
         return AbstractViewItem.initializeView(cell);
     }
 

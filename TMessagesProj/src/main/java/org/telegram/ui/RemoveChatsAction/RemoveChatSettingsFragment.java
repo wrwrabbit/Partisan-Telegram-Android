@@ -116,9 +116,9 @@ public class RemoveChatSettingsFragment extends BaseFragment {
         fragmentView = new FrameLayout(context);
         FrameLayout frameLayout = (FrameLayout) fragmentView;
 
-        actionBar.setTitle(LocaleController.getString("FakePasscodeRemoveDialogSettingsTitle", R.string.FakePasscodeRemoveDialogSettingsTitle));
+        actionBar.setTitle(LocaleController.getString(R.string.FakePasscodeRemoveDialogSettingsTitle));
         ActionBarMenu menu = actionBar.createMenu();
-        menu.addItem(done_button, LocaleController.getString("Save", R.string.Save).toUpperCase());
+        menu.addItem(done_button, LocaleController.getString(R.string.Save).toUpperCase());
 
         frameLayout.setTag(Theme.key_windowBackgroundGray);
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
@@ -253,9 +253,9 @@ public class RemoveChatSettingsFragment extends BaseFragment {
     private void showHideDialogIsNotSafeWarning() {
         DialogTemplate template = new DialogTemplate();
         template.type = DialogType.OK;
-        template.title = LocaleController.getString("Warning", R.string.Warning);
-        template.message = LocaleController.getString("HideDialogIsNotSafeWarningMessage", R.string.HideDialogIsNotSafeWarningMessage);
-        template.addCheckboxTemplate(false, LocaleController.getString("DoNotShowAgain", R.string.DoNotShowAgain));
+        template.title = LocaleController.getString(R.string.Warning);
+        template.message = LocaleController.getString(R.string.HideDialogIsNotSafeWarningMessage);
+        template.addCheckboxTemplate(false, LocaleController.getString(R.string.DoNotShowAgain));
         template.positiveListener = views -> {
             boolean isNotShowAgain = !((DialogCheckBox) views.get(0)).isChecked();
             if (SharedConfig.showHideDialogIsNotSafeWarning != isNotShowAgain) {
@@ -358,9 +358,9 @@ public class RemoveChatSettingsFragment extends BaseFragment {
         if (hasIndeterminateStates()) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
             String buttonText;
-            builder.setMessage(LocaleController.getString("RemoveDialogCantSaveDetails", R.string.RemoveDialogCantSaveDetails));
-            builder.setTitle(LocaleController.getString("RemoveDialogCantSaveTitle", R.string.RemoveDialogCantSaveTitle));
-            buttonText = LocaleController.getString("OK", R.string.OK);
+            builder.setMessage(LocaleController.getString(R.string.RemoveDialogCantSaveDetails));
+            builder.setTitle(LocaleController.getString(R.string.RemoveDialogCantSaveTitle));
+            buttonText = LocaleController.getString(R.string.OK);
             builder.setPositiveButton(buttonText, null);
             AlertDialog alertDialog = builder.create();
             showDialog(alertDialog);
@@ -430,11 +430,11 @@ public class RemoveChatSettingsFragment extends BaseFragment {
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
         String buttonText;
-        builder.setTitle(LocaleController.getString("DiscardChanges", R.string.DiscardChanges));
-        builder.setMessage(LocaleController.getString("PhotoEditorDiscardAlert", R.string.PhotoEditorDiscardAlert));
-        buttonText = LocaleController.getString("PassportDiscard", R.string.PassportDiscard);
+        builder.setTitle(LocaleController.getString(R.string.DiscardChanges));
+        builder.setMessage(LocaleController.getString(R.string.PhotoEditorDiscardAlert));
+        buttonText = LocaleController.getString(R.string.PassportDiscard);
         builder.setPositiveButton(buttonText, (dialogInterface, i) -> finishFragment());
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         AlertDialog alertDialog = builder.create();
         showDialog(alertDialog);
         TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
@@ -538,22 +538,22 @@ public class RemoveChatSettingsFragment extends BaseFragment {
                 case 0: {
                     SimpleRadioButtonCell radioButtonCell = (SimpleRadioButtonCell) holder.itemView;
                     if (position == deleteDialogRow) {
-                        radioButtonCell.setTextAndValue(LocaleController.getString("Delete", R.string.Delete), false, hasDeleteDialog());
+                        radioButtonCell.setTextAndValue(LocaleController.getString(R.string.Delete), false, hasDeleteDialog());
                     } else if (position == hideDialogRow) {
-                        radioButtonCell.setTextAndValue(LocaleController.getString("Hide", R.string.Hide), false, hasHideDialog());
+                        radioButtonCell.setTextAndValue(LocaleController.getString(R.string.Hide), false, hasHideDialog());
                     }
                     break;
                 }
                 case 1: {
                     CheckBoxThreeStateCell checkBoxCell = (CheckBoxThreeStateCell) holder.itemView;
                     if (position == deleteFromCompanionRow) {
-                        String title = LocaleController.getString("DeleteFromCompanion", R.string.DeleteFromCompanion);
+                        String title = LocaleController.getString(R.string.DeleteFromCompanion);
                         checkBoxCell.setText(title, "", getDeleteFromCompanionState(), false);
                     } else if (position == deleteNewMessagesRow) {
-                        String title = LocaleController.getString("DeleteNewMessages", R.string.DeleteNewMessages);
+                        String title = LocaleController.getString(R.string.DeleteNewMessages);
                         checkBoxCell.setText(title, "", getDeleteNewMessagesState(), false);
                     } else if (position == deleteAllMyMessagesRow) {
-                        String title = LocaleController.getString("DeleteAllMyMessages", R.string.DeleteAllMyMessages);
+                        String title = LocaleController.getString(R.string.DeleteAllMyMessages);
                         checkBoxCell.setText(title, "", getDeleteAllMyMessagesState(), false);
                     } else if (position == strictHidingRow) {
                         String title = LocaleController.getString(R.string.StrictHiding);
@@ -565,13 +565,13 @@ public class RemoveChatSettingsFragment extends BaseFragment {
                 case 2: {
                     TextInfoPrivacyCell textCell = (TextInfoPrivacyCell) holder.itemView;
                     if (position == deleteFromCompanionDetailsRow) {
-                        textCell.setText(LocaleController.getString("DeleteFromCompanionDetails", R.string.DeleteFromCompanionDetails));
+                        textCell.setText(LocaleController.getString(R.string.DeleteFromCompanionDetails));
                     } else if (position == deleteNewMessagesDetailsRow) {
-                        textCell.setText(LocaleController.getString("DeleteNewMessagesDetails", R.string.DeleteNewMessagesDetails));
+                        textCell.setText(LocaleController.getString(R.string.DeleteNewMessagesDetails));
                     } else if (position == deleteAllMyMessagesDetailsRow) {
-                        textCell.setText(LocaleController.getString("DeleteAllMyMessagesDetails", R.string.DeleteAllMyMessagesDetails));
+                        textCell.setText(LocaleController.getString(R.string.DeleteAllMyMessagesDetails));
                     } else if (position == hideDialogDetailsRow) {
-                        textCell.setText(LocaleController.getString("HideDialogDetails", R.string.HideDialogDetails));
+                        textCell.setText(LocaleController.getString(R.string.HideDialogDetails));
                     } else if (position == strictHidingDetailsRow) {
                         textCell.setText(LocaleController.getString(R.string.StrictHidingDialogDescription));
                     }

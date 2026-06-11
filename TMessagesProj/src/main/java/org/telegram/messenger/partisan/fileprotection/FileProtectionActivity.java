@@ -67,7 +67,7 @@ public class FileProtectionActivity extends BaseFragment {
         actionBar.setAllowOverlayTitle(true);
         actionBar.setTitle(LocaleController.getString(R.string.FileProtection));
         ActionBarMenu menu = actionBar.createMenu();
-        menu.addItem(done_button, LocaleController.getString("Save", R.string.Save).toUpperCase());
+        menu.addItem(done_button, LocaleController.getString(R.string.Save).toUpperCase());
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -169,11 +169,11 @@ public class FileProtectionActivity extends BaseFragment {
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
         String buttonText;
-        builder.setTitle(LocaleController.getString("DiscardChanges", R.string.DiscardChanges));
-        builder.setMessage(LocaleController.getString("PhotoEditorDiscardAlert", R.string.PhotoEditorDiscardAlert));
-        buttonText = LocaleController.getString("PassportDiscard", R.string.PassportDiscard);
+        builder.setTitle(LocaleController.getString(R.string.DiscardChanges));
+        builder.setMessage(LocaleController.getString(R.string.PhotoEditorDiscardAlert));
+        buttonText = LocaleController.getString(R.string.PassportDiscard);
         builder.setPositiveButton(buttonText, (dialogInterface, i) -> finishFragment());
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         AlertDialog alertDialog = builder.create();
         showDialog(alertDialog);
         TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
@@ -202,7 +202,7 @@ public class FileProtectionActivity extends BaseFragment {
             }
             new FileProtectionSwitcher(this).changeForMultipleAccounts(map);
         });
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         AlertDialog dialog = builder.create();
         showDialog(dialog);
     }

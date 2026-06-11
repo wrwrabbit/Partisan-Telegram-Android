@@ -111,8 +111,8 @@ public class FakePasscodeRemovePasscodesActivity extends BaseFragment implements
                 AlertsCreator.showCheckableSettingModesAlert(this, getParentActivity(), getTitle(), this, null);
             } else if (position == checkAllRow) {
                 AlertsCreator.showConfirmationDialog(this, context, selectedPasscodes.size() > 0
-                                ? LocaleController.getString("Clear", R.string.Clear)
-                                : LocaleController.getString("CheckAll", R.string.CheckAll),
+                                ? LocaleController.getString(R.string.Clear)
+                                : LocaleController.getString(R.string.CheckAll),
                         () -> {
                             if (selectedPasscodes.size() > 0) {
                                 selectedPasscodes = new ArrayList<>();
@@ -200,10 +200,10 @@ public class FakePasscodeRemovePasscodesActivity extends BaseFragment implements
                     String value;
                     switch (getSelectedMode()) {
                         case 0:
-                            value = LocaleController.getString("Selected", R.string.Selected);
+                            value = LocaleController.getString(R.string.Selected);
                             break;
                         case 1:
-                            value = LocaleController.getString("ExceptSelected", R.string.ExceptSelected);
+                            value = LocaleController.getString(R.string.ExceptSelected);
                             break;
                         default:
                             value = "";
@@ -215,16 +215,16 @@ public class FakePasscodeRemovePasscodesActivity extends BaseFragment implements
                     TextCell textCell = (TextCell) holder.itemView;
                     if (position == checkAllRow) {
                         if (selectedPasscodes.size() > 0) {
-                            textCell.setText(LocaleController.getString("Clear", R.string.Clear), true);
+                            textCell.setText(LocaleController.getString(R.string.Clear), true);
                         } else {
-                            textCell.setText(LocaleController.getString("CheckAll", R.string.CheckAll), true);
+                            textCell.setText(LocaleController.getString(R.string.CheckAll), true);
                         }
                     }
                     break;
                 case 2:
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
                     if (position == fakePasscodesSectionRow) {
-                        headerCell.setText(LocaleController.getString("FakePasscodes", R.string.FakePasscodes));
+                        headerCell.setText(LocaleController.getString(R.string.FakePasscodes));
                     }
                     break;
                 default:
@@ -300,7 +300,7 @@ public class FakePasscodeRemovePasscodesActivity extends BaseFragment implements
     }
 
     private String getTitle() {
-        return LocaleController.getString("DeleteOtherPasscodesAfterActivation", R.string.DeleteOtherPasscodesAfterActivation);
+        return LocaleController.getString(R.string.DeleteOtherPasscodesAfterActivation);
     }
 
     private void saveCheckedPasscodes(List<FakePasscode> passcodes) {

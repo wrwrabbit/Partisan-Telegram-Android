@@ -133,8 +133,8 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
             if (position == activationMessageRow) {
                 DialogTemplate template = new DialogTemplate();
                 template.type = DialogType.EDIT;
-                template.title = LocaleController.getString("ActivationMessage", R.string.ActivationMessage);
-                EditTemplate editTemplate = new EditTemplate(fakePasscode.activationMessage, LocaleController.getString("Message", R.string.Message), false) {
+                template.title = LocaleController.getString(R.string.ActivationMessage);
+                EditTemplate editTemplate = new EditTemplate(fakePasscode.activationMessage, LocaleController.getString(R.string.Message), false) {
                     @Override
                     public boolean validate(View view) {
                         if (!super.validate(view)) {
@@ -154,8 +154,8 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
                     fakePasscode.activationMessage = ((EditTextCaption) views.get(0)).getText().toString();
                     SharedConfig.saveConfig();
                     TextSettingsCell cell = (TextSettingsCell) view;
-                    String value = fakePasscode.activationMessage.isEmpty() ? LocaleController.getString("Disabled", R.string.Disabled) : fakePasscode.activationMessage;
-                    cell.setTextAndValue(LocaleController.getString("ActivationMessage", R.string.ActivationMessage), value, false);
+                    String value = fakePasscode.activationMessage.isEmpty() ? LocaleController.getString(R.string.Disabled) : fakePasscode.activationMessage;
+                    cell.setTextAndValue(LocaleController.getString(R.string.ActivationMessage), value, false);
                     if (listAdapter != null) {
                         listAdapter.notifyDataSetChanged();
                     }
@@ -164,7 +164,7 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
                     fakePasscode.activationMessage = "";
                     SharedConfig.saveConfig();
                     TextSettingsCell cell = (TextSettingsCell) view;
-                    cell.setTextAndValue(LocaleController.getString("ActivationMessage", R.string.ActivationMessage), LocaleController.getString("Disabled", R.string.Disabled), false);
+                    cell.setTextAndValue(LocaleController.getString(R.string.ActivationMessage), LocaleController.getString(R.string.Disabled), false);
                     if (listAdapter != null) {
                         listAdapter.notifyDataSetChanged();
                     }
@@ -172,7 +172,7 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
                 AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
                 showDialog(dialog);
             } else if (position == badTriesToActivateRow) {
-                String title = LocaleController.getString("BadPasscodeTriesToActivate", R.string.BadPasscodeTriesToActivate);
+                String title = LocaleController.getString(R.string.BadPasscodeTriesToActivate);
                 int selected = -1;
                 final int[] values = new int[]{1, 2, 3, 4, 5, 7, 10, 15, 20, 25, 30};
                 if (fakePasscode.badTriesToActivate == null) {
@@ -186,7 +186,7 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
                     }
                 }
                 String[] items = new String[values.length + 1];
-                items[0] = LocaleController.getString("Disabled", R.string.Disabled);
+                items[0] = LocaleController.getString(R.string.Disabled);
                 for (int i = 0; i < values.length; i++) {
                     items[i + 1] = String.valueOf(values[i]);
                 }
@@ -272,7 +272,7 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
             }
         });
         builder.setView(numberPicker);
-        builder.setNegativeButton(LocaleController.getString("Done", R.string.Done), (dialog, which) -> {
+        builder.setNegativeButton(LocaleController.getString(R.string.Done), (dialog, which) -> {
             fakePasscode.activateByTimerTime = durations.get(numberPicker.getValue());
             SharedConfig.saveConfig();
             listAdapter.notifyItemChanged(position);
@@ -373,13 +373,13 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
                 case 1: {
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
                     if (position == activationMessageRow) {
-                        String value = fakePasscode.activationMessage.isEmpty() ? LocaleController.getString("Disabled", R.string.Disabled) : fakePasscode.activationMessage;
-                        textCell.setTextAndValue(LocaleController.getString("ActivationMessage", R.string.ActivationMessage), value, false);
+                        String value = fakePasscode.activationMessage.isEmpty() ? LocaleController.getString(R.string.Disabled) : fakePasscode.activationMessage;
+                        textCell.setTextAndValue(LocaleController.getString(R.string.ActivationMessage), value, false);
                         textCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
                         textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
                     } else if (position == badTriesToActivateRow) {
-                        String value = fakePasscode.badTriesToActivate == null ? LocaleController.getString("Disabled", R.string.Disabled) : String.valueOf(fakePasscode.badTriesToActivate);
-                        textCell.setTextAndValue(LocaleController.getString("BadPasscodeTriesToActivate", R.string.BadPasscodeTriesToActivate), value, false);
+                        String value = fakePasscode.badTriesToActivate == null ? LocaleController.getString(R.string.Disabled) : String.valueOf(fakePasscode.badTriesToActivate);
+                        textCell.setTextAndValue(LocaleController.getString(R.string.BadPasscodeTriesToActivate), value, false);
                         textCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
                         textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
                     } else if (position == activateByTimerRow){
@@ -398,13 +398,13 @@ public class FakePasscodeActivationMethodsActivity extends BaseFragment {
                 case 2: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
                     if (position == activateByTimerDetailRow){
-                        cell.setText(LocaleController.getString("TimerActivationFakePasscodeInfo", R.string.TimerActivationFakePasscodeInfo));
+                        cell.setText(LocaleController.getString(R.string.TimerActivationFakePasscodeInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == activationMessageDetailRow) {
-                        cell.setText(LocaleController.getString("ActivationMessageInfo", R.string.ActivationMessageInfo));
+                        cell.setText(LocaleController.getString(R.string.ActivationMessageInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == badTriesToActivateDetailRow) {
-                        cell.setText(LocaleController.getString("BadPasscodeTriesToActivateInfo", R.string.BadPasscodeTriesToActivateInfo));
+                        cell.setText(LocaleController.getString(R.string.BadPasscodeTriesToActivateInfo));
                         cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     } else if (position == fingerprintDetailRow) {
                         cell.setText(LocaleController.getString(R.string.ActivateWithFingerprintInfo));

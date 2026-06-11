@@ -28,14 +28,14 @@ import java.util.Set;
 public class MultiLogOutDialogBuilder {
     public static AlertDialog makeLogOutDialog(Context context, int[] accounts) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setMessage(LocaleController.getString("AreYouSureLogout", R.string.AreYouSureLogout));
-        builder.setTitle(LocaleController.getString("LogOut", R.string.LogOut));
-        builder.setPositiveButton(LocaleController.getString("LogOut", R.string.LogOut), (dialogInterface, i) -> {
+        builder.setMessage(LocaleController.getString(R.string.AreYouSureLogout));
+        builder.setTitle(LocaleController.getString(R.string.LogOut));
+        builder.setPositiveButton(LocaleController.getString(R.string.LogOut), (dialogInterface, i) -> {
             for (int account : accounts) {
                 MessagesController.getInstance(account).performLogout(1);
             }
         });
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         AlertDialog alertDialog = builder.create();
         TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
         if (button != null) {
@@ -59,10 +59,10 @@ public class MultiLogOutDialogBuilder {
             }
         });
 
-        builder.setTitle(LocaleController.getString("SelectAccount", R.string.SelectAccount));
+        builder.setTitle(LocaleController.getString(R.string.SelectAccount));
         builder.setView(accountsLayout);
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-        builder.setPositiveButton(LocaleController.getString("LogOut", R.string.LogOut), (dialogInterface, i) -> {
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+        builder.setPositiveButton(LocaleController.getString(R.string.LogOut), (dialogInterface, i) -> {
             if (selectedAccounts.isEmpty()) {
                 return;
             }
