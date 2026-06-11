@@ -3153,7 +3153,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     NotificationCenter.getInstance(intentAccount[0]).postNotificationName(NotificationCenter.closeChats);
                 }
                 if (dialogId == 0) {
-                    openDialogsToSend(false);
+                    if (!fromPassword) {
+                        openDialogsToSend(false);
+                    } else {
+                        AndroidUtilities.runOnUIThread(() -> openDialogsToSend(false), 100);
+                    }
                     pushOpened = true;
                 } else {
                     ArrayList<MessagesStorage.TopicKey> dids = new ArrayList<>();
