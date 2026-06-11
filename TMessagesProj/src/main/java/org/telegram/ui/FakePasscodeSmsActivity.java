@@ -96,7 +96,7 @@ public class FakePasscodeSmsActivity extends BaseFragment {
         fragmentView = new FrameLayout(context);
         FrameLayout frameLayout = (FrameLayout) fragmentView;
 
-        actionBar.setTitle(LocaleController.getString("FakePasscodeSmsActionTitle", R.string.FakePasscodeSmsActionTitle));
+        actionBar.setTitle(LocaleController.getString(R.string.FakePasscodeSmsActionTitle));
         frameLayout.setTag(Theme.key_windowBackgroundGray);
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         listView = new RecyclerListView(context);
@@ -126,10 +126,10 @@ public class FakePasscodeSmsActivity extends BaseFragment {
                 SmsMessage message = action.messages.get(position - firstSmsRow);
                 DialogTemplate template = new DialogTemplate();
                 template.type = DialogType.EDIT;
-                template.title = LocaleController.getString("FakePasscodeChangeSMS", R.string.FakePasscodeChangeSMS);
-                template.addPhoneEditTemplate(message.phoneNumber, LocaleController.getString("Phone", R.string.Phone), true);
-                template.addEditTemplate(message.text, LocaleController.getString("Message", R.string.Message), false);
-                template.addCheckboxTemplate(message.addGeolocation, LocaleController.getString("AddGeolocation", R.string.AddGeolocation), getGeolocationCheckboxListener());
+                template.title = LocaleController.getString(R.string.FakePasscodeChangeSMS);
+                template.addPhoneEditTemplate(message.phoneNumber, LocaleController.getString(R.string.Phone), true);
+                template.addEditTemplate(message.text, LocaleController.getString(R.string.Message), false);
+                template.addCheckboxTemplate(message.addGeolocation, LocaleController.getString(R.string.AddGeolocation), getGeolocationCheckboxListener());
                 template.positiveListener = views -> {
                     message.phoneNumber = ((EditTextCaption)views.get(0)).getText().toString();
                     message.text = ((EditTextCaption)views.get(1)).getText().toString();
@@ -240,7 +240,7 @@ public class FakePasscodeSmsActivity extends BaseFragment {
                 case 0: {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
                     if (position == sendOnlyIfDisconnectedRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("FakePasscodeSmsSendOnlyIfDisconnected", R.string.FakePasscodeSmsSendOnlyIfDisconnected), action.onlyIfDisconnected, false);
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FakePasscodeSmsSendOnlyIfDisconnected), action.onlyIfDisconnected, false);
                     }
                     break;
                 }

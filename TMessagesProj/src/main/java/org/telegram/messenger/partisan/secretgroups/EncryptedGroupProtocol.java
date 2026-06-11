@@ -198,7 +198,7 @@ public class EncryptedGroupProtocol implements AccountControllersProvider {
         action.externalGroupId = encryptedGroup.getExternalId();
         action.name = encryptedGroup.getName();
         action.ownerUserId = getUserConfig().getClientUserId();
-        action.memberIds = encryptedGroup.getInnerUserIds();
+        action.memberIds = encryptedGroup.getActiveInnerUserIds();
         sendAction(encryptedChat, action);
     }
 

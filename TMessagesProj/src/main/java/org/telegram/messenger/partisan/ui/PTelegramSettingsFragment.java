@@ -65,6 +65,12 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
     @Override
     protected AbstractSourceItem[] createItems() {
         return new AbstractSourceItem[]{
+                new ButtonItem(this, getString(R.string.OriginalPasscode),
+                        () -> SharedConfig.passcodeEnabled()
+                                ? getString(R.string.PasswordOn)
+                                : getString(R.string.PasswordOff),
+                        v -> presentFragment(createOriginalPasscodeFragment())),
+                new DescriptionItem(this, getString(R.string.OriginalPasscodeInfo)),
                 new HeaderItem(this, getString(R.string.FakePasscodes)),
                 new ItemsGenerator(
                         () -> (!isNeedFoldFakePasscodes() || showAllFakePasscodes)
@@ -142,6 +148,18 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
 
     private static boolean isNeedFoldFakePasscodes() {
         return SharedConfig.fakePasscodes.size() >= MIN_FOLD_FAKE_PASSCODES;
+    }
+
+    private static BaseFragment createOriginalPasscodeFragment() {
+        if (!SharedConfig.passcodeEnabled()) {
+            return PasscodeActivity.determineOpenFragment();
+        }
+        int type = SharedConfig.protectPtelegramSettings
+                ? PasscodeActivity.TYPE_MANAGE_CODE_SETTINGS
+                : PasscodeActivity.TYPE_ENTER_CODE_TO_MANAGE_SETTINGS;
+        PasscodeActivity passcodeActivity = new PasscodeActivity(type);
+        passcodeActivity.originalSettings = true;
+        return passcodeActivity;
     }
 
     private void showNoMainPasscodeWarningIfNeeded(Runnable action) {

@@ -53,24 +53,24 @@ public class BadPasscodeAttemptsActivity extends BaseFragment {
                     finishFragment();
                 } else if (id == clear_button) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                    builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
-                    builder.setMessage(LocaleController.getString("ClearBadPasscodeAttempts", R.string.ClearBadPasscodeAttempts));
-                    builder.setPositiveButton(LocaleController.getString("ClearButton", R.string.ClearButton).toUpperCase(), (dialogInterface, i) -> {
+                    builder.setTitle(LocaleController.getString(R.string.AppName));
+                    builder.setMessage(LocaleController.getString(R.string.ClearBadPasscodeAttempts));
+                    builder.setPositiveButton(LocaleController.getString(R.string.ClearButton).toUpperCase(), (dialogInterface, i) -> {
                         SharedConfig.clearBadPasscodeAttemptList();
                         listView.getAdapter().notifyDataSetChanged();
                     });
-                    builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+                    builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                     showDialog(builder.create());
                 }
             }
         });
         ActionBarMenu menu = actionBar.createMenu();
-        menu.addItem(clear_button, LocaleController.getString("ClearButton", R.string.ClearButton).toUpperCase());
+        menu.addItem(clear_button, LocaleController.getString(R.string.ClearButton).toUpperCase());
 
         fragmentView = new FrameLayout(context);
         FrameLayout frameLayout = (FrameLayout) fragmentView;
 
-        actionBar.setTitle(LocaleController.getString("BadPasscodeAttempts", R.string.BadPasscodeAttempts));
+        actionBar.setTitle(LocaleController.getString(R.string.BadPasscodeAttempts));
         frameLayout.setTag(Theme.key_windowBackgroundGray);
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         listView = new RecyclerListView(context);
@@ -126,7 +126,7 @@ public class BadPasscodeAttemptsActivity extends BaseFragment {
                 cell.setBadPasscodeAttempt(attempt);
             } else if (holder.getItemViewType() == 1) {
                 TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
-                cell.setText(LocaleController.getString("NoBadPasscodeAttemts", R.string.NoBadPasscodeAttemts));
+                cell.setText(LocaleController.getString(R.string.NoBadPasscodeAttemts));
             }
         }
 

@@ -70,7 +70,7 @@ public class FakePasscodeRestoreActivity extends BaseFragment {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(false);
         ActionBarMenu menu = actionBar.createMenu();
-        menu.addItemWithWidth(done_button, R.drawable.ic_ab_done, AndroidUtilities.dp(56), LocaleController.getString("Done", R.string.Done));
+        menu.addItemWithWidth(done_button, R.drawable.ic_ab_done, AndroidUtilities.dp(56), LocaleController.getString(R.string.Done));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -91,7 +91,7 @@ public class FakePasscodeRestoreActivity extends BaseFragment {
         fragmentView = new FrameLayout(context);
         FrameLayout frameLayout = (FrameLayout) fragmentView;
 
-        actionBar.setTitle(LocaleController.getString("FakePasscodeRestore", R.string.FakePasscodeRestore));
+        actionBar.setTitle(LocaleController.getString(R.string.FakePasscodeRestore));
         frameLayout.setTag(Theme.key_windowBackgroundGray);
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         listView = new RecyclerListView(context);
@@ -189,7 +189,7 @@ public class FakePasscodeRestoreActivity extends BaseFragment {
                 }
                 case 1: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
-                    cell.setText(LocaleController.getString("FakePasscodeRestoreInfo", R.string.FakePasscodeRestoreInfo));
+                    cell.setText(LocaleController.getString(R.string.FakePasscodeRestoreInfo));
                     cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     break;
                 }

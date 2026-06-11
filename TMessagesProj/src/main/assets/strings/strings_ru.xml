@@ -379,4 +379,6 @@
     <string name="BadPasscodeReactionInfo">Настройте защиту от подбора код-пароля и фотографирование камерой при неверном вводе или посмотрите список неудачных попыток входа.</string>
     <string name="InterfaceTweaks">Дополнительные функции</string>
     <string name="InterfaceTweaksInfo">Включите дополнительные функции Партизанского Телеграма или отключите их, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
+    <string name="OriginalPasscode">Оригинальный код-пароль</string>
+    <string name="OriginalPasscodeInfo">Установите или измените оригинальный (настоящий) код-пароль приложения.</string>
 </resources>
