@@ -52,6 +52,13 @@ class NoteListSubscreen extends FrameLayout {
         floatingButton.setText("+");
         floatingButton.setTextColor(Color.BLACK);
         floatingButton.setTextSize(24);
+        floatingButton.setMinWidth(0);
+        floatingButton.setMinHeight(0);
+        floatingButton.setMinimumWidth(0);
+        floatingButton.setMinimumHeight(0);
+        floatingButton.setPadding(0, 0, 0, 0);
+        floatingButton.setIncludeFontPadding(false);
+        floatingButton.setGravity(Gravity.CENTER);
 
         GradientDrawable shape = new GradientDrawable();
         shape.setShape(GradientDrawable.OVAL);

@@ -10,6 +10,10 @@ import android.graphics.drawable.shapes.RoundRectShape;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
@@ -69,6 +73,26 @@ public class NotePasscodeScreen extends AbstractMaskedPasscodeScreen
         backgroundFrameLayout = new FrameLayout(context);
         backgroundFrameLayout.setWillNotDraw(false);
         backgroundFrameLayout.setBackgroundColor(Colors.screenBackgroundColor);
+    }
+
+    @Override
+    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int topInset = AndroidUtilities.statusBarHeight;
+        int bottomInset = AndroidUtilities.navigationBarHeight;
+        WindowInsetsCompat insetsCompat = ViewCompat.getRootWindowInsets(backgroundFrameLayout);
+        if (insetsCompat != null) {
+            Insets systemInsets = insetsCompat.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars());
+            topInset = systemInsets.top;
+            bottomInset = systemInsets.bottom;
+        }
+        updateSubscreenMargins(noteListSubscreen, topInset, bottomInset);
+        updateSubscreenMargins(editNoteSubscreen, topInset, bottomInset);
+    }
+
+    private void updateSubscreenMargins(View subscreen, int topInset, int bottomInset) {
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) subscreen.getLayoutParams();
+        params.topMargin = topInset;
+        params.bottomMargin = bottomInset;
     }
 
     @Override
