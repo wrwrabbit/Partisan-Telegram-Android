@@ -106,6 +106,13 @@ public class EncryptedGroup {
         return innerChats.stream().map(InnerEncryptedChat::getUserId).collect(Collectors.toList());
     }
 
+    public List<Long> getActiveInnerUserIds() {
+        return innerChats.stream()
+                .filter(innerChat -> innerChat.isNotInState(InnerEncryptedChatState.CANCELLED))
+                .map(InnerEncryptedChat::getUserId)
+                .collect(Collectors.toList());
+    }
+
     public String getName() {
         return name;
     }

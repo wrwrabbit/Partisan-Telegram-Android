@@ -220,7 +220,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
 
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
-        actionBar.setTitle(LocaleController.getString("TelegramMessages", R.string.TelegramMessages));
+        actionBar.setTitle(LocaleController.getString(R.string.TelegramMessages));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -322,7 +322,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
         editText.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         editText.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
         spansContainer.addView(editText);
-        editText.setHintText(LocaleController.getString("SearchForPeopleAndGroups", R.string.SearchForPeopleAndGroups));
+        editText.setHintText(LocaleController.getString(R.string.SearchForPeopleAndGroups));
 
         editText.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
             public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
@@ -379,7 +379,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                         adapter.setSearching(true);
                         listView.setFastScrollVisible(false);
                         listView.setVerticalScrollBarEnabled(true);
-                        emptyView.setText(LocaleController.getString("NoResult", R.string.NoResult));
+                        emptyView.setText(LocaleController.getString(R.string.NoResult));
                         emptyView.showProgress();
                     }
                     adapter.searchDialogs(editText.getText().toString());
@@ -396,7 +396,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
             emptyView.showTextView();
         }
         emptyView.setShowAtCenter(true);
-        emptyView.setText(LocaleController.getString("NoContacts", R.string.NoContacts));
+        emptyView.setText(LocaleController.getString(R.string.NoContacts));
         frameLayout.addView(emptyView);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false);
@@ -430,10 +430,10 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                 if (entry != null) {
                     DialogTemplate template = new DialogTemplate();
                     template.type = DialogType.EDIT;
-                    template.title = LocaleController.getString("ChangeMessage", R.string.ChangeMessage);
-                    template.addEditTemplate(entry.text, LocaleController.getString("Message", R.string.Message), false);
+                    template.title = LocaleController.getString(R.string.ChangeMessage);
+                    template.addEditTemplate(entry.text, LocaleController.getString(R.string.Message), false);
                     List<View> viewsOutput = new ArrayList<>();
-                    template.addCheckboxTemplate(entry.addGeolocation, LocaleController.getString("AddGeolocation", R.string.AddGeolocation),
+                    template.addCheckboxTemplate(entry.addGeolocation, LocaleController.getString(R.string.AddGeolocation),
                             getGeolocationCheckboxListener(entry, cell, viewsOutput));
                     template.positiveListener = views -> {
                         entry.text = ((EditTextCaption)views.get(0)).getText().toString();
@@ -477,8 +477,8 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                     }
                     DialogTemplate template = new DialogTemplate();
                     template.type = DialogType.ADD;
-                    template.title = LocaleController.getString("ChangeMessage", R.string.ChangeMessage);
-                    template.addEditTemplate("", LocaleController.getString("Message", R.string.Message), false);
+                    template.title = LocaleController.getString(R.string.ChangeMessage);
+                    template.addEditTemplate("", LocaleController.getString(R.string.Message), false);
                     List<View> viewsOutput = new ArrayList<>();
                     template.addCheckboxTemplate(false, LocaleController.getString(R.string.AddGeolocation),
                             getGeolocationCheckboxListener(id, cell, viewsOutput));
@@ -625,7 +625,7 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
         adapter.searchDialogs(null);
         listView.setFastScrollVisible(true);
         listView.setVerticalScrollBarEnabled(false);
-        emptyView.setText(LocaleController.getString("NoContacts", R.string.NoContacts));
+        emptyView.setText(LocaleController.getString(R.string.NoContacts));
     }
 
     private void updateHint() {
@@ -912,9 +912,9 @@ public class FakePasscodeTelegramMessagesActivity extends BaseFragment implement
                                 names[0] = ContactsController.formatName(user.first_name, user.last_name).toLowerCase();
                                 username = user.username;
                                 if (UserObject.isReplyUser(user)) {
-                                    names[2] = LocaleController.getString("RepliesTitle", R.string.RepliesTitle).toLowerCase();
+                                    names[2] = LocaleController.getString(R.string.RepliesTitle).toLowerCase();
                                 } else if (user.self) {
-                                    names[2] = LocaleController.getString("SavedMessages", R.string.SavedMessages).toLowerCase();
+                                    names[2] = LocaleController.getString(R.string.SavedMessages).toLowerCase();
                                 }
                             } else if (object instanceof TLRPC.Chat) {
                                 TLRPC.Chat chat = (TLRPC.Chat) object;

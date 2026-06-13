@@ -358,4 +358,6 @@
     <string name="BadPasscodeReactionInfo">Наладзьце абарону ад падбору кода блакіроўкі і фатаграфаванне камерай пры няправільным уводзе або паглядзіце спіс няўдалых спроб уваходу.</string>
     <string name="InterfaceTweaks">Дадатковыя функцыі</string>
     <string name="InterfaceTweaksInfo">Уключыце дадатковыя функцыі Партызанскага Тэлеграма або адключыце іх, каб лепш замаскіраваць дадатак, калі несапраўдны код блакіроўкі не актываваны.</string>
+    <string name="OriginalPasscode">Арыгінальны код блакіроўкі</string>
+    <string name="OriginalPasscodeInfo">Усталюйце або змяніце арыгінальны (сапраўдны) код блакіроўкі дадатку.</string>
 </resources>

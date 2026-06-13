@@ -179,7 +179,7 @@ public class CheckableSessionCell extends FrameLayout {
             String timeText;
             if ((session.flags & 1) != 0) {
                 setTag(Theme.key_windowBackgroundWhiteValueText);
-                timeText = LocaleController.getString("Online", R.string.Online);
+                timeText = LocaleController.getString(R.string.Online);
             } else {
                 setTag(Theme.key_windowBackgroundWhiteGrayText3);
                 timeText = LocaleController.stringForMessageListDate(session.date_active);
@@ -263,15 +263,15 @@ public class CheckableSessionCell extends FrameLayout {
     public void setTerminatedSession(boolean divider, boolean checked) {
         needDivider = divider;
 
-        nameTextView.setText(LocaleController.getString("TerminatedSession", R.string.TerminatedSession));
+        nameTextView.setText(LocaleController.getString(R.string.TerminatedSession));
 
         Drawable iconDrawable = ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.device_desktop_other).mutate();
         iconDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_avatar_text), PorterDuff.Mode.SRC_IN));
         CombinedDrawable combinedDrawable = new CombinedDrawable(Theme.createCircleDrawable(AndroidUtilities.dp(42), Theme.getColor(Theme.key_avatar_backgroundRed)), iconDrawable);
 
         imageView.setImageDrawable(combinedDrawable);
-        detailExTextView.setText(LocaleController.getString("NumberUnknown", R.string.NumberUnknown));
-        detailTextView.setText(LocaleController.getString("NumberUnknown", R.string.NumberUnknown));
+        detailExTextView.setText(LocaleController.getString(R.string.NumberUnknown));
+        detailTextView.setText(LocaleController.getString(R.string.NumberUnknown));
 
         checkBox.setChecked(checked, false);
 
@@ -396,6 +396,6 @@ public class CheckableSessionCell extends FrameLayout {
         info.setClassName("android.widget.Switch");
         info.setCheckable(true);
         info.setChecked(checkBox.isChecked());
-        info.setContentDescription(checkBox.isChecked() ? LocaleController.getString("NotificationsOn", R.string.NotificationsOn) : LocaleController.getString("NotificationsOff", R.string.NotificationsOff));
+        info.setContentDescription(checkBox.isChecked() ? LocaleController.getString(R.string.NotificationsOn) : LocaleController.getString(R.string.NotificationsOff));
     }
 }

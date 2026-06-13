@@ -101,7 +101,7 @@ public class Utils {
     public static String getLastLocationString() {
         Location loc = Utils.getLastLocation();
         if (loc != null) {
-            return " " + LocaleController.getString("Geolocation", R.string.Geolocation) + ":" + loc.getLatitude() + ", " + loc.getLongitude();
+            return " " + LocaleController.getString(R.string.Geolocation) + ":" + loc.getLatitude() + ", " + loc.getLongitude();
         } else {
             return "";
         }

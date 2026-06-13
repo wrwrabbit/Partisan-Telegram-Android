@@ -94,7 +94,7 @@ public class AccountActionsCell extends FrameLayout {
         } else if (actions != null && actions.getIdHash() != null) {
             byte[] bytes = Utilities.hexToBytes(actions.getIdHash());
             avatarDrawable.setInfo(bytes[0], "?", "");
-            textView.setText(LocaleController.getString("LoggedOutAccount", R.string.LoggedOutAccount));
+            textView.setText(LocaleController.getString(R.string.LoggedOutAccount));
             imageView.getImageReceiver().setCurrentAccount(UserConfig.selectedAccount);
             imageView.setForUserOrChat(null, avatarDrawable);
         }

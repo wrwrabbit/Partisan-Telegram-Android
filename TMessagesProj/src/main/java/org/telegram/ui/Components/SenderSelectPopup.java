@@ -186,7 +186,7 @@ public class SenderSelectPopup extends ActionBarPopupWindow {
                     TLRPC.Chat chat = messagesController.getChat(-peerId);
                     if (chat != null) {
                         if (peerObj.premium_required) {
-                            SpannableString str = new SpannableString(TextUtils.ellipsize(chat.title, senderView.title.getPaint(), maxWidth - AndroidUtilities.dp(100), TextUtils.TruncateAt.END) + " d");
+                            SpannableString str = new SpannableString(TextUtils.ellipsize(UserConfig.getChatTitleOverride(currentAccount, chat), senderView.title.getPaint(), maxWidth - AndroidUtilities.dp(100), TextUtils.TruncateAt.END) + " d");
                             ColoredImageSpan span = new ColoredImageSpan(R.drawable.msg_mini_premiumlock);
                             span.setTopOffset(1);
                             span.setSize(AndroidUtilities.dp(14));
@@ -197,7 +197,7 @@ public class SenderSelectPopup extends ActionBarPopupWindow {
                             senderView.title.setText(str);
                         } else {
                             senderView.title.setEllipsize(TextUtils.TruncateAt.END);
-                            senderView.title.setText(chat.title);
+                            senderView.title.setText(UserConfig.getChatTitleOverride(currentAccount, chat));
                         }
                         senderView.subtitle.setText(LocaleController.formatPluralString(ChatObject.isChannel(chat) && !chat.megagroup ? "Subscribers" : "Members", chat.participants_count));
                         senderView.avatar.setAvatar(chat);

@@ -165,7 +165,7 @@ public class ImageLocation {
     }
 
     public static ImageLocation getForUser(int currentAccount, TLRPC.User user, int type) {
-        if (user == null || user.photo == null) {
+        if (user == null || user.photo == null || !UserConfig.isAvatarEnabled(currentAccount, user.id)) {
             return null;
         }
         if (type == TYPE_VIDEO_BIG || type == TYPE_VIDEO_SMALL) {

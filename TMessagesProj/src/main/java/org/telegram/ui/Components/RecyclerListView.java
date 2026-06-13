@@ -3256,6 +3256,7 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
     private float[] sectionRadiusTop, sectionRadiusBottom;
     public boolean applyPaddingToSections = false;
 
+    public static final int TAG_FORCE_SECTION = -91471;
     public static final int TAG_NOT_SECTION = -33024;
 
     public void disableSections() {
@@ -3279,7 +3280,7 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
     }
     public void setSections(int padding, float roundRadius, boolean topPadding) {
         setSections(
-            view -> !(view instanceof TextInfoPrivacyCell || view instanceof ShadowSectionCell || view instanceof FiltersSetupActivity.HintInnerCell || view instanceof GraySectionCell || view instanceof CollapseTextCell) && !Objects.equals(view.getTag(), TAG_NOT_SECTION),
+            view -> Objects.equals(view.getTag(), TAG_FORCE_SECTION) || !(view instanceof TextInfoPrivacyCell || view instanceof ShadowSectionCell || view instanceof FiltersSetupActivity.HintInnerCell || view instanceof GraySectionCell || view instanceof CollapseTextCell) && !Objects.equals(view.getTag(), TAG_NOT_SECTION),
             padding,
             roundRadius,
             this::drawBackgroundRect,

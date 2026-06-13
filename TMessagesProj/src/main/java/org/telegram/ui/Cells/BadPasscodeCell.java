@@ -129,7 +129,7 @@ public class BadPasscodeCell extends FrameLayout {
         typeView.setText(badPasscodeAttempt.getTypeString());
         if (badPasscodeAttempt.isFakePasscode) {
             fakePasscodeView.setVisibility(VISIBLE);
-            fakePasscodeView.setText(LocaleController.getString("FakePasscode", R.string.FakePasscode));
+            fakePasscodeView.setText(LocaleController.getString(R.string.FakePasscode));
         } else {
             fakePasscodeView.setVisibility(GONE);
         }
@@ -160,10 +160,10 @@ public class BadPasscodeCell extends FrameLayout {
         image.setVisibility(VISIBLE);
         image.setOnClickListener(view -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-            builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
-            builder.setMessage(LocaleController.getString("SaveToGallery", R.string.SaveToGallery) + "?");
-            builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+            builder.setTitle(LocaleController.getString(R.string.AppName));
+            builder.setMessage(LocaleController.getString(R.string.SaveToGallery) + "?");
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialogInterface, i) -> {
                 saveFile(file);
             });
             builder.create().show();
