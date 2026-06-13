@@ -232,7 +232,7 @@ public class GroupCallFullscreenAdapter extends RecyclerListView.SelectionAdapte
                 name = UserObject.getFirstName(currentUser);
                 avatarImageView.getImageReceiver().setCurrentAccount(currentAccount);
 
-                ImageLocation imageLocation = ImageLocation.getForUser(currentUser, ImageLocation.TYPE_SMALL, currentAccount);
+                ImageLocation imageLocation = ImageLocation.getForUser(currentAccount, currentUser, ImageLocation.TYPE_SMALL);
                 hasAvatar = imageLocation != null;
                 avatarImageView.setImage(imageLocation, "50_50", avatarDrawable, currentUser);
             } else {
@@ -244,7 +244,7 @@ public class GroupCallFullscreenAdapter extends RecyclerListView.SelectionAdapte
                     name = UserConfig.getChatTitleOverride(currentAccount, currentChat);
                     avatarImageView.getImageReceiver().setCurrentAccount(currentAccount);
 
-                    ImageLocation imageLocation = ImageLocation.getForChat(currentChat, ImageLocation.TYPE_SMALL, currentAccount);
+                    ImageLocation imageLocation = ImageLocation.getForChat(currentAccount, currentChat, ImageLocation.TYPE_SMALL);
                     hasAvatar = imageLocation != null;
                     avatarImageView.setImage(imageLocation, "50_50", avatarDrawable, currentChat);
                 }
