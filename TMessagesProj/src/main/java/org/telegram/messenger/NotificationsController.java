@@ -97,7 +97,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
-public class NotificationsController extends BaseController {
+public class NotificationsController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
     public static final String EXTRA_VOICE_REPLY = "extra_voice_reply";
     public static String OTHER_NOTIFICATIONS_CHANNEL = null;
@@ -114,6 +114,7 @@ public class NotificationsController extends BaseController {
     private final LongSparseArray<Integer> wearNotificationsIds = new LongSparseArray<>();
     private final LongSparseArray<Integer> lastWearNotifiedMessageId = new LongSparseArray<>();
     private final LongSparseArray<Integer> pushDialogsOverrideMention = new LongSparseArray<>();
+    private final HashSet<String> pendingVoiceLoads = new HashSet<>();
     public final ArrayList<MessageObject> popupMessages = new ArrayList<>();
     public ArrayList<MessageObject> popupReplyMessages = new ArrayList<>();
     private final HashSet<Long> openedInBubbleDialogs = new HashSet<>();
@@ -246,6 +247,10 @@ public class NotificationsController extends BaseController {
         };
 
         dialogsNotificationsFacade = new NotificationsSettingsFacade(currentAccount);
+
+        AndroidUtilities.runOnUIThread(() -> {
+            getNotificationCenter().addObserver(this, NotificationCenter.fileLoaded);
+        });
     }
 
     public static void checkOtherNotificationsChannel() {
@@ -1773,7 +1778,7 @@ public class NotificationsController extends BaseController {
         NotificationBadge.applyCount(count);
     }
 
-    private String getShortStringForMessage(MessageObject messageObject, String[] userName, boolean[] preview) {
+    public String getShortStringForMessage(MessageObject messageObject, String[] userName, boolean[] preview) {
         if (AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter) {
             return LocaleController.getString(R.string.NotificationHiddenMessage);
         }
@@ -1892,6 +1897,9 @@ public class NotificationsController extends BaseController {
             return LocaleController.getString(R.string.NotificationHiddenMessage);
         } else {
             boolean isChannel = ChatObject.isChannel(chat) && !chat.megagroup;
+            if (messageObject.messageOwner != null && messageObject.messageOwner.rich_message != null) {
+                return messageObject.messageText.toString();
+            }
             if (dialogPreviewEnabled && (chat_id == 0 && fromId != 0 && preferences.getBoolean("EnablePreviewAll", true) || chat_id != 0 && (!isChannel && preferences.getBoolean("EnablePreviewGroup", true) || isChannel && preferences.getBoolean("EnablePreviewChannel", true)))) {
                 if (messageObject.messageOwner instanceof TLRPC.TL_messageService) {
                     userName[0] = null;
@@ -3267,6 +3275,26 @@ public class NotificationsController extends BaseController {
             AndroidUtilities.runOnUIThread(() -> NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.pushMessagesUpdated));
         } catch (Exception e) {
             FileLog.e(e);
+        }
+    }
+
+    public ArrayList<MessageObject> getPushMessagesSnapshot() {
+        ArrayList<MessageObject> copy;
+        synchronized (this) {
+            copy = new ArrayList<>(pushMessages);
+        }
+        return copy;
+    }
+
+    @Override
+    public void didReceivedNotification(int id, int account, Object... args) {
+        if (id == NotificationCenter.fileLoaded) {
+            String path = (String) args[0];
+            notificationsQueue.postRunnable(() -> {
+                if (pendingVoiceLoads.remove(path)) {
+                    showOrUpdateNotification(true);
+                }
+            });
         }
     }
 
@@ -5090,6 +5118,20 @@ public class NotificationsController extends BaseController {
                 replyIntent.putExtra("max_id", maxId);
                 replyIntent.putExtra("topic_id", topicId);
                 replyIntent.putExtra("currentAccount", currentAccount);
+                if (messageObjects != null && !messageObjects.isEmpty()) {
+                    ArrayList<Integer> voiceIdsList = new ArrayList<>();
+                    for (int vi = 0; vi < messageObjects.size(); vi++) {
+                        MessageObject vmo = messageObjects.get(vi);
+                        if (vmo != null && vmo.isVoice() && vmo.isContentUnread() && !vmo.isOut()) {
+                            voiceIdsList.add(vmo.getId());
+                        }
+                    }
+                    if (!voiceIdsList.isEmpty()) {
+                        int[] voiceIds = new int[voiceIdsList.size()];
+                        for (int vi = 0; vi < voiceIds.length; vi++) voiceIds[vi] = voiceIdsList.get(vi);
+                        replyIntent.putExtra("voice_msg_ids", voiceIds);
+                    }
+                }
                 PendingIntent replyPendingIntent = PendingIntent.getBroadcast(ApplicationLoader.applicationContext, internalId, replyIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
                 RemoteInput remoteInputWear = new RemoteInput.Builder(EXTRA_VOICE_REPLY).setLabel(LocaleController.getString(R.string.Reply)).build();
                 String replyToString;
@@ -5400,19 +5442,27 @@ public class NotificationsController extends BaseController {
                             List<NotificationCompat.MessagingStyle.Message> messages = messagingStyle.getMessages();
                             if (!messages.isEmpty()) {
                                 File f = getFileLoader().getPathToMessage(messageObject.messageOwner);
-                                Uri uri;
-                                if (Build.VERSION.SDK_INT >= 24) {
-                                    try {
-                                        uri = FileProvider.getUriForFile(ApplicationLoader.applicationContext, ApplicationLoader.getApplicationId() + ".provider", f);
-                                    } catch (Exception ignore) {
-                                        uri = null;
+                                if (f.exists()) {
+                                    Uri uri;
+                                    if (Build.VERSION.SDK_INT >= 24) {
+                                        try {
+                                            uri = FileProvider.getUriForFile(ApplicationLoader.applicationContext, ApplicationLoader.getApplicationId() + ".provider", f);
+                                        } catch (Exception ignore) {
+                                            uri = null;
+                                        }
+                                    } else {
+                                        uri = Uri.fromFile(f);
                                     }
-                                } else {
-                                    uri = Uri.fromFile(f);
-                                }
-                                if (uri != null) {
-                                    NotificationCompat.MessagingStyle.Message addedMessage = messages.get(messages.size() - 1);
-                                    addedMessage.setData("audio/ogg", uri);
+                                    if (uri != null) {
+                                        NotificationCompat.MessagingStyle.Message addedMessage = messages.get(messages.size() - 1);
+                                        addedMessage.setData("audio/ogg", uri);
+                                    }
+                                } else if (messageObject.getDocument() != null) {
+                                    String fileName = FileLoader.getAttachFileName(messageObject.getDocument());
+                                    if (!pendingVoiceLoads.contains(fileName)) {
+                                        pendingVoiceLoads.add(fileName);
+                                        getFileLoader().loadFile(messageObject.getDocument(), messageObject, FileLoader.PRIORITY_HIGH, 0);
+                                    }
                                 }
                             }
                         }
