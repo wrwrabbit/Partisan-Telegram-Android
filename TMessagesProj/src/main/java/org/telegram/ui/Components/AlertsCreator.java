@@ -1669,8 +1669,25 @@ public class AlertsCreator {
     public static void showOpenUrlAlert(Context context, String url, boolean punycode, boolean tryTelegraph, boolean ask, boolean forceNotInternalForApps, long inlineReturn, Browser.Progress progress, @Nullable TLRPC.WebPage webPage, Theme.ResourcesProvider resourcesProvider) {
         if (!AndroidUtilities.isContextSafe(context)) return;
         final String scheme = url == null ? null : Uri.parse(url).getScheme();
-        if (Browser.isInternalUrl(url, null) || !ask || "mailto".equalsIgnoreCase(scheme)) {
+        SpoofedLinkChecker.SpoofedLinkInfo spoofedLinkInfo = SpoofedLinkChecker.isSpoofedLink(url, null, progress);
+        if ((Browser.isInternalUrl(url, null) || !ask || "mailto".equalsIgnoreCase(scheme)) && !spoofedLinkInfo.isSpoofed) {
             Browser.openUrl(context, Uri.parse(url), inlineReturn == 0, tryTelegraph, forceNotInternalForApps && checkInternalBotApp(url), progress, null, false, true, false);
+            return;
+        }
+        if (spoofedLinkInfo.isSpoofed) {
+            final Runnable open = () -> Browser.openUrl(context, Uri.parse(url), inlineReturn == 0, tryTelegraph, progress);
+            final AlertDialog[] dialog = new AlertDialog[1];
+            final AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
+            builder.setTitle(LocaleController.getString(R.string.SpoofedLinkTitle));
+            final SpannableStringBuilder stringBuilder = new SpannableStringBuilder(LocaleController.getString(R.string.SpoofedLinkDescription));
+            replaceByUnclickableLink(stringBuilder, "%1$s", spoofedLinkInfo.label);
+            replaceByUnclickableLink(stringBuilder, "%2$s", url);
+            builder.setMessage(stringBuilder);
+            builder.setMessageTextViewClickable(false);
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            dialog[0] = builder.create();
+            DialogButtonWithTimer.setButton(dialog[0], AlertDialog.BUTTON_POSITIVE, LocaleController.getString(R.string.Open), 3, (dialogInterface, i) -> open.run());
+            dialog[0].show();
             return;
         }
 
@@ -1801,6 +1818,20 @@ public class AlertsCreator {
         });
 
         dialog[0] = builder.show();
+    }
+
+    private static void replaceByUnclickableLink(SpannableStringBuilder stringBuilder, String placeholder, String url) {
+        SpannableString link = new SpannableString(url);
+        link.setSpan(new URLSpan(url) {
+            @Override
+            public void onClick(View widget) {
+                // ignore
+            }
+        }, 0, link.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        int index = stringBuilder.toString().indexOf(placeholder);
+        if (index >= 0) {
+            stringBuilder.replace(index, index + placeholder.length(), link);
+        }
     }
 
     private static boolean checkInternalBotApp(String url) {

@@ -13217,6 +13217,7 @@ public class ArticleViewer extends IArticleViewer implements NotificationCenter.
                 if (currentState != 0) {
                     return;
                 }
+                BaseFragment parentFragment = (parent instanceof ArticleViewer) ? ((ArticleViewer)parent).parentFragment : null;
                 org.telegram.messenger.partisan.PartisanWarningDialogBuilder.showConfirmDangerousActionDialogIfNeeded(parentFragment, () -> {
                     setState(1, true);
                     joinChannel(parent.getCurrentAccount(), BlockChannelCell.this, parent.loadedChannel);
@@ -13319,7 +13320,7 @@ public class ArticleViewer extends IArticleViewer implements NotificationCenter.
             progressView.measure(MeasureSpec.makeMeasureSpec(dp(39), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(39), MeasureSpec.EXACTLY));
             imageView.measure(MeasureSpec.makeMeasureSpec(dp(39), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(39), MeasureSpec.EXACTLY));
             if (currentBlock != null) {
-                String title = UserConfig.getChatTitleOverride(currentAccount, currentBlock.channel);
+                String title = UserConfig.getChatTitleOverride(parent.getCurrentAccount(), currentBlock.channel);
                 textLayout = createLayoutForText(parent, this, title, null, width - dp(36 + 16) - buttonWidth, textY, currentBlock, StaticLayoutEx.ALIGN_LEFT(), 1, adapter);
                 if (adapter != null && adapter.isRtl) {
                     textX2 = textX;

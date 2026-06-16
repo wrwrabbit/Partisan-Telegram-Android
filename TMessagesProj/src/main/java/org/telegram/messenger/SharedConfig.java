@@ -730,7 +730,6 @@ public class SharedConfig {
     private static void migrateSharedConfig() {
         int prevMigrationVersion = sharedConfigMigrationVersion;
         if (sharedConfigMigrationVersion == 0) {
-            inappBrowser = false;
             Utilities.globalQueue.postRunnable(() -> {
                 AndroidUtilities.runOnUIThread(() -> Utils.clearWebBrowserCache(ApplicationLoader.applicationContext));
                 if (BrowserHistory.historyLoaded) {
