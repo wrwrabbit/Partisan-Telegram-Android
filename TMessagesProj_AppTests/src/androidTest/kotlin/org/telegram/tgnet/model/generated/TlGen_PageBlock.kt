@@ -218,6 +218,7 @@ public sealed class TlGen_PageBlock : TlGen_Object {
   }
 
   public data class TL_pageBlockPhoto(
+    public val spoiler: Boolean,
     public val photo_id: Long,
     public val caption: TlGen_PageCaption,
     public val multiflags_0: Multiflags_0?,
@@ -226,6 +227,7 @@ public sealed class TlGen_PageBlock : TlGen_Object {
       get() {
         var result = 0U
         if (multiflags_0 != null) result = result or 1U
+        if (spoiler) result = result or 2U
         return result
       }
 
@@ -251,6 +253,7 @@ public sealed class TlGen_PageBlock : TlGen_Object {
   public data class TL_pageBlockVideo(
     public val autoplay: Boolean,
     public val loop: Boolean,
+    public val spoiler: Boolean,
     public val video_id: Long,
     public val caption: TlGen_PageCaption,
   ) : TlGen_PageBlock() {
@@ -259,6 +262,7 @@ public sealed class TlGen_PageBlock : TlGen_Object {
         var result = 0U
         if (autoplay) result = result or 1U
         if (loop) result = result or 2U
+        if (spoiler) result = result or 4U
         return result
       }
 
@@ -425,19 +429,6 @@ public sealed class TlGen_PageBlock : TlGen_Object {
     }
   }
 
-  public data class TL_pageBlockOrderedList(
-    public val items: List<TlGen_PageListOrderedItem>,
-  ) : TlGen_PageBlock() {
-    public override fun serializeToStream(stream: OutputSerializedData) {
-      stream.writeInt32(MAGIC.toInt())
-      TlGen_Vector.serialize(stream, items)
-    }
-
-    public companion object {
-      public const val MAGIC: UInt = 0x9A8AE1E1U
-    }
-  }
-
   public data class TL_pageBlockDetails(
     public val `open`: Boolean,
     public val blocks: List<TlGen_PageBlock>,
@@ -495,6 +486,174 @@ public sealed class TlGen_PageBlock : TlGen_Object {
 
     public companion object {
       public const val MAGIC: UInt = 0xA44F3EF6U
+    }
+  }
+
+  public data class TL_pageBlockOrderedList(
+    public val reversed: Boolean,
+    public val items: List<TlGen_PageListOrderedItem>,
+    public val start: Int?,
+    public val type: String?,
+  ) : TlGen_PageBlock() {
+    internal val flags: UInt
+      get() {
+        var result = 0U
+        if (start != null) result = result or 1U
+        if (type != null) result = result or 2U
+        if (reversed) result = result or 4U
+        return result
+      }
+
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      stream.writeInt32(flags.toInt())
+      TlGen_Vector.serialize(stream, items)
+      start?.let { stream.writeInt32(it) }
+      type?.let { stream.writeString(it) }
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x1FD6F6C1U
+    }
+  }
+
+  public data class TL_pageBlockHeading1(
+    public val text: TlGen_RichText,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      text.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0xBAFF072FU
+    }
+  }
+
+  public data class TL_pageBlockHeading2(
+    public val text: TlGen_RichText,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      text.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x096B2AECU
+    }
+  }
+
+  public data class TL_pageBlockHeading3(
+    public val text: TlGen_RichText,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      text.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x67E731ADU
+    }
+  }
+
+  public data class TL_pageBlockHeading4(
+    public val text: TlGen_RichText,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      text.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0xB532772BU
+    }
+  }
+
+  public data class TL_pageBlockHeading5(
+    public val text: TlGen_RichText,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      text.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0xDBBE6C6AU
+    }
+  }
+
+  public data class TL_pageBlockHeading6(
+    public val text: TlGen_RichText,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      text.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x682A41A9U
+    }
+  }
+
+  public data class TL_pageBlockMath(
+    public val source: String,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      stream.writeString(source)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x59080C20U
+    }
+  }
+
+  public data class TL_pageBlockThinking(
+    public val text: TlGen_RichText,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      text.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x3C29A3E2U
+    }
+  }
+
+  public data class TL_inputPageBlockMap(
+    public val geo: TlGen_InputGeoPoint,
+    public val zoom: Int,
+    public val w: Int,
+    public val h: Int,
+    public val caption: TlGen_PageCaption,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      geo.serializeToStream(stream)
+      stream.writeInt32(zoom)
+      stream.writeInt32(w)
+      stream.writeInt32(h)
+      caption.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x574B617FU
+    }
+  }
+
+  public data class TL_pageBlockBlockquoteBlocks(
+    public val blocks: List<TlGen_PageBlock>,
+    public val caption: TlGen_RichText,
+  ) : TlGen_PageBlock() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      TlGen_Vector.serialize(stream, blocks)
+      caption.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x0E6E47C4U
     }
   }
 
@@ -707,6 +866,19 @@ public sealed class TlGen_PageBlock : TlGen_Object {
 
     public companion object {
       public const val MAGIC: UInt = 0x31B81A7FU
+    }
+  }
+
+  public data class TL_pageBlockOrderedList_layer226(
+    public val items: List<TlGen_PageListOrderedItem>,
+  ) : TlGen_Object {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      TlGen_Vector.serialize(stream, items)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x9A8AE1E1U
     }
   }
 }

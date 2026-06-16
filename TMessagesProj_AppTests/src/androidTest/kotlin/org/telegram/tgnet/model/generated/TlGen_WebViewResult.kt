@@ -12,6 +12,7 @@ public sealed class TlGen_WebViewResult : TlGen_Object {
   public data class TL_webViewResultUrl(
     public val fullsize: Boolean,
     public val fullscreen: Boolean,
+    public val same_origin: Boolean,
     public val query_id: Long?,
     public val url: String,
   ) : TlGen_WebViewResult() {
@@ -21,6 +22,7 @@ public sealed class TlGen_WebViewResult : TlGen_Object {
         if (query_id != null) result = result or 1U
         if (fullsize) result = result or 2U
         if (fullscreen) result = result or 4U
+        if (same_origin) result = result or 8U
         return result
       }
 
