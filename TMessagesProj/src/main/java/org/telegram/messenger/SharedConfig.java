@@ -360,6 +360,7 @@ public class SharedConfig {
     public static boolean shadowsInSections;
     public static boolean debugViewMetrics;
     public static boolean photoHighQualityDefault;
+    public static boolean photoLiveDefault;
 
     public static UpdateData pendingPtgAppUpdate;
     public static long lastUpdateCheckTime;
@@ -1016,6 +1017,7 @@ public class SharedConfig {
             shadowsInSections = preferences.getBoolean("shadowsInSections", false);
             debugViewMetrics = preferences.getBoolean("debugViewMetrics", false);
             photoHighQualityDefault = preferences.getBoolean("photoHighQualityDefault", false);
+            photoLiveDefault = preferences.getBoolean("photoLiveDefault", false);
 
             loadDebugConfig(preferences);
 

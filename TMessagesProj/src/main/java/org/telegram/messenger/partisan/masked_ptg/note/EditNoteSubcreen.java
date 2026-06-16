@@ -55,6 +55,13 @@ class EditNoteSubcreen extends RelativeLayout {
         acceptButton = new Button(getContext());
         acceptButton.setTextColor(Color.BLACK);
         acceptButton.setTextSize(20);
+        acceptButton.setMinWidth(0);
+        acceptButton.setMinHeight(0);
+        acceptButton.setMinimumWidth(0);
+        acceptButton.setMinimumHeight(0);
+        acceptButton.setPadding(0, 0, 0, 0);
+        acceptButton.setIncludeFontPadding(false);
+        acceptButton.setGravity(Gravity.CENTER);
         acceptButton.setId(generateViewId());
 
         GradientDrawable shape = new GradientDrawable();

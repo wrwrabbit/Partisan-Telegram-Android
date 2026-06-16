@@ -186,6 +186,9 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
     public void whiteSectionEnd() {
         if (currentWhiteSection != null) {
             currentWhiteSection.end = Math.max(0, itemsOffset + items.size() - 1);
+            if (currentWhiteSection.start == currentWhiteSection.end) {
+                whiteSections.remove(currentWhiteSection);
+            }
             currentWhiteSection = null;
         }
     }
@@ -620,6 +623,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_BLACK_HEADER:
             case VIEW_TYPE_LARGE_HEADER:
                 ((HeaderCell) holder.itemView).setText(item.text);
+                ((HeaderCell) holder.itemView).setEnabled(item.enabled, true);
                 break;
             case VIEW_TYPE_ANIMATED_HEADER:
                 HeaderCell animatedHeaderCell = (HeaderCell) holder.itemView;
@@ -647,9 +651,16 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                         topCell.setEmoji(item.iconResId);
                     }
                 } else {
+                    if (item.intValue != 0) {
+                        topCell.setEmojiSize(item.intValue);
+                    }
                     topCell.setEmoji(item.subtext.toString(), item.textValue.toString());
                 }
-                topCell.setText(item.text);
+                if (TextUtils.isEmpty(item.animatedText)) {
+                    topCell.setText(item.text);
+                } else {
+                    topCell.setText(item.text, item.animatedText);
+                }
                 break;
             case VIEW_TYPE_TEXT:
                 TextCell cell = (TextCell) holder.itemView;
@@ -681,6 +692,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 } else {
                     cell.setColors(Theme.key_windowBackgroundWhiteGrayIcon, Theme.key_windowBackgroundWhiteBlackText);
                 }
+                cell.setEnabled(item.enabled, true);
                 break;
             case VIEW_TYPE_CHECK:
             case VIEW_TYPE_CHECKRIPPLE:
@@ -785,6 +797,8 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_CUSTOM_SHADOW:
             case VIEW_TYPE_FULLY_CUSTOM:
                 FrameLayout frameLayout = (FrameLayout) holder.itemView;
+                frameLayout.setClipChildren(!item.checked);
+                frameLayout.setClipToPadding(!item.checked);
                 if (frameLayout.getChildCount() != (item.view == null ? 0 : 1) || frameLayout.getChildAt(0) != item.view) {
                     frameLayout.removeAllViews();
                     if (item.view != null) {
@@ -822,6 +836,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_USER_ADD:
                 UserCell userCell2 = (UserCell) holder.itemView;
                 userCell2.setFromUItem(currentAccount, item, divider);
+                userCell2.setQuery(item.textValue == null ? null : item.textValue.toString().toLowerCase());
                 userCell2.setAddButtonVisible(!item.checked);
                 userCell2.setCloseIcon(item.clickCallback);
                 break;

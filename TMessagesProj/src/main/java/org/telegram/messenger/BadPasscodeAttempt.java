@@ -34,9 +34,9 @@ public class BadPasscodeAttempt {
     @JsonIgnore
     public String getTypeString() {
         switch (type) {
-            case AppUnlockType: return LocaleController.getString("AppUnlock", R.string.AppUnlock);
+            case AppUnlockType: return LocaleController.getString(R.string.AppUnlock);
             default:
-            case PasscodeSettingsType: return LocaleController.getString("EnterPasswordSettings", R.string.EnterPasswordSettings);
+            case PasscodeSettingsType: return LocaleController.getString(R.string.EnterPasswordSettings);
         }
     }
 

@@ -10,12 +10,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChatState;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
@@ -127,13 +129,13 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
             if (position == idRow) {
                 final String chatIdStr = String.valueOf(encryptedGroup.getExternalId());
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setItems(new CharSequence[]{LocaleController.getString("Copy", R.string.Copy)}, (dialogInterface, i) -> {
+                builder.setItems(new CharSequence[]{LocaleController.getString(R.string.Copy)}, (dialogInterface, i) -> {
                     if (i == 0) {
                         try {
                             android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
                             android.content.ClipData clip = android.content.ClipData.newPlainText("label", chatIdStr);
                             clipboard.setPrimaryClip(clip);
-                            BulletinFactory.of(this).createCopyBulletin(LocaleController.getString("IdCopied", R.string.IdCopied)).show();
+                            BulletinFactory.of(this).createCopyBulletin(LocaleController.getString(R.string.IdCopied)).show();
                         } catch (Exception e) {
                             FileLog.e(e);
                         }
@@ -144,7 +146,9 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
                 Bundle args = new Bundle();
                 int index = positionToChatIndex(position);
                 TLRPC.User user = getUser(index);
-                if (user == null) {
+                InnerEncryptedChat innerChat = getInnerChat(index);
+                if (user == null || innerChat != null && innerChat.isInState(InnerEncryptedChatState.CANCELLED)
+                        || getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(getDialogId(index))) == null) {
                     return;
                 }
                 args.putLong("user_id", user.id);
@@ -183,14 +187,14 @@ public class EncryptedGroupProfileActivity extends BaseFragment implements Notif
     }
 
     private InnerEncryptedChat getInnerChat(int index) {
-        if (index >= encryptedGroup.getInnerChats().size()) {
+        if (index < 0 || index >= encryptedGroup.getInnerChats().size()) {
             return null;
         }
         return encryptedGroup.getInnerChats().get(index);
     }
 
     private long getDialogId(int index) {
-        if (index >= encryptedGroup.getInnerChats().size()) {
+        if (index < 0 || index >= encryptedGroup.getInnerChats().size()) {
             return 0;
         }
         return encryptedGroup.getInnerChats().get(index).getDialogId().orElse(0L);

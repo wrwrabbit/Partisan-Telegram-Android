@@ -1426,7 +1426,7 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
 
         ActionBarMenu menu = actionBar.createMenu();
         if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
-            refreshItem = menu.addItem(refresh, R.drawable.menu_browser_refresh);
+            refreshItem = menu.addItem(refresh, R.drawable.msg_retry);
             refreshItem.setContentDescription(LocaleController.getString(R.string.Refresh));
         }
 
@@ -3814,7 +3814,10 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         if (refreshAnimator != null) {
             return;
         }
-        refreshAnimator = ObjectAnimator.ofFloat(refreshItem.getIconView(), "rotation", 0f, 360f);
+        final View icon = refreshItem.getIconView();
+        icon.setPivotX(icon.getWidth() / 2f);
+        icon.setPivotY(icon.getHeight() / 2f);
+        refreshAnimator = ObjectAnimator.ofFloat(icon, View.ROTATION, 360f, 0f);
         refreshAnimator.setDuration(700);
         refreshAnimator.setInterpolator(new LinearInterpolator());
         refreshAnimator.setRepeatCount(ValueAnimator.INFINITE);

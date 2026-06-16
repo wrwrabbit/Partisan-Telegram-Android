@@ -235,7 +235,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
 
         actionBar.setBackButtonDrawable(backDrawable = new BackDrawable(false));
         actionBar.setAllowOverlayTitle(true);
-        actionBar.setTitle(LocaleController.getString("ChatsToRemove", R.string.ChatsToRemove));
+        actionBar.setTitle(LocaleController.getString(R.string.ChatsToRemove));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -357,7 +357,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         editText.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         editText.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
         spansContainer.addView(editText);
-        editText.setHintText(LocaleController.getString("SearchForPeopleAndGroups", R.string.SearchForPeopleAndGroups));
+        editText.setHintText(LocaleController.getString(R.string.SearchForPeopleAndGroups));
 
         editText.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
             public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
@@ -414,7 +414,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
                         adapter.setSearching(true);
                         listView.setFastScrollVisible(false);
                         listView.setVerticalScrollBarEnabled(true);
-                        emptyView.setText(LocaleController.getString("NoResult", R.string.NoResult));
+                        emptyView.setText(LocaleController.getString(R.string.NoResult));
                         emptyView.showProgress();
                     }
                     adapter.searchDialogs(editText.getText().toString());
@@ -431,7 +431,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
             emptyView.showTextView();
         }
         emptyView.setShowAtCenter(true);
-        emptyView.setText(LocaleController.getString("NoContacts", R.string.NoContacts));
+        emptyView.setText(LocaleController.getString(R.string.NoContacts));
         frameLayout.addView(emptyView);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false);
@@ -495,7 +495,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         builder.setTitle(LocaleController.getString(R.string.RemoveDialogFromListTitle));
         buttonText = LocaleController.getString(R.string.ClearSearchRemove);
         builder.setPositiveButton(buttonText, (dialogInterface, i) -> onAccepted.run());
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         AlertDialog alertDialog = builder.create();
         showDialog(alertDialog);
         TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
@@ -606,7 +606,7 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         adapter.searchDialogs(null);
         listView.setFastScrollVisible(true);
         listView.setVerticalScrollBarEnabled(false);
-        emptyView.setText(LocaleController.getString("NoContacts", R.string.NoContacts));
+        emptyView.setText(LocaleController.getString(R.string.NoContacts));
     }
 
     private void updateHint() {
@@ -705,9 +705,9 @@ public class RemoveChatsFragment extends BaseFragment implements NotificationCen
         actionMode.addView(selectedDialogsCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, 72, 0, 0, 0));
         selectedDialogsCountTextView.setOnTouchListener((v, event) -> true);
 
-        deleteItem = actionMode.addItemWithWidth(delete, R.drawable.msg_delete, AndroidUtilities.dp(54), LocaleController.getString("Delete", R.string.Delete));
-        addItem = actionMode.addItemWithWidth(add, R.drawable.msg_add, AndroidUtilities.dp(54), LocaleController.getString("Add", R.string.Add));
-        editItem = actionMode.addItemWithWidth(edit, R.drawable.msg_edit, AndroidUtilities.dp(54), LocaleController.getString("Edit", R.string.Edit));
+        deleteItem = actionMode.addItemWithWidth(delete, R.drawable.msg_delete, AndroidUtilities.dp(54), LocaleController.getString(R.string.Delete));
+        addItem = actionMode.addItemWithWidth(add, R.drawable.msg_add, AndroidUtilities.dp(54), LocaleController.getString(R.string.Add));
+        editItem = actionMode.addItemWithWidth(edit, R.drawable.msg_edit, AndroidUtilities.dp(54), LocaleController.getString(R.string.Edit));
 
         actionModeViews.add(deleteItem);
         actionModeViews.add(addItem);

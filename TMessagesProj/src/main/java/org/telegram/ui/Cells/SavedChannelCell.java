@@ -3505,9 +3505,4 @@ public class SavedChannelCell extends BaseCell implements StoriesListPlaceProvid
         }
         return adaptiveEmojiColorFilter[n];
     }
-
-    @Override
-    protected boolean allowCaching() {
-        return false;
-    }
 }
