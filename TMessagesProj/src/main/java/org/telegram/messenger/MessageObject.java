@@ -6134,16 +6134,18 @@ public class MessageObject {
                 final TL_iv.PageListItem item = list.items.get(j);
                 if (item instanceof TL_iv.TL_pageListItemText) {
                     final TL_iv.TL_pageListItemText i = (TL_iv.TL_pageListItemText) item;
-                    out.append("• ");
                     if (i.checkbox) {
-                        out.append(i.checked ? "✅ " : "⬛️ ");
+                        out.append(i.checked ? "✅ " : "☑️ ");
+                    } else {
+                        out.append("• ");
                     }
                     formatRichText(i.text, isOut, photoViewer, maxLength, out, 0);
                 } else if (item instanceof TL_iv.TL_pageListItemBlocks) {
                     final TL_iv.TL_pageListItemBlocks i = (TL_iv.TL_pageListItemBlocks) item;
-                    out.append("• ");
                     if (i.checkbox) {
-                        out.append(i.checked ? "✅ " : "⬛️ ");
+                        out.append(i.checked ? "✅ " : "☑️ ");
+                    } else {
+                        out.append("• ");
                     }
                     for (int k = 0; k < i.blocks.size(); ++k) {
                         if (k > 0) out.append("\n");
@@ -6171,7 +6173,7 @@ public class MessageObject {
                     out.append(i.num);
                     out.append(". ");
                     if (i.checkbox) {
-                        out.append(i.checked ? "✅ " : "⬛️ ");
+                        out.append(i.checked ? "✅ " : "☑️ ");
                     }
                     formatRichText(i.text, isOut, photoViewer, maxLength, out, 0);
                 } else if (item instanceof TL_iv.TL_pageListOrderedItemBlocks) {
@@ -6179,7 +6181,7 @@ public class MessageObject {
                     out.append(i.num);
                     out.append(". ");
                     if (i.checkbox) {
-                        out.append(i.checked ? "✅ " : "⬛️ ");
+                        out.append(i.checked ? "✅ " : "☑️ ");
                     }
                     for (int k = 0; k < i.blocks.size(); ++k) {
                         if (k > 0) out.append("\n");
@@ -8514,6 +8516,7 @@ public class MessageObject {
     }
 
     public static StaticLayout makeStaticLayout(CharSequence text_, TextPaint paint, int width, float lineSpacingMult, float lineSpacingAdd, boolean dontIncludePad) {
+        if (width <= 0) width = 1;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             final CharSequence text = /* Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ?
                 PrecomputedText.create(text_, new PrecomputedText.Params.Builder(paint).build()) :*/ text_;
