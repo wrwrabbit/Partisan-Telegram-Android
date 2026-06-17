@@ -212,6 +212,21 @@ public sealed class TlGen_SendMessageAction : TlGen_Object {
     }
   }
 
+  public data class TL_sendMessageRichMessageDraftAction(
+    public val random_id: Long,
+    public val rich_message: TlGen_RichMessage,
+  ) : TlGen_SendMessageAction() {
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      stream.writeInt64(random_id)
+      rich_message.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0xA2CB24F9U
+    }
+  }
+
   public data object TL_sendMessageUploadVideoAction_layer17 : TlGen_SendMessageAction() {
     public const val MAGIC: UInt = 0x92042FF7U
 

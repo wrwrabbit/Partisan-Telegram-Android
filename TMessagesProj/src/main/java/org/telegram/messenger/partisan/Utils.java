@@ -224,7 +224,7 @@ public class Utils {
             webView.clearHistory();
             webView.destroy();
         } catch (Exception e) {}
-        if (SharedConfig.inappBrowser) { // Don't delete data from mini-apps if the user don't use inappBrowser
+        if (isWebBrowserInAppEnabledForAnyAccount()) { // Don't delete data from mini-apps if the user don't use inappBrowser
             WebStorage.getInstance().deleteAllData();
             try {
                 File dir = new File(ApplicationLoader.applicationContext.getApplicationInfo().dataDir, "app_webview");
@@ -248,6 +248,16 @@ public class Utils {
             WebMetadataCache.getInstance().clear();
             cacheFile.delete();
         }
+    }
+
+    private static boolean isWebBrowserInAppEnabledForAnyAccount() {
+        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
+            if (UserConfig.getInstance(i).isClientActivated()
+                    && MessagesController.getInstance(i).isWebBrowserInAppEnabled()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void deleteDialog(int accountNum, long id) {
