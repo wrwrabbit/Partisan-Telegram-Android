@@ -1674,23 +1674,6 @@ public class AlertsCreator {
             Browser.openUrl(context, Uri.parse(url), inlineReturn == 0, tryTelegraph, forceNotInternalForApps && checkInternalBotApp(url), progress, null, false, true, false);
             return;
         }
-        if (spoofedLinkInfo.isSpoofed) {
-            final Runnable open = () -> Browser.openUrl(context, Uri.parse(url), inlineReturn == 0, tryTelegraph, progress);
-            final AlertDialog[] dialog = new AlertDialog[1];
-            final AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
-            builder.setTitle(LocaleController.getString(R.string.SpoofedLinkTitle));
-            final SpannableStringBuilder stringBuilder = new SpannableStringBuilder(LocaleController.getString(R.string.SpoofedLinkDescription));
-            replaceByUnclickableLink(stringBuilder, "%1$s", spoofedLinkInfo.label);
-            replaceByUnclickableLink(stringBuilder, "%2$s", url);
-            builder.setMessage(stringBuilder);
-            builder.setMessageTextViewClickable(false);
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            dialog[0] = builder.create();
-            DialogButtonWithTimer.setButton(dialog[0], AlertDialog.BUTTON_POSITIVE, LocaleController.getString(R.string.Open), 3, (dialogInterface, i) -> open.run());
-            dialog[0].show();
-            return;
-        }
-
         String urlFinal;
         if (punycode) {
             try {
@@ -1704,11 +1687,15 @@ public class AlertsCreator {
             urlFinal = url;
         }
 
+        final boolean isProtocolUnsafe = isNeedWarnAboutUnsafeProtocol(url);
+        final boolean isSpoofed = spoofedLinkInfo.isSpoofed;
+        final boolean isUrlUnsafe = isProtocolUnsafe || isSpoofed;
+
         final Runnable open = () -> Browser.openUrl(context, Uri.parse(url), inlineReturn == 0, tryTelegraph, progress);
         final AlertDialog[] dialog = new AlertDialog[1];
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
-        builder.setTitle(LocaleController.getString(R.string.OpenUrlTitle));
+        builder.setTitle(LocaleController.getString(isSpoofed ? R.string.SpoofedLinkTitle : R.string.OpenUrlTitle));
 
         final TextView urlView = new TextView(context);
         urlView.setText(urlFinal);
@@ -1746,12 +1733,23 @@ public class AlertsCreator {
             ));
         }
 
+        if (isUrlUnsafe) {
+            CharSequence warningText = createWarningText(url, spoofedLinkInfo);
+            TextView warningView = createWarningView(context, warningText, resourcesProvider);
+            container.addView(warningView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 22, 0, 22, 9));
+        }
+
         builder.setView(container);
         builder.setWidth(Math.min(dp(320), AndroidUtilities.displaySize.x * 85 / 100));
-        builder.setPositiveButton(LocaleController.getString(R.string.Open), (dialogInterface, i) -> open.run());
         builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-
-        dialog[0] = builder.show();
+        if (isUrlUnsafe) {
+            dialog[0] = builder.create();
+            DialogButtonWithTimer.setButton(dialog[0], AlertDialog.BUTTON_POSITIVE, LocaleController.getString(R.string.Open), 3, (dialogInterface, i) -> open.run());
+            dialog[0].show();
+        } else {
+            builder.setPositiveButton(LocaleController.getString(R.string.Open), (dialogInterface, i) -> open.run());
+            dialog[0] = builder.show();
+        }
     }
 
     public static void showOpenExternalBrowserAlert(
@@ -1820,17 +1818,47 @@ public class AlertsCreator {
         dialog[0] = builder.show();
     }
 
-    private static void replaceByUnclickableLink(SpannableStringBuilder stringBuilder, String placeholder, String url) {
-        SpannableString link = new SpannableString(url);
-        link.setSpan(new URLSpan(url) {
-            @Override
-            public void onClick(View widget) {
-                // ignore
-            }
-        }, 0, link.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        int index = stringBuilder.toString().indexOf(placeholder);
-        if (index >= 0) {
-            stringBuilder.replace(index, index + placeholder.length(), link);
+    private static void highlightSpoofedPlaceholder(SpannableStringBuilder builder, String placeholder, String value) {
+        int index = builder.toString().indexOf(placeholder);
+        if (index < 0) {
+            return;
+        }
+        builder.replace(index, index + placeholder.length(), value);
+        builder.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), index, index + value.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    private static boolean isNeedWarnAboutUnsafeProtocol(String url) {
+        if (FakePasscodeUtils.isFakePasscodeActivated()) {
+            return false;
+        }
+        Uri uri = Uri.parse(url);
+        if (!uri.getScheme().toLowerCase(Locale.ROOT).equals("http")) {
+            return false;
+        }
+        return !Strings.isNullOrEmpty(uri.getUserInfo())
+                || !Strings.isNullOrEmpty(uri.getPath()) && !uri.getPath().equals("/")
+                || !Strings.isNullOrEmpty(uri.getQuery())
+                || !Strings.isNullOrEmpty(uri.getFragment());
+    }
+
+    private static TextView createWarningView(Context context, CharSequence warningText, Theme.ResourcesProvider resourcesProvider) {
+        final TextView warningView = new TextView(context);
+        warningView.setText(warningText);
+        warningView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        warningView.setTextColor(Theme.getColor(Theme.key_text_RedRegular, resourcesProvider));
+        warningView.setGravity(Gravity.CENTER);
+        warningView.setPadding(dp(14), dp(4), dp(14), dp(4));
+        return warningView;
+    }
+
+    private static CharSequence createWarningText(String url, SpoofedLinkChecker.SpoofedLinkInfo spoofedLinkInfo) {
+        if (spoofedLinkInfo.isSpoofed) {
+            final SpannableStringBuilder description = new SpannableStringBuilder(LocaleController.getString(R.string.SpoofedLinkDescription));
+            highlightSpoofedPlaceholder(description, "%1$s", spoofedLinkInfo.label != null ? spoofedLinkInfo.label : "");
+            highlightSpoofedPlaceholder(description, "%2$s", url != null ? url : "");
+            return description;
+        } else {
+            return LocaleController.getString(R.string.HttpProtocolIsUnsafe);
         }
     }
 
