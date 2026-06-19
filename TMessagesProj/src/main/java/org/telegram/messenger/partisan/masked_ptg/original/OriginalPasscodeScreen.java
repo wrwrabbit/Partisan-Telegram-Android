@@ -915,7 +915,7 @@ public class OriginalPasscodeScreen extends AbstractMaskedPasscodeScreen {
                 }
             }
         });
-        backgroundAnimationSpring.addUpdateListener((animation, value, velocity) -> motionBackgroundDrawable.updateAnimation(true));
+        backgroundAnimationSpring.addUpdateListener((animation, value, velocity) -> motionBackgroundDrawable.updateAnimation());
         backgroundAnimationSpring.start();
     }
 

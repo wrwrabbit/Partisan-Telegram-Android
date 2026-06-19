@@ -31,9 +31,7 @@ public class TextStyleSpan extends MetricAffectingSpan {
         public TLRPC.MessageEntity urlEntity;
         public String lng;
 
-        public TextStyleRun() {
-
-        }
+        public TextStyleRun() {}
 
         public TextStyleRun(TextStyleRun run) {
             flags = run.flags;
@@ -84,7 +82,7 @@ public class TextStyleSpan extends MetricAffectingSpan {
             if ((flags & FLAG_STYLE_MONO) != 0 || (flags & FLAG_STYLE_CODE) != 0) {
                 return Typeface.MONOSPACE;
             } else if ((flags & FLAG_STYLE_BOLD) != 0 && (flags & FLAG_STYLE_ITALIC) != 0) {
-                return AndroidUtilities.getTypeface("fonts/rmediumitalic.ttf");
+                return AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM_ITALIC);
             } else if ((flags & FLAG_STYLE_BOLD) != 0) {
                 return AndroidUtilities.bold();
             } else if ((flags & FLAG_STYLE_ITALIC) != 0) {

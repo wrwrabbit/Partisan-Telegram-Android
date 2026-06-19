@@ -42,6 +42,7 @@ public sealed class TlGen_DraftMessage : TlGen_Object {
     public val date: Int,
     public val effect: Long?,
     public val suggested_post: TlGen_SuggestedPost?,
+    public val rich_message: TlGen_RichMessage?,
   ) : TlGen_DraftMessage() {
     internal val flags: UInt
       get() {
@@ -53,6 +54,7 @@ public sealed class TlGen_DraftMessage : TlGen_Object {
         if (invert_media) result = result or 64U
         if (effect != null) result = result or 128U
         if (suggested_post != null) result = result or 256U
+        if (rich_message != null) result = result or 512U
         return result
       }
 
@@ -66,10 +68,11 @@ public sealed class TlGen_DraftMessage : TlGen_Object {
       stream.writeInt32(date)
       effect?.let { stream.writeInt64(it) }
       suggested_post?.serializeToStream(stream)
+      rich_message?.serializeToStream(stream)
     }
 
     public companion object {
-      public const val MAGIC: UInt = 0x96EAA5EBU
+      public const val MAGIC: UInt = 0x60FE3294U
     }
   }
 
@@ -173,6 +176,47 @@ public sealed class TlGen_DraftMessage : TlGen_Object {
 
     public companion object {
       public const val MAGIC: UInt = 0x2D65321FU
+    }
+  }
+
+  public data class TL_draftMessage_layer226(
+    public val no_webpage: Boolean,
+    public val invert_media: Boolean,
+    public val reply_to: TlGen_InputReplyTo?,
+    public val message: String,
+    public val entities: List<TlGen_MessageEntity>?,
+    public val media: TlGen_InputMedia?,
+    public val date: Int,
+    public val effect: Long?,
+    public val suggested_post: TlGen_SuggestedPost?,
+  ) : TlGen_Object {
+    internal val flags: UInt
+      get() {
+        var result = 0U
+        if (no_webpage) result = result or 2U
+        if (entities != null) result = result or 8U
+        if (reply_to != null) result = result or 16U
+        if (media != null) result = result or 32U
+        if (invert_media) result = result or 64U
+        if (effect != null) result = result or 128U
+        if (suggested_post != null) result = result or 256U
+        return result
+      }
+
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      stream.writeInt32(flags.toInt())
+      reply_to?.serializeToStream(stream)
+      stream.writeString(message)
+      entities?.let { TlGen_Vector.serialize(stream, it) }
+      media?.serializeToStream(stream)
+      stream.writeInt32(date)
+      effect?.let { stream.writeInt64(it) }
+      suggested_post?.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x96EAA5EBU
     }
   }
 }
