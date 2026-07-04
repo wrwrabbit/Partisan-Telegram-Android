@@ -36,6 +36,7 @@ import org.telegram.messenger.voip.VoIPService;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -80,12 +81,11 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
     protected AbstractViewItem[] createItems() {
         return new AbstractViewItem[]{
                 new ToggleItem(this, getString(R.string.Enable), VoiceChangeSettings.voiceChangeEnabled::getOrDefault, value -> {
-                    VoiceChangeSettings.voiceChangeEnabled.set(value);
-                    if (VoiceChangeSettings.areSettingsEmpty()) {
-                        new VoiceChangeSettingsGenerator().generateParameters(true);
+                    if (value) {
+                        showEnableVoiceChangeWarning();
+                    } else {
+                        setVoiceChangeEnabled(false);
                     }
-                    listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
-                    showCurrentCallWillNotBeAffectedDialogIfNeeded();
                 }),
                 new DelimiterItem(this),
 
@@ -192,6 +192,33 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
                     .create();
             showDialog(dialog);
         }
+    }
+
+    private void setVoiceChangeEnabled(boolean value) {
+        VoiceChangeSettings.voiceChangeEnabled.set(value);
+        if (value) {
+            VoiceChangeSettings.showVoiceChangeWarningTimer.set(false);
+        }
+        if (VoiceChangeSettings.areSettingsEmpty()) {
+            new VoiceChangeSettingsGenerator().generateParameters(true);
+        }
+        listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
+        showCurrentCallWillNotBeAffectedDialogIfNeeded();
+    }
+
+    private void showEnableVoiceChangeWarning() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle(getString(R.string.VoiceChangeEnableWarningTitle));
+        builder.setMessage(AndroidUtilities.replaceTags(getString(R.string.VoiceChangeEnableWarningMessage)));
+        builder.setNegativeButton(getString(R.string.Cancel), null);
+        AlertDialog dialog = builder.create();
+        if (VoiceChangeSettings.showVoiceChangeWarningTimer.get().orElse(true)) {
+            DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_POSITIVE, getString(R.string.Enable), 5,
+                    (dlg, which) -> setVoiceChangeEnabled(true));
+        } else {
+            dialog.setPositiveButton(getString(R.string.Enable), (dlg, which) -> setVoiceChangeEnabled(true));
+        }
+        showDialog(dialog);
     }
 
     private static boolean isInCall() {

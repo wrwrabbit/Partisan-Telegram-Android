@@ -120,6 +120,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 ),
                 new ToggleItem(this, "Show No Main Passcode Warning", () -> SharedConfig.showFakePasscodeNoMainPasscodeWarning,
                         value -> SharedConfig.showFakePasscodeNoMainPasscodeWarning = value),
+                new ToggleItem(this, "Show Voice Change Warning Timer", VoiceChangeSettings.showVoiceChangeWarningTimer),
                 new SimpleEditableDataItem(this, "Phone Override", TesterSettings.phoneOverride)
                         .addCondition(() -> SharedConfig.activatedTesterSettingType == 2),
                 new ButtonItem(this, "Reset Security Issues", view -> {
