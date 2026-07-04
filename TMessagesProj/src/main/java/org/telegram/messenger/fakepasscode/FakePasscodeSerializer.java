@@ -38,6 +38,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterOutputStream;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -57,17 +58,20 @@ public class FakePasscodeSerializer {
     public @interface EnabledSerialization {
     }
 
+    private static final int GCM_IV_LENGTH = 12;
+    private static final int GCM_TAG_LENGTH_BITS = 128;
+
     public static byte[] serializeEncrypted(FakePasscode passcode, String passcodeString) {
         try {
             byte[] fakePasscodeBytes = getJsonMapper().writeValueAsString(passcode).getBytes("UTF-8");
 
-            byte[] initializationVector = new byte[16];
-            Utilities.random.nextBytes(initializationVector);
+            byte[] nonce = new byte[GCM_IV_LENGTH];
+            Utilities.random.nextBytes(nonce);
             byte[] key = MessageDigest.getInstance("MD5").digest(passcodeString.getBytes("UTF-8"));
-            byte[] encryptedBytes = encryptBytes(compress(fakePasscodeBytes), initializationVector, key, false);
-            byte[] resultBytes = new byte[16 + encryptedBytes.length];
-            System.arraycopy(initializationVector, 0, resultBytes, 0, 16);
-            System.arraycopy(encryptedBytes, 0, resultBytes, 16, encryptedBytes.length);
+            byte[] encryptedBytes = encryptGcm(compress(fakePasscodeBytes), nonce, key);
+            byte[] resultBytes = new byte[GCM_IV_LENGTH + encryptedBytes.length];
+            System.arraycopy(nonce, 0, resultBytes, 0, GCM_IV_LENGTH);
+            System.arraycopy(encryptedBytes, 0, resultBytes, GCM_IV_LENGTH, encryptedBytes.length);
             return resultBytes;
         } catch (Exception e) {
             PartisanLog.e("FakePasscodeSerializer", e);
@@ -77,15 +81,39 @@ public class FakePasscodeSerializer {
 
     public static FakePasscode deserializeEncrypted(byte[] encryptedPasscodeData, String passcodeString) {
         try {
-            byte[] initializationVector = Arrays.copyOfRange(encryptedPasscodeData, 0, 16);
             byte[] key = MessageDigest.getInstance("MD5").digest(passcodeString.getBytes("UTF-8"));
-            byte[] encryptedPasscode = Arrays.copyOfRange(encryptedPasscodeData, 16, encryptedPasscodeData.length);
-            byte[] decryptedBytes = encryptBytes(encryptedPasscode, initializationVector, key, true);
+            byte[] decryptedBytes = tryDecryptGcm(encryptedPasscodeData, key);
+            if (decryptedBytes == null) {
+                decryptedBytes = tryDecryptCbc(encryptedPasscodeData, key);
+            }
+            if (decryptedBytes == null) {
+                return null;
+            }
             FakePasscode passcode = getJsonMapper().readValue(new String(decompress(decryptedBytes)), FakePasscode.class);
             passcode.generatePasscodeHash(passcodeString);
             return passcode;
         } catch (Exception e) {
             PartisanLog.e("FakePasscodeSerializer", e);
+            return null;
+        }
+    }
+
+    private static byte[] tryDecryptGcm(byte[] encryptedPasscodeData, byte[] key) {
+        try {
+            byte[] nonce = Arrays.copyOfRange(encryptedPasscodeData, 0, GCM_IV_LENGTH);
+            byte[] ciphertext = Arrays.copyOfRange(encryptedPasscodeData, GCM_IV_LENGTH, encryptedPasscodeData.length);
+            return decryptGcm(ciphertext, nonce, key);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static byte[] tryDecryptCbc(byte[] encryptedPasscodeData, byte[] key) {
+        try {
+            byte[] iv = Arrays.copyOfRange(encryptedPasscodeData, 0, 16);
+            byte[] ciphertext = Arrays.copyOfRange(encryptedPasscodeData, 16, encryptedPasscodeData.length);
+            return decryptCbc(ciphertext, iv, key);
+        } catch (Exception e) {
             return null;
         }
     }
@@ -99,11 +127,27 @@ public class FakePasscodeSerializer {
         }
     }
 
-    private static byte[] encryptBytes(byte[] data, byte[] initializationVector, byte[] key, boolean isDecrypt) throws Exception {
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(initializationVector);
+    private static byte[] encryptGcm(byte[] data, byte[] nonce, byte[] key) throws Exception {
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, nonce);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParameterSpec);
+        return cipher.doFinal(data);
+    }
+
+    private static byte[] decryptGcm(byte[] data, byte[] nonce, byte[] key) throws Exception {
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, nonce);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec);
+        return cipher.doFinal(data);
+    }
+
+    private static byte[] decryptCbc(byte[] data, byte[] iv, byte[] key) throws Exception {
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
         SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
-        cipher.init(isDecrypt ? Cipher.DECRYPT_MODE : Cipher.ENCRYPT_MODE, keySpec, ivParameterSpec);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivParameterSpec);
         return cipher.doFinal(data);
     }
 
