@@ -60,6 +60,8 @@
     <string name="TakePhotoWithFrontCamera">Делать фото фронтальной камерой</string>
     <string name="TakePhotoWithBackCamera">Делать фото основной камерой</string>
     <string name="ClearBadPasscodeAttempts">Очистить неудачные попытки ввода код-пароля?</string>
+    <string name="DeletePhotos">Удалить фото</string>
+    <string name="DeleteBadPasscodePhotos">Удалить все фото из неудачных попыток ввода код-пароля?</string>
     <string name="DoNotShowAgain">Не показывать снова</string>
     <string name="ClearCacheOnLock">Очищать кэш при блокировке</string>
     <string name="ClearCacheOnLockInfo">При нажатии на кнопку замка над списком диалогов кэш приложения будет очищаться.</string>

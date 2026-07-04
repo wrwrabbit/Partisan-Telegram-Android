@@ -61,6 +61,8 @@
     <string name="TakePhotoWithFrontCamera">Робити фото фронтальною камерою</string>
     <string name="TakePhotoWithBackCamera">Робити фото основною камерою</string>
     <string name="ClearBadPasscodeAttempts">Видалити невдалі спроби вводу коду блокування?</string>
+    <string name="DeletePhotos">Видалити фото</string>
+    <string name="DeleteBadPasscodePhotos">Видалити усі фото з невдалих спроб вводу коду блокування?</string>
     <string name="DoNotShowAgain">Не показувати знову</string>
     <string name="ClearCacheOnLock">Блокуючи, видаляти кеш</string>
     <string name="ClearCacheOnLockInfo">Натискаючи на кнопку-замок над списком чатів, кеш Telegram буде видалятися. </string>

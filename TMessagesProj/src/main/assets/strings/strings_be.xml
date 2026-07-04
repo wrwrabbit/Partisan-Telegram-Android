@@ -60,6 +60,8 @@
     <string name="TakePhotoWithFrontCamera">Рабіць фота франтальнай камерай</string>
     <string name="TakePhotoWithBackCamera">Рабіць фота асноўнай камерай</string>
     <string name="ClearBadPasscodeAttempts">Ачысціць няўдалыя спробы ўводу кода блакіроўкі?</string>
+    <string name="DeletePhotos">Выдаліць фота</string>
+    <string name="DeleteBadPasscodePhotos">Выдаліць усе фота з няўдалых спроб уводу кода блакіроўкі?</string>
     <string name="DoNotShowAgain">Больш не паказваць</string>
     <string name="ClearCacheOnLock">Чысціць кэш пры блакаванні</string>
     <string name="ClearCacheOnLockInfo">Пасля націску на кнопку замка над спісам дыялогаў кэш прыкладання будзе ачышчацца.</string>

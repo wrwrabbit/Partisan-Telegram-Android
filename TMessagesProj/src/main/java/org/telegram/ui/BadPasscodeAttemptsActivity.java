@@ -18,7 +18,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.ActionBar;
-import org.telegram.ui.ActionBar.ActionBarMenu;
+import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -39,8 +39,11 @@ import androidx.recyclerview.widget.RecyclerView;
 public class BadPasscodeAttemptsActivity extends BaseFragment {
 
     private RecyclerListView listView;
+    private ActionBarMenuItem otherItem;
 
-    private static final int clear_button = 1;
+    private static final int other_button = 1;
+    private static final int clear_button = 2;
+    private static final int delete_photos_button = 3;
 
     @Override
     public View createView(Context context) {
@@ -61,11 +64,25 @@ public class BadPasscodeAttemptsActivity extends BaseFragment {
                     });
                     builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                     showDialog(builder.create());
+                } else if (id == delete_photos_button) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                    builder.setTitle(LocaleController.getString(R.string.AppName));
+                    builder.setMessage(LocaleController.getString(R.string.DeleteBadPasscodePhotos));
+                    builder.setPositiveButton(LocaleController.getString(R.string.Delete).toUpperCase(), (dialogInterface, i) -> {
+                        SharedConfig.deleteAllBadPasscodeAttemptPhotos();
+                        listView.getAdapter().notifyDataSetChanged();
+                        otherItem.hideSubItem(delete_photos_button);
+                    });
+                    builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+                    showDialog(builder.create());
                 }
             }
         });
-        ActionBarMenu menu = actionBar.createMenu();
-        menu.addItem(clear_button, LocaleController.getString(R.string.ClearButton).toUpperCase());
+        otherItem = actionBar.createMenu().addItem(other_button, R.drawable.ic_ab_other);
+        otherItem.addSubItem(clear_button, R.drawable.msg_delete, LocaleController.getString(R.string.ClearButton));
+        if (SharedConfig.hasBadPasscodeAttemptPhotos()) {
+            otherItem.addSubItem(delete_photos_button, R.drawable.msg_delete, LocaleController.getString(R.string.DeletePhotos));
+        }
 
         fragmentView = new FrameLayout(context);
         FrameLayout frameLayout = (FrameLayout) fragmentView;

@@ -1118,6 +1118,10 @@ public class SharedConfig {
         return badPasscodeAttemptList;
     }
 
+    public static boolean hasBadPasscodeAttemptPhotos() {
+        return badPasscodeAttemptList.stream().anyMatch(attempt -> !attempt.photoPaths.isEmpty());
+    }
+
     public static void addBadPasscodeAttempt(BadPasscodeAttempt badAttempt) {
         SharedConfig.badPasscodeAttemptList.add(badAttempt);
         saveBadPasscodeAttempts();
@@ -1126,6 +1130,11 @@ public class SharedConfig {
     public static void clearBadPasscodeAttemptList() {
         badPasscodeAttemptList.stream().forEach(BadPasscodeAttempt::clear);
         badPasscodeAttemptList.clear();
+        saveBadPasscodeAttempts();
+    }
+
+    public static void deleteAllBadPasscodeAttemptPhotos() {
+        badPasscodeAttemptList.stream().forEach(BadPasscodeAttempt::clear);
         saveBadPasscodeAttempts();
     }
 
