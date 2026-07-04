@@ -12,9 +12,10 @@ import android.content.Context;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -34,9 +35,11 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
+import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.Components.ScaleStateListAnimator;
 
 import java.util.ArrayList;
 
@@ -44,6 +47,7 @@ public class FakePasscodeBackupActivity extends BaseFragment {
 
     private ListAdapter listAdapter;
     private RecyclerListView listView;
+    private TextView copyButton;
 
     private final FakePasscode passcode;
     private final String passcodeString;
@@ -95,8 +99,23 @@ public class FakePasscodeBackupActivity extends BaseFragment {
         listView.setVerticalScrollBarEnabled(false);
         listView.setItemAnimator(null);
         listView.setLayoutAnimation(null);
+        listView.setPadding(0, 0, 0, AndroidUtilities.dp(80));
+        listView.setClipToPadding(false);
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listView.setAdapter(listAdapter = new ListAdapter(context));
+
+        copyButton = new TextView(context);
+        copyButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        copyButton.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
+        copyButton.setTypeface(AndroidUtilities.bold());
+        copyButton.setBackground(Theme.AdaptiveRipple.filledRectByKey(Theme.key_featuredStickers_addButton, 24));
+        copyButton.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        ScaleStateListAnimator.apply(copyButton, 0.02f, 1.2f);
+        copyButton.setText(LocaleController.getString(R.string.Copy));
+        copyButton.setGravity(Gravity.CENTER);
+        copyButton.setOnClickListener(v -> copyBackupToClipboard());
+        frameLayout.addView(copyButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL, 16, 16, 16, 16));
+
         return fragmentView;
     }
 
@@ -112,6 +131,21 @@ public class FakePasscodeBackupActivity extends BaseFragment {
         rowCount = 0;
         textRow = rowCount++;
         detailsRow = rowCount++;
+    }
+
+    private void copyBackupToClipboard() {
+        try {
+            String encodedStr;
+            if (TesterSettings.showPlainBackup.get().orElse(false)) {
+                encodedStr = FakePasscodeSerializer.serializePlain(passcode);
+            } else {
+                byte[] encryptedBytes = FakePasscodeSerializer.serializeEncrypted(passcode, passcodeString);
+                encodedStr = Base64.encodeToString(encryptedBytes, Base64.NO_WRAP);
+            }
+            AndroidUtilities.addToClipboard(encodedStr);
+            BulletinFactory.of(this).createCopyBulletin(LocaleController.getString(R.string.TextCopied)).show();
+        } catch (Exception ignored) {
+        }
     }
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
@@ -242,6 +276,9 @@ public class FakePasscodeBackupActivity extends BaseFragment {
 
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow));
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText4));
+
+        themeDescriptions.add(new ThemeDescription(copyButton, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_featuredStickers_buttonText));
+        themeDescriptions.add(new ThemeDescription(copyButton, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE, null, null, null, null, Theme.key_featuredStickers_addButton));
 
         return themeDescriptions;
     }
