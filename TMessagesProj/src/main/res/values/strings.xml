@@ -11095,6 +11095,7 @@
     <string name="ActivateWithFingerprint">Activate with Fingerprint</string>
     <string name="ActivateWithFingerprintInfo">When this option is enabled, fingerprint unlock will be binded to this fake passcode. This option can only be enabled for one fake passcode.</string>
     <string name="TakePhotoWarning">When taking a photo, camera sounds can be played, photo notifications or other indications may be displayed. The application will try to remove them, but this is not possible in all cases. Please check beforehand that this function works correctly.</string>
+    <string name="TakePhotoWarningAndroid12">On Android 12 and later, the system shows a notification whenever the camera is used. This notification cannot be hidden, so it may reveal that a photo was taken. We do not recommend using this feature on such phones.</string>
     <string name="TimerActivationFakePasscode">Activate by Timer</string>
     <string name="TimerActivationFakePasscodeInfo">Activate the fake passcode when not using the application. The time the app is locked with a passcode is considered inactive.</string>
     <string name="TimerActivationDialogTitle">Activation Timer</string>

@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -25,6 +26,7 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BadPasscodeAttemptsActivity;
 import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 
 public class BadPasscodeReactionFragment extends PartisanBaseFragment {
 
@@ -107,6 +109,15 @@ public class BadPasscodeReactionFragment extends PartisanBaseFragment {
     private void showPhotoWarning(Runnable callback) {
         if (SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack) {
             callback.run();
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+            builder.setTitle(LocaleController.getString(R.string.Warning));
+            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarningAndroid12));
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            AlertDialog dialog = builder.create();
+            DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_POSITIVE, LocaleController.getString(R.string.Continue), 5,
+                    (d, v) -> callback.run());
+            showDialog(dialog);
         } else {
             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
             builder.setMessage(LocaleController.getString(R.string.TakePhotoWarning));
