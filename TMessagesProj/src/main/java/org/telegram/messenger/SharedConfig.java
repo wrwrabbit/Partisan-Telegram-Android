@@ -1392,20 +1392,24 @@ public class SharedConfig {
     public static void clearConfig() {
         saveIncomingPhotos = false;
         appLocked = false;
-        passcodeType = PASSCODE_TYPE_PIN;
         passcodeRetryInMs = 0;
         lastUptimeMillis = 0;
         badPasscodeTries = 0;
-        passcodeHash = "";
         synchronized (FakePasscode.class) {
-            for (FakePasscode p: fakePasscodes) {
-                p.onDelete();
+            if (FakePasscodeUtils.isFakePasscodeActivated()) {
+                FakePasscodeUtils.enterPasswordlessModeAfterLogout();
+            } else {
+                passcodeHash = "";
+                passcodeType = PASSCODE_TYPE_PIN;
+                passcodeSalt = new byte[0];
+                for (FakePasscode p: fakePasscodes) {
+                    p.onDelete();
+                }
+                fakePasscodes.clear();
+                fakePasscodeActivatedIndex = -1;
             }
-            fakePasscodes.clear();
-            fakePasscodeActivatedIndex = -1;
         }
         filesCopiedFromOldTelegram = false;
-        passcodeSalt = new byte[0];
         autoLockIn = 60 * 60;
         lastPauseTime = 0;
         useFingerprintLock = false;

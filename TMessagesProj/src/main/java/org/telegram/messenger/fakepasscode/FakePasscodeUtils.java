@@ -45,6 +45,13 @@ public class FakePasscodeUtils {
         return getActivatedFakePasscode() != null;
     }
 
+    public static void enterPasswordlessModeAfterLogout() {
+        FakePasscode activated = getActivatedFakePasscode();
+        if (activated != null) {
+            activated.checkPasswordlessMode();
+        }
+    }
+
     private static ActionsResult getActivatedActionsResult() {
         if (isFakePasscodeActivated()) {
             return getActivatedFakePasscode().actionsResult.merge(SharedConfig.fakePasscodeActionsResult);

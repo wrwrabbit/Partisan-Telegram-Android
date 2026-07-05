@@ -361,9 +361,10 @@ public class FakePasscode {
         }
     }
 
-    private void checkPasswordlessMode() {
-        boolean changed = passwordDisabled != passwordlessMode;
-        passwordDisabled = passwordlessMode;
+    void checkPasswordlessMode() {
+        boolean passwordless = passwordlessMode || UserConfig.getActivatedAccountsCount(true) == 0;
+        boolean changed = passwordDisabled != passwordless;
+        passwordDisabled = passwordless;
         if (passwordDisabled) {
             SharedConfig.setAppLocked(false);
             SharedConfig.isWaitingForPasscodeEnter = false;
