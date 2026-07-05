@@ -227,6 +227,8 @@ public class EncryptedGroupServiceMessagesHandler implements AccountControllersP
 
     @Handler(conditions = {HandlerCondition.GROUP_NOT_EXISTS, HandlerCondition.FAKE_PASSCODE_NOT_ACTIVATED})
     private TLRPC.Message handleGroupCreation(AbstractCreateGroupAction action) {
+        innerAssert(action.ownerUserId != null && action.ownerUserId == encryptedChat.user_id,
+                "Group creation action sender is not the declared owner");
         encryptedGroup = createEncryptedGroup(encryptedChat, action);
         log("Created.");
 
