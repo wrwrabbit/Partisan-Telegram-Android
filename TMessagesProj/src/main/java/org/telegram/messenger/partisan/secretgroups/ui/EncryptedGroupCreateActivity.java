@@ -802,6 +802,31 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         AlertsCreator.showSimpleAlert(this, getString(R.string.Warning), getString(R.string.SlowSecretGroupCreationWarning));
     }
 
+    private void showSecretGroupCreationDisclosureWarning(String chatName, List<TLRPC.User> users) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle(getString(R.string.Warning));
+        builder.setMessage(getString(R.string.SecretGroupCreationDisclosureWarning));
+        builder.setPositiveButton(getString(R.string.Create), (dialog, which) -> createEncryptedGroup(chatName, users));
+        builder.setNegativeButton(getString(R.string.Cancel), null);
+        showDialog(builder.create());
+    }
+
+    private void createEncryptedGroup(String chatName, List<TLRPC.User> users) {
+        EncryptedGroupStarter.startEncryptedGroup(currentAccount, users, chatName, group -> {
+            if (!group.isPresent()) {
+                return;
+            }
+            AndroidUtilities.runOnUIThread(() -> {
+                getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
+
+                Bundle args = new Bundle();
+                args.putInt("enc_group_id", group.get().getInternalId());
+                args.putBoolean("just_created_chat", true);
+                presentFragment(new ChatActivity(args), true);
+            });
+        });
+    }
+
     private void showLimitReachedDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
         builder.setTitle(getString(R.string.AppName));
@@ -958,19 +983,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                         .map(id -> getMessagesController().getUser(id))
                         .collect(Collectors.toList());
 
-                EncryptedGroupStarter.startEncryptedGroup(currentAccount, users, chatName, group -> {
-                    if (!group.isPresent()) {
-                        return;
-                    }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
-
-                        Bundle args = new Bundle();
-                        args.putInt("enc_group_id", group.get().getInternalId());
-                        args.putBoolean("just_created_chat", true);
-                        presentFragment(new ChatActivity(args), true);
-                    });
-                });
+                showSecretGroupCreationDisclosureWarning(chatName, users);
             };
             showDialog(FakePasscodeDialogBuilder.build(getContext(), template));
         } else {

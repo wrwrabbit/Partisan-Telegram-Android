@@ -319,6 +319,7 @@
     <string name="EncryptedGroupAvatarChangeForbidden">Не можна змінити аватар до ініціалізації групи.</string>
     <string name="CantAddNewMemberToEncryptedGroupMessage">Перед додаванням нового необхідно дочекатися підтвердження від попередніх членів.</string>
     <string name="SlowSecretGroupCreationWarning">Секретна група на 7 і більше учасників буде створюватися довше, ніж зазвичай.</string>
+    <string name="SecretGroupCreationDisclosureWarning">Створення секретної групи дозволить усім запрошеним учасникам дізнатися, що Ви використовуєте Партизанський Телеграм.</string>
     <string name="VoiceChange">Зміна голосу</string>
     <string name="VoiceChangeDescription">Зміна голосу дозволяє уникнути деанонімізації при надсиланні голосових повідомлень, кружечків та дзвінків.</string>
     <string name="VoiceChangeLevel">Рівень зміни голосу</string>
