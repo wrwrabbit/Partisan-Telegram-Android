@@ -315,7 +315,7 @@ target_include_directories(flac PUBLIC
 
 #sqlite
 add_library(sqlite STATIC
-        sqlite/sqlite3.c)
+        sqlcipher/sqlite3.c)
 target_compile_options(sqlite PUBLIC
         -fno-strict-aliasing -Oz)
 set_target_properties(sqlite PROPERTIES
@@ -327,6 +327,14 @@ else ()
     target_compile_definitions(sqlite PUBLIC
             NULL=0 SOCKLEN_T=socklen_t LOCALE_NOT_USED ANDROID_NDK DISABLE_IMPORTGL AVOID_TABLES ANDROID_TILE_BASED_DECODE HAVE_STRCHRNUL=0 ANDROID_ARMV6_IDCT)
 endif ()
+target_compile_definitions(sqlite PUBLIC
+        SQLITE_HAS_CODEC)
+target_compile_definitions(sqlite PRIVATE
+        SQLITE_TEMP_STORE=2 SQLCIPHER_CRYPTO_OPENSSL)
+target_include_directories(sqlite PRIVATE
+        boringssl/include/)
+target_link_libraries(sqlite
+        crypto)
 
 
 #world

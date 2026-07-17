@@ -42,6 +42,8 @@ import org.telegram.messenger.partisan.PartisanDatabaseMigrationHelper;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionDatabaseCleaner;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionUtils;
 import org.telegram.messenger.partisan.fileprotection.UsersWithSecretChatsCache;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
@@ -337,14 +339,15 @@ public class MessagesStorage extends BaseController {
             createTable = true;
         }
         try {
+            byte[] databaseEncryptionKey = FileProtectionDbEncryption.syncDatabaseEncryptionAndGetKeySpec(currentAccount, cacheFile);
             if (fileProtectionShouldBeEnabled()) {
-                database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey);
                 storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
                 if (isFileProtectionDisabledBecauseOfFileSize()) {
                     fileProtectionDisabledBecauseOfFileSize = true;
                 }
-                database = new SQLiteDatabase(cacheFile.getPath());
+                database = new SQLiteDatabase(cacheFile.getPath(), databaseEncryptionKey);
             }
             database.executeFast("PRAGMA secure_delete = ON").stepThis().dispose();
             database.executeFast("PRAGMA temp_store = MEMORY").stepThis().dispose();
@@ -459,10 +462,11 @@ public class MessagesStorage extends BaseController {
         FileLog.e("Database restored = " + restored);
         if (restored) {
             try {
+                byte[] databaseEncryptionKey = FileProtectionDbEncryption.syncDatabaseEncryptionAndGetKeySpec(currentAccount, cacheFile);
                 if (fileProtectionShouldBeEnabled()) {
-                    database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                    database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey);
                 } else {
-                    database = new SQLiteDatabase(cacheFile.getPath());
+                    database = new SQLiteDatabase(cacheFile.getPath(), databaseEncryptionKey);
                 }
                 database.executeFast("PRAGMA secure_delete = ON").stepThis().dispose();
                 database.executeFast("PRAGMA temp_store = MEMORY").stepThis().dispose();
@@ -11377,21 +11381,17 @@ public class MessagesStorage extends BaseController {
     }
 
     public boolean fileProtectionShouldBeEnabled() {
-        return fileProtectionEnabledByConfig() && !databaseFileSizeExceedsMaximumForRam();
+        return shouldUseInMemoryDatabase() && !databaseFileSizeExceedsMaximumForRam();
     }
 
-    private boolean fileProtectionEnabledByConfig() {
+    private boolean shouldUseInMemoryDatabase() {
+        if (!SharedConfig.storeMessagesInMemoryOnly) {
+            return false;
+        }
         if (FakePasscodeUtils.isFakePasscodeActivated() && !SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
             return false;
         }
-        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-            return true;
-        }
-        if (getUserConfig().isConfigLoaded()) {
-            return getUserConfig().fileProtectionEnabled;
-        } else {
-            return getUserConfig().getPreferences().getBoolean("fileProtectionEnabled", false);
-        }
+        return FileProtectionUtils.fileProtectionEnabledForAccount(currentAccount);
     }
 
     private boolean databaseFileSizeExceedsMaximumForRam() {
@@ -11401,7 +11401,7 @@ public class MessagesStorage extends BaseController {
     private static volatile boolean fileProtectionDisabledBecauseOfFileSize = false;
 
     public boolean isFileProtectionDisabledBecauseOfFileSize() {
-        return fileProtectionDisabledBecauseOfFileSize || fileProtectionEnabledByConfig() && databaseFileSizeExceedsMaximumForRam();
+        return fileProtectionDisabledBecauseOfFileSize || shouldUseInMemoryDatabase() && databaseFileSizeExceedsMaximumForRam();
     }
 
     public void clearFileProtectedDb() {

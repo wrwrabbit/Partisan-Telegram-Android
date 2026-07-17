@@ -1714,7 +1714,7 @@ public class DatabaseMigrationHelper {
             newDatabase.executeFast("PRAGMA journal_size_limit = 10485760").stepThis().dispose();
 
             MessagesStorage.createTables(newDatabase);
-            newDatabase.executeFast("ATTACH DATABASE \"" + oldDatabaseFile.getAbsolutePath() + "\" AS old;").stepThis().dispose();
+            newDatabase.executeFast("ATTACH DATABASE \"" + oldDatabaseFile.getAbsolutePath() + "\" AS old" + org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption.getAttachKeyClauseIfNeeded(currentAccount, oldDatabaseFile) + ";").stepThis().dispose();
 
             int version = newDatabase.executeInt("PRAGMA old.user_version");
             if (version != MessagesStorage.LAST_DB_VERSION) {

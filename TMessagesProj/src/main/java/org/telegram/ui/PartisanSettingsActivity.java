@@ -282,7 +282,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
                     builder.setMessage(LocaleController.getString(R.string.ApplicationWillBeRestarted));
                     builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialogInterface, i) -> {
-                        new FileProtectionSwitcher(this).changeForAllAccounts(!fileProtectionEnabledForAnyAccount());
+                        new FileProtectionSwitcher(this).apply(!fileProtectionEnabledForAnyAccount());
                     });
                     builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                     AlertDialog dialog = builder.create();

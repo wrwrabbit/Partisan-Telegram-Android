@@ -60,6 +60,7 @@ import org.telegram.ui.web.WebMetadataCache;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -528,6 +529,31 @@ public class Utils {
             }
         }
         return path.delete();
+    }
+
+    public static void shredFile(File file) throws Exception {
+        try {
+            shredFileContent(file);
+        } finally {
+            file.delete();
+        }
+    }
+
+    public static void shredFileContent(File file) throws Exception {
+        final int shredChunkSize = 64 * 1024;
+        long length = file.length();
+        if (length <= 0) {
+            return;
+        }
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rwd")) {
+            byte[] junk = new byte[(int) Math.min(length, shredChunkSize)];
+            randomAccessFile.seek(0);
+            for (long written = 0; written < length; written += junk.length) {
+                int chunkSize = (int) Math.min(junk.length, length - written);
+                Utilities.random.nextBytes(junk);
+                randomAccessFile.write(junk, 0, chunkSize);
+            }
+        }
     }
 
     public static String removeUsernamePrefixed(String username) {

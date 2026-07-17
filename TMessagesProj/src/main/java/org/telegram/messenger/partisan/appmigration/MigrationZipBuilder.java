@@ -136,10 +136,27 @@ public class MigrationZipBuilder {
         ZipOutputStream zipStream = new ZipOutputStream(cipherStream);
 
         File filesDir = contextWrapper.getFilesDir();
+        FileProtectionKeyMigrationSender.deleteStaleKeysFile();
         addDirToZip(zipStream, "", filesDir);
         addDirToZip(zipStream, "", new File(filesDir.getParentFile(), "shared_prefs"));
+        addDbEncryptionKeysToZip(zipStream);
         zipStream.close();
         return zipFile;
+    }
+
+    // The database encryption keys are wrapped by this app's Android Keystore, which the
+    // target app can't access, so the raw keys are transferred inside the migration zip.
+    // Inside the zip they're never unencrypted on disk (the zip stream is wrapped in a
+    // CipherOutputStream); once extracted on the target they exist briefly as a plaintext
+    // file, which FileProtectionKeyMigrationReceiver shreds as each key is consumed.
+    private static void addDbEncryptionKeysToZip(ZipOutputStream zos) throws IOException {
+        byte[] keysFileContent = FileProtectionKeyMigrationSender.serializeKeysForMigration();
+        if (keysFileContent == null) {
+            return;
+        }
+        zos.putNextEntry(new ZipEntry("files/" + FileProtectionKeyMigrationSender.KEYS_FILE_NAME));
+        zos.write(keysFileContent);
+        zos.closeEntry();
     }
 
     public static void deleteZipFile() {

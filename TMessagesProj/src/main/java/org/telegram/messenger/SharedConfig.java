@@ -445,6 +445,8 @@ public class SharedConfig {
     public static boolean confirmDangerousActions;
     public static boolean fileProtectionForAllAccountsEnabled = true;
     public static boolean disableFileProtectionAfterRestart = false;
+    public static boolean storeMessagesInMemoryOnly = true;
+    public static boolean encryptDatabase = true;
     public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
     public static String previousMessageActivatorId = "";
 
@@ -988,6 +990,8 @@ public class SharedConfig {
             confirmDangerousActions = preferences.getBoolean("confirmDangerousActions", false);
             fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
+            storeMessagesInMemoryOnly = preferences.getBoolean("dontStoreMessagesOnDevice", storeMessagesInMemoryOnly);
+            encryptDatabase = preferences.getBoolean("encryptDatabaseEnabled", encryptDatabase);
             fileProtectionWorksWhenFakePasscodeActivated = preferences.getBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
             previousMessageActivatorId = preferences.getString("previousMessageActivatorId", previousMessageActivatorId);
             dayNightWallpaperSwitchHint = preferences.getInt("dayNightWallpaperSwitchHint", 0);
@@ -1103,6 +1107,22 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
+        editor.commit();
+    }
+
+    public static void setStoreMessagesInMemoryOnly(boolean value) {
+        storeMessagesInMemoryOnly = value;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("dontStoreMessagesOnDevice", value);
+        editor.commit();
+    }
+
+    public static void setEncryptDatabase(boolean value) {
+        encryptDatabase = value;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("encryptDatabaseEnabled", value);
         editor.commit();
     }
 

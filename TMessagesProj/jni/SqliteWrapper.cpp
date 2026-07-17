@@ -1,6 +1,6 @@
 #include <cstring>
 #include <jni.h>
-#include "sqlite/sqlite3.h"
+#include "sqlcipher/sqlite3.h"
 #include "tgnet/NativeByteBuffer.h"
 #include "tgnet/BuffersStorage.h"
 
@@ -149,7 +149,7 @@ JNIEXPORT jint Java_org_telegram_SQLite_SQLiteDatabase_internalBackup(JNIEnv *en
     return rc;
 }
 
-JNIEXPORT jlong Java_org_telegram_SQLite_SQLiteDatabase_opendb(JNIEnv *env, jobject object, jstring fileName, jstring tempDir) {
+JNIEXPORT jlong Java_org_telegram_SQLite_SQLiteDatabase_opendb(JNIEnv *env, jobject object, jstring fileName, jstring tempDir, jbyteArray key) {
     char const *fileNameStr = env->GetStringUTFChars(fileName, 0);
     char const *tempDirStr = env->GetStringUTFChars(tempDir, 0);
 
@@ -170,6 +170,15 @@ JNIEXPORT jlong Java_org_telegram_SQLite_SQLiteDatabase_opendb(JNIEnv *env, jobj
     }
     if (tempDirStr != 0) {
         env->ReleaseStringUTFChars(tempDir, tempDirStr);
+    }
+    if (key != nullptr) {
+        jbyte *keyBytes = env->GetByteArrayElements(key, 0);
+        jsize keyLength = env->GetArrayLength(key);
+        err = sqlite3_key(handle, keyBytes, keyLength);
+        env->ReleaseByteArrayElements(key, keyBytes, JNI_ABORT);
+        if (SQLITE_OK != err) {
+            throw_sqlite3_exception(env, handle, err);
+        }
     }
     return (jlong) handle;
 }

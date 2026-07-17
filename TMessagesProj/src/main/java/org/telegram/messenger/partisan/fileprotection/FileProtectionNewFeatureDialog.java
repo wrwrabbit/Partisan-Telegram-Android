@@ -29,7 +29,7 @@ public class FileProtectionNewFeatureDialog {
             dlg.dismiss();
         });
         dialog.setPositiveButton(LocaleController.getString(R.string.Enable), (dlg, which) -> {
-            new FileProtectionSwitcher(fragment).changeForAllAccounts(true);
+            new FileProtectionSwitcher(fragment).apply(true);
             deleteNeedShowPreference();
         });
         return dialog;

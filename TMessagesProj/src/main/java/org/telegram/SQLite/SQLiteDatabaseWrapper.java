@@ -28,9 +28,13 @@ public class SQLiteDatabaseWrapper extends SQLiteDatabase {
     private final SQLiteDatabase memoryDatabase;
 
     public SQLiteDatabaseWrapper(String fileName) throws SQLiteException {
-        super(fileName);
-        fileDatabase = new SQLiteDatabase(fileName);
-        memoryDatabase = new SQLiteDatabase(":memory:");
+        this(fileName, null);
+    }
+
+    public SQLiteDatabaseWrapper(String fileName, byte[] encryptionKey) throws SQLiteException {
+        super();
+        fileDatabase = new SQLiteDatabase(fileName, encryptionKey);
+        memoryDatabase = new SQLiteDatabase(":memory:", encryptionKey);
         fileDatabase.backup(memoryDatabase); // copy file database to memory
     }
 

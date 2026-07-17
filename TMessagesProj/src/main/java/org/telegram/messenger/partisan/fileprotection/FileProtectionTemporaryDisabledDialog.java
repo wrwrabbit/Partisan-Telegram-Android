@@ -8,10 +8,9 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FileProtectionTemporaryDisabledDialog {
     private static volatile boolean dialogShowed = false;
@@ -31,17 +30,17 @@ public class FileProtectionTemporaryDisabledDialog {
             dialogShowed = true;
         });
         dialog.setNegativeButton(LocaleController.getString(R.string.Disable), (dlg, which) -> {
-            new FileProtectionSwitcher(fragment).changeForAllAccounts(false);
+            new FileProtectionSwitcher(fragment).apply(false);
         });
         dialog.setPositiveButton(LocaleController.getString(R.string.FileProtectionEnableAgain), (dlg, which) -> {
             if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-                new FileProtectionSwitcher(fragment).changeForAllAccounts(true);
+                new FileProtectionSwitcher(fragment).forceApply(true);
             } else {
-                Map<Integer, Boolean> values = new HashMap<>();
+                List<FileProtectionAccountInfo> accounts = new ArrayList<>();
                 Utils.foreachActivatedAccountInstance(accountInstance ->
-                        values.put(accountInstance.getCurrentAccount(), accountInstance.getUserConfig().fileProtectionEnabled)
+                        accounts.add(new FileProtectionAccountInfo(accountInstance.getCurrentAccount()))
                 );
-                new FileProtectionSwitcher(fragment).changeForMultipleAccounts(values);
+                new FileProtectionSwitcher(fragment).apply(accounts, SharedConfig.storeMessagesInMemoryOnly, SharedConfig.encryptDatabase);
             }
         });
         return dialog;
