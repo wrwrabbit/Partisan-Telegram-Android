@@ -71,6 +71,7 @@ class UpdateMessageParser {
 
     private static boolean isUpdateSpecificationMessage(MessageObject message) {
         return message.isReply()
+                && message.replyMessageObject != null
                 && message.replyMessageObject.getDocument() != null
                 && message.messageText != null;
     }
