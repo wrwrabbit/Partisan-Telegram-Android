@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.telegram.messenger.MediaDataController.TYPE_IMAGE;
@@ -29,12 +30,15 @@ public class DeleteStickersAction extends AccountAction implements NotificationC
     private int step = STEP_DELETE_REGULAR_STICKERS;
     @JsonIgnore
     private long lastUpdateTime = 0;
+    @JsonIgnore
+    private final AtomicInteger pendingStickerDeletions = new AtomicInteger();
     private boolean preventBulletin = false;
 
     @Override
     public void execute(FakePasscode fakePasscode) {
         step = STEP_DELETE_REGULAR_STICKERS;
         lastUpdateTime = 0;
+        pendingStickerDeletions.set(0);
         loadStickers();
         //delete recent emoji
         Emoji.clearRecentEmoji();
@@ -47,10 +51,7 @@ public class DeleteStickersAction extends AccountAction implements NotificationC
     private void loadStickers() {
         preventBulletin = true;
         NotificationCenter.getInstance(accountNum).addObserver(this, NotificationCenter.stickersDidLoad);
-        MediaDataController.getInstance(accountNum).loadStickers(TYPE_IMAGE, false, false, true, s -> {
-            deleteStickers();
-            preventBulletin = false;
-        });
+        MediaDataController.getInstance(accountNum).loadStickers(TYPE_IMAGE, false, false, true, s -> deleteStickers());
     }
 
     private void deleteArchivedStickers() {
@@ -78,14 +79,29 @@ public class DeleteStickersAction extends AccountAction implements NotificationC
         MediaDataController controller = MediaDataController.getInstance(accountNum);
         List<TLRPC.TL_messages_stickerSet> stickerSets = new ArrayList<>(controller.getStickerSets(TYPE_IMAGE));
         for (TLRPC.TL_messages_stickerSet stickerSet : stickerSets) {
-            AndroidUtilities.runOnUIThread(() -> controller.toggleStickerSet(null, stickerSet, 0, null, false, false));
+            pendingStickerDeletions.incrementAndGet();
+            AndroidUtilities.runOnUIThread(() -> {
+                controller.toggleStickerSet(null, stickerSet, 0, null, false, false);
+                onStickerDeletionFinished();
+            });
         }
         for (int recent_sticker_type = 0; recent_sticker_type < 8; recent_sticker_type++) {
+            int typeFinal = recent_sticker_type;
             for (TLRPC.Document document : controller.getRecentStickers(recent_sticker_type)) {
-                controller.addRecentSticker(recent_sticker_type, null, document, 0, true, false);
+                pendingStickerDeletions.incrementAndGet();
+                AndroidUtilities.runOnUIThread(() -> {
+                    controller.addRecentSticker(typeFinal, null, document, 0, true, false);
+                    onStickerDeletionFinished();
+                });
             }
         }
         controller.clearRecentStickers();
+    }
+
+    private void onStickerDeletionFinished() {
+        if (pendingStickerDeletions.decrementAndGet() == 0) {
+            preventBulletin = false;
+        }
     }
 
     @Override

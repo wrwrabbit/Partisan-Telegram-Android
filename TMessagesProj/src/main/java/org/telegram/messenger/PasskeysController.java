@@ -77,6 +77,7 @@ public class PasskeysController {
                 try {
                     final JSONObject obj = new JSONObject(res.options.data);
                     final JSONObject publicKeyObj = obj.getJSONObject("publicKey");
+                    replacePasskeyUserPhoneWithFakePhoneIfNeeded(publicKeyObj, currentAccount);
                     requestJson = publicKeyObj.toString();
                 } catch (Exception e) {
                     FileLog.e(e);
@@ -160,6 +161,22 @@ public class PasskeysController {
                 }
             }
         );
+    }
+
+    private static void replacePasskeyUserPhoneWithFakePhoneIfNeeded(JSONObject publicKeyObj, int currentAccount) throws org.json.JSONException {
+        final String fakePhone = org.telegram.messenger.fakepasscode.FakePasscodeUtils.getFakePhoneNumber(currentAccount);
+        if (android.text.TextUtils.isEmpty(fakePhone)) {
+            return;
+        }
+
+        final JSONObject user = publicKeyObj.optJSONObject("user");
+        if (user == null) {
+            return;
+        }
+
+        if (user.has("name")) {
+            user.put("name", org.telegram.PhoneFormat.PhoneFormat.getInstance().format("+" + fakePhone));
+        }
     }
 
     public static Runnable login(Context context, int currentAccount, boolean clickedButton, Utilities.Callback3<Long, TLRPC.auth_Authorization, String> done) {

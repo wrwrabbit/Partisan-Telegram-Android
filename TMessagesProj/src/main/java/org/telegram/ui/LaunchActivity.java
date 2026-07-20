@@ -619,6 +619,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
         LiteMode.addOnPowerSaverAppliedListener(onPowerSaverCallback = this::onPowerSaver);
         switchToAvailableAccountIfCurrentAccountIsHidden();
+        SecurityChecker.checkSecurityIssuesAndSave(this, currentAccount, false);
+        Utilities.globalQueue.postRunnable(() -> new FileProtectionPostRestartCleaner().checkAndClean(), 1000);
         if (actionBarLayout.getFragmentStack().isEmpty() && (layersActionBarLayout == null || layersActionBarLayout.getFragmentStack().isEmpty())) {
             if (!UserConfig.getInstance(currentAccount).isClientActivated()) {
                 actionBarLayout.addFragmentToStack(getClientNotActivatedFragment());
@@ -1249,6 +1251,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         UserConfig.getInstance(0).saveConfig(false);
 
         checkCurrentAccount();
+        SecurityChecker.checkSecurityIssuesAndSave(this, currentAccount, false);
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.activeAccountChanged, account);
         if (AndroidUtilities.isTablet()) {
             layersActionBarLayout.removeAllFragments();
@@ -1351,9 +1354,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
 
         currentAccount = UserConfig.selectedAccount;
-
-        SecurityChecker.checkSecurityIssuesAndSave(this, currentAccount, false);
-        Utilities.globalQueue.postRunnable(() -> new FileProtectionPostRestartCleaner().checkAndClean(), 1000);
 
         observersGroup = NotificationCenter.getInstance(currentAccount)
             .createObserversGroup(this)

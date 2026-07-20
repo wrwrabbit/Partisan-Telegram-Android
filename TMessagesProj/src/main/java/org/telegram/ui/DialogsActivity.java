@@ -14115,20 +14115,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             presentFragment(new ChatActivity(args));
         });
         if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
-                    && PartisanTelegramSettings.showAsTab.getOrDefault()) {
-                io.add(R.drawable.tabs_contacts_24, getString(R.string.Contacts), () -> {
-                    Bundle args = new Bundle();
-                    args.putBoolean("needPhonebook", true);
-                    presentFragment(new ContactsActivity(args));
-                });
-            }
-            if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
-                    && PartisanTelegramSettings.showInChatList.getOrDefault()) {
-                io.add(R.drawable.menu_saved_channels, getString(R.string.SavedChannels), () -> {
-                    presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
-                });
-            }
-            if (ApplicationLoader.applicationLoaderInstance != null) {
+                && PartisanTelegramSettings.showAsTab.getOrDefault()) {
+            io.add(R.drawable.tabs_contacts_24, getString(R.string.Contacts), () -> {
+                Bundle args = new Bundle();
+                args.putBoolean("needPhonebook", true);
+                presentFragment(new ContactsActivity(args));
+            });
+        }
+        if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showSavedChannels
+                && PartisanTelegramSettings.showInChatList.getOrDefault()) {
+            io.add(R.drawable.menu_saved_channels, getString(R.string.SavedChannels), () -> {
+                presentFragment(new org.telegram.ui.SavedChannelsActivity(new Bundle()));
+            });
+        }
+        if (ApplicationLoader.applicationLoaderInstance != null) {
             ApplicationLoader.applicationLoaderInstance.addItemOptions(io);
         }
         TLRPC.TL_attachMenuBots menuBots = MediaDataController.getInstance(UserConfig.selectedAccount).getAttachMenuBots();
