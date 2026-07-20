@@ -6,7 +6,6 @@ import android.text.TextUtils;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
@@ -138,9 +137,9 @@ public class FakePasscodeUtils {
             return filteredDialogs;
         }
 
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());
+        MessagesController messagesController = MessagesController.getInstance(account.get());
         List<TLRPC.Dialog> filteredDialogsWithoutEncryptedGroups = filteredDialogs.stream()
-                .filter(d -> !messagesStorage.isEncryptedGroup(d.id))
+                .filter(d -> !messagesController.isEncryptedGroup(d.id))
                 .collect(Collectors.toList());
         return new FilteredArrayList<>(filteredDialogsWithoutEncryptedGroups, filteredDialogs);
     }

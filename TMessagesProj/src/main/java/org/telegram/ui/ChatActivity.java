@@ -13021,7 +13021,7 @@ public class ChatActivity extends BaseFragment implements
                     getMessagesController().getTopicsController().onTopicsDeletedServerSide(currentChat.id, threadId);
                 }
             } else {
-                int onlyHistory = getMessagesStorage().isEncryptedGroup(dialog_id) ? 2 : 1;
+                int onlyHistory = getMessagesController().isEncryptedGroup(dialog_id) ? 2 : 1;
                 getMessagesController().deleteDialog(dialog_id, onlyHistory, revoke);
                 getMessagesStorage().removeAllTopics(dialog_id);
                 getMessagesController().getTopicsController().reloadTopics(-dialog_id);
@@ -44700,7 +44700,7 @@ public class ChatActivity extends BaseFragment implements
             }
         } else {
             boolean isEncryptedChatFromEncryptedGroup = enc_id != 0 &&
-                    getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(enc_id) != null;
+                    getMessagesController().getEncryptedGroupIdByInnerEncryptedChatId(enc_id) != null;
             if (!org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false) && isEncryptedChatFromEncryptedGroup) {
                 return false;
             }

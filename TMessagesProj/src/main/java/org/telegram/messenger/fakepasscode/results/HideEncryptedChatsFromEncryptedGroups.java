@@ -1,7 +1,7 @@
 package org.telegram.messenger.fakepasscode.results;
 
 import org.telegram.messenger.DialogObject;
-import org.telegram.messenger.MessagesStorage;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.fakepasscode.ChatFilter;
 
 public class HideEncryptedChatsFromEncryptedGroups implements ChatFilter {
@@ -23,7 +23,7 @@ public class HideEncryptedChatsFromEncryptedGroups implements ChatFilter {
         }
         if (DialogObject.isEncryptedDialog(chatId)) {
             int encryptedChatId = DialogObject.getEncryptedChatId(chatId);
-            if (getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId) != null) {
+            if (getMessagesController().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId) != null) {
                 return true;
             }
         }
@@ -35,7 +35,7 @@ public class HideEncryptedChatsFromEncryptedGroups implements ChatFilter {
         return false;
     }
 
-    private MessagesStorage getMessagesStorage() {
-        return MessagesStorage.getInstance(account);
+    private MessagesController getMessagesController() {
+        return MessagesController.getInstance(account);
     }
 }

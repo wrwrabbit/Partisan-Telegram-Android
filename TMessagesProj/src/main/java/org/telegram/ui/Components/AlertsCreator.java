@@ -7944,7 +7944,7 @@ public class AlertsCreator {
                 }
             };
 
-            Integer encryptedGroupId = MessagesStorage.getInstance(UserConfig.selectedAccount)
+            Integer encryptedGroupId = MessagesController.getInstance(UserConfig.selectedAccount)
                     .getEncryptedGroupIdByInnerEncryptedChatId(encryptedChat.id);
             if (encryptedGroupId != null) {
                 // apply ttl for every inner chat in the encrypted group

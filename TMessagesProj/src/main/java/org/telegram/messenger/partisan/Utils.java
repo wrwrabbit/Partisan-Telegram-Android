@@ -36,7 +36,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
@@ -596,10 +595,9 @@ public class Utils {
         if (!account.isPresent() || TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false)) {
             return filteredDialogsByPasscode;
         }
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());
-        Set<Integer> innerChatIdsFromEncryptedGroups = messagesStorage.getAllInnerChatIdsFromEncryptedGroups();
+        MessagesController messagesController = MessagesController.getInstance(account.get());
         List<TLRPC.Dialog> filteredDialogs = filteredDialogsByPasscode.stream()
-                .filter(d -> !DialogObject.isEncryptedDialog(d.id) || !innerChatIdsFromEncryptedGroups.contains(DialogObject.getEncryptedChatId(d.id)))
+                .filter(d -> !DialogObject.isEncryptedDialog(d.id) || messagesController.getEncryptedGroupIdByInnerEncryptedChatId(DialogObject.getEncryptedChatId(d.id)) == null)
                 .collect(Collectors.toList());
         if (filteredDialogsByPasscode.size() == filteredDialogs.size()) {
             return filteredDialogsByPasscode;

@@ -18,15 +18,19 @@ public class EncryptedGroupChatUpdateHandler implements AccountControllersProvid
     }
 
     public void processEncryptedChatUpdate(TLRPC.EncryptedChat encryptedChat) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(encryptedChat);
-        if (encryptedGroup == null) {
-            return;
-        }
-        if (encryptedChat instanceof TLRPC.TL_encryptedChat) {
-            handleEncryptedChatCreated(encryptedGroup, encryptedChat);
-        } else if (encryptedChat instanceof TLRPC.TL_encryptedChatDiscarded) {
-            handleEncryptedChatDiscarded(encryptedGroup, encryptedChat);
-        }
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(encryptedChat);
+            if (encryptedGroup == null) {
+                return;
+            }
+            AndroidUtilities.runOnUIThread(() -> {
+                if (encryptedChat instanceof TLRPC.TL_encryptedChat) {
+                    handleEncryptedChatCreated(encryptedGroup, encryptedChat);
+                } else if (encryptedChat instanceof TLRPC.TL_encryptedChatDiscarded) {
+                    handleEncryptedChatDiscarded(encryptedGroup, encryptedChat);
+                }
+            });
+        });
     }
 
     private void handleEncryptedChatCreated(EncryptedGroup encryptedGroup, TLRPC.EncryptedChat encryptedChat) {

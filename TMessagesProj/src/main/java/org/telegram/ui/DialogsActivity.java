@@ -9544,7 +9544,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                 hasDialogsToRevoke = true;
                                 dialogsIdsPossibleToRevoke.add(selectedDialog);
                             }
-                        } else if (getMessagesStorage().isEncryptedGroup(selectedDialog)) {
+                        } else if (getMessagesController().isEncryptedGroup(selectedDialog)) {
                             hasDialogsToRevoke = true;
                             dialogsIdsPossibleToRevoke.add(selectedDialog);
                         }
@@ -9882,7 +9882,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private void performDeleteOrClearDialogAction(int action, long selectedDialog, TLRPC.Chat chat, boolean isBot, boolean revoke) {
         if (action == clear) {
-            int onlyHistory = getMessagesStorage().isEncryptedGroup(selectedDialog) ? 2 : 1;
+            int onlyHistory = getMessagesController().isEncryptedGroup(selectedDialog) ? 2 : 1;
             getMessagesController().deleteDialog(selectedDialog, onlyHistory, revoke);
         } else {
             if (chat != null) {

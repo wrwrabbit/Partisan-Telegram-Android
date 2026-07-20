@@ -92,6 +92,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.function.Consumer;
 
 import me.vkryl.core.BitwiseUtils;
@@ -4566,6 +4567,7 @@ public class MessagesStorage extends BaseController {
                         cursor2.dispose();
                         cursor2 = null;
 
+                        getEncryptedGroupUtils().cacheEncryptedGroupBlockingIfNeeded(did);
                         if (getEncryptedGroupUtils().isInnerEncryptedGroupChat(did)){
                             database.executeFast("DELETE FROM messages_v2 WHERE uid = " + did).stepThis().dispose();
                             if (did == getUserConfig().getClientUserId()) {
@@ -9911,6 +9913,7 @@ public class MessagesStorage extends BaseController {
                 }
             }
             if (!replyMessageRandomOwners.isEmpty()) {
+                getEncryptedGroupUtils().cacheEncryptedGroupBlockingIfNeeded(dialogId);
                 boolean isEncryptedGroupInnerChat = getEncryptedGroupUtils().isInnerEncryptedGroupChat(dialogId);
                 if (isEncryptedGroupInnerChat) {
                     cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id, r.uid FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
@@ -11401,21 +11404,7 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public boolean isEncryptedGroup(long dialogId) {
-        if (!DialogObject.isEncryptedDialog(dialogId)) {
-            return false;
-        }
-        String sql = "SELECT EXISTS(SELECT 1 FROM enc_groups WHERE encrypted_group_id=? LIMIT 1)";
-        Object[] args = {DialogObject.getEncryptedChatId(dialogId)};
-        return partisanSelect(sql, args, cursor -> {
-            if (cursor.next()) {
-                return cursor.intValue(0) == 1;
-            }
-            return false;
-        });
-    }
-
-    public Integer getEncryptedGroupIdByInnerEncryptedChatId(int encryptedChatId) {
+    public Integer loadEncryptedGroupIdByInnerEncryptedChatId(int encryptedChatId) {
         String sql = "SELECT encrypted_group_id FROM enc_group_inner_chats WHERE encrypted_chat_id=?";
         Object[] args = {encryptedChatId};
         return partisanSelect(sql, args, cursor -> {
@@ -11426,19 +11415,11 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public Set<Integer> getAllInnerChatIdsFromEncryptedGroups() {
-        return partisanSelect("SELECT DISTINCT encrypted_chat_id FROM enc_group_inner_chats", cursor -> {
-            Set<Integer> encryptedChatIds = new HashSet<>();
-            while (cursor.next()) {
-                int id = cursor.intValue(0);
-                encryptedChatIds.add(id);
-            }
-            return encryptedChatIds;
-        });
-    }
-
     public void deleteEncryptedGroupPreview(long innerDialogId) {
         Set<Integer> messageIds = getPreviewMessageIds(innerDialogId);
+        if (messageIds == null) {
+            return;
+        }
         for (int messageId : messageIds) {
             deleteEncryptedGroupPreviewMessageById(innerDialogId, messageId);
         }
@@ -11477,6 +11458,10 @@ public class MessagesStorage extends BaseController {
     }
 
     private void partisanExecute(String sql, SQLitePreparedStatementConsumer action) {
+        if (database == null) {
+            PartisanLog.handleException(new IllegalStateException("partisanExecute called with a null database: " + sql));
+            return;
+        }
         SQLitePreparedStatement state = null;
         try {
             state = database.executeFast(sql);
@@ -11500,6 +11485,10 @@ public class MessagesStorage extends BaseController {
     }
 
     private <T> T partisanSelect(String sql, Object[] args, SQLiteCursorConsumer<T> action) {
+        if (database == null) {
+            PartisanLog.handleException(new IllegalStateException("partisanSelect called with a null database: " + sql));
+            return null;
+        }
         SQLiteCursor cursor = null;
         T result = null;
         try {
@@ -17079,6 +17068,7 @@ public class MessagesStorage extends BaseController {
                 usersToLoad.add(getUserConfig().getClientUserId());
                 ArrayList<Long> chatsToLoad = new ArrayList<>();
                 ArrayList<Integer> encryptedToLoad = new ArrayList<>();
+                ArrayList<Integer> encryptedGroupsToLoad = new ArrayList<>();
                 ArrayList<Long> loadedDialogs = new ArrayList<>();
                 ArrayList<Long> emojiToLoad = new ArrayList<>();
                 LongSparseArray<SparseArray<ArrayList<TLRPC.Message>>> replyMessageOwners = new LongSparseArray<>();
@@ -17216,6 +17206,10 @@ public class MessagesStorage extends BaseController {
                             int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
                             if (!encryptedToLoad.contains(encryptedChatId)) {
                                 encryptedToLoad.add(encryptedChatId);
+                            }
+                            EncryptedGroup dialogEncryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChatDialogId(dialogId);
+                            if (dialogEncryptedGroup != null && !encryptedGroupsToLoad.contains(dialogEncryptedGroup.getInternalId())) {
+                                encryptedGroupsToLoad.add(dialogEncryptedGroup.getInternalId());
                             }
                         } else if (DialogObject.isUserDialog(dialogId)) {
                             if (!usersToLoad.contains(dialogId)) {
@@ -17357,8 +17351,13 @@ public class MessagesStorage extends BaseController {
                 if (!encryptedToLoad.isEmpty()) {
                     getEncryptedChatsInternal(TextUtils.join(",", encryptedToLoad), encryptedChats, usersToLoad);
 
-                    String encryptedGroupsCondition = String.format(Locale.US, "WHERE encrypted_group_id IN(%s)", TextUtils.join(",", encryptedToLoad));
-                    encryptedGroups.addAll(getEncryptedGroupsInternal(encryptedGroupsCondition, null));
+                    List<Integer> allEncryptedGroupsToLoad = Stream.concat(encryptedToLoad.stream(), encryptedGroupsToLoad.stream())
+                            .distinct()
+                            .collect(Collectors.toList());
+                    if (!allEncryptedGroupsToLoad.isEmpty()) {
+                        encryptedGroups.addAll(getEncryptedGroupsInternal(
+                                String.format(Locale.US, "WHERE encrypted_group_id IN(%s)", TextUtils.join(",", allEncryptedGroupsToLoad)), null));
+                    }
                 }
                 if (!chatsToLoad.isEmpty()) {
                     getChatsInternal(TextUtils.join(",", chatsToLoad), dialogs.chats);

@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -91,11 +92,26 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
     }
 
     public void getEncryptedGroupIdByInnerEncryptedDialogIdAndExecute(long dialogId, Consumer<Integer> action) {
-        if (DialogObject.isEncryptedDialog(dialogId)) {
-            Integer encryptedGroupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(DialogObject.getEncryptedChatId(dialogId));
-            if (encryptedGroupId != null) {
-                action.accept(encryptedGroupId);
-            }
+        if (!DialogObject.isEncryptedDialog(dialogId)) {
+            return;
+        }
+        int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
+        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroupByInnerEncryptedChatId(encryptedChatId);
+        boolean isStorageThread = Thread.currentThread() == getMessagesStorage().getStorageQueue();
+        if (encryptedGroup == null && isStorageThread) {
+            encryptedGroup = loadEncryptedGroupFromDb(encryptedChatId);
+            getMessagesController().putEncryptedGroup(encryptedGroup, true);
+        }
+        if (encryptedGroup != null) {
+            action.accept(encryptedGroup.getInternalId());
+        } else if (!isStorageThread) {
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                EncryptedGroup loadedGroup = loadEncryptedGroupFromDb(encryptedChatId);
+                getMessagesController().putEncryptedGroup(loadedGroup, true);
+                if (loadedGroup != null) {
+                    AndroidUtilities.runOnUIThread(() -> action.accept(loadedGroup.getInternalId()));
+                }
+            });
         }
     }
 
@@ -135,7 +151,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
     }
 
     public void updateEncryptedGroupLastMessage(int encryptedGroupId) {
-        if (isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(encryptedGroupId))) {
+        if (isNotInitializedEncryptedGroup(encryptedGroupId)) {
             return;
         }
         EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(encryptedGroupId);
@@ -283,7 +299,10 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
     }
 
     public EncryptedGroup getOrLoadEncryptedGroupByEncryptedChatId(int encryptedChatId) {
-        Integer groupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
+        EncryptedGroup cachedEncryptedGroup = getMessagesController().getEncryptedGroupByInnerEncryptedChatId(encryptedChatId);
+        Integer groupId = cachedEncryptedGroup != null
+                ? cachedEncryptedGroup.getInternalId()
+                : getMessagesStorage().loadEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
         if (groupId == null) {
             return null;
         }
@@ -297,16 +316,48 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         return getOrLoadEncryptedGroupByEncryptedChatId(DialogObject.getEncryptedChatId(encryptedChatDialogId));
     }
 
-    public boolean isNotInitializedEncryptedGroup(long dialogId) {
-        if (!DialogObject.isEncryptedDialog(dialogId)) {
-            return false;
+    public void cacheEncryptedGroupBlockingIfNeeded(long dialogId) {
+        if (DialogObject.isEncryptedDialog(dialogId)) {
+            cacheEncryptedGroupBlockingIfNeeded(DialogObject.getEncryptedChatId(dialogId));
         }
-        int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
-        Integer encryptedGroupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
-        if (encryptedGroupId == null) {
-            return false;
+    }
+
+    public void cacheEncryptedGroupBlockingIfNeeded(int groupIdOrInnerChatId) {
+        if (getMessagesController().getEncryptedGroup(groupIdOrInnerChatId) != null
+                || getMessagesController().getEncryptedGroupByInnerEncryptedChatId(groupIdOrInnerChatId) != null) {
+            return;
         }
-        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(encryptedGroupId);
+        EncryptedGroup encryptedGroup = Thread.currentThread() == getMessagesStorage().getStorageQueue()
+                ? loadEncryptedGroupFromDb(groupIdOrInnerChatId)
+                : loadEncryptedGroupFromDbOnStorageQueueBlocking(groupIdOrInnerChatId);
+        getMessagesController().putEncryptedGroup(encryptedGroup, true);
+    }
+
+    private EncryptedGroup loadEncryptedGroupFromDb(int groupIdOrInnerChatId) {
+        EncryptedGroup encryptedGroup = getOrLoadEncryptedGroup(groupIdOrInnerChatId);
+        if (encryptedGroup == null) {
+            encryptedGroup = getOrLoadEncryptedGroupByEncryptedChatId(groupIdOrInnerChatId);
+        }
+        return encryptedGroup;
+    }
+
+    private EncryptedGroup loadEncryptedGroupFromDbOnStorageQueueBlocking(int groupIdOrInnerChatId) {
+        EncryptedGroup[] loadedGroup = new EncryptedGroup[1];
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            loadedGroup[0] = loadEncryptedGroupFromDb(groupIdOrInnerChatId);
+            countDownLatch.countDown();
+        });
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            PartisanLog.e("cacheEncryptedGroupBlockingIfNeeded interrupted", e);
+        }
+        return loadedGroup[0];
+    }
+
+    public boolean isNotInitializedEncryptedGroup(int encryptedGroupId) {
+        EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroup(encryptedGroupId);
         return encryptedGroup == null || encryptedGroup.isNotInState(EncryptedGroupState.INITIALIZED);
     }
 
@@ -355,7 +406,7 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
     }
 
     public boolean isInnerEncryptedGroupChat(int encryptedChatId) {
-        return getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId) != null;
+        return getMessagesController().getEncryptedGroupByInnerEncryptedChatId(encryptedChatId) != null;
     }
 
     public boolean putEncIdOrEncGroupIdInBundleIfPossible(Bundle bundle, long dialogId) {

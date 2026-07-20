@@ -3112,11 +3112,12 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
             } else if (push_enc_id != 0) {
                 Bundle args = new Bundle();
+                new EncryptedGroupUtils(currentAccount).cacheEncryptedGroupBlockingIfNeeded(push_enc_id);
                 if (!new EncryptedGroupUtils(currentAccount).putEncIdOrEncGroupIdInBundleIfPossible(args, DialogObject.makeEncryptedDialogId(push_enc_id))) {
                     return true;
                 }
-                if (new EncryptedGroupUtils(currentAccount).isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(push_enc_id))) {
-                    EncryptedGroup encryptedGroup = new EncryptedGroupUtils(currentAccount).getOrLoadEncryptedGroupByEncryptedChatId(push_enc_id);
+                EncryptedGroup encryptedGroup = MessagesController.getInstance(currentAccount).getEncryptedGroupByInnerEncryptedChatId(push_enc_id);
+                if (encryptedGroup != null && new EncryptedGroupUtils(currentAccount).isNotInitializedEncryptedGroup(encryptedGroup.getInternalId())) {
                     new EncryptedGroupUtils(currentAccount).showSecretGroupJoinDialog(encryptedGroup, getLastFragment(), () -> {
                         Bundle args2 = new Bundle();
                         args2.putInt("enc_group_id", encryptedGroup.getInternalId());

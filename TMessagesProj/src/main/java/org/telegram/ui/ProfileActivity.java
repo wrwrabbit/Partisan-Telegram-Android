@@ -7051,7 +7051,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return;
             }
             Bundle args = new Bundle();
-                EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChat(currentEncryptedChat);
+                EncryptedGroup encryptedGroup = getMessagesController().getEncryptedGroupByEncryptedChat(currentEncryptedChat);
                 if (encryptedGroup != null && !org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false)) {
                     args.putInt("enc_group_id", encryptedGroup.getInternalId());
                 } else {
@@ -16264,7 +16264,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (dialog_id != 0 && FakePasscodeUtils.isHideChat(dialog_id, currentAccount)) {
             if (!FakePasscodeUtils.isFakePasscodeActivated() && DialogObject.isEncryptedDialog(dialog_id)) {
                 int encryptedChatId = DialogObject.getEncryptedChatId(dialog_id);
-                Integer groupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
+                Integer groupId = getMessagesController().getEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
                 if (groupId == null) {
                     return false;
                 }
