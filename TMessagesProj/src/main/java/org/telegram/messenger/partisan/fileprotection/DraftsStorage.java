@@ -12,8 +12,8 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.AccountControllersProvider;
+import org.telegram.tgnet.NativeByteBuffer;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -179,12 +179,15 @@ public class DraftsStorage implements AccountControllersProvider {
 
         private void replaceRow(String key, String hexValue) {
             try {
+                byte[] data = Utilities.hexToBytes(hexValue);
+                NativeByteBuffer buffer = new NativeByteBuffer(data.length);
+                buffer.writeBytes(data);
                 SQLitePreparedStatement statement = getMessagesStorage().getDatabase().executeFast("REPLACE INTO drafts(key, data) VALUES(?, ?)");
                 statement.bindString(1, key);
-                statement.bindByteBuffer(2, ByteBuffer.wrap(Utilities.hexToBytes(hexValue)));
+                statement.bindByteBuffer(2, buffer);
                 statement.step();
                 statement.dispose();
-            } catch (SQLiteException e) {
+            } catch (Exception e) {
                 FileLog.e(e);
             }
         }

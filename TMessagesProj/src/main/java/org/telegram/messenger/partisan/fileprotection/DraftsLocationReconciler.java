@@ -7,8 +7,8 @@ import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.tgnet.NativeByteBuffer;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 public class DraftsLocationReconciler {
@@ -36,9 +36,12 @@ public class DraftsLocationReconciler {
             if (!(entry.getValue() instanceof String)) {
                 continue;
             }
+            byte[] data = Utilities.hexToBytes((String) entry.getValue());
+            NativeByteBuffer buffer = new NativeByteBuffer(data.length);
+            buffer.writeBytes(data);
             SQLitePreparedStatement statement = database.executeFast("REPLACE INTO drafts(key, data) VALUES(?, ?)");
             statement.bindString(1, entry.getKey());
-            statement.bindByteBuffer(2, ByteBuffer.wrap(Utilities.hexToBytes((String) entry.getValue())));
+            statement.bindByteBuffer(2, buffer);
             statement.step();
             statement.dispose();
         }
