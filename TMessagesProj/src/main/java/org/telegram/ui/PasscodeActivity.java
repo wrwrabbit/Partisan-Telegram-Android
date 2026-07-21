@@ -65,6 +65,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.MaskedMigrationIssue;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -435,7 +436,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     } else if (position == badPasscodeAttemptsRow) {
                         presentFragment(new BadPasscodeAttemptsActivity());
                     } else if (position == badPasscodePhotoFrontRow) {
-                        showPhotoWarning(() -> {
+                        Utils.showPhotoWarning(this, () -> {
                             Activity parentActivity = getParentActivity();
                             if (SharedConfig.takePhotoWithBadPasscodeFront || ContextCompat.checkSelfPermission(parentActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                                 SharedConfig.takePhotoWithBadPasscodeFront = !SharedConfig.takePhotoWithBadPasscodeFront;
@@ -450,7 +451,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                             }
                         });
                     } else if (position == badPasscodePhotoBackRow) {
-                        showPhotoWarning(() -> {
+                        Utils.showPhotoWarning(this, () -> {
                             Activity parentActivity = getParentActivity();
                             if (SharedConfig.takePhotoWithBadPasscodeBack || ContextCompat.checkSelfPermission(parentActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                                 SharedConfig.takePhotoWithBadPasscodeBack = !SharedConfig.takePhotoWithBadPasscodeBack;
@@ -1368,19 +1369,6 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                 outlinePasswordView.animateError(0f);
             }
         }, isPinCode() ? 150 : 1000));
-    }
-
-    private void showPhotoWarning(Runnable callback) {
-        if (SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack) {
-            callback.run();
-        } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarning));
-            builder.setTitle(LocaleController.getString(R.string.Warning));
-            builder.setPositiveButton(LocaleController.getString(R.string.OK), (d, v) -> callback.run());
-            AlertDialog alertDialog = builder.create();
-            showDialog(alertDialog);
-        }
     }
 
     private boolean needToShowPasswordToPinSwitchWarning() {

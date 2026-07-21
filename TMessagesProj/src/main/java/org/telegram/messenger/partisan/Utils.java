@@ -52,6 +52,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.CacheControlActivity;
 import org.telegram.ui.Cells.CheckBoxUserCell;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 import org.telegram.ui.web.BrowserHistory;
 import org.telegram.ui.web.WebBrowserSettings;
 import org.telegram.ui.web.WebMetadataCache;
@@ -796,5 +797,26 @@ public class Utils {
 
     public static boolean needShowSavedChannels() {
         return !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && org.telegram.messenger.SharedConfig.showSavedChannels;
+    }
+
+    public static void showPhotoWarning(BaseFragment fragment, Runnable callback) {
+        if (SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack) {
+            callback.run();
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
+            builder.setTitle(LocaleController.getString(R.string.Warning));
+            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarningAndroid12));
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            AlertDialog dialog = builder.create();
+            DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_POSITIVE, LocaleController.getString(R.string.Continue), 5,
+                    (d, v) -> callback.run());
+            fragment.showDialog(dialog);
+        } else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
+            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarning));
+            builder.setTitle(LocaleController.getString(R.string.Warning));
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), (d, v) -> callback.run());
+            fragment.showDialog(builder.create());
+        }
     }
 }

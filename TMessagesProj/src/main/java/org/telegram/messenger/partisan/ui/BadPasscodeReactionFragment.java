@@ -7,7 +7,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -18,6 +17,7 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
 import org.telegram.messenger.partisan.ui.items.ButtonItem;
 import org.telegram.messenger.partisan.ui.items.DescriptionItem;
@@ -26,7 +26,6 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BadPasscodeAttemptsActivity;
 import org.telegram.ui.Components.AlertsCreator;
-import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 
 public class BadPasscodeReactionFragment extends PartisanBaseFragment {
 
@@ -80,7 +79,7 @@ public class BadPasscodeReactionFragment extends PartisanBaseFragment {
             SharedConfig.saveConfig();
             afterPhotoToggle();
         } else {
-            showPhotoWarning(() -> {
+            Utils.showPhotoWarning(this, () -> {
                 Activity parentActivity = getParentActivity();
                 if (ContextCompat.checkSelfPermission(parentActivity, Manifest.permission.CAMERA)
                         == PackageManager.PERMISSION_GRANTED) {
@@ -103,27 +102,6 @@ public class BadPasscodeReactionFragment extends PartisanBaseFragment {
         if (listAdapter != null) {
             listAdapter.updateRows();
             listAdapter.notifyDataSetChanged();
-        }
-    }
-
-    private void showPhotoWarning(Runnable callback) {
-        if (SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack) {
-            callback.run();
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setTitle(LocaleController.getString(R.string.Warning));
-            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarningAndroid12));
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            AlertDialog dialog = builder.create();
-            DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_POSITIVE, LocaleController.getString(R.string.Continue), 5,
-                    (d, v) -> callback.run());
-            showDialog(dialog);
-        } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarning));
-            builder.setTitle(LocaleController.getString(R.string.Warning));
-            builder.setPositiveButton(LocaleController.getString(R.string.OK), (d, v) -> callback.run());
-            showDialog(builder.create());
         }
     }
 
