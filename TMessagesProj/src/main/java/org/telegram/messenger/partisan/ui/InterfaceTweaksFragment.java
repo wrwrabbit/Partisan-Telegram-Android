@@ -13,12 +13,8 @@ import org.telegram.messenger.partisan.ui.items.DescriptionItem;
 import org.telegram.messenger.partisan.ui.items.ToggleItem;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
-import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
+import org.telegram.messenger.partisan.verification.VerificationUtils;
 import org.telegram.ui.ActionBar.AlertDialog;
-import org.telegram.ui.Components.EditTextCaption;
-import org.telegram.ui.DialogBuilder.DialogTemplate;
-import org.telegram.ui.DialogBuilder.DialogType;
-import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
 
 import java.util.List;
 
@@ -75,30 +71,12 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                             SharedConfig.toggleAdditionalVerifiedBadges();
                             cell.setChecked(SharedConfig.additionalVerifiedBadges);
                         },
-                        cell -> {
-                            List<VerificationStorage> storages = VerificationRepository.getInstance().getStorages();
-                            if (storages.size() == 1) {
-                                VerificationStorage storage = storages.get(0);
-                                DialogTemplate template = new DialogTemplate();
-                                template.type = DialogType.ONLY_SAVE;
-                                template.title = getString(R.string.VerificationChannelUsername);
-                                template.addEditTemplate(storage.chatUsername, getString(R.string.VerificationChannelUsername), true);
-                                template.positiveListener = views -> {
-                                    String username = ((EditTextCaption) views.get(0)).getText().toString();
-                                    username = Utils.removeUsernamePrefixed(username);
-                                    VerificationRepository.getInstance().deleteStorage(storage.chatId);
-                                    VerificationRepository.getInstance().addStorage("Custom", username, -1);
-                                    VerificationUpdatesChecker.checkUpdate(currentAccount, true);
-                                    cell.setTextAndValueAndCheck(getString(R.string.AdditionalVerifiedSetting), username, SharedConfig.additionalVerifiedBadges, false);
-                                };
-                                template.negativeListener = (dlg, whichButton) -> {
+                        cell -> VerificationUtils.showEditVerificationChannelUsernameDialog(this,
+                                username -> cell.setTextAndValueAndCheck(getString(R.string.AdditionalVerifiedSetting), username, SharedConfig.additionalVerifiedBadges, false),
+                                () -> {
                                     SharedConfig.toggleAdditionalVerifiedBadges();
                                     cell.setChecked(SharedConfig.additionalVerifiedBadges);
-                                };
-                                AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
-                                showDialog(dialog);
-                            }
-                        }),
+                                })),
                 new DescriptionItem(this, getString(R.string.AdditionalVerifiedSettingInfo)),
                 new ToggleItem(this,
                         getString(R.string.ConfirmDangerousAction),

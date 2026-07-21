@@ -27,7 +27,7 @@ import org.telegram.messenger.partisan.ui.DangerousSettingSwitcher;
 import org.telegram.messenger.partisan.ui.PartisanTelegramSettingsLocationFragment;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
-import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
+import org.telegram.messenger.partisan.verification.VerificationUtils;
 import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
 import org.telegram.messenger.partisan.voicechange.VoiceChangeSettingsFragment;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -40,18 +40,12 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.AlertsCreator;
-import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
-import org.telegram.ui.DialogBuilder.DialogTemplate;
-import org.telegram.ui.DialogBuilder.DialogType;
-import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class PartisanSettingsActivity extends BaseFragment {
 
@@ -247,29 +241,12 @@ public class PartisanSettingsActivity extends BaseFragment {
             } else if (position == verifiedRow) {
                 NotificationsCheckCell verifiedCheckCell = (NotificationsCheckCell) view;
                 if (!verifiedCheckCell.isCheckboxClicked(x)) {
-                    List<VerificationStorage> storages = VerificationRepository.getInstance().getStorages();
-                    if (storages.size() == 1) {
-                        VerificationStorage storage = storages.get(0);
-                        DialogTemplate template = new DialogTemplate();
-                        template.type = DialogType.ONLY_SAVE;
-                        template.title = LocaleController.getString(R.string.VerificationChannelUsername);
-                        template.addEditTemplate(storage.chatUsername, LocaleController.getString(R.string.VerificationChannelUsername), true);
-                        template.positiveListener = views -> {
-                            String username = ((EditTextCaption)views.get(0)).getText().toString();
-                            username = Utils.removeUsernamePrefixed(username);
-                            VerificationRepository.getInstance().deleteStorage(storage.chatId);
-                            VerificationRepository.getInstance().addStorage("Custom", username, -1);
-                            VerificationUpdatesChecker.checkUpdate(currentAccount, true);
-                            boolean enabled = SharedConfig.additionalVerifiedBadges;
-                            verifiedCheckCell.setTextAndValueAndCheck(LocaleController.getString(R.string.AdditionalVerifiedSetting), username, enabled, false);
-                        };
-                        template.negativeListener = (dlg, whichButton) -> {
-                            SharedConfig.toggleAdditionalVerifiedBadges();
-                            verifiedCheckCell.setChecked(SharedConfig.additionalVerifiedBadges);
-                        };
-                        AlertDialog dialog = FakePasscodeDialogBuilder.build(getParentActivity(), template);
-                        showDialog(dialog);
-                    }
+                    VerificationUtils.showEditVerificationChannelUsernameDialog(this,
+                            username -> verifiedCheckCell.setTextAndValueAndCheck(LocaleController.getString(R.string.AdditionalVerifiedSetting), username, SharedConfig.additionalVerifiedBadges, false),
+                            () -> {
+                                SharedConfig.toggleAdditionalVerifiedBadges();
+                                verifiedCheckCell.setChecked(SharedConfig.additionalVerifiedBadges);
+                            });
                 } else {
                     SharedConfig.toggleAdditionalVerifiedBadges();
                     verifiedCheckCell.setChecked(SharedConfig.additionalVerifiedBadges);

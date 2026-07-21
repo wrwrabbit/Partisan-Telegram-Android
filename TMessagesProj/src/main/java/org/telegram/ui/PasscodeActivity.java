@@ -436,7 +436,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     } else if (position == badPasscodeAttemptsRow) {
                         presentFragment(new BadPasscodeAttemptsActivity());
                     } else if (position == badPasscodePhotoFrontRow) {
-                        Utils.showPhotoWarning(this, () -> {
+                        Utils.showBadPasscodePhotoWarning(this, () -> {
                             Activity parentActivity = getParentActivity();
                             if (SharedConfig.takePhotoWithBadPasscodeFront || ContextCompat.checkSelfPermission(parentActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                                 SharedConfig.takePhotoWithBadPasscodeFront = !SharedConfig.takePhotoWithBadPasscodeFront;
@@ -451,7 +451,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                             }
                         });
                     } else if (position == badPasscodePhotoBackRow) {
-                        Utils.showPhotoWarning(this, () -> {
+                        Utils.showBadPasscodePhotoWarning(this, () -> {
                             Activity parentActivity = getParentActivity();
                             if (SharedConfig.takePhotoWithBadPasscodeBack || ContextCompat.checkSelfPermission(parentActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                                 SharedConfig.takePhotoWithBadPasscodeBack = !SharedConfig.takePhotoWithBadPasscodeBack;
@@ -926,36 +926,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     }
                 });
             } else {
-                new AlertDialog.Builder(getParentActivity())
-                        .setTopAnimation(R.raw.permission_request_camera, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground))
-                        .setMessage(AndroidUtilities.replaceTags(LocaleController.getString(R.string.PermissionNoCameraWithHint)))
-                        .setPositiveButton(LocaleController.getString("PermissionOpenSettings", R.string.PermissionOpenSettings), (dialogInterface, i) -> {
-                            try {
-                                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                                intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
-                                getParentActivity().startActivity(intent);
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                        })
-                        .setNegativeButton(LocaleController.getString("ContactsPermissionAlertNotNow", R.string.ContactsPermissionAlertNotNow), null)
-                        .create()
-                        .show();
+                Utils.showBadPasscodePhotoCameraPermissionDeniedDialog(this);
             }
-        }
-
-        if (requestCode == 2000 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-        } else if (requestCode == 2001 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            AndroidUtilities.runOnUIThread(() -> {
-                SharedConfig.takePhotoWithBadPasscodeBack = !SharedConfig.takePhotoWithBadPasscodeBack;
-                SharedConfig.saveConfig();
-                backPhotoTextCell.setChecked(SharedConfig.takePhotoWithBadPasscodeBack);
-                updateRows();
-                if (listAdapter != null) {
-                    listAdapter.notifyDataSetChanged();
-                }
-            });
         }
     }
 

@@ -51,6 +51,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.CacheControlActivity;
 import org.telegram.ui.Cells.CheckBoxUserCell;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 import org.telegram.ui.web.BrowserHistory;
@@ -799,7 +800,7 @@ public class Utils {
         return !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && org.telegram.messenger.SharedConfig.showSavedChannels;
     }
 
-    public static void showPhotoWarning(BaseFragment fragment, Runnable callback) {
+    public static void showBadPasscodePhotoWarning(BaseFragment fragment, Runnable callback) {
         if (SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack) {
             callback.run();
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -818,5 +819,23 @@ public class Utils {
             builder.setPositiveButton(LocaleController.getString(R.string.OK), (d, v) -> callback.run());
             fragment.showDialog(builder.create());
         }
+    }
+
+    public static void showBadPasscodePhotoCameraPermissionDeniedDialog(BaseFragment fragment) {
+        new AlertDialog.Builder(fragment.getParentActivity())
+                .setTopAnimation(R.raw.permission_request_camera, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground))
+                .setMessage(AndroidUtilities.replaceTags(LocaleController.getString(R.string.PermissionNoCameraWithHint)))
+                .setPositiveButton(LocaleController.getString(R.string.PermissionOpenSettings), (dialogInterface, i) -> {
+                    try {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
+                        fragment.getParentActivity().startActivity(intent);
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
+                })
+                .setNegativeButton(LocaleController.getString(R.string.ContactsPermissionAlertNotNow), null)
+                .create()
+                .show();
     }
 }
