@@ -41,6 +41,7 @@ import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanDatabaseMigrationHelper;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.DraftsLocationReconciler;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionDatabaseCleaner;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionUtils;
@@ -416,6 +417,7 @@ public class MessagesStorage extends BaseController {
                 }
             }
             new PartisanDatabaseMigrationHelper(database).updateDb();
+            DraftsLocationReconciler.reconcileDraftsLocation(currentAccount, database);
             databaseCreated = true;
         } catch (Exception e) {
             FileLog.e(e);
@@ -526,6 +528,7 @@ public class MessagesStorage extends BaseController {
             "enc_chats",
             "enc_groups",
             "enc_group_inner_chats",
+            "drafts",
             "channel_users_v2",
             "channel_admins_v3",
             "contacts",
