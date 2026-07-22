@@ -207,7 +207,7 @@ public class MediaDataController extends BaseController {
             }
         }
         loadRepliesOfDraftReplies(replyMessageOwners);
-        getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
+        AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload));
     }
 
     private void loadInitialData() {
