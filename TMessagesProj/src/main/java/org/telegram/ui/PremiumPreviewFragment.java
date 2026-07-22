@@ -74,6 +74,7 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
@@ -234,6 +235,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
     public final static int FEATURE_GIFTS = 40;
     public final static int PREMIUM_FEATURE_SHARING_DISABLE = 41;
     public final static int PREMIUM_FEATURE_AI_EDITOR = 42;
+    public final static int PREMIUM_FEATURE_RICH_EDITOR = 43;
 
     private int statusBarHeight;
     private int firstViewHeight;
@@ -331,6 +333,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 return PREMIUM_FEATURE_SHARING_DISABLE;
             case "ai_compose":
                 return PREMIUM_FEATURE_AI_EDITOR;
+            case "rich_formatting":
+                return PREMIUM_FEATURE_RICH_EDITOR;
 
             case "business":
                 return PREMIUM_FEATURE_BUSINESS;
@@ -424,6 +428,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 return "pm_noforwards";
             case PREMIUM_FEATURE_AI_EDITOR:
                 return "ai_compose";
+            case PREMIUM_FEATURE_RICH_EDITOR:
+                return "rich_formatting";
 
             case PREMIUM_FEATURE_BUSINESS:
                 return "business";
@@ -515,7 +521,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
     @Override
     public View createView(Context context) {
         iBlur3Capture = (canvas, position) -> Blur3Utils.captureRelativeParent(listView, canvas, position, listView, contentView);
-        /**/
 
         hasOwnBackground = true;
         strokeShader = new LinearGradient(0, 0, 0, dp(28), new int[] { 0x4dffffff, 0, 0x1affffff }, new float[] { 0, 0.5f, 1 }, Shader.TileMode.CLAMP);
@@ -566,7 +571,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         shadowDrawable.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_dialogBackground), PorterDuff.Mode.MULTIPLY));
         shadowDrawable.getPadding(padding);
 
-        statusBarHeight = AndroidUtilities.isTablet() ? 0 : AndroidUtilities.statusBarHeight;
+        statusBarHeight = AndroidUtilities.statusBarHeight;
 
         contentView = new FrameLayout(context) {
 
@@ -611,12 +616,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
 
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                if (MeasureSpec.getSize(widthMeasureSpec) > MeasureSpec.getSize(heightMeasureSpec)) {
-                    isLandscapeMode = true;
-                } else {
-                    isLandscapeMode = false;
-                }
-                statusBarHeight = AndroidUtilities.isTablet() ? 0 : AndroidUtilities.statusBarHeight;
+                isLandscapeMode = MeasureSpec.getSize(widthMeasureSpec) > MeasureSpec.getSize(heightMeasureSpec);
+                statusBarHeight = AndroidUtilities.statusBarHeight;
                 backgroundView.measure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
                 particlesView.getLayoutParams().height = backgroundView.getMeasuredHeight();
                 if (buttonContainer != null) {
@@ -957,7 +958,11 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         fragmentView = contentView;
         actionBar.setBackground(null);
         actionBar.setCastShadows(false);
-        actionBar.setBackButtonImage(R.drawable.ic_ab_back);
+        if (parentLayout != null && parentLayout.isRightLayout()) {
+            actionBar.setBackButtonImage(R.drawable.ic_ab_close);
+        } else {
+            actionBar.setBackButtonImage(R.drawable.ic_ab_back);
+        }
         actionBar.setAddToContainer(false);
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
@@ -1021,10 +1026,11 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_TODO, R.drawable.msg_premium_icons, getString(R.string.PremiumPreviewTodo), getString(R.string.PremiumPreviewTodoDescription)));
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_SHARING_DISABLE, R.drawable.filled_sharing_off2_24, getString(R.string.PremiumPreviewSharingDisable), getString(R.string.PremiumPreviewSharingDisableDescription)));
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_AI_EDITOR, R.drawable.premium_ai_editor, getString(R.string.PremiumPreviewAIEditor), getString(R.string.PremiumPreviewAIEditorDescription)));
+        premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_RICH_EDITOR, R.drawable.premium_rich_editor, getString(R.string.PremiumPreviewRichEditor), getString(R.string.PremiumPreviewRichEditorDescription)));
 
         if (messagesController.premiumFeaturesTypesToPosition.size() > 0) {
             for (int i = 0; i < premiumFeatures.size(); i++) {
-                if (messagesController.premiumFeaturesTypesToPosition.get(premiumFeatures.get(i).type, -1) == -1 && !BuildVars.DEBUG_PRIVATE_VERSION) {
+                if (messagesController.premiumFeaturesTypesToPosition.get(premiumFeatures.get(i).type, -1) == -1 && !BuildVars.DEBUG_VERSION) {
                     premiumFeatures.remove(i);
                     i--;
                 }
@@ -2203,8 +2209,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         if (backgroundView == null || actionBar == null) {
             return;
         }
-        actionBar.setItemsColor(Theme.getColor(whiteBackground ? Theme.key_windowBackgroundWhiteBlackText : Theme.key_premiumGradientBackgroundOverlay), false);
         actionBar.setItemsColor(Theme.getColor(whiteBackground ? Theme.key_windowBackgroundWhiteBlackText : Theme.key_premiumGradientBackgroundOverlay), true);
+        actionBar.setItemsColor(Theme.getColor(whiteBackground ? Theme.key_windowBackgroundWhiteBlackText : Theme.key_premiumGradientBackgroundOverlay), false);
         actionBar.setItemsBackgroundColor(ColorUtils.setAlphaComponent(Theme.getColor(Theme.key_premiumGradientBackgroundOverlay), 60), false);
         particlesView.drawable.updateColors();
         if (backgroundView != null) {

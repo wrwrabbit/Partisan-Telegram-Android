@@ -39,7 +39,6 @@ public class AnimatedLinearLayout extends LinearLayout {
         return holder != null && holder.isVisible;
     }
 
-
     public void setPriority(View child, int priority) {
         final Holder holder = viewHolders.get(child);
         if (holder != null) {
@@ -124,8 +123,6 @@ public class AnimatedLinearLayout extends LinearLayout {
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
 
-        Log.i("LIST_DEBUG", "start list: ");
-
         visibleHolders.clear();
         for (int a = 0, N = getChildCount(); a < N; a++) {
             final View view = getChildAt(a);
@@ -137,7 +134,6 @@ public class AnimatedLinearLayout extends LinearLayout {
             holder.order = a;
             if (view.getVisibility() == VISIBLE && holder.isVisible) {
                 visibleHolders.add(holder);
-                Log.i("LIST_DEBUG", "show item: " + holder.tag + " " + a);
             }
         }
         Collections.sort(visibleHolders, comparator);

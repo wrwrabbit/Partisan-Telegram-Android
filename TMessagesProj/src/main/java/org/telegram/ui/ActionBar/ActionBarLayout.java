@@ -74,6 +74,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.utils.ViewOutlineProviderImpl;
 import org.telegram.ui.AllowShowingActivityInterface;
+import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.BackButtonMenu;
 import org.telegram.ui.EmptyBaseFragment;
@@ -309,7 +310,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                 if (!(child instanceof ActionBar)) {
                     if (child instanceof BaseFragment.AttachedSheetWindow) {
                         measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, getBottomTabsHeight(false) > 0 || !isSupportEdgeToEdge ? 0 : navigationBarInsetHeight);
-                    } else if (child.getTag(0xFF112233) != null || child.getFitsSystemWindows()) {
+                    } else if (child.getTag(R.id.sheet_attached_to_fragment_tag) != null || child.getFitsSystemWindows()) {
                         int addHeight = isSupportEdgeToEdge ? navigationBarInsetHeight : 0;
                         measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, addHeight);
                     } else {
@@ -336,7 +337,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                 View child = getChildAt(a);
                 if (!(child instanceof ActionBar)) {
                     FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) child.getLayoutParams();
-                    if (child.getTag(0xFF112233) != null || child.getFitsSystemWindows() || child instanceof BaseFragment.AttachedSheetWindow) {
+                    if (child.getTag(R.id.sheet_attached_to_fragment_tag) != null || child.getFitsSystemWindows() || child instanceof BaseFragment.AttachedSheetWindow) {
                         child.layout(
                             layoutParams.leftMargin,
                             layoutParams.topMargin,
@@ -633,6 +634,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
     protected Activity parentActivity;
     private final boolean main;
     private boolean isLayersLayout;
+    private boolean isRightLayout;
 
     private List<BaseFragment> fragmentsStack;
     private List<BackButtonMenu.PulledDialog> pulledDialogs;
@@ -662,6 +664,20 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
 
     public void setIsLayersLayout() {
         isLayersLayout = true;
+    }
+
+    public void setIsRightLayout() {
+        isRightLayout = true;
+    }
+
+    @Override
+    public boolean isRightLayout() {
+        return isRightLayout;
+    }
+
+    @Override
+    public boolean isLayersLayout() {
+        return isLayersLayout;
     }
 
     @Override
@@ -916,12 +932,6 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                     currFragment.setNavigationBarColor(ColorUtils.blendARGB(currNavigationBarColor, prevNavigationBarColor, ratio));
                 }
             }
-            if (currFragment != null && !currFragment.inPreviewMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !SharedConfig.noStatusBar) {
-                int overlayColor = Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE ? AndroidUtilities.LIGHT_STATUS_BAR_OVERLAY : AndroidUtilities.DARK_STATUS_BAR_OVERLAY;
-                int oldStatusBarColor = prevFragment != null && prevFragment.hasForceLightStatusBar() ? Color.TRANSPARENT : overlayColor;
-                int newStatusBarColor = currFragment != null && currFragment.hasForceLightStatusBar() ? Color.TRANSPARENT : overlayColor;
-                parentActivity.getWindow().setStatusBarColor(ColorUtils.blendARGB(newStatusBarColor, oldStatusBarColor, ratio));
-            }
         }
     }
 
@@ -1004,7 +1014,17 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
     @Override
     protected void dispatchDraw(Canvas canvas) {
         withShadow = true;
+        if (isLayersLayout) {
+            canvas.save();
+            final float r = dp(24);
+            AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());
+            clipPath.addRoundRect(AndroidUtilities.rectTmp, r, r, Path.Direction.CW);
+            canvas.clipPath(clipPath);
+        }
         super.dispatchDraw(canvas);
+        if (isLayersLayout) {
+            canvas.restore();
+        }
     }
 
     private final AnimatedFloat hasSheetsAnimator = new AnimatedFloat(this, 280, CubicBezierInterpolator.EASE_OUT_QUINT);
@@ -1071,6 +1091,14 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                     radii[2] = radii[3] = topRight == null ? 0 : topRight.getRadius();
                     radii[4] = radii[5] = bottomRight == null ? 0 : bottomRight.getRadius();
                     radii[6] = radii[7] = bottomLeft == null ? 0 : bottomLeft.getRadius();
+
+                    if (isRightLayout) {
+                        final float factor = Utilities.clamp01(Math.abs(translationX) / dpf2(12));
+                        radii[0] *= factor;
+                        radii[1] *= factor;
+                        radii[6] *= factor;
+                        radii[7] *= factor;
+                    }
 
                     clipPath.rewind();
                     clipPath.addRoundRect(AndroidUtilities.rectTmp, radii, Path.Direction.CW);
@@ -2065,7 +2093,35 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         containerView.setTranslationY(0);
 
         if (preview) {
-            fragmentView.setOutlineProvider(ViewOutlineProviderImpl.boundsWithPaddingRoundRect(0, dp(menu == null ? 24 : 12)));
+            if (fragment instanceof ChatActivity) {
+                if (menu != null) {
+                    fragmentView.setOutlineProvider(new ViewOutlineProvider() {
+                        private final Path path = new Path();
+
+                        @Override
+                        public void getOutline(View view, Outline outline) {
+                            final float rTop = dp(29);
+                            final float rBottom = dp(12);
+                            final float[] radii = new float[] {
+                                rTop, rTop, rTop, rTop,
+                                rBottom, rBottom, rBottom, rBottom
+                            };
+
+                            path.rewind();
+                            path.addRoundRect(0, 0, view.getWidth(), view.getHeight(), radii, Path.Direction.CW);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                outline.setPath(path);
+                            } else {
+                                outline.setConvexPath(path);
+                            }
+                        }
+                    });
+                } else {
+                    fragmentView.setOutlineProvider(ViewOutlineProviderImpl.boundsWithPaddingRoundRect(0, dp(29)));
+                }
+            } else {
+                fragmentView.setOutlineProvider(ViewOutlineProviderImpl.boundsWithPaddingRoundRect(0, dp(menu == null ? 24 : 12)));
+            }
             fragmentView.setClipToOutline(true);
             fragmentView.setElevation(dp(4));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -2110,6 +2166,8 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                 };
                 ArrayList<Animator> animators = new ArrayList<>();
                 animators.add(ObjectAnimator.ofFloat(this, View.ALPHA, 0.0f, 1.0f));
+                animators.add(ObjectAnimator.ofFloat(this, View.SCALE_X, 0.9f, 1.0f));
+                animators.add(ObjectAnimator.ofFloat(this, View.SCALE_Y, 0.9f, 1.0f));
                 if (backgroundView != null) {
                     backgroundView.setVisibility(VISIBLE);
                     animators.add(ObjectAnimator.ofFloat(backgroundView, View.ALPHA, 0.0f, 1.0f));
@@ -2120,7 +2178,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                 fragment.onTransitionAnimationStart(true, false);
                 currentAnimation = new AnimatorSet();
                 currentAnimation.playTogether(animators);
-                currentAnimation.setInterpolator(accelerateDecelerateInterpolator);
+                currentAnimation.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
                 currentAnimation.setDuration(200);
                 currentAnimation.addListener(new AnimatorListenerAdapter() {
                     @Override
@@ -2481,7 +2539,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         fragment.setInMenuMode(false);
 
         try {
-            AndroidUtilities.setLightStatusBar(parentActivity.getWindow(), Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE || (fragment.hasForceLightStatusBar() && !Theme.getCurrentTheme().isDark()), fragment.hasForceLightStatusBar());
+            AndroidUtilities.setLightStatusBar(parentActivity, Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE || (fragment.hasForceLightStatusBar() && !Theme.getCurrentTheme().isDark()));
         } catch (Exception ignore) {}
     }
 
@@ -2521,7 +2579,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         }
 
         if (previousFragment != null) {
-            AndroidUtilities.setLightStatusBar(parentActivity.getWindow(), Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE || (previousFragment.hasForceLightStatusBar() && !Theme.getCurrentTheme().isDark()), previousFragment.hasForceLightStatusBar());
+            AndroidUtilities.setLightStatusBar(parentActivity, Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE || (previousFragment.hasForceLightStatusBar() && !Theme.getCurrentTheme().isDark()));
             LayoutContainer temp = containerView;
             containerView = containerViewBack;
             containerViewBack = temp;
@@ -2660,6 +2718,8 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
 
                 ArrayList<Animator> animators = new ArrayList<>();
                 animators.add(ObjectAnimator.ofFloat(this, View.ALPHA, 1.0f, 0.0f));
+                animators.add(ObjectAnimator.ofFloat(this, View.SCALE_X, 1.0f, 0.9f));
+                animators.add(ObjectAnimator.ofFloat(this, View.SCALE_Y, 1.0f, 0.9f));
                 if (backgroundView != null) {
                     animators.add(ObjectAnimator.ofFloat(backgroundView, View.ALPHA, 1.0f, 0.0f));
                 }
@@ -3473,10 +3533,20 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
 
     private void dispatchApplyWindowInsetsInternal(View child, WindowInsetsCompat insets) {
         if (isLayersLayout) {
-            ViewCompat.dispatchApplyWindowInsets(child, WindowInsetsCompat.CONSUMED);
+            if (child instanceof LayoutContainer && ((LayoutContainer) child).isSupportEdgeToEdge) {
+                final int imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+                final View parent = getParent() instanceof View ? (View) getParent() : null;
+                final int bottomGap = parent != null ? Math.max(0, parent.getHeight() - getBottom()) : 0;
+                final int imeOverlap = Math.max(0, imeBottom - bottomGap);
+                final WindowInsetsCompat layersInsets = new WindowInsetsCompat.Builder(WindowInsetsCompat.CONSUMED)
+                    .setInsets(WindowInsetsCompat.Type.ime(), Insets.of(0, 0, 0, imeOverlap))
+                    .build();
+                ViewCompat.dispatchApplyWindowInsets(child, layersInsets);
+            } else {
+                ViewCompat.dispatchApplyWindowInsets(child, WindowInsetsCompat.CONSUMED);
+            }
             return;
         }
-
 
         final Insets systemInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
         final Insets systemWithImeInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars()

@@ -72,8 +72,10 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.poll.PollAttachedMedia;
+import org.telegram.ui.Components.poll.WebPageLoader;
 import org.telegram.ui.Components.poll.attached.PollAttachedMediaFile;
 import org.telegram.ui.Components.poll.attached.PollAttachedMediaGallery;
+import org.telegram.ui.Components.poll.attached.PollAttachedMediaLink;
 import org.telegram.ui.Components.poll.attached.PollAttachedMediaLocation;
 import org.telegram.ui.Components.poll.PollAttachedMediaPack;
 import org.telegram.ui.Components.poll.attached.PollAttachedMediaMusic;
@@ -89,6 +91,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import androidx.annotation.NonNull;
+import androidx.collection.LongSparseArray;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -118,6 +121,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
     private CharSequence questionString;
     private CharSequence descriptionString;
     private CharSequence solutionString;
+    private final WebPageLoader webPageLoader;
 
     private boolean allowRevoting = true;
     private boolean shuffleOptions = true;
@@ -131,7 +135,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
     private boolean multipleChoise = true;
     private boolean quizPoll;
     private boolean hintShowed;
-    private int quizOnly;
+    private boolean quizOnly;
     private boolean allowAdding = true;
     private boolean allowMarking = true;
 
@@ -273,7 +277,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         }
     };
 
-    public ChatAttachAlertPollLayout(ChatAttachAlert alert, Context context, boolean todo, Theme.ResourcesProvider resourcesProvider) {
+    public ChatAttachAlertPollLayout(ChatAttachAlert alert, Context context, boolean todo, Theme.ResourcesProvider resourcesProvider, Boolean quiz) {
         super(alert, context, resourcesProvider);
 
         this.todo = todo;
@@ -281,12 +285,14 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         answers = new CharSequence[maxAnswersCount];
         answersChecks = new boolean[maxAnswersCount];
 
-        updateRows();
         isPremium = AccountInstance.getInstance(parentAlert.currentAccount).getUserConfig().isPremium();
-        /*if (quiz != null) {
+        if (quiz != null) {
             quizPoll = quiz;
-            quizOnly = quizPoll ? 1 : 2;
-        }*/
+            quizOnly = quizPoll;
+            allowAddingOptions = !quizPoll;
+            allowRevoting = !quizPoll;
+        }
+        updateRows();
 
         checkboxPaint.setColor(getThemedColor(Theme.key_telegram_color));
         parentAlert.sizeNotifierFrameLayout.setDelegate(this);
@@ -309,6 +315,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         };
         iBlur3Capture = listView;
         iBlur3CaptureView = listView;
+        occupyStatusBar = true;
         occupyNavigationBar = true;
         listView.setItemAnimator(itemAnimator = new DefaultItemAnimator() {
             @Override
@@ -328,7 +335,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         listView.setClipToPadding(false);
         listView.setVerticalScrollBarEnabled(false);
         listView.setSections(true);
-        listView.setLayoutManager(layoutManager = new FillLastLinearLayoutManager(context, LinearLayoutManager.VERTICAL, false, AndroidUtilities.dp(53 + 12), listView) {
+        listView.setLayoutManager(layoutManager = new FillLastLinearLayoutManager(context, LinearLayoutManager.VERTICAL, false, AndroidUtilities.dp(53 + 12) + AndroidUtilities.statusBarHeight, listView) {
 
             @Override
             public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
@@ -340,7 +347,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                             dy += dp(160);
                         }
                         if (!smoothScrollToOption) {
-                            dy -= (topPadding - AndroidUtilities.dp(7));
+                            dy -= (topPadding - AndroidUtilities.statusBarHeight - AndroidUtilities.dp(7));
                         }
 
                         if (smoothScrollToOption && dy == 0) {
@@ -540,7 +547,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                 } else if (position == poll2vLimitDurationHideResultsRow) {
                     checked = hideResults = !hideResults;
                 } else if (position == poll2vQuizRow) {
-                    if (quizOnly != 0) {
+                    if (quizOnly) {
                         return;
                     }
                     listView.setItemAnimator(itemAnimator);
@@ -652,8 +659,11 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                     int top = parentAlert.scrollOffsetY[0] - backgroundPaddingTop - offset;
                     if (top + backgroundPaddingTop < ActionBar.getCurrentActionBarHeight()) {
                         RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(1);
-                        if (holder != null && holder.itemView.getTop() > AndroidUtilities.dp(53 + 12)) {
-                            listView.smoothScrollBy(0, holder.itemView.getTop() - AndroidUtilities.dp(53 + 12));
+                        if (holder != null) {
+                            final int dy = holder.itemView.getTop() - AndroidUtilities.statusBarHeight - AndroidUtilities.dp(53 + 12);
+                            if (dy > 0) {
+                                listView.smoothScrollBy(0, dy);
+                            }
                         }
                     }
 
@@ -672,6 +682,8 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
 
         MAX_CAPTION_LENGTH = MessagesController.getInstance(parentAlert.currentAccount).config.pollCaptionLengthMax.get();
 
+        webPageLoader = new WebPageLoader(parentAlert.currentAccount);
+        NotificationCenter.getInstance(parentAlert.currentAccount).addObserver(this, NotificationCenter.didReceivedWebpagesInUpdates);
         if (isPremium) {
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
             suggestEmojiPanel = new SuggestEmojiView(context, parentAlert.currentAccount, null, resourcesProvider) {
@@ -950,7 +962,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             return Integer.MAX_VALUE;
         }
         RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findContainingViewHolder(child);
-        int top = (int) child.getY() - AndroidUtilities.dp(8 + 12);
+        int top = (int) child.getY() - AndroidUtilities.statusBarHeight - AndroidUtilities.dp(8 + 12);
         int newOffset = top > 0 && holder != null && holder.getAdapterPosition() == 1 ? top : 0;
         if (top >= 0 && holder != null && holder.getAdapterPosition() == 1) {
             newOffset = top;
@@ -992,6 +1004,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             }
             parentAlert.setAllowNestedScroll(allowNesterScroll);
         }
+        padding += AndroidUtilities.statusBarHeight;
         ignoreLayout = true;
         if (topPadding != padding || listView.getPaddingBottom() != listPaddingBottom) {
             topPadding = padding;
@@ -1022,7 +1035,19 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.emojiLoaded) {
+        if (id == NotificationCenter.didReceivedWebpagesInUpdates) {
+            LongSparseArray<TLRPC.WebPage> hashMap = (LongSparseArray<TLRPC.WebPage>) args[0];
+            webPageLoader.apply(hashMap);
+
+            for (int a = 0, N = attachedMedia.medias.size(); a < N; a++) {
+                PollAttachedMedia media = attachedMedia.medias.get(a);
+                if (media instanceof PollAttachedMediaLink) {
+                    checkPollLinkMedia((PollAttachedMediaLink) media, true);
+                }
+            }
+
+
+        } else if (id == NotificationCenter.emojiLoaded) {
             if (emojiView != null) {
                 emojiView.invalidateViews();
             }
@@ -1192,9 +1217,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             } else {
                 anonymousPoll = true;
             }
-            if (quizOnly != 1) {
-                poll2vMultipleRow = rowCount++;
-            }
+            poll2vMultipleRow = rowCount++;
             if (!isChannel) {
                 poll2vAllowAddingRow = rowCount++;
             } else {
@@ -1202,9 +1225,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             }
             poll2vAllowRevotingRow = rowCount++;
             poll2vShuffleRow = rowCount++;
-            if (quizOnly == 0) {
-                poll2vQuizRow = rowCount++;
-            }
+            poll2vQuizRow = rowCount++;
             if (isChannel) {
                 poll2vSubscribersOnlyRow.row = rowCount++;
                 poll2vLimitByCountryRow.row = rowCount++;
@@ -1236,7 +1257,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         } catch (Exception ignore) {}
         if (todo) {
             parentAlert.actionBar.setTitle(getString(R.string.TodoTitle));
-        } else if (quizOnly == 1) {
+        } else if (quizOnly) {
             parentAlert.actionBar.setTitle(getString(R.string.NewQuiz));
         } else {
             parentAlert.actionBar.setTitle(getString(R.string.NewPoll));
@@ -1249,6 +1270,8 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
     public void onDestroy() {
         super.onDestroy();
         destroyed = true;
+
+        NotificationCenter.getInstance(parentAlert.currentAccount).removeObserver(this, NotificationCenter.didReceivedWebpagesInUpdates);
         if (isPremium) {
             NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
             if (emojiView != null) {
@@ -1931,7 +1954,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                     } else {
                         cell.getTextView().setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
                         if (position == answerHeaderRow) {
-                            if (quizOnly == 1) {
+                            if (quizOnly) {
                                 cell.setText(getString(R.string.QuizAnswers));
                             } else {
                                 cell.setText(getString(todo ? R.string.TodoItemsTitle : R.string.AnswerOptions2));
@@ -2063,7 +2086,9 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                         cell.setDivider(pollLimitDuration != 0 || pollLimitDeadline != 0);
                     }
 
-                    if (position == poll2vAllowAddingRow) {
+                    if (position == poll2vQuizRow) {
+                        cell.getCheckBox().setIconVisible(quizOnly, false);
+                    } else if (position == poll2vAllowAddingRow) {
                         cell.getCheckBox().setIconVisible(quizPoll || anonymousPoll, false);
                     } else {
                         cell.getCheckBox().setIconVisible(false, false);
@@ -2142,7 +2167,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
             return position == addAnswerRow
-                || quizOnly == 0 && position == poll2vQuizRow
+                || position == poll2vQuizRow
                 || position == poll2vAnonymousRow || position == poll2vMultipleRow
                 || position == poll2vAllowAddingRow || position == poll2vLimitDurationRow
                 || position == poll2vAllowRevotingRow || position == poll2vShuffleRow
@@ -2794,6 +2819,10 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         } else if (pollAttachedMedia instanceof PollAttachedMediaLocation) {
             PollAttachedMediaLocation location = (PollAttachedMediaLocation) pollAttachedMedia;
             showOptionsForDrawable(index, location::createMessagePreviewDrawable, dp(300), dp(300) * 9 / 16);
+        } else if (pollAttachedMedia instanceof PollAttachedMediaLink) {
+            String currentUrl = ((PollAttachedMediaLink) pollAttachedMedia).url;
+            AlertsCreator.showAddLinkToPoll(getContext(), resourcesProvider, currentUrl, ((PollAttachedMediaLink) pollAttachedMedia).getWebPage(), url ->
+                setAttachedMedia(index, new PollAttachedMediaLink(url)), () -> setAttachedMedia(index, null));
         } else {
             openAttachMenuForOptions(index);
         }
@@ -2842,7 +2871,11 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         chatAttachAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
             @Override
             public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument, long payStars) {
-                if (button == 7 || button == 8) {
+                if (button == ChatAttachAlert.LAYOUT_TYPE_LINK) {
+                    AlertsCreator.showAddLinkToPoll(fragment.getContext(), fragment.getResourceProvider(), null, null, url -> {
+                        callback.run(new PollAttachedMediaLink(url));
+                    }, null);
+                } else if (button == 7 || button == 8) {
                     HashMap<Object, Object> photos = chatAttachAlert.getPhotoLayout().getSelectedPhotos();
                     ArrayList<Object> order = chatAttachAlert.getPhotoLayout().getSelectedPhotosOrder();
                     for (int a = 0; a < order.size(); a++) {
@@ -2940,7 +2973,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         }
 
         chatAttachAlert.setMaxSelectedPhotos(1, true);
-        chatAttachAlert.enablePollAttachMode(layoutToShow, allowedLayouts);
+        chatAttachAlert.enablePollAttachMode(allowedLayouts);
         chatAttachAlert.setLocationActivityDelegate((location, live, notify, scheduleDate, payStars) -> {
             callback.run(new PollAttachedMediaLocation(location));
         });
@@ -3044,17 +3077,14 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             }
         } else if (attachedMedia instanceof PollAttachedMediaLocation) {
             return ChatAttachAlert.LAYOUT_TYPE_LOCATION;
+        } else if (attachedMedia instanceof PollAttachedMediaLink) {
+            return ChatAttachAlert.LAYOUT_TYPE_LINK;
         }
         return ChatAttachAlert.LAYOUT_TYPE_PHOTO;
     }
 
     public static int getAllowedLayoutsForIndex(int index) {
-        if (index == PollAttachedMediaPack.INDEX_DESCRIPTION) {
-            return (1 << ChatAttachAlert.LAYOUT_TYPE_PHOTO)
-                | (1 << ChatAttachAlert.LAYOUT_TYPE_DOCUMENTS)
-                | (1 << ChatAttachAlert.LAYOUT_TYPE_MUSIC)
-                | (1 << ChatAttachAlert.LAYOUT_TYPE_LOCATION);
-        } else if (index == PollAttachedMediaPack.INDEX_EXPLANATION) {
+        if (index == PollAttachedMediaPack.INDEX_DESCRIPTION || index == PollAttachedMediaPack.INDEX_EXPLANATION) {
             return (1 << ChatAttachAlert.LAYOUT_TYPE_PHOTO)
                 | (1 << ChatAttachAlert.LAYOUT_TYPE_DOCUMENTS)
                 | (1 << ChatAttachAlert.LAYOUT_TYPE_MUSIC)
@@ -3063,10 +3093,16 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             return (1 << ChatAttachAlert.LAYOUT_TYPE_PHOTO)
                 | (1 << ChatAttachAlert.LAYOUT_TYPE_STICKERS)
                 // | (1 << ChatAttachAlert.LAYOUT_TYPE_EMOJI)
+                | (1 << ChatAttachAlert.LAYOUT_TYPE_LINK)
                 | (1 << ChatAttachAlert.LAYOUT_TYPE_LOCATION);
         }
     }
 
+    private void checkPollLinkMedia(PollAttachedMediaLink attachedMediaLink, boolean animated) {
+        final boolean progress = webPageLoader.isLoading(attachedMediaLink.url);
+        final TLRPC.WebPage page = webPageLoader.getWebPage(attachedMediaLink.url);
+        attachedMediaLink.setWebPage(page, progress, animated);
+    }
 
 
     /* * */
@@ -3103,6 +3139,12 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             }
         }
 
+        if (media instanceof PollAttachedMediaLink) {
+            webPageLoader.get(((PollAttachedMediaLink) media).url, (res, err) -> {
+                checkPollLinkMedia((PollAttachedMediaLink) media, true);
+            });
+            checkPollLinkMedia((PollAttachedMediaLink) media, false);
+        }
         checkDoneButton();
     }
 

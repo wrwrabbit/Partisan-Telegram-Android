@@ -49,7 +49,6 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.graphics.Xfermode;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -161,7 +160,6 @@ import org.telegram.messenger.utils.DebugRecordingCanvas;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
@@ -248,8 +246,6 @@ import java.util.zip.GZIPOutputStream;
 import me.vkryl.core.BitwiseUtils;
 
 public class AndroidUtilities {
-    public final static int LIGHT_STATUS_BAR_OVERLAY = 0x0f000000, DARK_STATUS_BAR_OVERLAY = 0x33000000;
-
     public final static int REPLACING_TAG_TYPE_LINK = 0;
     public final static int REPLACING_TAG_TYPE_BOLD = 1;
     public final static int REPLACING_TAG_TYPE_LINKBOLD = 2;
@@ -2568,23 +2564,16 @@ public class AndroidUtilities {
             } else {
                 return new String[]{locale.replace('_', '-')};
             }
-        } catch (Exception ignore) {
-
-        }
+        } catch (Exception ignore) {}
         return new String[]{"en"};
     }
 
     public static void hideKeyboard(View view) {
-        if (view == null) {
-            return;
-        }
+        if (view == null) return;
         try {
-            InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (!imm.isActive()) {
-                return;
-            }
+            final InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (!imm.isActive()) return;
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-
         } catch (Exception e) {
             FileLog.e(e);
         }
@@ -2987,6 +2976,13 @@ public class AndroidUtilities {
 
     public static boolean isTablet() {
         return isTabletInternal() && !SharedConfig.forceDisableTabletMode;
+    }
+
+    public static boolean isFold() {
+        return (
+            ApplicationLoader.applicationContext != null &&
+            ApplicationLoader.applicationContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HINGE_ANGLE)
+        );
     }
 
     public static boolean isSmallScreen() {
@@ -3607,6 +3603,19 @@ public class AndroidUtilities {
 
     public static boolean shouldShowClipboardToast() {
         return (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !OneUIUtilities.hasBuiltInClipboardToasts()) && Build.VERSION.SDK_INT < 32;
+    }
+
+    public static boolean addToClipboard(CharSequence plain, String html) {
+        if (html == null) return addToClipboard(plain);
+        try {
+            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
+            android.content.ClipData clip = android.content.ClipData.newHtmlText("label", plain, html);
+            clipboard.setPrimaryClip(clip);
+            return true;
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return false;
     }
 
     public static boolean addToClipboard(CharSequence str) {
@@ -5382,23 +5391,29 @@ public class AndroidUtilities {
         return Color.argb(255, (r1 / 2 + r2 / 2), (g1 / 2 + g2 / 2), (b1 / 2 + b2 / 2));
     }
 
-    public static void setLightStatusBar(Window window, boolean enable) {
-        setLightStatusBar(window, enable, false);
+    public static void setLightStatusBar(Activity activity, boolean enable) {
+        if (activity != null) {
+            setLightStatusBar(activity.getWindow(), enable);
+        }
     }
 
-    public static void setLightStatusBar(Window window, boolean enable, boolean forceTransparentStatusbar) {
+    public static void setLightStatusBar(Dialog dialog, boolean enable) {
+        if (dialog != null) {
+            setLightStatusBar(dialog.getWindow(), enable);
+        }
+    }
+
+
+    public static void setLightStatusBar(Window window, boolean enable) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             final View decorView = window.getDecorView();
             changeSetSystemUiVisibility(decorView, View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR, enable);
 
-            final int statusBarColor;
-            if (!SharedConfig.noStatusBar && !forceTransparentStatusbar) {
-                statusBarColor = enable ? LIGHT_STATUS_BAR_OVERLAY : DARK_STATUS_BAR_OVERLAY;
-            } else {
-                statusBarColor = Color.TRANSPARENT;
-            }
-            if (window.getStatusBarColor() != statusBarColor) {
-                window.setStatusBarColor(statusBarColor);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                final int statusBarColor = Color.TRANSPARENT;
+                if (window.getStatusBarColor() != statusBarColor) {
+                    window.setStatusBarColor(statusBarColor);
+                }
             }
         }
     }
@@ -7035,14 +7050,48 @@ public class AndroidUtilities {
         LaunchActivity.instance.presentFragment(new DebugRecordingCanvasReplayFragment(c));
     }
 
-    public static <A, B> B find(ArrayList<A> array, Class<B> clazz) {
+    public static <A, B> B find(List<A> array, Class<B> clazz) {
         if (array == null) {
             return null;
         }
-        for (A obj : array) {
+        for (int i = 0; i < array.size(); ++i) {
+            final A obj = array.get(i);
             if (clazz.isInstance(obj)) {
                 return clazz.cast(obj);
             }
+        }
+        return null;
+    }
+
+    public static <A, B> B findLast(List<A> array, Class<B> clazz) {
+        if (array == null) {
+            return null;
+        }
+        for (int i = array.size() - 1; i >= 0; --i) {
+            final A obj = array.get(i);
+            if (clazz.isInstance(obj)) {
+                return clazz.cast(obj);
+            }
+        }
+        return null;
+    }
+
+    public static TLRPC.Photo findPhoto(List<TLRPC.Photo> array, long id) {
+        if (array == null) return null;
+        for (int i = 0; i < array.size(); ++i) {
+            final TLRPC.Photo photo = array.get(i);
+            if (photo != null && photo.id == id)
+                return photo;
+        }
+        return null;
+    }
+
+    public static TLRPC.Document findDocument(List<TLRPC.Document> array, long id) {
+        if (array == null) return null;
+        for (int i = 0; i < array.size(); ++i) {
+            final TLRPC.Document doc = array.get(i);
+            if (doc != null && doc.id == id)
+                return doc;
         }
         return null;
     }

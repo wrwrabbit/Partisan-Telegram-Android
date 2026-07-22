@@ -98,6 +98,7 @@ import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.AccountFrozenAlert;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.SimpleTextView;
@@ -266,11 +267,11 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 int firstViewHeight;
                 if (StarsIntroActivity.this.isLandscapeMode) {
-                    firstViewHeight = StarsIntroActivity.this.statusBarHeight + actionBar.getMeasuredHeight() - AndroidUtilities.dp(16);
+                    firstViewHeight = StarsIntroActivity.this.statusBarHeight + actionBar.getMeasuredHeight() - dp(16);
                 } else {
-                    int h = AndroidUtilities.dp(140) + statusBarHeight;
-                    if (backgroundView.getMeasuredHeight() + AndroidUtilities.dp(24) > h) {
-                        h = backgroundView.getMeasuredHeight() + AndroidUtilities.dp(24);
+                    int h = dp(140) + statusBarHeight;
+                    if (backgroundView.getMeasuredHeight() + dp(24) > h) {
+                        h = backgroundView.getMeasuredHeight() + dp(24);
                     }
                     firstViewHeight = h;
                 }
@@ -280,11 +281,10 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         };
 
         super.createView(context);
+        if (parentLayout != null && parentLayout.isRightLayout()) {
+            actionBar.setBackButtonImage(R.drawable.ic_ab_close);
+        }
 
-//        balanceView = new StarsBalanceView(context, currentAccount);
-//        actionBar.addView(balanceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT | Gravity.BOTTOM));
-
-//        yOffset = dp(16);
         aboveTitleView = new FrameLayout(context);
         aboveTitleView.setClickable(true);
         iconTextureView = new GLIconTextureView(context, GLIconRenderer.DIALOG_STYLE, Icon3D.TYPE_GOLDEN_STAR);
@@ -1564,7 +1564,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             star.setSpan(new ImageSpan(drawable), 0, star.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
             ton = new SpannableString("TON");
-            drawable = context.getResources().getDrawable(R.drawable.ton).mutate();
+            drawable = context.getResources().getDrawable(R.drawable.mini_gram_72).mutate();
             ColoredImageSpan span = new ColoredImageSpan(drawable);
             span.setSize(dp(18));
             span.setTranslateY(dp(.5f));
@@ -3310,7 +3310,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         if (cache != null && cache[0] != null) {
             span = cache[0];
         } else {
-            span = new ColoredImageSpan(ton ? R.drawable.ton : R.drawable.msg_premium_liststar);
+            span = new ColoredImageSpan(ton ? R.drawable.mini_gram_72 : R.drawable.msg_premium_liststar);
             if (cache != null) {
                 cache[0] = span;
             }
@@ -3386,7 +3386,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         if (spanRef != null && spanRef[0] != null) {
             span = spanRef[0];
         } else {
-            span = new ColoredImageSpan(ton ? R.drawable.ton : R.drawable.msg_premium_liststar);
+            span = new ColoredImageSpan(ton ? R.drawable.mini_gram_72 : R.drawable.msg_premium_liststar);
             span.setScale(ton ? 0.222f : 1.13f, ton ? 0.222f : 1.13f);
         }
         if (spanRef != null) {
@@ -3425,7 +3425,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             ssb = (SpannableStringBuilder) cs;
         }
         final String symbol = ton ? "TON" : "⭐";
-        final int resId = ton ? R.drawable.ton : R.drawable.star_small_inner;
+        final int resId = ton ? R.drawable.mini_gram_72 : R.drawable.star_small_inner;
         SpannableString spacedStar = new SpannableString(symbol + " ");
         ColoredImageSpan span;
         if (spanArr != null && spanArr[0] != null) {

@@ -106,7 +106,12 @@ public class CombinedWorldProcessor extends ChainedAudioProcessor {
         ShiftParameter highRatio = generateNewShift(parametersProvider.getHighRatio(), currentHighRatio);
         threadPoolExecutor.execute(() -> {
             float[] shiftedAudioBuffer = changeVoice(audioEventCopy.getFloatBuffer(), f0Shift, lowRatio, midRatio, highRatio);
-            finalizingQueue.execute(() -> shiftingFinished(audioEventCopy, shiftedAudioBuffer));
+            synchronized (this) {
+                if (forceFinishProcessing) {
+                    return;
+                }
+                finalizingQueue.execute(() -> shiftingFinished(audioEventCopy, shiftedAudioBuffer));
+            }
         });
         return true;
     }

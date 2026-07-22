@@ -260,12 +260,19 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         updateColors();
     }
 
+    private boolean isWhiteBackground;
+
+    public void setWhiteBackground() {
+        isWhiteBackground = true;
+        updateColors();
+    }
+
     @Override
     public void updateColors() {
         final boolean isDark = resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark();
         bg = isSectionBackground ?
             Theme.createRoundRectDrawableShadowed(dp(20), getThemedColor(Theme.key_windowBackgroundWhite)) :
-            Theme.createRoundRectDrawable(dp(20), getThemedColor(Theme.key_windowBackgroundWhiteBlackText, isDark ? 0.07f : 0.05f));
+            Theme.createRoundRectDrawable(dp(20), isWhiteBackground ? getThemedColor(Theme.key_windowBackgroundWhite) : getThemedColor(Theme.key_windowBackgroundWhiteBlackText, isDark ? 0.07f : 0.05f));
         searchIcon.setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText, 0.6f), PorterDuff.Mode.MULTIPLY);
         closeIcon.setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText, 0.6f), PorterDuff.Mode.MULTIPLY);
         closeIcon.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector), 1, dp(17)));
@@ -490,11 +497,12 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
             FiltersView.MediaFilterData filter = localFilters.get(i);
             ActionBarMenuItem.SearchFilterView searchFilterView;
             if (filter.reaction != null) {
-                searchFilterView = new ActionBarMenuItem.ReactionFilterView(getContext(), resourcesProvider, true);
+                searchFilterView = new ActionBarMenuItem.ReactionFilterView(getContext(), resourcesProvider, false);
             } else {
-                searchFilterView = new ActionBarMenuItem.SearchFilterView(getContext(), resourcesProvider, true);
+                searchFilterView = new ActionBarMenuItem.SearchFilterView(getContext(), resourcesProvider, false);
             }
 
+            searchFilterView.setGlass();
             searchFilterView.setData(filter);
             searchFilterView.setOnClickListener(view -> {
                 int index = currentSearchFilters.indexOf(searchFilterView.getFilter());

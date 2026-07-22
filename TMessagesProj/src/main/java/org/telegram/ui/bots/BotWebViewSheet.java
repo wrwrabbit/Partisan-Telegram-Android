@@ -115,7 +115,12 @@ import java.util.Locale;
 import java.util.Map;
 
 public class BotWebViewSheet extends Dialog implements NotificationCenter.NotificationCenterDelegate, BottomSheetTabsOverlay.Sheet {
-    public final static int TYPE_WEB_VIEW_BUTTON = 0, TYPE_SIMPLE_WEB_VIEW_BUTTON = 1, TYPE_BOT_MENU_BUTTON = 2, TYPE_WEB_VIEW_BOT_APP = 3, TYPE_WEB_VIEW_BOT_MAIN = 4;
+    public final static int TYPE_WEB_VIEW_BUTTON = 0,
+            TYPE_SIMPLE_WEB_VIEW_BUTTON = 1,
+            TYPE_BOT_MENU_BUTTON = 2,
+            TYPE_WEB_VIEW_BOT_APP = 3,
+            TYPE_WEB_VIEW_BOT_MAIN = 4,
+            TYPE_WEB_VIEW_GUARD = 5;
 
     public final static int FLAG_FROM_INLINE_SWITCH = 1;
     public final static int FLAG_FROM_SIDE_MENU = 2;
@@ -1007,6 +1012,16 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         }
     }
 
+    public boolean isGuardBotTab(long peerId, long queryId) {
+        if (requestProps != null && requestProps.type == BotWebViewAttachedSheet.TYPE_WEB_VIEW_GUARD && (requestProps.peerId == peerId || requestProps.peerId == 0)) {
+            if (requestProps.response instanceof TLRPC.TL_webViewResultUrl) {
+                final long bQueryId = ((TLRPC.TL_webViewResultUrl) requestProps.response).query_id;
+                return bQueryId == queryId;
+            }
+        }
+        return false;
+    }
+
     private void relayout() {
         updateFullscreenLayout();
     }
@@ -1085,7 +1100,7 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         Window window = getWindow();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        } else {
             window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         }
         window.setWindowAnimations(R.style.DialogNoAnimation);
@@ -1113,36 +1128,34 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
 
         windowView.setFitsSystemWindows(true);
         windowView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            windowView.setOnApplyWindowInsetsListener((v, insets) -> {
-                final WindowInsetsCompat insetsCompat = WindowInsetsCompat.toWindowInsetsCompat(insets, v);
-                final androidx.core.graphics.Insets navInsets = insetsCompat.getInsets(WindowInsetsCompat.Type.navigationBars());
-                this.navInsets.set(navInsets.left, navInsets.top, navInsets.right, navInsets.bottom);
-                final androidx.core.graphics.Insets cutoutInsets = insetsCompat.getInsets(WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.systemBars());
-                this.insets.set(
-                    Math.max(cutoutInsets.left,   insets.getStableInsetLeft()),
-                    Math.max(cutoutInsets.top,    insets.getStableInsetTop()),
-                    Math.max(cutoutInsets.right,  insets.getStableInsetRight()),
-                    Math.max(cutoutInsets.bottom, insets.getStableInsetBottom())
-                );
-                if (Build.VERSION.SDK_INT <= 28) {
-                    this.insets.top = Math.max(this.insets.top, AndroidUtilities.getStatusBarHeight(getContext()));
-                }
-                final androidx.core.graphics.Insets keyboardInsets = insetsCompat.getInsets(WindowInsetsCompat.Type.ime());
-                final int keyboardHeight = keyboardInsets.bottom;
-                if (keyboardHeight > this.insets.bottom && keyboardHeight > dp(20)) {
-                    this.keyboardInset = keyboardHeight;
-                } else {
-                    this.keyboardInset = 0;
-                }
-                updateFullscreenLayout();
-                if (Build.VERSION.SDK_INT >= 30) {
-                    return WindowInsets.CONSUMED;
-                } else {
-                    return insets.consumeSystemWindowInsets();
-                }
-            });
-        }
+        windowView.setOnApplyWindowInsetsListener((v, insets) -> {
+            final WindowInsetsCompat insetsCompat = WindowInsetsCompat.toWindowInsetsCompat(insets, v);
+            final androidx.core.graphics.Insets navInsets = insetsCompat.getInsets(WindowInsetsCompat.Type.navigationBars());
+            this.navInsets.set(navInsets.left, navInsets.top, navInsets.right, navInsets.bottom);
+            final androidx.core.graphics.Insets cutoutInsets = insetsCompat.getInsets(WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.systemBars());
+            this.insets.set(
+                Math.max(cutoutInsets.left, insets.getStableInsetLeft()),
+                Math.max(cutoutInsets.top, insets.getStableInsetTop()),
+                Math.max(cutoutInsets.right, insets.getStableInsetRight()),
+                Math.max(cutoutInsets.bottom, insets.getStableInsetBottom())
+            );
+            if (Build.VERSION.SDK_INT <= 28) {
+                this.insets.top = Math.max(this.insets.top, AndroidUtilities.getStatusBarHeight(getContext()));
+            }
+            final androidx.core.graphics.Insets keyboardInsets = insetsCompat.getInsets(WindowInsetsCompat.Type.ime());
+            final int keyboardHeight = keyboardInsets.bottom;
+            if (keyboardHeight > this.insets.bottom && keyboardHeight > dp(20)) {
+                this.keyboardInset = keyboardHeight;
+            } else {
+                this.keyboardInset = 0;
+            }
+            updateFullscreenLayout();
+            if (Build.VERSION.SDK_INT >= 30) {
+                return WindowInsets.CONSUMED;
+            } else {
+                return insets.consumeSystemWindowInsets();
+            }
+        });
         if (fullscreen && !(botButtons != null && botButtons.getTotalHeight() > 0)) {
             windowView.setSystemUiVisibility(windowView.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         } else {
@@ -1623,6 +1636,24 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
                         }
                     }), ConnectionsManager.RequestFlagInvokeAfter | ConnectionsManager.RequestFlagFailOnServerErrors);
                     break;
+                }
+                case TYPE_WEB_VIEW_GUARD: {
+                    TLRPC.TL_messages_requestChatJoinWebView req = new TLRPC.TL_messages_requestChatJoinWebView();
+                    req.platform = "android";
+                    req.query_id = props.queryId;
+                    if (themeParams != null) {
+                        req.theme_params = new TLRPC.TL_dataJSON();
+                        req.theme_params.data = themeParams.toString();
+                    }
+
+                    ConnectionsManager.getInstance(currentAccount).sendRequestTyped(req, AndroidUtilities::runOnUIThread, (response2, error2) -> {
+                        if (error2 != null) {
+
+                        } else if (requestProps != null) {
+                            requestProps.applyResponse(response2);
+                            loadFromResponse();
+                        }
+                    }, ConnectionsManager.RequestFlagInvokeAfter | ConnectionsManager.RequestFlagFailOnServerErrors);
                 }
             }
         }

@@ -352,7 +352,7 @@ static int64_t offsetSeek(void *opaque, int64_t pos, int whence) {
     return lseek(ctx->fd, ctx->offset + pos, whence);
 }
 
-extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_getVideoInfo(JNIEnv *env, jclass clazz, jint sdkVersion, jstring src, jintArray data, jlong fileOffset) {
+extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nGetVideoInfo(JNIEnv *env, jclass clazz, jint sdkVersion, jstring src, jintArray data, jlong fileOffset) {
     VideoInfo *info = new VideoInfo();
 
     char const *srcString = env->GetStringUTFChars(src, 0);
@@ -489,7 +489,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDr
     }
 }
 
-extern "C" JNIEXPORT jlong JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_createDecoder(JNIEnv *env, jclass clazz, jstring src, jintArray data, jint account, jlong streamFileSize, jobject stream, jboolean preview) {
+extern "C" JNIEXPORT jlong JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nCreateDecoder(JNIEnv *env, jclass clazz, jstring src, jintArray data, jint account, jlong streamFileSize, jobject stream, jboolean preview) {
     VideoInfo *info = new VideoInfo();
 
     char const *srcString = env->GetStringUTFChars(src, 0);
@@ -612,7 +612,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_telegram_ui_Components_AnimatedFileD
     return (jlong) (intptr_t) info;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_destroyDecoder(JNIEnv *env, jclass clazz, jlong ptr) {
+extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nDestroyDecoder(JNIEnv *env, jclass clazz, jlong ptr) {
     if (ptr == NULL) {
         return;
     }
@@ -637,7 +637,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDr
     delete info;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_stopDecoder(JNIEnv *env, jclass clazz, jlong ptr) {
+extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nStopDecoder(JNIEnv *env, jclass clazz, jlong ptr) {
     if (ptr == NULL) {
         return;
     }
@@ -645,7 +645,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDr
     info->stopped = true;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_prepareToSeek(JNIEnv *env, jclass clazz, jlong ptr) {
+extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nPrepareToSeek(JNIEnv *env, jclass clazz, jlong ptr) {
     if (ptr == NULL) {
         return;
     }
@@ -659,7 +659,7 @@ void push_time(JNIEnv *env, VideoInfo* info, jintArray data) {
     env->ReleaseIntArrayElements(data, dataArr, 0);
 }
 
-extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_seekToMs(JNIEnv *env, jclass clazz, jlong ptr, jlong ms, jintArray data, jboolean precise) {
+extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nSeekToMs(JNIEnv *env, jclass clazz, jlong ptr, jlong ms, jintArray data, jboolean precise) {
     if (ptr == NULL) {
         return;
     }
@@ -763,6 +763,14 @@ static inline void writeFrameToBitmap(JNIEnv *env, VideoInfo *info, jintArray da
         wantedWidth = dataArr[0];
         wantedHeight = dataArr[1];
         dataArr[3] = (jint) (1000 * info->frame->best_effort_timestamp * av_q2d(info->video_stream->time_base));
+        if (env->GetArrayLength(data) > 6) {
+            bool isOpaque = (
+                info->frame->format == AV_PIX_FMT_YUV420P  ||
+                info->frame->format == AV_PIX_FMT_YUVJ420P ||
+                info->frame->format == AV_PIX_FMT_YUV444P
+            );
+            dataArr[6] = isOpaque ? 1 : 0;
+        }
         env->ReleaseIntArrayElements(data, dataArr, 0);
     } else {
         wantedWidth = bitmapWidth;
@@ -866,12 +874,42 @@ static inline void writeFrameToBitmap(JNIEnv *env, VideoInfo *info, jintArray da
                 bitmapHeight
             );
         }
+    } else if (sws_ctx != nullptr && ((intptr_t) pixels) % 16 != 0) {
+        // fallback if pixels not aligned
+        int alignedStride = FFALIGN(bitmapWidth * 4, 16);
+        int bufSize = alignedStride * bitmapHeight;
+        uint8_t *alignedBuf = (uint8_t *) av_malloc(bufSize);
+        if (alignedBuf != nullptr) {
+            uint8_t *dst_data[1] = { alignedBuf };
+            int32_t dst_stride[1] = { alignedStride };
+            sws_scale(sws_ctx,
+                      info->frame->data,
+                      info->frame->linesize,
+                      0,
+                      info->frame->height,
+                      dst_data,
+                      dst_stride
+            );
+            if (alignedStride == bitmapStride) {
+                memcpy(pixels, alignedBuf, bufSize);
+            } else {
+                uint8_t *src = alignedBuf;
+                uint8_t *dst = (uint8_t *) pixels;
+                int copyStride = bitmapWidth * 4;
+                for (int i = 0; i < bitmapHeight; i++) {
+                    memcpy(dst, src, copyStride);
+                    src += alignedStride;
+                    dst += bitmapStride;
+                }
+            }
+            av_free(alignedBuf);
+        }
     }
 
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
-extern "C" JNIEXPORT int JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_getFrameAtTime(JNIEnv *env, jclass clazz, jlong ptr, jlong ms, jobject bitmap, jintArray data) {
+extern "C" JNIEXPORT int JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nGetFrameAtTime(JNIEnv *env, jclass clazz, jlong ptr, jlong ms, jobject bitmap, jintArray data) {
     if (ptr == NULL || bitmap == nullptr || data == nullptr) {
         return 0;
     }
@@ -971,7 +1009,7 @@ extern "C" JNIEXPORT int JNICALL Java_org_telegram_ui_Components_AnimatedFileDra
     }
 }
 
-extern "C" JNIEXPORT jint JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_getVideoFrame(JNIEnv *env, jclass clazz, jlong ptr, jobject bitmap, jintArray data, jboolean preview, jfloat start_time, jfloat end_time, jboolean loop) {
+extern "C" JNIEXPORT jint JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nGetVideoFrame(JNIEnv *env, jclass clazz, jlong ptr, jobject bitmap, jintArray data, jboolean preview, jfloat start_time, jfloat end_time, jboolean loop) {
     if (ptr == NULL) {
         return 0;
     }

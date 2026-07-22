@@ -10,6 +10,7 @@ package org.telegram.ui.ActionBar;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Build;
 import android.view.MotionEvent;
@@ -32,15 +33,9 @@ public class DrawerLayoutContainer extends FrameLayout {
 
     private INavigationLayout parentActionBarLayout;
 
-    private final Paint backgroundPaint = new Paint();
-
-    private int behindKeyboardColor;
-
     private boolean hasCutout;
 
     private boolean inLayout;
-
-    public boolean allowDrawContent = true;
 
     private boolean firstLayout = true;
 
@@ -85,13 +80,6 @@ public class DrawerLayoutContainer extends FrameLayout {
 
     public void setParentActionBarLayout(INavigationLayout layout) {
         parentActionBarLayout = layout;
-    }
-
-    public void setAllowDrawContent(boolean value) {
-        if (allowDrawContent != value) {
-            allowDrawContent = value;
-            invalidate();
-        }
     }
 
     public boolean isDrawCurrentPreviewFragmentAbove() {
@@ -190,19 +178,6 @@ public class DrawerLayoutContainer extends FrameLayout {
         }
     }
 
-    public void setBehindKeyboardColor(int color) {
-        behindKeyboardColor = color;
-        invalidate();
-    }
-
-    @Override
-    protected boolean drawChild(@NonNull Canvas canvas, View child, long drawingTime) {
-        if (!allowDrawContent) {
-            return false;
-        }
-        return super.drawChild(canvas, child, drawingTime);
-    }
-
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         if (lastWindowInsetsCompat == null) {
@@ -214,7 +189,6 @@ public class DrawerLayoutContainer extends FrameLayout {
             | WindowInsetsCompat.Type.displayCutout());
 
         if (insets.bottom > 0) {
-            backgroundPaint.setColor(behindKeyboardColor);
             canvas.drawRect(
                 0,
                 getMeasuredHeight() - insets.bottom,
@@ -225,14 +199,13 @@ public class DrawerLayoutContainer extends FrameLayout {
         }
 
         if (hasCutout) {
-            backgroundPaint.setColor(0xff000000);
-            int left = insets.left;
+            final int left = insets.left;
             if (left != 0) {
-                canvas.drawRect(0, 0, left, getMeasuredHeight(), backgroundPaint);
+                canvas.drawRect(0, 0, left, getMeasuredHeight(), Theme.fillingPaint(Color.BLACK));
             }
-            int right = insets.right;
+            final int right = insets.right;
             if (right != 0) {
-                canvas.drawRect(right, 0, getMeasuredWidth(), getMeasuredHeight(), backgroundPaint);
+                canvas.drawRect(right, 0, getMeasuredWidth(), getMeasuredHeight(), Theme.fillingPaint(Color.BLACK));
             }
         }
     }

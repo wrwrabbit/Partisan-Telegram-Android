@@ -37,6 +37,7 @@ object RULES {
             "InputClientProxy",
             "InputStarsTransaction",
             "InputStickerSetItem",
+            "bots.AccessSettings"
         ),
         ignoredConstructors = mapOf(
             "Update" to setOf(
@@ -62,7 +63,8 @@ object RULES {
                 "updateInlineBotCallbackQuery",
                 "updatePtsChanged",
                 "updateSmsJob",
-                "updateBotGuestChatQuery"
+                "updateBotGuestChatQuery",
+                "updateBotStarsSubscription"
             ),
             "MessageAction" to setOf(
                 "messageActionRequestedPeerSentMe",
@@ -79,6 +81,8 @@ object RULES {
             "InputInvoice" to setOf("inputInvoiceBusinessBotTransferStars"),
             "InputBotInlineMessageID" to setOf("inputBotInlineMessageID64"),
             "InputPasskeyCredential" to setOf("inputPasskeyCredentialFirebasePNV"),
+            "InputRichMessage" to setOf("inputRichMessageHTML", "inputRichMessageMarkdown"),
+            "SendMessageAction" to setOf("inputSendMessageRichMessageDraftAction")
         )
     )
 }

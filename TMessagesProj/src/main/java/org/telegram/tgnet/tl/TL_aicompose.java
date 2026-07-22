@@ -44,7 +44,23 @@ public class TL_aicompose {
                 return b instanceof inputAiComposeToneID && ((inputAiComposeToneID) a).id == ((inputAiComposeToneID) b).id && ((inputAiComposeToneID) a).access_hash == ((inputAiComposeToneID) b).access_hash;
             if (a instanceof inputAiComposeToneSlug)
                 return b instanceof inputAiComposeToneSlug && TextUtils.equals(((inputAiComposeToneSlug) a).slug, ((inputAiComposeToneSlug) b).slug);
+            if (a instanceof inputAiComposeToneSingleUse)
+                return b instanceof inputAiComposeToneSingleUse && TextUtils.equals(((inputAiComposeToneSingleUse) a).custom_prompt, ((inputAiComposeToneSingleUse) b).custom_prompt);
             return false;
+        }
+
+        public static InputAiComposeTone TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
+            return TLdeserialize(InputAiComposeTone.class, fromConstructor(constructor), stream, constructor, exception);
+        }
+
+        private static InputAiComposeTone fromConstructor(int constructor) {
+            switch (constructor) {
+                case inputAiComposeToneDefault.constructor: return new inputAiComposeToneDefault();
+                case inputAiComposeToneID.constructor:      return new inputAiComposeToneID();
+                case inputAiComposeToneSlug.constructor:    return new inputAiComposeToneSlug();
+                case inputAiComposeToneSingleUse.constructor:   return new inputAiComposeToneSingleUse();
+                default: return null;
+            }
         }
     }
     public static class inputAiComposeToneDefault extends InputAiComposeTone {
@@ -57,9 +73,14 @@ public class TL_aicompose {
             stream.writeInt32(constructor);
             stream.writeString(tone);
         }
+
+        @Override
+        public void readParams(InputSerializedData stream, boolean exception) {
+            tone = stream.readString(exception);
+        }
     }
     public static class inputAiComposeToneID extends InputAiComposeTone {
-        public static final int constructor = 0x773c080;
+        public static final int constructor = 0x0773C080;
 
         public long id;
         public long access_hash;
@@ -69,6 +90,12 @@ public class TL_aicompose {
             stream.writeInt32(constructor);
             stream.writeInt64(id);
             stream.writeInt64(access_hash);
+        }
+
+        @Override
+        public void readParams(InputSerializedData stream, boolean exception) {
+            id = stream.readInt64(exception);
+            access_hash = stream.readInt64(exception);
         }
     }
     public static class inputAiComposeToneSlug extends InputAiComposeTone {
@@ -80,6 +107,27 @@ public class TL_aicompose {
         public void serializeToStream(OutputSerializedData stream) {
             stream.writeInt32(constructor);
             stream.writeString(slug);
+        }
+
+        @Override
+        public void readParams(InputSerializedData stream, boolean exception) {
+            slug = stream.readString(exception);
+        }
+    }
+    public static class inputAiComposeToneSingleUse extends InputAiComposeTone {
+        public static final int constructor = 0xe0c35af;
+
+        public String custom_prompt;
+
+        @Override
+        public void serializeToStream(OutputSerializedData stream) {
+            stream.writeInt32(constructor);
+            stream.writeString(custom_prompt);
+        }
+
+        @Override
+        public void readParams(InputSerializedData stream, boolean exception) {
+            custom_prompt = stream.readString(exception);
         }
     }
 
@@ -184,6 +232,7 @@ public class TL_aicompose {
         }
     }
 
+
     public static class Tones extends TLObject {
 
         public ArrayList<TLRPC.User> users = new ArrayList<>();
@@ -254,7 +303,6 @@ public class TL_aicompose {
             to.serializeToStream(stream);
         }
     }
-
 
     public static class createTone extends TLMethod<AiComposeTone> {
         public static final int constructor = 0x4aa83913;

@@ -236,4 +236,27 @@ public sealed class TlGen_BotInlineMessage : TlGen_Object {
       public const val MAGIC: UInt = 0x809AD9A6U
     }
   }
+
+  public data class TL_botInlineMessageRichMessage(
+    public val reply_markup: TlGen_ReplyMarkup?,
+    public val rich_message: TlGen_RichMessage,
+  ) : TlGen_BotInlineMessage() {
+    internal val flags: UInt
+      get() {
+        var result = 0U
+        if (reply_markup != null) result = result or 4U
+        return result
+      }
+
+    public override fun serializeToStream(stream: OutputSerializedData) {
+      stream.writeInt32(MAGIC.toInt())
+      stream.writeInt32(flags.toInt())
+      reply_markup?.serializeToStream(stream)
+      rich_message.serializeToStream(stream)
+    }
+
+    public companion object {
+      public const val MAGIC: UInt = 0x0A617E7BU
+    }
+  }
 }
