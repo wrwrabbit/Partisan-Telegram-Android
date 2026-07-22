@@ -300,9 +300,12 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
 
     public EncryptedGroup getOrLoadEncryptedGroupByEncryptedChatId(int encryptedChatId) {
         EncryptedGroup cachedEncryptedGroup = getMessagesController().getEncryptedGroupByInnerEncryptedChatId(encryptedChatId);
-        Integer groupId = cachedEncryptedGroup != null
-                ? cachedEncryptedGroup.getInternalId()
-                : getMessagesStorage().loadEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
+        Integer groupId;
+        if (cachedEncryptedGroup != null) {
+            groupId = cachedEncryptedGroup.getInternalId();
+        } else {
+            groupId = getMessagesStorage().loadEncryptedGroupIdByInnerEncryptedChatId(encryptedChatId);
+        }
         if (groupId == null) {
             return null;
         }
