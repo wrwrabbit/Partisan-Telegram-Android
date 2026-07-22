@@ -9,7 +9,6 @@ import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.tgnet.NativeByteBuffer;
@@ -17,6 +16,7 @@ import org.telegram.tgnet.NativeByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 public class DraftsStorage implements AccountControllersProvider {
 
@@ -156,25 +156,41 @@ public class DraftsStorage implements AccountControllersProvider {
             return this;
         }
 
+        // Blocks until the write completes, matching SharedPreferences.Editor.commit() semantics
         @Override
         public void commit() {
-            apply();
+            if (Thread.currentThread() == getMessagesStorage().getStorageQueue()) {
+                performOperations();
+            } else {
+                CountDownLatch countDownLatch = new CountDownLatch(1);
+                getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                    performOperations();
+                    countDownLatch.countDown();
+                });
+                try {
+                    countDownLatch.await();
+                } catch (InterruptedException e) {
+                    FileLog.e(e);
+                }
+            }
         }
 
         @Override
         public void apply() {
-            getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                try {
-                    if (clearAll) {
-                        getMessagesStorage().getDatabase().executeFast("DELETE FROM drafts").stepThis().dispose();
-                    }
-                    for (Runnable operation : operations) {
-                        operation.run();
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e);
+            getMessagesStorage().getStorageQueue().postRunnable(this::performOperations);
+        }
+
+        private void performOperations() {
+            try {
+                if (clearAll) {
+                    getMessagesStorage().getDatabase().executeFast("DELETE FROM drafts").stepThis().dispose();
                 }
-            });
+                for (Runnable operation : operations) {
+                    operation.run();
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
         }
 
         private void replaceRow(String key, String hexValue) {
