@@ -11331,7 +11331,7 @@
     <string name="BackupFakePasscode">Backup Fake Passcode</string>
     <string name="BackupFakePasscodeInfo">Create a message containing all the information about this fake passcode, its settings and actions.</string>
     <string name="EnterCurrentFakePasscode">Enter this fake passcode</string>
-    <string name="FakePasscodeBackupInfo">Copy this string and save it.\n\nWarning! This string is easy to brute-force. It is recommended to either delete it after moving your data to a new app or phone, or store it in a secret, protected place.</string>
+    <string name="FakePasscodeBackupInfo">Copy this string and save it.\n\n**Warning! This string is easy to brute-force.** It is recommended to either delete it after moving your data to a new app or phone, or store it in a secret, protected place.</string>
     <string name="FakePasscodeRestoreHint">Fake Passcode Base64 Backup</string>
     <string name="FakePasscodeRestoreInfo">Paste fake passcode backup string.</string>
     <string name="FakePasscodeRestore">Restore Fake Passcode</string>

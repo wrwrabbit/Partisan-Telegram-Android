@@ -157,7 +157,7 @@
     <string name="BackupFakePasscode">Zrób kopię zapasową</string>
     <string name="BackupFakePasscodeInfo">Utwórz wiadomość zawierającą wszystkie informacje o fałszywym kodzie dostępu, jego ustawieniach i działaniach.</string>
     <string name="EnterCurrentFakePasscode">Wprowadź fałszywe hasło</string>
-    <string name="FakePasscodeBackupInfo">Skopiuj i zapisz zawsze ten ciąg znaków.</string>
+    <string name="FakePasscodeBackupInfo">Skopiuj ten ciąg znaków i zapisz go.\n\n**Uwaga! Ten ciąg znaków jest łatwy do złamania metodą brute-force.** Zaleca się jego usunięcie po przeniesieniu danych do nowej aplikacji lub telefonu albo przechowywanie go w tajnym, zabezpieczonym miejscu.</string>
     <string name="FakePasscodeRestoreHint">Fałszywe hasło Base64 Kopia zapasowa</string>
     <string name="FakePasscodeRestoreInfo">Wklej ciąg kopii zapasowej fałszywego hasla.</string>
     <string name="FakePasscodeRestore">Przywracanie fałszywego hasła</string>

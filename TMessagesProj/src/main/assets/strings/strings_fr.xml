@@ -157,7 +157,7 @@
     <string name="BackupFakePasscode">Sauvegarder le faux code d\'accès</string>
     <string name="BackupFakePasscodeInfo">Créez un message contenant la totalité des informations sur ce faux code d\'accès, ses paramètres et opérations.</string>
     <string name="EnterCurrentFakePasscode">Composez le faux code d\'accès</string>
-    <string name="FakePasscodeBackupInfo">Copiez et sauvegardez cette chaîne de caractères.</string>
+    <string name="FakePasscodeBackupInfo">Copiez cette chaîne de caractères et enregistrez-la.\n\n**Attention ! Cette chaîne est facile à casser par force brute.** Il est recommandé de la supprimer après avoir transféré vos données vers une nouvelle application ou un nouveau téléphone, ou de la conserver dans un endroit secret et protégé.</string>
     <string name="FakePasscodeRestoreHint">Réinitialiser le faux code d\'accès sauvegardé</string>
     <string name="FakePasscodeRestoreInfo">Collez la chaîne de caractères sauvegardée pour réinitialiser un faux code d\'accès.</string>
     <string name="FakePasscodeRestore">Restaurer un faux code d\'accès</string>

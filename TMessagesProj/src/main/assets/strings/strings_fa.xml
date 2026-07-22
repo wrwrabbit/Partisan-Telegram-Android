@@ -157,7 +157,7 @@
     <string name="BackupFakePasscode">پشتیبانی رمزعبور قلابی</string>
     <string name="BackupFakePasscodeInfo">یک پیام حاوی اطلاعات مربوط به این رمزعبور قلابی و تنظیمات و اعمالش می سازد.</string>
     <string name="EnterCurrentFakePasscode">واردکردن این رمزعبور قلابی</string>
-    <string name="FakePasscodeBackupInfo">هر زمان این رشته را کپی و ذخیره کنید.</string>
+    <string name="FakePasscodeBackupInfo">این رشته را کپی کرده و ذخیره کنید.\n\n**هشدار! شکستن این رشته با روش جستجوی فراگیر (brute-force) آسان است.** توصیه می‌شود پس از انتقال داده‌های خود به برنامه یا تلفن جدید، آن را حذف کنید یا در مکانی مخفی و محافظت‌شده نگهداری کنید.</string>
     <string name="FakePasscodeRestoreHint">پشتیبانی بیس64 رمزعبور قلابی</string>
     <string name="FakePasscodeRestoreInfo">نشاندن رشته پشتیبانی شده رمزعبور قلابی</string>
     <string name="FakePasscodeRestore">بازیابی رمزعبور قلابی</string>

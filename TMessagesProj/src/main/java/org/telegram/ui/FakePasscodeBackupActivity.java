@@ -227,7 +227,7 @@ public class FakePasscodeBackupActivity extends BaseFragment {
                 }
                 case 1: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
-                    cell.setText(LocaleController.getString(R.string.FakePasscodeBackupInfo));
+                    cell.setText(AndroidUtilities.replaceTags(LocaleController.getString(R.string.FakePasscodeBackupInfo)));
                     cell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     break;
                 }
