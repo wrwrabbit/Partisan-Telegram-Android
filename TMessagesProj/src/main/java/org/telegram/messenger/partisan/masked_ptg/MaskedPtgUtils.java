@@ -83,4 +83,13 @@ public class MaskedPtgUtils {
         };
         return FakePasscodeDialogBuilder.build(ctx, template);
     }
+
+    public static String removeTelegramBranding(String text) {
+        if (text == null) {
+            return null;
+        }
+        return text.replaceAll("(?i)\\s*telegram\\s*", " ")
+                .replaceAll("\\s{2,}", " ")
+                .trim();
+    }
 }

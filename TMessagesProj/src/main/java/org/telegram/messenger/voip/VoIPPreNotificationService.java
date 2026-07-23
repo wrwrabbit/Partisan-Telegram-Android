@@ -142,7 +142,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
 
         final Intent intent = new Intent(context, LaunchActivity.class).setAction("voip");
         final Notification.Builder builder = new Notification.Builder(context)
-            .setContentTitle(LocaleController.getString(video ? R.string.VoipInVideoCallBranding : R.string.VoipInCallBranding))
+            .setContentTitle(org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils.removeTelegramBranding(LocaleController.getString(video ? R.string.VoipInVideoCallBranding : R.string.VoipInCallBranding)))
             .setSmallIcon(R.drawable.call)
             .setContentIntent(
                 PendingIntent.getActivity(
