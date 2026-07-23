@@ -60,6 +60,8 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
                 int ownerEncryptedChatId = encryptedGroup.getOwnerEncryptedChatId();
                 TLRPC.EncryptedChat ownerEncryptedChat = getMessagesController().getEncryptedChat(ownerEncryptedChatId);
                 getEncryptedGroupProtocol().sendAllSecondaryChatsInitialized(ownerEncryptedChat);
+            } else {
+                syncInnerChatsTtl(encryptedGroup, EncryptedGroupConstants.DEFAULT_TTL_SECONDS);
             }
         } else if (PartisanLog.logsAllowed()) {
             long notInitializedInnerChatCount = encryptedGroup.getInnerChats().stream()
@@ -499,15 +501,19 @@ public class EncryptedGroupUtils implements AccountControllersProvider {
         if (encryptedGroup == null) {
             return;
         }
+        syncInnerChatsTtl(encryptedGroup, encryptedChat.ttl);
+    }
+
+    private void syncInnerChatsTtl(EncryptedGroup encryptedGroup, int ttl) {
         encryptedGroup.getInnerEncryptedChatIds(false).stream()
                 .map(encryptedChatId -> getMessagesController().getEncryptedChat(encryptedChatId))
                 .filter(Objects::nonNull)
-                .filter(otherEncryptedChat -> otherEncryptedChat.ttl != encryptedChat.ttl)
-                .forEach(otherEncryptedChat ->
+                .filter(encryptedChat -> encryptedChat.ttl != ttl)
+                .forEach(encryptedChat ->
                     AndroidUtilities.runOnUIThread(() -> {
-                        otherEncryptedChat.ttl = encryptedChat.ttl;
-                        getSecretChatHelper().sendTTLMessage(otherEncryptedChat, null);
-                        getMessagesStorage().updateEncryptedChatTTL(otherEncryptedChat);
+                        encryptedChat.ttl = ttl;
+                        getSecretChatHelper().sendTTLMessage(encryptedChat, null);
+                        getMessagesStorage().updateEncryptedChatTTL(encryptedChat);
                     })
                 );
     }
