@@ -136,6 +136,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
+import org.telegram.messenger.BadPasscodeAttempt;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
@@ -8038,6 +8039,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     private void checkFreeDiscSpace(final int force) {
         staticInstanceForAlerts = this;
         AutoDeleteMediaTask.run();
+        BadPasscodeAttempt.deleteExpiredPhotos();
         SharedConfig.checkLogsToDelete();
         if (Build.VERSION.SDK_INT >= 26 && force == 0 || checkFreeDiscSpaceShown) {
             return;
