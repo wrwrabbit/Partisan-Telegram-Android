@@ -405,6 +405,7 @@ add_library(${NATIVE_LIB} SHARED
         TgNetWrapper.cpp
         NativeLoader.cpp
         partisan/voicechange/world.cpp
+        partisan/rootbeer/toolChecker.cpp
         exoplayer/flac_jni.cc
         exoplayer/flac_parser.cc
         exoplayer/opus_jni.cc

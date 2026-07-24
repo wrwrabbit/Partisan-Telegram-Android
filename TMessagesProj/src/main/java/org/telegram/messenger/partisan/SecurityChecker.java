@@ -5,7 +5,7 @@ import android.provider.Settings;
 
 import androidx.core.util.Consumer;
 
-import com.scottyab.rootbeer.RootBeer;
+import org.telegram.messenger.partisan.rootbeer.RootBeer;
 
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.UserConfig;
