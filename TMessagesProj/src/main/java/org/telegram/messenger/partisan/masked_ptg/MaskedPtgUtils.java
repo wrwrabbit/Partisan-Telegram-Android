@@ -19,6 +19,7 @@ import org.telegram.ui.DialogBuilder.FakePasscodeDialogBuilder;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 public class MaskedPtgUtils {
     public static boolean hasPermission(Context context, String permission) {
@@ -84,11 +85,12 @@ public class MaskedPtgUtils {
         return FakePasscodeDialogBuilder.build(ctx, template);
     }
 
-    public static String removeTelegramBranding(String text) {
+    public static String replaceTelegramBrandingWithAppName(String text) {
         if (text == null) {
             return null;
         }
-        return text.replaceAll("(?i)\\s*telegram\\s*", " ")
+        String appName = LocaleController.getString(R.string.AppName);
+        return text.replaceAll("(?i)telegram", Matcher.quoteReplacement(appName))
                 .replaceAll("\\s{2,}", " ")
                 .trim();
     }
