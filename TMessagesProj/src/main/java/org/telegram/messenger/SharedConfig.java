@@ -44,6 +44,7 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
@@ -442,11 +443,6 @@ public class SharedConfig {
     public static int runNumber;
     public static Set<SecurityIssue> ignoredSecurityIssues = new HashSet<>();
     public static boolean confirmDangerousActions;
-    public static boolean fileProtectionForAllAccountsEnabled = true;
-    public static boolean disableFileProtectionAfterRestart = false;
-    public static boolean storeMessagesInMemoryOnly = true;
-    public static boolean encryptDatabase = true;
-    public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
     public static String previousMessageActivatorId = "";
 
     private static final int[] LOW_SOC = {
@@ -747,7 +743,7 @@ public class SharedConfig {
                 editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
                 editor.apply();
 
-                fileProtectionForAllAccountsEnabled = false;
+                FileProtectionSettings.fileProtectionForAllAccountsEnabled.set(false);
             }
             sharedConfigMigrationVersion++;
         }
@@ -865,6 +861,7 @@ public class SharedConfig {
 
             TesterSettings.loadSettings();
             VoiceChangeSettings.loadSettings();
+            FileProtectionSettings.loadSettings();
             PartisanTelegramSettings.loadSettings();
 
             String authKeyString = preferences.getString("pushAuthKey", null);
@@ -987,11 +984,6 @@ public class SharedConfig {
             clearAllDraftsOnScreenLock = preferences.getBoolean("clearAllDraftsOnScreenLock", false);
             deleteMessagesForAllByDefault = preferences.getBoolean("deleteMessagesForAllByDefault", false);
             confirmDangerousActions = preferences.getBoolean("confirmDangerousActions", false);
-            fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
-            disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
-            storeMessagesInMemoryOnly = preferences.getBoolean("dontStoreMessagesOnDevice", storeMessagesInMemoryOnly);
-            encryptDatabase = preferences.getBoolean("encryptDatabaseEnabled", encryptDatabase);
-            fileProtectionWorksWhenFakePasscodeActivated = preferences.getBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
             previousMessageActivatorId = preferences.getString("previousMessageActivatorId", previousMessageActivatorId);
             dayNightWallpaperSwitchHint = preferences.getInt("dayNightWallpaperSwitchHint", 0);
             bigCameraForRound = preferences.getBoolean("bigCameraForRound", false);
@@ -1082,46 +1074,6 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("confirmDangerousActions", confirmDangerousActions);
-        editor.commit();
-    }
-
-    public static void setFileProtectionForAllAccounts(boolean enabled) {
-        fileProtectionForAllAccountsEnabled = enabled;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
-        editor.commit();
-    }
-
-    public static void setDisableFileProtectionAfterRestart(boolean value) {
-        disableFileProtectionAfterRestart = value;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("disableFileProtectionAfterRestart", value);
-        editor.commit();
-    }
-
-    public static void toggleFileProtectionWorksWhenFakePasscodeActivated() {
-        fileProtectionWorksWhenFakePasscodeActivated = !fileProtectionWorksWhenFakePasscodeActivated;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
-        editor.commit();
-    }
-
-    public static void setStoreMessagesInMemoryOnly(boolean value) {
-        storeMessagesInMemoryOnly = value;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("dontStoreMessagesOnDevice", value);
-        editor.commit();
-    }
-
-    public static void setEncryptDatabase(boolean value) {
-        encryptDatabase = value;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("encryptDatabaseEnabled", value);
         editor.commit();
     }
 

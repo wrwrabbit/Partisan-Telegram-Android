@@ -17,6 +17,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.NewFeatureTextSettingsCell;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionActivity;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionSwitcher;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
@@ -390,7 +391,7 @@ public class PartisanSettingsActivity extends BaseFragment {
     }
 
     private static int getAccountsWithFileProtectionCount() {
-        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+        if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
             return UserConfig.getActivatedAccountsCount();
         }
         int count = 0;
@@ -630,7 +631,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                         checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.AdditionalVerifiedSetting), value, enabled, false);
                     } else if (position == fileProtectionRow) {
                         String value;
-                        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+                        if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
                             value = LocaleController.getString(R.string.PopupEnabled);
                         } else {
                             int count = getAccountsWithFileProtectionCount();

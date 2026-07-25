@@ -1,15 +1,14 @@
 package org.telegram.messenger.partisan.fileprotection;
 
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 
 public class FileProtectionUtils {
     public static boolean encryptionEnabledByConfig(int account) {
-        return SharedConfig.encryptDatabase && fileProtectionEnabledForAccount(account);
+        return FileProtectionSettings.encryptDatabase.get().orElse(true) && fileProtectionEnabledForAccount(account);
     }
 
     public static boolean fileProtectionEnabledForAccount(int account) {
-        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+        if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
             return true;
         }
         UserConfig userConfig = UserConfig.getInstance(account);

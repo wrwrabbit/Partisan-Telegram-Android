@@ -3,7 +3,6 @@ package org.telegram.messenger.partisan.fileprotection;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -33,14 +32,14 @@ public class FileProtectionTemporaryDisabledDialog {
             new FileProtectionSwitcher(fragment).apply(false);
         });
         dialog.setPositiveButton(LocaleController.getString(R.string.FileProtectionEnableAgain), (dlg, which) -> {
-            if (SharedConfig.fileProtectionForAllAccountsEnabled) {
+            if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
                 new FileProtectionSwitcher(fragment).forceApply(true);
             } else {
                 List<FileProtectionAccountInfo> accounts = new ArrayList<>();
                 Utils.foreachActivatedAccountInstance(accountInstance ->
                         accounts.add(new FileProtectionAccountInfo(accountInstance.getCurrentAccount()))
                 );
-                new FileProtectionSwitcher(fragment).apply(accounts, SharedConfig.storeMessagesInMemoryOnly, SharedConfig.encryptDatabase);
+                new FileProtectionSwitcher(fragment).apply(accounts, FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true), FileProtectionSettings.encryptDatabase.get().orElse(true));
             }
         });
         return dialog;

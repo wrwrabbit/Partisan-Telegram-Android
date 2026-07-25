@@ -6,7 +6,6 @@ import com.jakewharton.processphoenix.ProcessPhoenix;
 
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -42,8 +41,8 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     private void applyForAllAccounts(boolean enableForAllAccounts) {
         this.enableForAllAccounts = enableForAllAccounts;
         valuesPerAccounts = new ArrayList<>();
-        storeMessagesInMemoryOnly = SharedConfig.storeMessagesInMemoryOnly;
-        encryptDatabase = SharedConfig.encryptDatabase;
+        storeMessagesInMemoryOnly = FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
+        encryptDatabase = FileProtectionSettings.encryptDatabase.get().orElse(true);
         startSwitching();
     }
 
@@ -80,7 +79,7 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
 
     public static boolean fileProtectedAccountsChanged(List<FileProtectionAccountInfo> accounts) {
         for (FileProtectionAccountInfo account : accounts) {
-            boolean current = SharedConfig.fileProtectionForAllAccountsEnabled
+            boolean current = FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)
                     || UserConfig.getInstance(account.accountNum).fileProtectionEnabled;
             if (account.fileProtectionEnabled != current) {
                 return true;
@@ -93,7 +92,7 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             UserConfig config = UserConfig.getInstance(a);
             if (config.isClientActivated()) {
-                boolean current = SharedConfig.fileProtectionForAllAccountsEnabled || config.fileProtectionEnabled;
+                boolean current = FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true) || config.fileProtectionEnabled;
                 if (needEnableFileProtectionForAccount(a) != current) {
                     return true;
                 }
@@ -130,7 +129,7 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
 
     private boolean onlyDbEncryptionChanged() {
         return !forceApply && !fileProtectedAccountsChangedInternal()
-                && storeMessagesInMemoryOnly == SharedConfig.storeMessagesInMemoryOnly;
+                && storeMessagesInMemoryOnly == FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
     }
 
     @Override
@@ -147,18 +146,18 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     }
 
     private void updateConfigs() {
-        SharedConfig.setEncryptDatabase(encryptDatabase);
+        FileProtectionSettings.encryptDatabase.set(encryptDatabase);
         if (onlyDbEncryptionChanged()) {
             return;
         }
-        SharedConfig.setStoreMessagesInMemoryOnly(storeMessagesInMemoryOnly);
-        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-            SharedConfig.setDisableFileProtectionAfterRestart(true);
+        FileProtectionSettings.storeMessagesInMemoryOnly.set(storeMessagesInMemoryOnly);
+        if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
+            FileProtectionSettings.disableFileProtectionAfterRestart.set(true);
         }
-        SharedConfig.setFileProtectionForAllAccounts(enableForAllAccounts);
+        FileProtectionSettings.fileProtectionForAllAccountsEnabled.set(enableForAllAccounts);
         Utils.foreachActivatedAccountInstance(accountInstance -> {
             boolean enabledInConfig = isEnabledInValuesPerAccounts(accountInstance.getCurrentAccount());
-            boolean enabledForAccountOrGlobally = SharedConfig.fileProtectionForAllAccountsEnabled
+            boolean enabledForAccountOrGlobally = FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)
                     || enabledInConfig;
             UserConfig userConfig = accountInstance.getUserConfig();
             if (userConfig.fileProtectionEnabled != enabledForAccountOrGlobally) {

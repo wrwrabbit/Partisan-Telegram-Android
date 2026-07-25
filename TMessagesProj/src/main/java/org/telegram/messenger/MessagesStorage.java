@@ -44,6 +44,7 @@ import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.fileprotection.DraftsLocationReconciler;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionDatabaseCleaner;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionUtils;
 import org.telegram.messenger.partisan.fileprotection.UsersWithSecretChatsCache;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
@@ -11527,10 +11528,10 @@ public class MessagesStorage extends BaseController {
     }
 
     private boolean shouldUseInMemoryDatabase() {
-        if (!SharedConfig.storeMessagesInMemoryOnly) {
+        if (!FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true)) {
             return false;
         }
-        if (FakePasscodeUtils.isFakePasscodeActivated() && !SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
+        if (FakePasscodeUtils.isFakePasscodeActivated() && !FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true)) {
             return false;
         }
         return FileProtectionUtils.fileProtectionEnabledForAccount(currentAccount);

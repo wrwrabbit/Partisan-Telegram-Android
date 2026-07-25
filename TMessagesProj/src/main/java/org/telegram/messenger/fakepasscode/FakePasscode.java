@@ -22,6 +22,7 @@ import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.messenger.partisan.serialization.PartisanListDeserializer;
 import org.telegram.messenger.partisan.serialization.PartisanCollectionSerializer;
 import org.telegram.tgnet.ConnectionsManager;
@@ -468,7 +469,7 @@ public class FakePasscode {
     }
 
     private void setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(boolean disable) {
-        if (!SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
+        if (!FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true)) {
             Utils.foreachActivatedAccountInstance(accountInstance -> {
                 UserConfig userConfig = accountInstance.getUserConfig();
                 if (userConfig.disableFileProtectionAfterRestartByFakePasscode != disable

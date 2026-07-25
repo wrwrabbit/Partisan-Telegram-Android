@@ -1,6 +1,5 @@
 package org.telegram.messenger.partisan.fileprotection;
 
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 
 public class FileProtectionAccountInfo {
@@ -9,7 +8,7 @@ public class FileProtectionAccountInfo {
 
     public FileProtectionAccountInfo(int accountNum) {
         this.accountNum = accountNum;
-        this.fileProtectionEnabled = SharedConfig.fileProtectionForAllAccountsEnabled
+        this.fileProtectionEnabled = FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)
                 || getUserConfig().fileProtectionEnabled;
     }
 

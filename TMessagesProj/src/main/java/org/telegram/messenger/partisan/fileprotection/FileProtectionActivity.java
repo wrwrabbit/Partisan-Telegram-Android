@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -56,9 +55,9 @@ public class FileProtectionActivity extends BaseFragment {
     @Override
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
-        storeMessagesInMemoryOnly = SharedConfig.storeMessagesInMemoryOnly;
-        encryptDatabase = SharedConfig.encryptDatabase;
-        fileProtectionWorksWhenFakePasscodeActivated = SharedConfig.fileProtectionWorksWhenFakePasscodeActivated;
+        storeMessagesInMemoryOnly = FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
+        encryptDatabase = FileProtectionSettings.encryptDatabase.get().orElse(true);
+        fileProtectionWorksWhenFakePasscodeActivated = FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true);
         updateRows();
         return true;
     }
@@ -160,15 +159,15 @@ public class FileProtectionActivity extends BaseFragment {
     }
 
     private boolean storeMessagesInMemoryOnlyChanged() {
-        return storeMessagesInMemoryOnly != SharedConfig.storeMessagesInMemoryOnly;
+        return storeMessagesInMemoryOnly != FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
     }
 
     private boolean encryptDatabaseChanged() {
-        return encryptDatabase != SharedConfig.encryptDatabase;
+        return encryptDatabase != FileProtectionSettings.encryptDatabase.get().orElse(true);
     }
 
     private boolean fileProtectionWorksWhenFakePasscodeActivatedChanged() {
-        return fileProtectionWorksWhenFakePasscodeActivated != SharedConfig.fileProtectionWorksWhenFakePasscodeActivated;
+        return fileProtectionWorksWhenFakePasscodeActivated != FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true);
     }
 
     private void confirmExit() {
@@ -199,7 +198,7 @@ public class FileProtectionActivity extends BaseFragment {
     private void processDone() {
         if (!switchingNeeded()) {
             if (fileProtectionWorksWhenFakePasscodeActivatedChanged()) {
-                SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+                FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.toggle();
             }
             finishFragment();
             return;
@@ -209,7 +208,7 @@ public class FileProtectionActivity extends BaseFragment {
         builder.setMessage(LocaleController.getString(R.string.ApplicationWillBeRestarted));
         builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialogInterface, i) -> {
             if (fileProtectionWorksWhenFakePasscodeActivatedChanged()) {
-                SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+                FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.toggle();
             }
             if (switchingNeeded()) {
                 new FileProtectionSwitcher(this).apply(accounts, storeMessagesInMemoryOnly, encryptDatabase);
