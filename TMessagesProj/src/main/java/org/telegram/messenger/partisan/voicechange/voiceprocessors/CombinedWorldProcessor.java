@@ -136,6 +136,8 @@ public class CombinedWorldProcessor extends ChainedAudioProcessor {
             double change = ThreadLocalRandom.current().nextDouble(-maxChange, maxChange);
             newValue = shiftParameter.to + change;
         } while(newValue < limits.min || newValue > limits.max);
+        shiftParameter.from = shiftParameter.to;
+        shiftParameter.to = newValue;
         return new ShiftParameter(shiftParameter.from, shiftParameter.to);
     }
 
