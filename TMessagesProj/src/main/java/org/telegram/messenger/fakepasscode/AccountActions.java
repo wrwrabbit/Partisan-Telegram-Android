@@ -1,7 +1,5 @@
 package org.telegram.messenger.fakepasscode;
 
-import android.util.Base64;
-
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
@@ -75,29 +73,11 @@ public class AccountActions implements Action {
         }
     }
 
-    private byte[] getSalt() {
-        if (salt == null) {
-            byte[] saltBytes = new byte[16];
-            Utilities.random.nextBytes(saltBytes);
-            salt = Base64.encodeToString(saltBytes, Base64.DEFAULT);
-        }
-        return Base64.decode(salt, Base64.DEFAULT);
-    }
-
     private String calculateIdHash(TLRPC.User user) {
-        String phoneDigits = user.phone.replaceAll("[^0-9]", "");
-        if (phoneDigits.length() < 4) {
-            throw new RuntimeException("Can't calculate id hash: invalid phone");
+        if (salt == null) {
+            salt = AccountIdHashUtils.generateSalt();
         }
-        int phoneId = Integer.parseInt(phoneDigits.substring(phoneDigits.length() - 4));
-        long sum = (user.id % 10_000 + phoneId) % 10_000;
-        byte[] sumBytes = Long.toString(sum).getBytes();
-        byte[] bytes = new byte[32 + sumBytes.length];
-        byte[] salt = getSalt();
-        System.arraycopy(salt, 0, bytes, 0, 16);
-        System.arraycopy(sumBytes, 0, bytes, 16, sumBytes.length);
-        System.arraycopy(salt, 0, bytes, sumBytes.length + 16, 16);
-        return Utilities.bytesToHex(Utilities.computeSHA256(bytes, 0, bytes.length));
+        return AccountIdHashUtils.calculateIdHash(user, salt);
     }
 
     void checkIdHash() {

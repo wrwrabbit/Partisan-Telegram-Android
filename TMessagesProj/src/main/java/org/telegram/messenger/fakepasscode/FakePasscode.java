@@ -18,6 +18,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.fakepasscode.results.AccountActionsResult;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanLog;
@@ -183,12 +184,19 @@ public class FakePasscode {
         }
         setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(false);
         AndroidUtilities.runOnUIThread(() -> {
-            if (!oldActionResult.hiddenAccountEntries.isEmpty()) {
+            boolean anyHidden = false;
+            for (AccountActionsResult accountResult : oldActionResult.accountResults.values()) {
+                if (accountResult.hideAccountResult != null) {
+                    anyHidden = true;
+                    break;
+                }
+            }
+            if (anyHidden) {
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.accountHidingChanged);
             }
-            for (Map.Entry<Integer, RemoveChatsResult> entry : oldActionResult.removeChatsResults.entrySet()) {
+            for (Map.Entry<Integer, AccountActionsResult> entry : oldActionResult.accountResults.entrySet()) {
                 int account = entry.getKey();
-                RemoveChatsResult removeResult = entry.getValue();
+                RemoveChatsResult removeResult = entry.getValue().removeChatsResult;
                 if (removeResult == null) {
                     continue;
                 }

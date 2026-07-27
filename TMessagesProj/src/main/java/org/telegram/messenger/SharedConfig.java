@@ -702,6 +702,9 @@ public class SharedConfig {
         for (FakePasscode p: fakePasscodes) {
             p.migrate();
         }
+        if (fakePasscodeActionsResult != null) {
+            fakePasscodeActionsResult.migrate();
+        }
 
         if (!fakePasscodeLoadedWithErrors) {
             SharedPreferences.Editor editor = preferences.edit();

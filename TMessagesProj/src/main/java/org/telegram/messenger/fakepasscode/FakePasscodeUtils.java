@@ -70,7 +70,7 @@ public class FakePasscodeUtils {
     public static RemoveChatsResult getJustActivatedRemoveChatsResult(int accountNum) {
         ActionsResult result = getActivatedActionsResult();
         if (result != null && result.isJustActivated()) {
-            return result.removeChatsResults.get(accountNum);
+            return result.getRemoveChatsResult(accountNum);
         }
         return null;
     }
@@ -295,6 +295,7 @@ public class FakePasscodeUtils {
     }
 
     public static boolean autoAddHidingsToAllFakePasscodes() {
+        ActionsResultIdHashRunnable.start();
         boolean result = false;
         for (FakePasscode fakePasscode: SharedConfig.fakePasscodes) {
             result |= fakePasscode.autoAddAccountHidings();
