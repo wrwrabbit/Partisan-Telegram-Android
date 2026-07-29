@@ -125,12 +125,12 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     }
 
     private boolean needClearLocalDb() {
-        return !onlyDbEncryptionChanged()
+        return !onlyEncryptionSettingsChanged()
                 && storeMessagesInMemoryOnly
                 && (enableForAllAccounts || !valuesPerAccounts.isEmpty());
     }
 
-    private boolean onlyDbEncryptionChanged() {
+    private boolean onlyEncryptionSettingsChanged() {
         return !forceApply && !fileProtectedAccountsChangedInternal()
                 && storeMessagesInMemoryOnly == FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
     }
@@ -151,7 +151,7 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     private void updateConfigs() {
         FileProtectionSettings.encryptDatabase.set(encryptDatabase);
         FileProtectionSettings.encryptAuthToken.set(encryptAuthToken);
-        if (onlyDbEncryptionChanged()) {
+        if (onlyEncryptionSettingsChanged()) {
             return;
         }
         FileProtectionSettings.storeMessagesInMemoryOnly.set(storeMessagesInMemoryOnly);

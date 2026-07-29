@@ -440,7 +440,9 @@ void ConnectionsManager::loadConfig() {
     if (config == nullptr) {
         config = new Config(instanceNum, "tgnet.dat");
     }
-    NativeByteBuffer *buffer = config->readConfig();
+    bool wasEncrypted = false;
+    NativeByteBuffer *buffer = config->readConfig(&wasEncrypted);
+    bool encryptionFormatMismatch = false;
     if (buffer != nullptr) {
         uint32_t version = buffer->readUint32(nullptr);
         if (LOGS_ENABLED) DEBUG_D("config version = %u", version);
@@ -487,6 +489,7 @@ void ConnectionsManager::loadConfig() {
             }
         }
         buffer->reuse();
+        encryptionFormatMismatch = wasEncrypted != (configEncryptionKeySet && configEncryptionEncryptOnWrite);
     }
 
     if (currentDatacenterId != 0 && currentUserId) {
@@ -507,7 +510,7 @@ void ConnectionsManager::loadConfig() {
 
     initDatacenters();
 
-    if ((!datacenters.empty() && currentDatacenterId == 0) || pushSessionId == 0) {
+    if ((!datacenters.empty() && currentDatacenterId == 0) || pushSessionId == 0 || encryptionFormatMismatch) {
         if (pushSessionId == 0) {
             RAND_bytes((uint8_t *) &pushSessionId, 8);
         }

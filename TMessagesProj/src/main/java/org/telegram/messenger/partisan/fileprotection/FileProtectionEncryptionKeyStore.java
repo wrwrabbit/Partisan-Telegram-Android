@@ -1,5 +1,6 @@
 package org.telegram.messenger.partisan.fileprotection;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.security.keystore.KeyGenParameterSpec;
@@ -9,6 +10,7 @@ import android.util.Base64;
 
 import androidx.annotation.RequiresApi;
 
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
 
@@ -25,26 +27,28 @@ import javax.crypto.spec.GCMParameterSpec;
  * Stores a random per-account encryption key. The raw key is needed by consumers that can't use a
  * Keystore key directly (SQLCipher's sqlite3_key needs exportable material; native tgnet code can't
  * reach the Android Keystore at all), so it is wrapped with AES-GCM using a non-exportable Keystore
- * key and the wrapped blob is persisted in the account's preferences. Each {@link KeyType} is an
+ * key and the wrapped blob is persisted in per-account preferences. Each {@link KeyType} is an
  * independent key with its own Keystore alias and preference so their lifecycles never interfere.
  */
 public class FileProtectionEncryptionKeyStore {
     public enum KeyType {
-        DATABASE("FileProtectionDbKey", "dbEncryptionKey", "db_encryption_keys"),
-        AUTH_TOKEN("AuthTokenKey", "authTokenEncryptionKey", "tgnet_encryption_keys");
+        DATABASE("FileProtectionDbKey", "dbEncryptionKey", "db_encryption_keys", null),
+        AUTH_TOKEN("AuthTokenKey", "authTokenEncryptionKey", "tgnet_encryption_keys", "fileprotection_keys");
 
         final String keystoreAlias;
         final String prefKey;
         public final String migrationFileName;
+        final String prefsName;
 
-        KeyType(String keystoreAlias, String prefKey, String migrationFileName) {
+        KeyType(String keystoreAlias, String prefKey, String migrationFileName, String prefsName) {
             this.keystoreAlias = keystoreAlias;
             this.prefKey = prefKey;
             this.migrationFileName = migrationFileName;
+            this.prefsName = prefsName;
         }
     }
 
-    public static final int DB_KEY_LENGTH = 32;
+    public static final int KEY_LENGTH = 32;
     private static final int GCM_TAG_LENGTH = 128;
 
     public static synchronized byte[] getOrCreateKey(KeyType type, int account) {
@@ -61,7 +65,7 @@ public class FileProtectionEncryptionKeyStore {
             return null;
         }
         try {
-            key = new byte[DB_KEY_LENGTH];
+            key = new byte[KEY_LENGTH];
             new SecureRandom().nextBytes(key);
             storeKey(type, account, key);
             return key;
@@ -76,7 +80,7 @@ public class FileProtectionEncryptionKeyStore {
             return null;
         }
         try {
-            String encoded = getPreferences(account).getString(type.prefKey, null);
+            String encoded = getPreferences(type, account).getString(type.prefKey, null);
             if (encoded == null) {
                 return null;
             }
@@ -88,17 +92,17 @@ public class FileProtectionEncryptionKeyStore {
     }
 
     public static synchronized boolean keyBlobExists(KeyType type, int account) {
-        return getPreferences(account).getString(type.prefKey, null) != null;
+        return getPreferences(type, account).getString(type.prefKey, null) != null;
     }
 
     public static synchronized void deleteKey(KeyType type, int account) {
-        getPreferences(account).edit().remove(type.prefKey).commit();
+        getPreferences(type, account).edit().remove(type.prefKey).commit();
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
     public static synchronized void storeKey(KeyType type, int account, byte[] key) throws Exception {
         byte[] blob = wrapKey(type, key);
-        boolean saved = getPreferences(account).edit()
+        boolean saved = getPreferences(type, account).edit()
                 .putString(type.prefKey, Base64.encodeToString(blob, Base64.DEFAULT))
                 .commit();
         if (!saved) {
@@ -166,7 +170,11 @@ public class FileProtectionEncryptionKeyStore {
         keyGenerator.generateKey();
     }
 
-    private static SharedPreferences getPreferences(int account) {
-        return UserConfig.getInstance(account).getPreferences();
+    private static SharedPreferences getPreferences(KeyType type, int account) {
+        if (type.prefsName == null) {
+            return UserConfig.getInstance(account).getPreferences();
+        }
+        String name = account == 0 ? type.prefsName : type.prefsName + account;
+        return ApplicationLoader.applicationContext.getSharedPreferences(name, Context.MODE_PRIVATE);
     }
 }

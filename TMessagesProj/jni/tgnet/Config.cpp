@@ -103,6 +103,9 @@ static NativeByteBuffer *readEncryptedConfig(FILE *file, long fileSize, const ui
     if (key == nullptr) {
         return nullptr;
     }
+    if (fileSize < (long) (CONFIG_ENC_HEADER_LEN + CONFIG_ENC_TAG_LEN)) {
+        return nullptr;
+    }
     if (fseek(file, 0, SEEK_SET) || fseek(file, CONFIG_ENC_MARKER_LEN, SEEK_CUR)) {
         return nullptr;
     }
@@ -111,7 +114,7 @@ static NativeByteBuffer *readEncryptedConfig(FILE *file, long fileSize, const ui
     if (fread(iv, sizeof(uint8_t), CONFIG_ENC_IV_LEN, file) != CONFIG_ENC_IV_LEN
             || fread(&cipherLen, sizeof(uint32_t), 1, file) != 1
             || cipherLen == 0
-            || (long) cipherLen > fileSize - CONFIG_ENC_HEADER_LEN - CONFIG_ENC_TAG_LEN) {
+            || (uint64_t) cipherLen > (uint64_t) fileSize - CONFIG_ENC_HEADER_LEN - CONFIG_ENC_TAG_LEN) {
         return nullptr;
     }
     auto *ciphertext = new uint8_t[cipherLen];
@@ -159,7 +162,7 @@ Config::Config(int32_t instance, std::string fileName) {
     }
 }
 
-NativeByteBuffer *Config::readConfig() {
+NativeByteBuffer *Config::readConfig(bool *wasEncrypted) {
     NativeByteBuffer *buffer = nullptr;
     FILE *file = fopen(configPath.c_str(), "rb");
     if (file != nullptr) {
@@ -171,9 +174,13 @@ NativeByteBuffer *Config::readConfig() {
             file = fopen(configPath.c_str(), "rb");
         }
         uint32_t marker = 0;
-        if (file != nullptr && fileSize >= (long) sizeof(marker)
+        bool encrypted = file != nullptr && fileSize >= (long) sizeof(marker)
                 && fread(&marker, sizeof(uint32_t), 1, file) == 1
-                && marker >= CONFIG_ENC_MARKER_MIN) {
+                && marker >= CONFIG_ENC_MARKER_MIN;
+        if (wasEncrypted != nullptr) {
+            *wasEncrypted = encrypted;
+        }
+        if (encrypted) {
             ConnectionsManager &manager = ConnectionsManager::getInstance(instanceNum);
             buffer = readEncryptedConfig(file, fileSize, manager.configEncryptionKeySet ? manager.configEncryptionKey : nullptr);
             fclose(file);

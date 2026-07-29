@@ -63,7 +63,7 @@ class MigratedKeyFile {
     private static byte[] parseKey(String hex) {
         try {
             byte[] key = Utilities.hexToBytes(hex.trim());
-            return key != null && key.length == FileProtectionEncryptionKeyStore.DB_KEY_LENGTH ? key : null;
+            return key != null && key.length == FileProtectionEncryptionKeyStore.KEY_LENGTH ? key : null;
         } catch (Exception e) {
             return null;
         }

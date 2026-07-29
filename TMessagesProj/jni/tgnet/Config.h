@@ -17,7 +17,7 @@ class Config {
 public:
     Config(int32_t instance, std::string fileName);
 
-    NativeByteBuffer *readConfig();
+    NativeByteBuffer *readConfig(bool *wasEncrypted = nullptr);
     void writeConfig(NativeByteBuffer *buffer);
 
 private:
