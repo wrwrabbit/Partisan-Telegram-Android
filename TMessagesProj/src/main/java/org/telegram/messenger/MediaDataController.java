@@ -52,6 +52,7 @@ import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.SQLite.SQLiteException;
 import org.telegram.SQLite.SQLitePreparedStatement;
+import org.telegram.SQLite.SQLitePreparedStatementWrapper;
 import org.telegram.messenger.partisan.fileprotection.DraftsStorage;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
@@ -4919,9 +4920,12 @@ public class MediaDataController extends BaseController {
                 getMessagesStorage().getDatabase().beginTransaction();
                 SQLitePreparedStatement state2;
                 if (topicId != 0) {
-                    state2 = getMessagesStorage().getDatabase().executeFast("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
+                    state2 = getMessagesStorage().executeFastForBothDbIfNeeded("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
                 } else {
-                    state2 = getMessagesStorage().getDatabase().executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
+                    state2 = getMessagesStorage().executeFastForBothDbIfNeeded("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
+                }
+                if (state2 instanceof SQLitePreparedStatementWrapper) {
+                    ((SQLitePreparedStatementWrapper) state2).setDbSelectorByDialogId(uid);
                 }
 
                 for (TLRPC.Message message : messages) {

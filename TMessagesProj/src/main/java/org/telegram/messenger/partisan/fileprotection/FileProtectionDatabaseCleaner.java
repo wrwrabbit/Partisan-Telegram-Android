@@ -56,6 +56,23 @@ public class FileProtectionDatabaseCleaner {
             clearTable(new TableInfo("media_v4") {{ keepUsersWithSecretChats = true; }});
             clearTable(new TableInfo("media_holes_topics"));
             clearTable(new TableInfo("media_holes_v2"));
+            clearTable(new TableInfo("enc_tasks_v4"));
+            clearTable(new TableInfo("randoms_v2"));
+            clearTable(new TableInfo("sharing_locations"));
+            clearTable(new TableInfo("unread_push_messages"));
+            clearTable(new TableInfo("media_topics"));
+            clearTable(new TableInfo("saved_dialogs") {{ dialogIdColumn = "did"; }});
+            clearTable(new TableInfo("topics") {{ dialogIdColumn = "did"; }});
+            clearTable(new TableInfo("scheduled_messages_v2"));
+            clearTable(new TableInfo("chat_pinned_v2"));
+            clearTable(new TableInfo("ephemeral_messages") {{ dialogIdColumn = "dialog_id"; }});
+            clearTable(new TableInfo("bot_keyboard"));
+            clearTable(new TableInfo("bot_keyboard_topics"));
+            clearTable(new TableInfo("users_data") {{ keepRecentSearch = true; keepUsersWithSecretChats = true; }});
+            clearTable(new TableInfo("quick_replies_messages") {{ keepEncryptedGroups = false; }});
+            clearTable(new TableInfo("user_phones_v7") {{ keepEncryptedGroups = false; }});
+            clearTable(new TableInfo("tag_message_id") {{ keepEncryptedGroups = false; }});
+            clearTable(new TableInfo("user_contacts_v7") {{ keepEncryptedGroups = false; }});
             if (deletedCount > 100) {
                 compressDb();
             }
