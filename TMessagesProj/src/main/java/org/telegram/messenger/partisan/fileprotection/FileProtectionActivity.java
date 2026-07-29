@@ -39,6 +39,7 @@ public class FileProtectionActivity extends BaseFragment {
 
     private int storeMessagesInMemoryOnlyRow;
     private int encryptDatabaseRow;
+    private int encryptAuthTokenRow;
     private int worksWithFakePasscodeRow;
     private int worksWithFakePasscodeDelimiterRow;
     private int firstAccountRow;
@@ -48,6 +49,7 @@ public class FileProtectionActivity extends BaseFragment {
     private final List<FileProtectionAccountInfo> accounts = new ArrayList<>();
     private boolean storeMessagesInMemoryOnly;
     private boolean encryptDatabase;
+    private boolean encryptAuthToken;
     private boolean fileProtectionWorksWhenFakePasscodeActivated;
 
     private static final int done_button = 1;
@@ -57,6 +59,7 @@ public class FileProtectionActivity extends BaseFragment {
         super.onFragmentCreate();
         storeMessagesInMemoryOnly = FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
         encryptDatabase = FileProtectionSettings.encryptDatabase.get().orElse(true);
+        encryptAuthToken = FileProtectionSettings.encryptAuthToken.get().orElse(true);
         fileProtectionWorksWhenFakePasscodeActivated = FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true);
         updateRows();
         return true;
@@ -110,6 +113,10 @@ public class FileProtectionActivity extends BaseFragment {
                 encryptDatabase = !encryptDatabase;
                 ((TextCheckCell) view).setChecked(encryptDatabase);
             }
+            if (position == encryptAuthTokenRow) {
+                encryptAuthToken = !encryptAuthToken;
+                ((TextCheckCell) view).setChecked(encryptAuthToken);
+            }
             if (position == worksWithFakePasscodeRow) {
                 fileProtectionWorksWhenFakePasscodeActivated = !fileProtectionWorksWhenFakePasscodeActivated;
                 TextCheckCell textCell = (TextCheckCell) view;
@@ -141,6 +148,7 @@ public class FileProtectionActivity extends BaseFragment {
 
         storeMessagesInMemoryOnlyRow = rowCount++;
         encryptDatabaseRow = rowCount++;
+        encryptAuthTokenRow = rowCount++;
         worksWithFakePasscodeRow = rowCount++;
         worksWithFakePasscodeDelimiterRow = rowCount++;
         firstAccountRow = rowCount;
@@ -155,6 +163,7 @@ public class FileProtectionActivity extends BaseFragment {
         return FileProtectionSwitcher.fileProtectedAccountsChanged(accounts)
                 || storeMessagesInMemoryOnlyChanged()
                 || encryptDatabaseChanged()
+                || encryptAuthTokenChanged()
                 || fileProtectionWorksWhenFakePasscodeActivatedChanged();
     }
 
@@ -164,6 +173,10 @@ public class FileProtectionActivity extends BaseFragment {
 
     private boolean encryptDatabaseChanged() {
         return encryptDatabase != FileProtectionSettings.encryptDatabase.get().orElse(true);
+    }
+
+    private boolean encryptAuthTokenChanged() {
+        return encryptAuthToken != FileProtectionSettings.encryptAuthToken.get().orElse(true);
     }
 
     private boolean fileProtectionWorksWhenFakePasscodeActivatedChanged() {
@@ -192,7 +205,8 @@ public class FileProtectionActivity extends BaseFragment {
     private boolean switchingNeeded() {
         return FileProtectionSwitcher.fileProtectedAccountsChanged(accounts)
                 || storeMessagesInMemoryOnlyChanged()
-                || encryptDatabaseChanged();
+                || encryptDatabaseChanged()
+                || encryptAuthTokenChanged();
     }
 
     private void processDone() {
@@ -211,7 +225,7 @@ public class FileProtectionActivity extends BaseFragment {
                 FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.toggle();
             }
             if (switchingNeeded()) {
-                new FileProtectionSwitcher(this).apply(accounts, storeMessagesInMemoryOnly, encryptDatabase);
+                new FileProtectionSwitcher(this).apply(accounts, storeMessagesInMemoryOnly, encryptDatabase, encryptAuthToken);
             } else {
                 finishFragment();
             }
@@ -276,6 +290,8 @@ public class FileProtectionActivity extends BaseFragment {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionStoreMessagesInMemoryOnly), storeMessagesInMemoryOnly, true);
                     } else if (position == encryptDatabaseRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionEncryptDatabase), encryptDatabase, true);
+                    } else if (position == encryptAuthTokenRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionEncryptAuthToken), encryptAuthToken, true);
                     } else if (position == worksWithFakePasscodeRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.WorksWithFakePasscodes), fileProtectionWorksWhenFakePasscodeActivated, true);
                     }
@@ -292,7 +308,7 @@ public class FileProtectionActivity extends BaseFragment {
 
         @Override
         public int getItemViewType(int position) {
-            if (position == storeMessagesInMemoryOnlyRow || position == encryptDatabaseRow || position == worksWithFakePasscodeRow) {
+            if (position == storeMessagesInMemoryOnlyRow || position == encryptDatabaseRow || position == encryptAuthTokenRow || position == worksWithFakePasscodeRow) {
                 return 1;
             } else if (position == worksWithFakePasscodeDelimiterRow) {
                 return 2;

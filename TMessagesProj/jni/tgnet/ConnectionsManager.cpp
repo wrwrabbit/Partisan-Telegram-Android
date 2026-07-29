@@ -3720,6 +3720,17 @@ void ConnectionsManager::applyDnsConfig(NativeByteBuffer *buffer, std::string ph
     });
 }
 
+void ConnectionsManager::setConfigEncryptionKey(const uint8_t *key, int32_t length, bool encryptOnWrite) {
+    configEncryptionEncryptOnWrite = encryptOnWrite;
+    if (key != nullptr && length == sizeof(configEncryptionKey)) {
+        memcpy(configEncryptionKey, key, sizeof(configEncryptionKey));
+        configEncryptionKeySet = true;
+    } else {
+        memset(configEncryptionKey, 0, sizeof(configEncryptionKey));
+        configEncryptionKeySet = false;
+    }
+}
+
 void ConnectionsManager::init(uint32_t version, int32_t layer, int32_t apiId, std::string deviceModel, std::string systemVersion, std::string appVersion, std::string langCode, std::string systemLangCode, std::string configPath, std::string logPath, std::string regId, std::string cFingerpting, std::string installerId, std::string packageId, int32_t timezoneOffset, int64_t userId, bool userPremium, bool isPaused, bool enablePushConnection, bool hasNetwork, int32_t networkType, int32_t performanceClass) {
     currentVersion = version;
     currentLayer = layer;

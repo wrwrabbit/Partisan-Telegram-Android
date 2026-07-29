@@ -11,6 +11,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionEncryptionKeyStore.KeyType;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -136,25 +137,26 @@ public class MigrationZipBuilder {
         ZipOutputStream zipStream = new ZipOutputStream(cipherStream);
 
         File filesDir = contextWrapper.getFilesDir();
-        FileProtectionKeyMigrationSender.deleteStaleKeysFile();
+        KeyMigrationSender.deleteStaleKeysFile(KeyType.DATABASE);
+        KeyMigrationSender.deleteStaleKeysFile(KeyType.AUTH_TOKEN);
         addDirToZip(zipStream, "", filesDir);
         addDirToZip(zipStream, "", new File(filesDir.getParentFile(), "shared_prefs"));
-        addDbEncryptionKeysToZip(zipStream);
+        addKeysToZip(zipStream, KeyType.DATABASE);
+        addKeysToZip(zipStream, KeyType.AUTH_TOKEN);
         zipStream.close();
         return zipFile;
     }
 
-    // The database encryption keys are wrapped by this app's Android Keystore, which the
-    // target app can't access, so the raw keys are transferred inside the migration zip.
-    // Inside the zip they're never unencrypted on disk (the zip stream is wrapped in a
-    // CipherOutputStream); once extracted on the target they exist briefly as a plaintext
-    // file, which FileProtectionKeyMigrationReceiver shreds as each key is consumed.
-    private static void addDbEncryptionKeysToZip(ZipOutputStream zos) throws IOException {
-        byte[] keysFileContent = FileProtectionKeyMigrationSender.serializeKeysForMigration();
+    // Each KeyType's raw per-account keys are wrapped by this app's Android Keystore, which the
+    // target app can't access, so they're transferred inside the migration zip. Inside the zip
+    // they're never unencrypted on disk (the zip stream is wrapped in a CipherOutputStream); once
+    // extracted on the target they exist briefly as a plaintext file, shredded as each key is consumed.
+    private static void addKeysToZip(ZipOutputStream zos, KeyType type) throws IOException {
+        byte[] keysFileContent = KeyMigrationSender.serializeKeysForMigration(type);
         if (keysFileContent == null) {
             return;
         }
-        zos.putNextEntry(new ZipEntry("files/" + FileProtectionKeyMigrationSender.KEYS_FILE_NAME));
+        zos.putNextEntry(new ZipEntry("files/" + type.migrationFileName));
         zos.write(keysFileContent);
         zos.closeEntry();
     }

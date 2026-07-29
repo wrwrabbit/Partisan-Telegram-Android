@@ -24,6 +24,7 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     private boolean forceApply;
     private boolean storeMessagesInMemoryOnly;
     private boolean encryptDatabase;
+    private boolean encryptAuthToken;
 
     public FileProtectionSwitcher(BaseFragment fragment) {
         this.fragment = fragment;
@@ -43,13 +44,15 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
         valuesPerAccounts = new ArrayList<>();
         storeMessagesInMemoryOnly = FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
         encryptDatabase = FileProtectionSettings.encryptDatabase.get().orElse(true);
+        encryptAuthToken = FileProtectionSettings.encryptAuthToken.get().orElse(true);
         startSwitching();
     }
 
     // accounts must cover every activated account
-    public void apply(List<FileProtectionAccountInfo> accounts, boolean storeMessagesInMemoryOnly, boolean encryptDatabase) {
+    public void apply(List<FileProtectionAccountInfo> accounts, boolean storeMessagesInMemoryOnly, boolean encryptDatabase, boolean encryptAuthToken) {
         this.storeMessagesInMemoryOnly = storeMessagesInMemoryOnly;
         this.encryptDatabase = encryptDatabase;
+        this.encryptAuthToken = encryptAuthToken;
         setProtectedAccounts(accounts);
         startSwitching();
     }
@@ -147,6 +150,7 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
 
     private void updateConfigs() {
         FileProtectionSettings.encryptDatabase.set(encryptDatabase);
+        FileProtectionSettings.encryptAuthToken.set(encryptAuthToken);
         if (onlyDbEncryptionChanged()) {
             return;
         }

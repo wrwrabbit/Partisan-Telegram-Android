@@ -9,6 +9,7 @@ public class FileProtectionSettings {
     public static final BooleanSetting disableFileProtectionAfterRestart = new BooleanSetting("disableFileProtectionAfterRestart", false);
     public static final BooleanSetting storeMessagesInMemoryOnly = new BooleanSetting("dontStoreMessagesOnDevice", true);
     public static final BooleanSetting encryptDatabase = new BooleanSetting("encryptDatabaseEnabled", true);
+    public static final BooleanSetting encryptAuthToken = new BooleanSetting("encryptAuthTokenEnabled", true);
     public static final BooleanSetting fileProtectionWorksWhenFakePasscodeActivated = new BooleanSetting("fileProtectionWorksWhenFakePasscodeActivated", true);
 
     public static void loadSettings() {

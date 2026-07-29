@@ -22,80 +22,94 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 /**
- * Stores a random per-account database encryption key. The raw key is needed by SQLCipher
- * (sqlite3_key requires exportable key material), so it can't live in the Android Keystore
- * directly. Instead, it is wrapped with AES-GCM using a non-exportable Keystore key and the
- * wrapped blob is persisted in the account's preferences.
+ * Stores a random per-account encryption key. The raw key is needed by consumers that can't use a
+ * Keystore key directly (SQLCipher's sqlite3_key needs exportable material; native tgnet code can't
+ * reach the Android Keystore at all), so it is wrapped with AES-GCM using a non-exportable Keystore
+ * key and the wrapped blob is persisted in the account's preferences. Each {@link KeyType} is an
+ * independent key with its own Keystore alias and preference so their lifecycles never interfere.
  */
 public class FileProtectionEncryptionKeyStore {
-    private static final String KEYSTORE_ALIAS = "FileProtectionDbKey";
-    private static final String PREF_KEY = "dbEncryptionKey";
+    public enum KeyType {
+        DATABASE("FileProtectionDbKey", "dbEncryptionKey", "db_encryption_keys"),
+        AUTH_TOKEN("AuthTokenKey", "authTokenEncryptionKey", "tgnet_encryption_keys");
+
+        final String keystoreAlias;
+        final String prefKey;
+        public final String migrationFileName;
+
+        KeyType(String keystoreAlias, String prefKey, String migrationFileName) {
+            this.keystoreAlias = keystoreAlias;
+            this.prefKey = prefKey;
+            this.migrationFileName = migrationFileName;
+        }
+    }
+
     public static final int DB_KEY_LENGTH = 32;
     private static final int GCM_TAG_LENGTH = 128;
 
-    public static synchronized byte[] getOrCreateKey(int account) {
+    public static synchronized byte[] getOrCreateKey(KeyType type, int account) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return null;
         }
-        byte[] key = getKeyIfExists(account);
+        byte[] key = getKeyIfExists(type, account);
         if (key != null) {
             return key;
         }
-        if (keyBlobExists(account)) {
+        if (keyBlobExists(type, account)) {
             // The wrapped key exists but couldn't be unwrapped (temporary keystore failure).
-            // Don't overwrite it: the database may already be encrypted with it.
+            // Don't overwrite it: the data may already be encrypted with it.
             return null;
         }
         try {
             key = new byte[DB_KEY_LENGTH];
             new SecureRandom().nextBytes(key);
-            storeKey(account, key);
+            storeKey(type, account, key);
             return key;
         } catch (Exception e) {
-            PartisanLog.e("FileProtectionEncryptionKeyStore: failed to create a database key", e);
+            PartisanLog.e("FileProtectionEncryptionKeyStore: failed to create a key", e);
             return null;
         }
     }
 
-    public static synchronized byte[] getKeyIfExists(int account) {
+    public static synchronized byte[] getKeyIfExists(KeyType type, int account) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return null;
         }
         try {
-            String encoded = getPreferences(account).getString(PREF_KEY, null);
+            String encoded = getPreferences(account).getString(type.prefKey, null);
             if (encoded == null) {
                 return null;
             }
-            return unwrapKey(Base64.decode(encoded, Base64.DEFAULT));
+            return unwrapKey(type, Base64.decode(encoded, Base64.DEFAULT));
         } catch (Exception e) {
-            PartisanLog.e("FileProtectionEncryptionKeyStore: failed to unwrap the database key", e);
+            PartisanLog.e("FileProtectionEncryptionKeyStore: failed to unwrap the key", e);
             return null;
         }
     }
 
-    public static synchronized boolean keyBlobExists(int account) {
-        return getPreferences(account).getString(PREF_KEY, null) != null;
+    public static synchronized boolean keyBlobExists(KeyType type, int account) {
+        return getPreferences(account).getString(type.prefKey, null) != null;
     }
 
-    public static synchronized void deleteKey(int account) {
-        getPreferences(account).edit().remove(PREF_KEY).commit();
+    public static synchronized void deleteKey(KeyType type, int account) {
+        getPreferences(account).edit().remove(type.prefKey).commit();
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    private static void storeKey(int account, byte[] key) throws Exception {
-        byte[] blob = wrapKey(key);
+    public static synchronized void storeKey(KeyType type, int account, byte[] key) throws Exception {
+        byte[] blob = wrapKey(type, key);
         boolean saved = getPreferences(account).edit()
-                .putString(PREF_KEY, Base64.encodeToString(blob, Base64.DEFAULT))
+                .putString(type.prefKey, Base64.encodeToString(blob, Base64.DEFAULT))
                 .commit();
         if (!saved) {
-            throw new IllegalStateException("failed to save the wrapped database key");
+            throw new IllegalStateException("failed to save the wrapped key");
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    private static byte[] wrapKey(byte[] key) throws Exception {
+    private static byte[] wrapKey(KeyType type, byte[] key) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, getSecretKey());
+        cipher.init(Cipher.ENCRYPT_MODE, getSecretKey(type));
         byte[] iv = cipher.getIV();
         byte[] wrappedKey = cipher.doFinal(key);
         byte[] blob = new byte[1 + iv.length + wrappedKey.length];
@@ -106,42 +120,42 @@ public class FileProtectionEncryptionKeyStore {
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    private static byte[] unwrapKey(byte[] blob) throws Exception {
+    private static byte[] unwrapKey(KeyType type, byte[] blob) throws Exception {
         int ivLength = blob[0] & 0xFF;
         byte[] iv = Arrays.copyOfRange(blob, 1, 1 + ivLength);
         byte[] wrappedKey = Arrays.copyOfRange(blob, 1 + ivLength, blob.length);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), new GCMParameterSpec(GCM_TAG_LENGTH, iv));
+        cipher.init(Cipher.DECRYPT_MODE, getSecretKey(type), new GCMParameterSpec(GCM_TAG_LENGTH, iv));
         return cipher.doFinal(wrappedKey);
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    private static SecretKey getSecretKey() throws Exception {
+    private static SecretKey getSecretKey(KeyType type) throws Exception {
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
-        if (!keyStore.containsAlias(KEYSTORE_ALIAS)) {
-            generateSecretKey();
+        if (!keyStore.containsAlias(type.keystoreAlias)) {
+            generateSecretKey(type);
         }
-        return (SecretKey) keyStore.getKey(KEYSTORE_ALIAS, null);
+        return (SecretKey) keyStore.getKey(type.keystoreAlias, null);
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    private static void generateSecretKey() throws Exception {
+    private static void generateSecretKey(KeyType type) throws Exception {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
-                generateSecretKey(true);
+                generateSecretKey(type, true);
                 return;
             } catch (StrongBoxUnavailableException e) {
                 PartisanLog.d("FileProtectionEncryptionKeyStore: StrongBox is unavailable, falling back to TEE");
             }
         }
-        generateSecretKey(false);
+        generateSecretKey(type, false);
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    private static void generateSecretKey(boolean strongBoxBacked) throws Exception {
+    private static void generateSecretKey(KeyType type, boolean strongBoxBacked) throws Exception {
         KeyGenerator keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
-        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(KEYSTORE_ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(type.keystoreAlias, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setUserAuthenticationRequired(false);

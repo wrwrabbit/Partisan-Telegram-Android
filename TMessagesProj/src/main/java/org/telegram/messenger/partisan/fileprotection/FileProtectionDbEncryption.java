@@ -6,7 +6,8 @@ import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
-import org.telegram.messenger.partisan.appmigration.FileProtectionKeyMigrationReceiver;
+import org.telegram.messenger.partisan.appmigration.DatabaseKeyMigrationReceiver;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionEncryptionKeyStore.KeyType;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,7 +26,7 @@ public class FileProtectionDbEncryption {
     public static byte[] syncDatabaseEncryptionAndGetKeySpec(int account, File dbFile) {
         try {
             restoreBackupIfNeeded(dbFile);
-            FileProtectionKeyMigrationReceiver.takeOverMigratedKeyIfNeeded(account, dbFile);
+            DatabaseKeyMigrationReceiver.takeOverMigratedKeyIfNeeded(account, dbFile);
             if (!encryptionSupported()) {
                 return null;
             }
@@ -57,7 +58,7 @@ public class FileProtectionDbEncryption {
         if (!FileProtectionUtils.encryptionEnabledByConfig(account)) {
             return null;
         }
-        byte[] key = FileProtectionEncryptionKeyStore.getOrCreateKey(account);
+        byte[] key = FileProtectionEncryptionKeyStore.getOrCreateKey(KeyType.DATABASE, account);
         if (key == null) {
             return null;
         }
@@ -80,7 +81,7 @@ public class FileProtectionDbEncryption {
         } catch (Exception e) {
             return "";
         }
-        byte[] key = FileProtectionEncryptionKeyStore.getKeyIfExists(account);
+        byte[] key = FileProtectionEncryptionKeyStore.getKeyIfExists(KeyType.DATABASE, account);
         if (key == null) {
             return "";
         }
@@ -92,7 +93,7 @@ public class FileProtectionDbEncryption {
     }
 
     private static byte[] resolveKeySpecOrDeleteEncryptedFile(int account, File dbFile) throws Exception {
-        byte[] key = FileProtectionEncryptionKeyStore.getKeyIfExists(account);
+        byte[] key = FileProtectionEncryptionKeyStore.getKeyIfExists(KeyType.DATABASE, account);
         if (key != null) {
             byte[] keySpec = toKeySpec(key);
             if (canOpenWithKey(dbFile, keySpec)) {
@@ -101,7 +102,7 @@ public class FileProtectionDbEncryption {
                 PartisanLog.e("FileProtectionDbEncryption: the stored key doesn't match the encrypted database, deleting the database");
                 deleteWithSidecars(dbFile);
             }
-        } else if (!FileProtectionEncryptionKeyStore.keyBlobExists(account)) {
+        } else if (!FileProtectionEncryptionKeyStore.keyBlobExists(KeyType.DATABASE, account)) {
             PartisanLog.e("FileProtectionDbEncryption: the database is encrypted but the key is lost, deleting the database");
             deleteWithSidecars(dbFile);
         }
@@ -111,18 +112,18 @@ public class FileProtectionDbEncryption {
     // Called when the file is encrypted but the "Encrypt database" toggle is now off: convert
     // it back to plaintext so it opens without a key. Leaves the database in an openable state.
     private static void decryptOrDeleteEncryptedFile(int account, File dbFile) throws Exception {
-        byte[] key = FileProtectionEncryptionKeyStore.getKeyIfExists(account);
+        byte[] key = FileProtectionEncryptionKeyStore.getKeyIfExists(KeyType.DATABASE, account);
         if (key != null) {
             byte[] keySpec = toKeySpec(key);
             if (canOpenWithKey(dbFile, keySpec)) {
                 decryptDatabase(dbFile, keySpec);
-                FileProtectionEncryptionKeyStore.deleteKey(account);
+                FileProtectionEncryptionKeyStore.deleteKey(KeyType.DATABASE, account);
             } else {
                 PartisanLog.e("FileProtectionDbEncryption: cannot decrypt (stored key doesn't match), deleting the database");
                 deleteWithSidecars(dbFile);
-                FileProtectionEncryptionKeyStore.deleteKey(account);
+                FileProtectionEncryptionKeyStore.deleteKey(KeyType.DATABASE, account);
             }
-        } else if (!FileProtectionEncryptionKeyStore.keyBlobExists(account)) {
+        } else if (!FileProtectionEncryptionKeyStore.keyBlobExists(KeyType.DATABASE, account)) {
             PartisanLog.e("FileProtectionDbEncryption: cannot decrypt (key lost), deleting the database");
             deleteWithSidecars(dbFile);
         }

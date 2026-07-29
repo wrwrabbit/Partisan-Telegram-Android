@@ -464,6 +464,21 @@ void setSystemLangCode(JNIEnv *env, jclass c, jint instanceNum, jstring langCode
     }
 }
 
+void setTgnetConfigKey(JNIEnv *env, jclass c, jint instanceNum, jbyteArray key, jboolean encryptOnWrite) {
+    if (key == nullptr) {
+        ConnectionsManager::getInstance(instanceNum).setConfigEncryptionKey(nullptr, 0, encryptOnWrite);
+        return;
+    }
+    jsize length = env->GetArrayLength(key);
+    jbyte *bytes = env->GetByteArrayElements(key, nullptr);
+    if (bytes == nullptr) {
+        ConnectionsManager::getInstance(instanceNum).setConfigEncryptionKey(nullptr, 0, encryptOnWrite);
+        return;
+    }
+    ConnectionsManager::getInstance(instanceNum).setConfigEncryptionKey((const uint8_t *) bytes, (int32_t) length, encryptOnWrite);
+    env->ReleaseByteArrayElements(key, bytes, JNI_ABORT);
+}
+
 void init(JNIEnv *env, jclass c, jint instanceNum, jint version, jint layer, jint apiId, jstring deviceModel, jstring systemVersion, jstring appVersion, jstring langCode, jstring systemLangCode, jstring configPath, jstring logPath, jstring regId, jstring cFingerprint, jstring installerId, jstring packageId, jint timezoneOffset, jlong userId, jboolean userPremium, jboolean enablePushConnection, jboolean hasNetwork, jint networkType, jint performanceClass) {
     const char *deviceModelStr = env->GetStringUTFChars(deviceModel, 0);
     const char *systemVersionStr = env->GetStringUTFChars(systemVersion, 0);
@@ -543,6 +558,7 @@ static JNINativeMethod ConnectionsManagerMethods[] = {
         {"native_setLangCode", "(ILjava/lang/String;)V", (void *) setLangCode},
         {"native_setRegId", "(ILjava/lang/String;)V", (void *) setRegId},
         {"native_setSystemLangCode", "(ILjava/lang/String;)V", (void *) setSystemLangCode},
+        {"native_setTgnetConfigKey", "(I[BZ)V", (void *) setTgnetConfigKey},
         {"native_switchBackend", "(IZ)V", (void *) switchBackend},
         {"native_pauseNetwork", "(I)V", (void *) pauseNetwork},
         {"native_resumeNetwork", "(IZ)V", (void *) resumeNetwork},

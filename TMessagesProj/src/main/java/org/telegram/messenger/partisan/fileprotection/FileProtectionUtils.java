@@ -7,6 +7,10 @@ public class FileProtectionUtils {
         return FileProtectionSettings.encryptDatabase.get().orElse(true) && fileProtectionEnabledForAccount(account);
     }
 
+    public static boolean authTokenEncryptionEnabledByConfig(int account) {
+        return FileProtectionSettings.encryptAuthToken.get().orElse(true) && fileProtectionEnabledForAccount(account);
+    }
+
     public static boolean fileProtectionEnabledForAccount(int account) {
         if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
             return true;
