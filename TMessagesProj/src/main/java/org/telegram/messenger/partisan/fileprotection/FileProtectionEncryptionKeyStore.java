@@ -113,7 +113,7 @@ public class FileProtectionEncryptionKeyStore {
     @RequiresApi(Build.VERSION_CODES.M)
     private static byte[] wrapKey(KeyType type, byte[] key) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, getSecretKey(type));
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey(type));
         byte[] iv = cipher.getIV();
         byte[] wrappedKey = cipher.doFinal(key);
         byte[] blob = new byte[1 + iv.length + wrappedKey.length];
@@ -129,18 +129,34 @@ public class FileProtectionEncryptionKeyStore {
         byte[] iv = Arrays.copyOfRange(blob, 1, 1 + ivLength);
         byte[] wrappedKey = Arrays.copyOfRange(blob, 1 + ivLength, blob.length);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, getSecretKey(type), new GCMParameterSpec(GCM_TAG_LENGTH, iv));
+        cipher.init(Cipher.DECRYPT_MODE, getSecretKeyIfExists(type), new GCMParameterSpec(GCM_TAG_LENGTH, iv));
         return cipher.doFinal(wrappedKey);
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    private static SecretKey getSecretKey(KeyType type) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
-        keyStore.load(null);
+    private static SecretKey getOrCreateSecretKey(KeyType type) throws Exception {
+        KeyStore keyStore = loadKeyStore();
         if (!keyStore.containsAlias(type.keystoreAlias)) {
             generateSecretKey(type);
         }
         return (SecretKey) keyStore.getKey(type.keystoreAlias, null);
+    }
+
+    // Never generates a key: a missing alias while a wrapped blob exists means the blob is already
+    // lost, and a replacement would silently make it undecryptable forever instead of just now.
+    @RequiresApi(Build.VERSION_CODES.M)
+    private static SecretKey getSecretKeyIfExists(KeyType type) throws Exception {
+        SecretKey key = (SecretKey) loadKeyStore().getKey(type.keystoreAlias, null);
+        if (key == null) {
+            throw new IllegalStateException("the keystore key is missing");
+        }
+        return key;
+    }
+
+    private static KeyStore loadKeyStore() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        return keyStore;
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -170,7 +186,7 @@ public class FileProtectionEncryptionKeyStore {
         keyGenerator.generateKey();
     }
 
-    private static SharedPreferences getPreferences(KeyType type, int account) {
+    static SharedPreferences getPreferences(KeyType type, int account) {
         if (type.prefsName == null) {
             return UserConfig.getInstance(account).getPreferences();
         }

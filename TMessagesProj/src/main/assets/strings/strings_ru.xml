@@ -312,6 +312,13 @@
     <string name="FileProtectionDisabledTitle">Защита файлов отключена</string>
     <string name="FileProtectionDisabledDetails">Размер базы данных стал слишком большим. Защита файлов временно отключена. Вы можете снова включить эту функцию.</string>
     <string name="FileProtectionEnableAgain">Включить снова</string>
+    <string name="AccountDataUnavailableTitle">Данные аккаунта недоступны</string>
+    <string name="AccountDataUnavailableDetails">Приложение сейчас не может прочитать данные этого аккаунта. Обычно помогает перезапуск приложения или устройства.\n\nЕсли это повторяется, вам придётся снова войти в этот аккаунт.</string>
+    <string name="RestartApplication">Перезапустить</string>
+    <string name="AccountDataCannotBeProtectedTitle">⚠️ Данные аккаунта не могут быть защищены</string>
+    <string name="AccountDataCannotBeProtectedDetails">Это устройство сейчас не может защитить данные этого аккаунта. Оба варианта связаны с риском:\n\n**Продолжить без защиты** — вы останетесь в аккаунте, но его данные будут храниться на устройстве незащищёнными. Любой, кто получит доступ к файлам, сможет прочитать вашу переписку.\n\n**Оставить защиту** — на устройстве не останется незащищённых данных, но данные этого аккаунта не будут сохраняться, пока проблема не исчезнет. Возможно, вы выйдете из аккаунта, и придётся войти заново.</string>
+    <string name="ContinueWithoutProtection">Продолжить без защиты</string>
+    <string name="KeepProtection">Оставить защиту</string>
     <string name="InnerEncryptedChatStateSecretChatCreating">Создание секретного чата</string>
     <string name="InnerEncryptedChatStateInvitationSent">Приглашение отправлено</string>
     <string name="InnerEncryptedChatStateInitialization">Инициализация</string>

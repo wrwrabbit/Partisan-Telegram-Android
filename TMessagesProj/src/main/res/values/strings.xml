@@ -11474,6 +11474,13 @@
     <string name="FileProtectionDisabledTitle">File protection is disabled</string>
     <string name="FileProtectionDisabledDetails">The database size has become too large. File protection is temporarily disabled. You can enable this feature again.</string>
     <string name="FileProtectionEnableAgain">Enable again</string>
+    <string name="AccountDataUnavailableTitle">Account data unavailable</string>
+    <string name="AccountDataUnavailableDetails">The application can\'t read this account\'s data right now. Restarting the application or the device usually helps.\n\nIf this keeps happening, you will have to log in to this account again.</string>
+    <string name="RestartApplication">Restart</string>
+    <string name="AccountDataCannotBeProtectedTitle">⚠️ Account data can\'t be protected</string>
+    <string name="AccountDataCannotBeProtectedDetails">This device can\'t protect this account\'s data right now. Both ways forward have a risk:\n\n**Continue without protection** — you stay logged in, but this account\'s data is stored on the device unprotected. Anyone who gets access to the files could use it to read your messages.\n\n**Keep protection** — no unprotected data is left on the device, but this account\'s data will not be saved while the problem lasts. You may be logged out and have to log in again.</string>
+    <string name="ContinueWithoutProtection">Continue without protection</string>
+    <string name="KeepProtection">Keep protection</string>
     <string name="InnerEncryptedChatStateSecretChatCreating">Secret chat creating</string>
     <string name="InnerEncryptedChatStateInvitationSent">Invitation sent</string>
     <string name="InnerEncryptedChatStateInitialization">Initialization</string>

@@ -312,6 +312,13 @@
     <string name="FileProtectionDisabledTitle">Захист файлів вимкнено</string>
     <string name="FileProtectionDisabledDetails">Розмір бази даних став занадто великим. Захист файлів тимчасово вимкнено. Ви можете увімкнути цю функцію знову.</string>
     <string name="FileProtectionEnableAgain">Увімкнути знову</string>
+    <string name="AccountDataUnavailableTitle">Дані акаунта недоступні</string>
+    <string name="AccountDataUnavailableDetails">Додаток зараз не може прочитати дані цього акаунта. Зазвичай допомагає перезапуск додатка або пристрою.\n\nЯкщо це повторюється, вам доведеться знову увійти в цей акаунт.</string>
+    <string name="RestartApplication">Перезапустити</string>
+    <string name="AccountDataCannotBeProtectedTitle">⚠️ Дані акаунта не можуть бути захищені</string>
+    <string name="AccountDataCannotBeProtectedDetails">Цей пристрій зараз не може захистити дані цього акаунта. Обидва варіанти пов\'язані з ризиком:\n\n**Продовжити без захисту** — ви залишитеся в акаунті, але його дані зберігатимуться на пристрої незахищеними. Будь-хто, хто отримає доступ до файлів, зможе прочитати ваше листування.\n\n**Залишити захист** — на пристрої не залишиться незахищених даних, але дані цього акаунта не зберігатимуться, доки проблема не зникне. Можливо, ви вийдете з акаунта, і доведеться увійти знову.</string>
+    <string name="ContinueWithoutProtection">Продовжити без захисту</string>
+    <string name="KeepProtection">Залишити захист</string>
     <string name="InnerEncryptedChatStateSecretChatCreating">Створення секретного чату</string>
     <string name="InnerEncryptedChatStateInvitationSent">Запрошення надіслано</string>
     <string name="InnerEncryptedChatStateInitialization">Ініціалізація</string>

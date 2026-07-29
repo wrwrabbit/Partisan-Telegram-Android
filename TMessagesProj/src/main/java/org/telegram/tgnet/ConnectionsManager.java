@@ -830,7 +830,10 @@ public class ConnectionsManager extends BaseController {
     public static void onLogout(final int currentAccount) {
         AndroidUtilities.runOnUIThread(() -> {
             AccountInstance accountInstance = AccountInstance.getInstance(currentAccount);
-            if (accountInstance.getUserConfig().getClientUserId() != 0) {
+            // The server rejects us whenever the stored config key can't be unwrapped, because tgnet.dat
+            // then can't be read. Logging out would delete a file that a later launch can still decrypt.
+            if (accountInstance.getUserConfig().getClientUserId() != 0
+                    && !org.telegram.messenger.partisan.fileprotection.FileProtectionTgnetEncryption.isExistingConfigKeyUnreadable(currentAccount)) {
                 accountInstance.getUserConfig().clearConfig();
                 accountInstance.getMessagesController().performLogout(0);
             }

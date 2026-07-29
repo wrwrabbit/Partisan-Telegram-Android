@@ -43,6 +43,8 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.FilteredArrayList;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionEncryptionKeyStore;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionTgnetEncryption;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -624,6 +626,10 @@ public class Utils {
     }
 
     public static void deleteAccountFiles(int accountNum) {
+        // tgnet.dat is about to go, so its key is useless. Leaving it behind would make the next
+        // login unable to persist a session if the blob has become unreadable.
+        FileProtectionEncryptionKeyStore.deleteKey(FileProtectionEncryptionKeyStore.KeyType.AUTH_TOKEN, accountNum);
+        FileProtectionTgnetEncryption.clearConfigKeyState(accountNum);
         if (accountNum == 0) {
             deleteZeroAccountFiles();
             return;

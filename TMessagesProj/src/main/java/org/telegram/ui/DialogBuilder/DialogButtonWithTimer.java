@@ -8,7 +8,10 @@ import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
 
-import java.util.Locale;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 public class DialogButtonWithTimer {
     private static class Info {
@@ -16,6 +19,20 @@ public class DialogButtonWithTimer {
         public int timeout;
         public boolean isDialogDismissed = false;
     }
+
+    private static class TimedButton {
+        final int buttonType;
+        final Info info;
+
+        TimedButton(int buttonType, Info info) {
+            this.buttonType = buttonType;
+            this.info = info;
+        }
+    }
+
+    // A dialog keeps only one show listener, so every timed button on it has to be started from a
+    // single shared one instead of each call installing its own.
+    private static final Map<AlertDialog, List<TimedButton>> timedButtons = new WeakHashMap<>();
 
     public static void setButton(AlertDialog dialog, int buttonType, String text, int timeout, final DialogInterface.OnClickListener listener) {
         Info info = new Info();
@@ -27,15 +44,30 @@ public class DialogButtonWithTimer {
                 listener.onClick(dlg, which);
             }
         });
+
+        List<TimedButton> buttons = timedButtons.get(dialog);
+        if (buttons == null) {
+            buttons = new ArrayList<>();
+            timedButtons.put(dialog, buttons);
+        }
+        buttons.add(new TimedButton(buttonType, info));
+        List<TimedButton> dialogButtons = buttons;
         dialog.setOnShowListener(dlg -> {
-            TextView button = (TextView)dialog.getButton(buttonType);
-            info.text = button.getText().toString();
-            button.setText(info.text + " (" + timeout + ")");
-            button.setTextColor(Theme.getColor(Theme.key_dialogTextGray3));
-            button.setEnabled(false);
-            TimeoutRunnable timeoutRunnable = new TimeoutRunnable(button, info);
-            Utilities.globalQueue.postRunnable(timeoutRunnable, 1000);
+            for (TimedButton timedButton : dialogButtons) {
+                startCountdown(dialog, timedButton);
+            }
         });
+    }
+
+    private static void startCountdown(AlertDialog dialog, TimedButton timedButton) {
+        Info info = timedButton.info;
+        TextView button = (TextView) dialog.getButton(timedButton.buttonType);
+        info.text = button.getText().toString();
+        button.setText(info.text + " (" + info.timeout + ")");
+        button.setTextColor(Theme.getColor(Theme.key_dialogTextGray3));
+        button.setEnabled(false);
+        TimeoutRunnable timeoutRunnable = new TimeoutRunnable(button, info);
+        Utilities.globalQueue.postRunnable(timeoutRunnable, 1000);
     }
 
     private static class TimeoutRunnable implements Runnable {

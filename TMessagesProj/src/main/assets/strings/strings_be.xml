@@ -312,6 +312,13 @@
     <string name="FileProtectionDisabledTitle">Абарона файлаў адключана</string>
     <string name="FileProtectionDisabledDetails">Памер базы дадзеных стаў занадта вялікім. Абарона файлаў часова адключана. Вы можаце зноў уключыць гэтую функцыю.</string>
     <string name="FileProtectionEnableAgain">Уключыць зноў</string>
+    <string name="AccountDataUnavailableTitle">Даныя акаўнта недаступныя</string>
+    <string name="AccountDataUnavailableDetails">Дадатак зараз не можа прачытаць даныя гэтага акаўнта. Звычайна дапамагае перазапуск дадатка або прылады.\n\nКалі гэта паўтараецца, вам давядзецца зноў увайсці ў гэты акаўнт.</string>
+    <string name="RestartApplication">Перазапусціць</string>
+    <string name="AccountDataCannotBeProtectedTitle">⚠️ Даныя акаўнта не могуць быць абаронены</string>
+    <string name="AccountDataCannotBeProtectedDetails">Гэтая прылада зараз не можа абараніць даныя гэтага акаўнта. Абодва варыянты звязаны з рызыкай:\n\n**Працягнуць без абароны** — вы застанецеся ў акаўнце, але яго даныя будуць захоўвацца на прыладзе неабароненымі. Любы, хто атрымае доступ да файлаў, зможа прачытаць вашу перапіску.\n\n**Пакінуць абарону** — на прыладзе не застанецца неабароненых даных, але даныя гэтага акаўнта не будуць захоўвацца, пакуль праблема не знікне. Магчыма, вы выйдзеце з акаўнта, і давядзецца ўвайсці зноў.</string>
+    <string name="ContinueWithoutProtection">Працягнуць без абароны</string>
+    <string name="KeepProtection">Пакінуць абарону</string>
     <string name="InnerEncryptedChatStateSecretChatCreating">Стварэнне сакрэтнага чата</string>
     <string name="InnerEncryptedChatStateInvitationSent">Запрашэнне адпраўлена</string>
     <string name="InnerEncryptedChatStateInitialization">Ініцыялізацыя</string>

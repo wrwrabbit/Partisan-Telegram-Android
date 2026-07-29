@@ -137,6 +137,7 @@ import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionKeyUnavailableDialog;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
@@ -7269,6 +7270,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else if (!AndroidUtilities.needShowPasscode(false)) {
             checkOtherPtg();
             checkPtgPermissions();
+            showPtgDialog(FileProtectionKeyUnavailableDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionNewFeatureDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionTemporaryDisabledDialog.createDialogIfNeeded(this), true);
         }
@@ -7929,6 +7931,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return !AppMigrationDialogs.needShowNewerPtgDialog(getContext())
                 && !getOlderPtgStatus().needShowDialog()
                 && !needCameraPermission()
+                && !FileProtectionKeyUnavailableDialog.needShow(currentAccount)
                 && !FileProtectionNewFeatureDialog.needShow()
                 && !FileProtectionTemporaryDisabledDialog.needShow();
     }
