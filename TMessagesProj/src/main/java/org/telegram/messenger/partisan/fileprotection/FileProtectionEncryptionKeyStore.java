@@ -186,7 +186,7 @@ public class FileProtectionEncryptionKeyStore {
         keyGenerator.generateKey();
     }
 
-    static SharedPreferences getPreferences(KeyType type, int account) {
+    public static SharedPreferences getPreferences(KeyType type, int account) {
         if (type.prefsName == null) {
             return UserConfig.getInstance(account).getPreferences();
         }

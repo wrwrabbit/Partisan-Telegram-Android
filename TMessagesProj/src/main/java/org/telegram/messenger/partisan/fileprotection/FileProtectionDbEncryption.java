@@ -69,6 +69,16 @@ public class FileProtectionDbEncryption {
         return keySpec;
     }
 
+    public static boolean isKeyTemporarilyUnavailable(int account, File dbFile) {
+        try {
+            return hasContent(dbFile) && isEncrypted(dbFile)
+                    && FileProtectionEncryptionKeyStore.keyBlobExists(KeyType.DATABASE, account)
+                    && FileProtectionEncryptionKeyStore.getKeyIfExists(KeyType.DATABASE, account) == null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // Returns a " KEY ..." clause for "ATTACH DATABASE"
     public static String getAttachKeyClauseIfNeeded(int account, File dbFile) {
         if (!encryptionSupported() || !dbFile.exists() || dbFile.length() == 0) {

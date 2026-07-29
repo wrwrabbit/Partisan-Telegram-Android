@@ -43,6 +43,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.FilteredArrayList;
+import org.telegram.messenger.partisan.appmigration.TgnetKeyMigrationReceiver;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionEncryptionKeyStore;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTgnetEncryption;
 import org.telegram.messenger.partisan.settings.TesterSettings;
@@ -630,6 +631,7 @@ public class Utils {
         // login unable to persist a session if the blob has become unreadable.
         FileProtectionEncryptionKeyStore.deleteKey(FileProtectionEncryptionKeyStore.KeyType.AUTH_TOKEN, accountNum);
         FileProtectionTgnetEncryption.clearConfigKeyState(accountNum);
+        TgnetKeyMigrationReceiver.clearMigrationTakeoverMarker(accountNum);
         if (accountNum == 0) {
             deleteZeroAccountFiles();
             return;

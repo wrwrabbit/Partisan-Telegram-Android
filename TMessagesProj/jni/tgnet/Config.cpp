@@ -10,144 +10,11 @@
 #include <unistd.h>
 #include <errno.h>
 #include <cstring>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
 #include "Config.h"
 #include "ConnectionsManager.h"
 #include "FileLog.h"
 #include "BuffersStorage.h"
-
-// Encrypted tgnet.dat starts with a uniformly random uint32 >= this value; legacy plaintext files
-// start with a tiny size prefix, so no fixed bits are needed to tell them apart.
-static const uint32_t CONFIG_ENC_MARKER_MIN = 0x40000000; // 1024 MiB
-static const int CONFIG_ENC_MARKER_LEN = 4;
-static const int CONFIG_ENC_IV_LEN = 12;
-static const int CONFIG_ENC_CIPHERLEN_LEN = 4;
-static const int CONFIG_ENC_TAG_LEN = 16;
-static const int CONFIG_ENC_HEADER_LEN = CONFIG_ENC_MARKER_LEN + CONFIG_ENC_IV_LEN + CONFIG_ENC_CIPHERLEN_LEN;
-
-static uint32_t generateEncryptionMarker() {
-    uint32_t value = 0;
-    for (int attempt = 0; attempt < 32; attempt++) {
-        if (RAND_bytes((uint8_t *) &value, sizeof(value)) == 1 && value >= CONFIG_ENC_MARKER_MIN) {
-            return value;
-        }
-    }
-    return CONFIG_ENC_MARKER_MIN; // expected ~1.3 attempts; this is unreachable in practice
-}
-
-static bool aesGcmEncrypt(const uint8_t *key, const uint8_t *plaintext, int plaintextLen,
-                          uint8_t *ivOut, uint8_t *ciphertextOut, uint8_t *tagOut) {
-    if (RAND_bytes(ivOut, CONFIG_ENC_IV_LEN) != 1) {
-        return false;
-    }
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    if (ctx == nullptr) {
-        return false;
-    }
-    bool ok = false;
-    do {
-        if (EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1
-                || EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, CONFIG_ENC_IV_LEN, nullptr) != 1
-                || EVP_EncryptInit_ex(ctx, nullptr, nullptr, key, ivOut) != 1) {
-            break;
-        }
-        int len = 0;
-        if (EVP_EncryptUpdate(ctx, ciphertextOut, &len, plaintext, plaintextLen) != 1) {
-            break;
-        }
-        int total = len;
-        if (EVP_EncryptFinal_ex(ctx, ciphertextOut + total, &len) != 1) {
-            break;
-        }
-        total += len;
-        if (total != plaintextLen // GCM adds no padding
-                || EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, CONFIG_ENC_TAG_LEN, tagOut) != 1) {
-            break;
-        }
-        ok = true;
-    } while (false);
-    EVP_CIPHER_CTX_free(ctx);
-    return ok;
-}
-
-static bool aesGcmDecrypt(const uint8_t *key, const uint8_t *iv, const uint8_t *ciphertext,
-                          int ciphertextLen, const uint8_t *tag, uint8_t *plaintextOut) {
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    if (ctx == nullptr) {
-        return false;
-    }
-    bool ok = false;
-    do {
-        if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1
-                || EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, CONFIG_ENC_IV_LEN, nullptr) != 1
-                || EVP_DecryptInit_ex(ctx, nullptr, nullptr, key, iv) != 1) {
-            break;
-        }
-        int len = 0;
-        if (EVP_DecryptUpdate(ctx, plaintextOut, &len, ciphertext, ciphertextLen) != 1
-                || EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, CONFIG_ENC_TAG_LEN, (void *) tag) != 1) {
-            break;
-        }
-        int finalLen = 0;
-        if (EVP_DecryptFinal_ex(ctx, plaintextOut + len, &finalLen) != 1) {
-            break; // 0 on tag mismatch
-        }
-        ok = true;
-    } while (false);
-    EVP_CIPHER_CTX_free(ctx);
-    return ok;
-}
-
-static NativeByteBuffer *readEncryptedConfig(FILE *file, long fileSize, const uint8_t *key) {
-    if (key == nullptr) {
-        return nullptr;
-    }
-    if (fileSize < (long) (CONFIG_ENC_HEADER_LEN + CONFIG_ENC_TAG_LEN)) {
-        return nullptr;
-    }
-    if (fseek(file, 0, SEEK_SET) || fseek(file, CONFIG_ENC_MARKER_LEN, SEEK_CUR)) {
-        return nullptr;
-    }
-    uint8_t iv[CONFIG_ENC_IV_LEN];
-    uint32_t cipherLen = 0;
-    if (fread(iv, sizeof(uint8_t), CONFIG_ENC_IV_LEN, file) != CONFIG_ENC_IV_LEN
-            || fread(&cipherLen, sizeof(uint32_t), 1, file) != 1
-            || cipherLen == 0
-            || (uint64_t) cipherLen > (uint64_t) fileSize - CONFIG_ENC_HEADER_LEN - CONFIG_ENC_TAG_LEN) {
-        return nullptr;
-    }
-    auto *ciphertext = new uint8_t[cipherLen];
-    uint8_t tag[CONFIG_ENC_TAG_LEN];
-    NativeByteBuffer *buffer = nullptr;
-    if (fread(ciphertext, sizeof(uint8_t), cipherLen, file) == cipherLen
-            && fread(tag, sizeof(uint8_t), CONFIG_ENC_TAG_LEN, file) == CONFIG_ENC_TAG_LEN) {
-        buffer = BuffersStorage::getInstance().getFreeBuffer(cipherLen);
-        if (!aesGcmDecrypt(key, iv, ciphertext, (int) cipherLen, tag, buffer->bytes())) {
-            buffer->reuse();
-            buffer = nullptr;
-        }
-    }
-    delete[] ciphertext;
-    return buffer;
-}
-
-static bool writeEncryptedPayload(FILE *file, const uint8_t *key, const uint8_t *plaintext, uint32_t plaintextLen) {
-    uint8_t iv[CONFIG_ENC_IV_LEN];
-    uint8_t tag[CONFIG_ENC_TAG_LEN];
-    auto *ciphertext = new uint8_t[plaintextLen];
-    bool ok = false;
-    if (aesGcmEncrypt(key, plaintext, (int) plaintextLen, iv, ciphertext, tag)) {
-        uint32_t marker = generateEncryptionMarker();
-        ok = fwrite(&marker, sizeof(uint32_t), 1, file) == 1
-                && fwrite(iv, sizeof(uint8_t), CONFIG_ENC_IV_LEN, file) == CONFIG_ENC_IV_LEN
-                && fwrite(&plaintextLen, sizeof(uint32_t), 1, file) == 1
-                && fwrite(ciphertext, sizeof(uint8_t), plaintextLen, file) == plaintextLen
-                && fwrite(tag, sizeof(uint8_t), CONFIG_ENC_TAG_LEN, file) == CONFIG_ENC_TAG_LEN;
-    }
-    delete[] ciphertext;
-    return ok;
-}
+#include "ConfigEncryption.h"
 
 Config::Config(int32_t instance, std::string fileName) {
     instanceNum = instance;
@@ -176,13 +43,13 @@ NativeByteBuffer *Config::readConfig(bool *wasEncrypted) {
         uint32_t marker = 0;
         bool encrypted = file != nullptr && fileSize >= (long) sizeof(marker)
                 && fread(&marker, sizeof(uint32_t), 1, file) == 1
-                && marker >= CONFIG_ENC_MARKER_MIN;
+                && ConfigEncryption::isEncryptionMarker(marker);
         if (wasEncrypted != nullptr) {
             *wasEncrypted = encrypted;
         }
         if (encrypted) {
             ConnectionsManager &manager = ConnectionsManager::getInstance(instanceNum);
-            buffer = readEncryptedConfig(file, fileSize, manager.configEncryptionKeySet ? manager.configEncryptionKey : nullptr);
+            buffer = ConfigEncryption::readEncryptedConfig(file, fileSize, manager.configEncryptionKeySet ? manager.configEncryptionKey : nullptr);
             fclose(file);
             return buffer;
         }
@@ -245,7 +112,7 @@ void Config::writeConfig(NativeByteBuffer *buffer) {
     }
     uint32_t size = buffer->position();
     if (manager.configEncryptionKeySet && manager.configEncryptionEncryptOnWrite) {
-        if (!writeEncryptedPayload(file, manager.configEncryptionKey, buffer->bytes(), size)) {
+        if (!ConfigEncryption::writeEncryptedPayload(file, manager.configEncryptionKey, buffer->bytes(), size)) {
             if (LOGS_ENABLED) DEBUG_E("Config(%p, %s) failed to write encrypted config data to file", this, configPath.c_str());
             error = true;
         }

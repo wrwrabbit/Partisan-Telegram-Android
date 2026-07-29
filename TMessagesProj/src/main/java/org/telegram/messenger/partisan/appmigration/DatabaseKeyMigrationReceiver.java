@@ -11,19 +11,11 @@ import org.telegram.messenger.partisan.fileprotection.FileProtectionEncryptionKe
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Target-side half of the database encryption key migration (see KeyMigrationSender for the source
- * side). Replaces each transferred key with a fresh one wrapped by this app's own
- * keystore, re-encrypting the database.
- */
+// Target-side half of the database key migration (see KeyMigrationSender for the source side).
 public class DatabaseKeyMigrationReceiver {
+    // Once set, a blob for this account is ours, not a leftover from the source app's keystore.
+    private static final String MIGRATION_TAKEN_OVER = "databaseKeyMigrationTakenOver";
 
-    /**
-     * Called before every database open. If a migrated keys file is present, replaces the
-     * account's transferred key with a fresh one and re-encrypts the database with it, so
-     * that flash remnants of the keys file can't decrypt the database later. Guarantees the
-     * database is left in an openable state (deleting it if the data is unrecoverable).
-     */
     public static synchronized void takeOverMigratedKeyIfNeeded(int account, File dbFile) throws Exception {
         File keysFile = KeyMigrationSender.getKeysFile(KeyType.DATABASE);
         if (!keysFile.exists()) {
@@ -37,6 +29,8 @@ public class DatabaseKeyMigrationReceiver {
                 return;
             }
             FileProtectionEncryptionKeyStore.deleteKey(KeyType.DATABASE, account);
+            FileProtectionEncryptionKeyStore.getPreferences(KeyType.DATABASE, account).edit()
+                    .putBoolean(MIGRATION_TAKEN_OVER, true).apply();
             if (!dbEncrypted) {
                 return;
             }
@@ -58,9 +52,12 @@ public class DatabaseKeyMigrationReceiver {
         }
     }
 
-    // No key was migrated for this account, but a key blob may have arrived with the migrated
-    // preferences. It was wrapped by the source app's keystore and can never be unwrapped here.
+    // A blob that arrived with the migrated preferences but was never taken over is wrapped by the
+    // source app's keystore and can never be unwrapped here.
     private static void cleanUpForeignKeyBlobIfNeeded(int account, File dbFile, boolean dbEncrypted) throws Exception {
+        if (FileProtectionEncryptionKeyStore.getPreferences(KeyType.DATABASE, account).getBoolean(MIGRATION_TAKEN_OVER, false)) {
+            return;
+        }
         if (FileProtectionEncryptionKeyStore.keyBlobExists(KeyType.DATABASE, account)
                 && FileProtectionEncryptionKeyStore.getKeyIfExists(KeyType.DATABASE, account) == null) {
             PartisanLog.e("DatabaseKeyMigrationReceiver: account " + account + " has a foreign key blob but no migrated key");

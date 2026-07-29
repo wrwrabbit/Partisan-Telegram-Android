@@ -422,6 +422,10 @@ public class MessagesStorage extends BaseController {
             databaseCreated = true;
         } catch (Exception e) {
             FileLog.e(e);
+            if (FileProtectionDbEncryption.isKeyTemporarilyUnavailable(currentAccount, cacheFile)) {
+                PartisanLog.e("MessagesStorage: the database key is temporarily unavailable, leaving the database for a later launch");
+                return;
+            }
             if (openTries < 3 && e.getMessage() != null && e.getMessage().contains("malformed")) {
                 if (openTries == 2) {
                     cleanupInternal(true);
