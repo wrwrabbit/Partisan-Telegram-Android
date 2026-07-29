@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.settings.TesterSettings;
 
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -135,6 +136,7 @@ public class FileProtectionEncryptionKeyStore {
 
     @RequiresApi(Build.VERSION_CODES.M)
     private static SecretKey getOrCreateSecretKey(KeyType type) throws Exception {
+        throwIfKeystoreFailureSimulated();
         KeyStore keyStore = loadKeyStore();
         if (!keyStore.containsAlias(type.keystoreAlias)) {
             generateSecretKey(type);
@@ -146,11 +148,18 @@ public class FileProtectionEncryptionKeyStore {
     // lost, and a replacement would silently make it undecryptable forever instead of just now.
     @RequiresApi(Build.VERSION_CODES.M)
     private static SecretKey getSecretKeyIfExists(KeyType type) throws Exception {
+        throwIfKeystoreFailureSimulated();
         SecretKey key = (SecretKey) loadKeyStore().getKey(type.keystoreAlias, null);
         if (key == null) {
             throw new IllegalStateException("the keystore key is missing");
         }
         return key;
+    }
+
+    private static void throwIfKeystoreFailureSimulated() throws Exception {
+        if (TesterSettings.simulateKeystoreFailure.get().orElse(false)) {
+            throw new Exception("simulated keystore failure (TesterSettings.simulateKeystoreFailure)");
+        }
     }
 
     private static KeyStore loadKeyStore() throws Exception {
