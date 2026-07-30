@@ -238,6 +238,7 @@ class ContactsRemoteViewsFactory implements RemoteViewsService.RemoteViewsFactor
         ArrayList<TLRPC.Chat> chats = new ArrayList<>();
         LongSparseArray<TLRPC.Message> messages = new LongSparseArray<>();
         accountInstance.getMessagesStorage().getWidgetDialogs(appWidgetId, 1, dids, dialogs, messages, users, chats);
+        org.telegram.messenger.partisan.WidgetUtils.removeHiddenDialogIds(dids, accountInstance.getCurrentAccount());
         accountInstance.getMessagesController().putUsers(users, true);
         accountInstance.getMessagesController().putChats(chats, true);
     }

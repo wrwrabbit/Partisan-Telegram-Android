@@ -73,6 +73,7 @@ public class ChatsWidgetProvider extends AppWidgetProvider {
 
         Intent intent2 = new Intent(context, ChatsWidgetService.class);
         intent2.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+        org.telegram.messenger.partisan.WidgetUtils.addRefreshCounterExtra(intent2);
         intent2.setData(Uri.parse(intent2.toUri(Intent.URI_INTENT_SCHEME)));
 
         SharedPreferences preferences = context.getSharedPreferences("shortcut_widget", Activity.MODE_PRIVATE);
@@ -88,6 +89,7 @@ public class ChatsWidgetProvider extends AppWidgetProvider {
             ArrayList<Long> selectedDialogs = new ArrayList<>();
             if (accountId >= 0) {
                 AccountInstance.getInstance(accountId).getMessagesStorage().getWidgetDialogIds(appWidgetId, EditWidgetActivity.TYPE_CHATS, selectedDialogs, null, null, false);
+                org.telegram.messenger.partisan.WidgetUtils.removeHiddenDialogIds(selectedDialogs, accountId);
             }
 
             if (rows == 1 || selectedDialogs.size() <= 1) {

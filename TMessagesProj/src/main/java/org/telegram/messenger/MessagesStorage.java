@@ -10141,10 +10141,6 @@ public class MessagesStorage extends BaseController {
         return result[0] != null ? result : null;
     }
 
-    public void updateOverriddenWidgets(ArrayList<Long> dids) {
-        updateWidgets(dids);
-    }
-
     private void updateWidgets(long did) {
         ArrayList<Long> dids = new ArrayList<>();
         dids.add(did);

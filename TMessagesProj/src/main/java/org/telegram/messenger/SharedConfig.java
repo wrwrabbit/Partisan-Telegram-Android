@@ -50,6 +50,7 @@ import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
 import org.telegram.messenger.partisan.update.AppVersion;
 import org.telegram.messenger.partisan.SecurityIssue;
+import org.telegram.messenger.partisan.WidgetUtils;
 import org.telegram.messenger.partisan.TlrpcJsonDeserializer;
 import org.telegram.messenger.partisan.TlrpcJsonSerializer;
 import org.telegram.messenger.partisan.update.UpdateData;
@@ -1178,6 +1179,7 @@ public class SharedConfig {
         fakePasscodeActivatedIndex = fakePasscodeIndex;
         if (oldIndex != fakePasscodeIndex) {
             FakePasscodeUtils.hideFakePasscodeTraces();
+            WidgetUtils.updateAllWidgets();
             AndroidUtilities.runOnUIThread(() ->
                     NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.fakePasscodeActivated)
             );
@@ -1190,11 +1192,6 @@ public class SharedConfig {
         }
         for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
             if (UserConfig.getInstance(i).isClientActivated()) {
-                ArrayList<Long> overriddenDialogIds = UserConfig.getInstance(i).chatInfoOverrides
-                        .keySet().stream().map(str -> -Long.parseLong(str)).collect(Collectors.toCollection(ArrayList::new));
-                if (!overriddenDialogIds.isEmpty()) {
-                    MessagesStorage.getInstance(i).updateOverriddenWidgets(overriddenDialogIds);
-                }
                 MessagesStorage.getInstance(i).unreadCounterChangedByFakePasscode();
             }
         }
