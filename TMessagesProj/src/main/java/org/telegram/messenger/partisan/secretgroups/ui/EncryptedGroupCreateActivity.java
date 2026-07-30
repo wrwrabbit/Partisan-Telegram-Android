@@ -802,13 +802,21 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         AlertsCreator.showSimpleAlert(this, getString(R.string.Warning), getString(R.string.SlowSecretGroupCreationWarning));
     }
 
-    private void showSecretGroupCreationDisclosureWarning(String chatName, List<TLRPC.User> users) {
+    private void showSecretGroupCreationDisclosureWarning(String positiveButtonText, Runnable onConfirmed) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle(getString(R.string.Warning));
         builder.setMessage(getString(R.string.SecretGroupCreationDisclosureWarning));
-        builder.setPositiveButton(getString(R.string.Create), (dialog, which) -> createEncryptedGroup(chatName, users));
+        builder.setPositiveButton(positiveButtonText, (dialog, which) -> onConfirmed.run());
         builder.setNegativeButton(getString(R.string.Cancel), null);
         showDialog(builder.create());
+    }
+
+    private void addMembersToEncryptedGroup(List<TLRPC.User> users) {
+        getEncryptedGroupUtils().addNewMembers(encryptedGroup, users);
+        AndroidUtilities.runOnUIThread(() -> {
+            getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
+            finishFragment();
+        });
     }
 
     private void createEncryptedGroup(String chatName, List<TLRPC.User> users) {
@@ -983,7 +991,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                         .map(id -> getMessagesController().getUser(id))
                         .collect(Collectors.toList());
 
-                showSecretGroupCreationDisclosureWarning(chatName, users);
+                showSecretGroupCreationDisclosureWarning(getString(R.string.Create), () -> createEncryptedGroup(chatName, users));
             };
             showDialog(FakePasscodeDialogBuilder.build(getContext(), template));
         } else {
@@ -991,11 +999,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     .map(id -> getMessagesController().getUser(id))
                     .collect(Collectors.toList());
 
-            getEncryptedGroupUtils().addNewMembers(encryptedGroup, users);
-            AndroidUtilities.runOnUIThread(() -> {
-                getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
-                finishFragment();
-            });
+            showSecretGroupCreationDisclosureWarning(getString(R.string.Add), () -> addMembersToEncryptedGroup(users));
         }
         return true;
     }
