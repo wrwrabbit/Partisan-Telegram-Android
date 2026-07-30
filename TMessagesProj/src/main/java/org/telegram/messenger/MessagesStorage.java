@@ -348,7 +348,7 @@ public class MessagesStorage extends BaseController {
         try {
             byte[] databaseEncryptionKey = FileProtectionDbEncryption.syncDatabaseEncryptionAndGetKeySpec(currentAccount, cacheFile);
             if (fileProtectionShouldBeEnabled()) {
-                database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey);
+                database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey, getActiveOnlyMemoryTables());
                 storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
                 if (isFileProtectionDisabledBecauseOfFileSize()) {
@@ -476,7 +476,7 @@ public class MessagesStorage extends BaseController {
             try {
                 byte[] databaseEncryptionKey = FileProtectionDbEncryption.syncDatabaseEncryptionAndGetKeySpec(currentAccount, cacheFile);
                 if (fileProtectionShouldBeEnabled()) {
-                    database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey);
+                    database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey, getActiveOnlyMemoryTables());
                 } else {
                     database = new SQLiteDatabase(cacheFile.getPath(), databaseEncryptionKey);
                 }
@@ -10733,7 +10733,7 @@ public class MessagesStorage extends BaseController {
                 data3.reuse();
                 data4.reuse();
                 data5.reuse();
-                if (fileProtectionEnabled()) {
+                if (isUsingInMemoryDatabase()) {
                     UsersWithSecretChatsCache.getOrCreateInstance(currentAccount, database).add(user.id);
                 }
                 if (dialog != null) {
@@ -11528,15 +11528,19 @@ public class MessagesStorage extends BaseController {
     }
 
     SQLitePreparedStatement executeFastForBothDbIfNeeded(String sql) throws SQLiteException {
-        if (fileProtectionEnabled()) {
+        if (isUsingInMemoryDatabase()) {
             return ((SQLiteDatabaseWrapper)database).executeFastForBothDb(sql);
         } else {
             return database.executeFast(sql);
         }
     }
 
-    public boolean fileProtectionEnabled() {
+    public boolean isUsingInMemoryDatabase() {
         return database instanceof SQLiteDatabaseWrapper;
+    }
+
+    public boolean chatListMemoryOnly() {
+        return isUsingInMemoryDatabase() && ((SQLiteDatabaseWrapper) database).getOnlyMemoryTables().containsAll(SQLiteDatabaseWrapper.CHAT_LIST_TABLES);
     }
 
     public boolean fileProtectionShouldBeEnabled() {
@@ -11544,13 +11548,17 @@ public class MessagesStorage extends BaseController {
     }
 
     private boolean shouldUseInMemoryDatabase() {
-        if (!FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true)) {
+        if (!FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true)) {
             return false;
         }
         if (FakePasscodeUtils.isFakePasscodeActivated() && !FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true)) {
             return false;
         }
         return FileProtectionUtils.fileProtectionEnabledForAccount(currentAccount);
+    }
+
+    private Set<String> getActiveOnlyMemoryTables() {
+        return SQLiteDatabaseWrapper.unionOfActiveBuckets(FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true));
     }
 
     private boolean databaseFileSizeExceedsMaximumForRam() {
@@ -11564,12 +11572,19 @@ public class MessagesStorage extends BaseController {
     }
 
     public void clearFileProtectedDb() {
+        if (!isUsingInMemoryDatabase()) {
+            return;
+        }
+        clearFileProtectedDb(((SQLiteDatabaseWrapper) database).getOnlyMemoryTables());
+    }
+
+    public void clearFileProtectedDb(Set<String> tablesToClean) {
         Utilities.cacheClearQueue.postRunnable(() -> {
-            SQLiteDatabase db = fileProtectionEnabled()
+            SQLiteDatabase db = isUsingInMemoryDatabase()
                     ? ((SQLiteDatabaseWrapper) database).getFileDatabase()
                     : database;
             try {
-                new FileProtectionDatabaseCleaner(db, currentAccount).clear();
+                new FileProtectionDatabaseCleaner(db, currentAccount, tablesToClean).clear();
             } catch (Exception e) {
                 checkSQLException(e);
             }

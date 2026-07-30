@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.jakewharton.processphoenix.ProcessPhoenix;
 
+import org.telegram.SQLite.SQLiteDatabaseWrapper;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.UserConfig;
@@ -22,7 +23,8 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     private boolean enableForAllAccounts;
     private List<FileProtectionAccountInfo> valuesPerAccounts;
     private boolean forceApply;
-    private boolean storeMessagesInMemoryOnly;
+    private boolean storeDataInMemoryOnly;
+    private boolean storeChatsInMemoryOnly;
     private boolean encryptDatabase;
     private boolean encryptAuthToken;
 
@@ -42,15 +44,17 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     private void applyForAllAccounts(boolean enableForAllAccounts) {
         this.enableForAllAccounts = enableForAllAccounts;
         valuesPerAccounts = new ArrayList<>();
-        storeMessagesInMemoryOnly = FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
+        storeDataInMemoryOnly = FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true);
+        storeChatsInMemoryOnly = FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true);
         encryptDatabase = FileProtectionSettings.encryptDatabase.get().orElse(true);
         encryptAuthToken = FileProtectionSettings.encryptAuthToken.get().orElse(true);
         startSwitching();
     }
 
     // accounts must cover every activated account
-    public void apply(List<FileProtectionAccountInfo> accounts, boolean storeMessagesInMemoryOnly, boolean encryptDatabase, boolean encryptAuthToken) {
-        this.storeMessagesInMemoryOnly = storeMessagesInMemoryOnly;
+    public void apply(List<FileProtectionAccountInfo> accounts, boolean storeDataInMemoryOnly, boolean storeChatsInMemoryOnly, boolean encryptDatabase, boolean encryptAuthToken) {
+        this.storeDataInMemoryOnly = storeDataInMemoryOnly;
+        this.storeChatsInMemoryOnly = storeChatsInMemoryOnly;
         this.encryptDatabase = encryptDatabase;
         this.encryptAuthToken = encryptAuthToken;
         setProtectedAccounts(accounts);
@@ -126,19 +130,20 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
 
     private boolean needClearLocalDb() {
         return !onlyEncryptionSettingsChanged()
-                && storeMessagesInMemoryOnly
+                && storeDataInMemoryOnly
                 && (enableForAllAccounts || !valuesPerAccounts.isEmpty());
     }
 
     private boolean onlyEncryptionSettingsChanged() {
         return !forceApply && !fileProtectedAccountsChangedInternal()
-                && storeMessagesInMemoryOnly == FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true);
+                && storeDataInMemoryOnly == FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true)
+                && storeChatsInMemoryOnly == FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true);
     }
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.onDatabaseReset) {
-            MessagesStorage.getInstance(account).clearFileProtectedDb();
+            MessagesStorage.getInstance(account).clearFileProtectedDb(SQLiteDatabaseWrapper.unionOfActiveBuckets(storeChatsInMemoryOnly));
         } else if (id == NotificationCenter.onFileProtectedDbCleared) {
             accountsWithEnabledFileProtection.add(account);
             if (fileProtectionEnablingFinished()) {
@@ -154,7 +159,8 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
         if (onlyEncryptionSettingsChanged()) {
             return;
         }
-        FileProtectionSettings.storeMessagesInMemoryOnly.set(storeMessagesInMemoryOnly);
+        FileProtectionSettings.storeDataInMemoryOnly.set(storeDataInMemoryOnly);
+        FileProtectionSettings.storeChatsInMemoryOnly.set(storeChatsInMemoryOnly);
         if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
             FileProtectionSettings.disableFileProtectionAfterRestart.set(true);
         }

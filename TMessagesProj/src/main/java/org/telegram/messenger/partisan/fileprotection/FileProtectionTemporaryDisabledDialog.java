@@ -39,7 +39,7 @@ public class FileProtectionTemporaryDisabledDialog {
                 Utils.foreachActivatedAccountInstance(accountInstance ->
                         accounts.add(new FileProtectionAccountInfo(accountInstance.getCurrentAccount()))
                 );
-                new FileProtectionSwitcher(fragment).apply(accounts, FileProtectionSettings.storeMessagesInMemoryOnly.get().orElse(true), FileProtectionSettings.encryptDatabase.get().orElse(true), FileProtectionSettings.encryptAuthToken.get().orElse(true));
+                new FileProtectionSwitcher(fragment).apply(accounts, FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true), FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true), FileProtectionSettings.encryptDatabase.get().orElse(true), FileProtectionSettings.encryptAuthToken.get().orElse(true));
             }
         });
         return dialog;

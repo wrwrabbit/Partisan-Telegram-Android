@@ -481,7 +481,7 @@ public class FakePasscode {
             Utils.foreachActivatedAccountInstance(accountInstance -> {
                 UserConfig userConfig = accountInstance.getUserConfig();
                 if (userConfig.disableFileProtectionAfterRestartByFakePasscode != disable
-                        && (!disable || accountInstance.getMessagesStorage().fileProtectionEnabled())) {
+                        && (!disable || accountInstance.getMessagesStorage().isUsingInMemoryDatabase())) {
                     userConfig.disableFileProtectionAfterRestartByFakePasscode = disable;
                     accountInstance.getUserConfig().saveConfig(false);
                 }

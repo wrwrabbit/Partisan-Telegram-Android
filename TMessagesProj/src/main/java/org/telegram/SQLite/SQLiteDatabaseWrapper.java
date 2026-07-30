@@ -7,6 +7,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.partisan.PartisanLog;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -19,27 +20,42 @@ public class SQLiteDatabaseWrapper extends SQLiteDatabase {
     private final Set<String> sqlPrefixesForSpecificDB = new HashSet<>(Arrays.asList(
             "INSERT INTO", "REPLACE INTO", "SELECT"
     ));
-    private final Set<String> onlyMemoryTables = new HashSet<>(Arrays.asList(
-            "messages_v2", "chats", "contacts", "dialogs", "messages_holes", "messages_topics", "messages_holes_topics",
-            "users", "media_v4", "media_holes_topics", "media_holes_v2",
-            "media_topics", "saved_dialogs", "topics", "scheduled_messages_v2", "quick_replies_messages",
-            "ephemeral_messages", "chat_pinned_v2", "user_contacts_v7", "user_phones_v7", "users_data",
+
+    public static final Set<String> CHAT_LIST_TABLES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "dialogs", "users", "chats", "topics", "saved_dialogs", "contacts",
+            "user_contacts_v7", "user_phones_v7", "users_data"
+    )));
+    public static final Set<String> MESSAGE_CONTENT_TABLES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "messages_v2", "messages_holes", "messages_topics", "messages_holes_topics",
+            "media_v4", "media_holes_topics", "media_holes_v2", "media_topics",
+            "scheduled_messages_v2", "quick_replies_messages", "ephemeral_messages", "chat_pinned_v2",
             "bot_keyboard", "bot_keyboard_topics", "tag_message_id", "enc_tasks_v4", "randoms_v2",
             "unread_push_messages", "sharing_locations"
-    ));
+    )));
+
+    public static Set<String> unionOfActiveBuckets(boolean chatsMemoryOnly) {
+        Set<String> tables = new HashSet<>(MESSAGE_CONTENT_TABLES);
+        if (chatsMemoryOnly) {
+            tables.addAll(CHAT_LIST_TABLES);
+        }
+        return tables;
+    }
+
+    private final Set<String> onlyMemoryTables;
 
     private final SQLiteDatabase fileDatabase;
     private final SQLiteDatabase memoryDatabase;
 
-    public SQLiteDatabaseWrapper(String fileName) throws SQLiteException {
-        this(fileName, null);
-    }
-
-    public SQLiteDatabaseWrapper(String fileName, byte[] encryptionKey) throws SQLiteException {
+    public SQLiteDatabaseWrapper(String fileName, byte[] encryptionKey, Set<String> onlyMemoryTables) throws SQLiteException {
         super();
+        this.onlyMemoryTables = onlyMemoryTables;
         fileDatabase = new SQLiteDatabase(fileName, encryptionKey);
         memoryDatabase = new SQLiteDatabase(":memory:", encryptionKey);
         fileDatabase.backup(memoryDatabase); // copy file database to memory
+    }
+
+    public Set<String> getOnlyMemoryTables() {
+        return Collections.unmodifiableSet(onlyMemoryTables);
     }
 
     public SQLiteDatabase getFileDatabase() {
@@ -135,7 +151,8 @@ public class SQLiteDatabaseWrapper extends SQLiteDatabase {
     }
 
     public SQLitePreparedStatementWrapper executeFastForBothDb(String sql) throws SQLiteException {
-        return new SQLitePreparedStatementWrapper(executeFunctionInSpecificDB(DbSelector.BOTH_DB, db -> db.executeFast(sql)));
+        DbSelector baseDbSelector = getDbSelectorBySqlQuery(sql);
+        return new SQLitePreparedStatementWrapper(executeFunctionInSpecificDB(DbSelector.BOTH_DB, db -> db.executeFast(sql)), baseDbSelector);
     }
 
     @Override

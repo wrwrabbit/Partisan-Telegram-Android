@@ -803,7 +803,7 @@ public class SavedChannelsAdapter extends RecyclerListView.SelectionAdapter impl
             }
         }
         boolean containsEmptyViewNow = itemInternals.stream().anyMatch(item -> item.viewType == VIEW_TYPE_EMPTY);
-        if (MessagesStorage.getInstance(currentAccount).fileProtectionEnabled() && containedEmptyViewBefore && !containsEmptyViewNow) {
+        if (MessagesStorage.getInstance(currentAccount).isUsingInMemoryDatabase() && containedEmptyViewBefore && !containsEmptyViewNow) {
             AndroidUtilities.runOnUIThread(() -> parentFragment.setScrollDisabled(false));
         }
     }

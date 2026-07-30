@@ -723,7 +723,7 @@ public class UserConfig extends BaseController {
     }
 
     public boolean isPinnedDialogsLoaded(int folderId) {
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().chatListMemoryOnly()) {
             return temporarilyLoadedPinnedDialogs.getOrDefault(folderId, false);
         } else {
             return getPreferences().getBoolean("2pinnedDialogsLoaded" + folderId, false);
@@ -731,7 +731,7 @@ public class UserConfig extends BaseController {
     }
 
     public void setPinnedDialogsLoaded(int folderId, boolean loaded) {
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().chatListMemoryOnly()) {
             temporarilyLoadedPinnedDialogs.put(folderId, loaded);
         } else {
             getPreferences().edit().putBoolean("2pinnedDialogsLoaded" + folderId, loaded).commit();
@@ -764,7 +764,7 @@ public class UserConfig extends BaseController {
     }
 
     public long[] getDialogLoadOffsets(int folderId) {
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().chatListMemoryOnly()) {
             return getFileProtectionDialogLoadOffsets(folderId);
         }
         SharedPreferences preferences = getPreferences();
@@ -778,7 +778,7 @@ public class UserConfig extends BaseController {
     }
 
     public void setDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().chatListMemoryOnly()) {
             setFileProtectionDialogsLoadOffset(folderId, dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess);
             return;
         }

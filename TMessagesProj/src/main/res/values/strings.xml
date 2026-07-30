@@ -11466,7 +11466,8 @@
     <string name="FileProtectionInfo">File protection allows you to protect yourself from information extraction during phone inspection. Enabling this option may cause the application to work incorrectly. After enabling file protection, the message cache will be cleared and the application will reboot.</string>
     <string name="ApplicationWillBeRestarted">The application will be restarted.</string>
     <string name="WorksWithFakePasscodes">Works With Fake Passcodes</string>
-    <string name="FileProtectionStoreMessagesInMemoryOnly">Don\'t store messages on device</string>
+    <string name="FileProtectionStoreDataInMemoryOnly">Don\'t store data on device</string>
+    <string name="FileProtectionStoreChatsInMemoryOnly">Don\'t store chats on device</string>
     <string name="FileProtectionEncryptDatabase">Encrypt database</string>
     <string name="FileProtectionEncryptAuthToken">Encrypt authorization key</string>
     <string name="NewPtelegramFeatureTitle">New PTelegram Feature</string>

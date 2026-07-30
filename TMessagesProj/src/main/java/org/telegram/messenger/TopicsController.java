@@ -219,7 +219,7 @@ public class TopicsController extends BaseController {
                     processTopics(chatId, topics.topics, messagesMap, false, loadType, ((TLRPC.TL_messages_forumTopics) response).count);
                     sortTopics(chatId);
                     getMessagesStorage().saveTopics(-chatId, topicsByChatId.get(chatId), true, true, getConnectionsManager().getCurrentTime());
-                    if (getMessagesStorage().fileProtectionEnabled()) {
+                    if (getMessagesStorage().isUsingInMemoryDatabase()) {
                         for (TLRPC.Message message : topics.messages) {
                             for (TLRPC.TL_forumTopic topic : topics.topics) {
                                 message.unread = topic.read_outbox_max_id < message.id;

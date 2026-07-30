@@ -7,7 +7,8 @@ import org.telegram.messenger.partisan.settings.SettingUtils;
 public class FileProtectionSettings {
     public static final BooleanSetting fileProtectionForAllAccountsEnabled = new BooleanSetting("fileProtectionForAllAccountsEnabled", true);
     public static final BooleanSetting disableFileProtectionAfterRestart = new BooleanSetting("disableFileProtectionAfterRestart", false);
-    public static final BooleanSetting storeMessagesInMemoryOnly = new BooleanSetting("dontStoreMessagesOnDevice", true);
+    public static final BooleanSetting storeDataInMemoryOnly = new BooleanSetting("dontStoreDataOnDevice", true);
+    public static final BooleanSetting storeChatsInMemoryOnly = new BooleanSetting("dontStoreChatsOnDevice", true);
     public static final BooleanSetting encryptDatabase = new BooleanSetting("encryptDatabaseEnabled", true);
     public static final BooleanSetting encryptAuthToken = new BooleanSetting("encryptAuthTokenEnabled", true);
     public static final BooleanSetting storeAuthTokenUnencryptedWhenKeyUnavailable = new BooleanSetting("storeAuthTokenUnencryptedWhenKeyUnavailable", false);

@@ -165,7 +165,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 new ReadOnlyDataItem(this, "Memory DB size",
                         () -> getMemoryDbSize() != null ? AndroidUtilities.formatFileSize(getMemoryDbSize()) : "error")
                         .setOnClickListener(this::showMemoryDialog)
-                        .addCondition(() -> getMessagesStorage().fileProtectionEnabled()),
+                        .addCondition(() -> getMessagesStorage().isUsingInMemoryDatabase()),
                 new ReadOnlyDataItem(this, "Account num", () -> Integer.toString(currentAccount)),
                 new DelimiterItem(this),
         };

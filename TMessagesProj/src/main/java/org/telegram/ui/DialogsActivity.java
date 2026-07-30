@@ -7274,7 +7274,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             showPtgDialog(FileProtectionNewFeatureDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionTemporaryDisabledDialog.createDialogIfNeeded(this), true);
         }
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().isUsingInMemoryDatabase()) {
             getMessagesController().sortDialogs(null);
         }
         org.telegram.messenger.partisan.Utils.showAccountWillBeHiddenDialogIfNeeded(this);

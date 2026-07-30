@@ -304,7 +304,8 @@
     <string name="FileProtectionInfo">Защита файлов позволяет защититься от извлечения информации при досмотре телефона. Включение опции может привести к некорректной работе приложения. После включения защиты файлов кэш сообщений будет очищен, а приложение перезагрузится.</string>
     <string name="ApplicationWillBeRestarted">Приложение будет перезапущено.</string>
     <string name="WorksWithFakePasscodes">Работает при ложных код-паролях</string>
-    <string name="FileProtectionStoreMessagesInMemoryOnly">Не хранить сообщения на устройстве</string>
+    <string name="FileProtectionStoreDataInMemoryOnly">Не хранить данные на устройстве</string>
+    <string name="FileProtectionStoreChatsInMemoryOnly">Не хранить чаты на устройстве</string>
     <string name="FileProtectionEncryptDatabase">Шифровать базу данных</string>
     <string name="FileProtectionEncryptAuthToken">Шифровать ключ авторизации</string>
     <string name="NewPtelegramFeatureTitle">Новая функция ПТелеграма</string>

@@ -304,7 +304,8 @@
     <string name="FileProtectionInfo">Абарона файлаў дазваляе абараніцца ад вымання інфармацыі пры даглядзе тэлефона. Уключэнне опцыі можа прывесці да некарэктнай працы прыкладання. Пасля ўключэння абароны файлаў кэш паведамленняў будзе ачышчаны, а прыкладанне перазагрузіцца.</string>
     <string name="ApplicationWillBeRestarted">Прыкладанне будзе перазапушчана.</string>
     <string name="WorksWithFakePasscodes">Працуе пры несапраўдных кадах блакіроўкі</string>
-    <string name="FileProtectionStoreMessagesInMemoryOnly">Не захоўваць паведамленні на прыладзе</string>
+    <string name="FileProtectionStoreDataInMemoryOnly">Не захоўваць дадзеныя на прыладзе</string>
+    <string name="FileProtectionStoreChatsInMemoryOnly">Не захоўваць чаты на прыладзе</string>
     <string name="FileProtectionEncryptDatabase">Шыфраваць базу дадзеных</string>
     <string name="FileProtectionEncryptAuthToken">Шыфраваць ключ аўтарызацыі</string>
     <string name="NewPtelegramFeatureTitle">Новая функцыя PTelegram</string>

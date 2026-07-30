@@ -31,13 +31,15 @@ public class FileProtectionDatabaseCleaner {
 
     private final int account;
     private final SQLiteDatabase db;
+    private final Set<String> tablesToClean;
     private final RecentSearchCache recentSearchDialogIds = new RecentSearchCache();
     private UsersWithSecretChatsCache usersWithSecretChats;
     private int deletedCount = 0;
 
-    public FileProtectionDatabaseCleaner(SQLiteDatabase db, int account) {
+    public FileProtectionDatabaseCleaner(SQLiteDatabase db, int account, Set<String> tablesToClean) {
         this.db = db;
         this.account = account;
+        this.tablesToClean = tablesToClean;
     }
 
     public void clear() throws Exception {
@@ -82,6 +84,9 @@ public class FileProtectionDatabaseCleaner {
     }
 
     private void clearTable(TableInfo tableInfo) throws Exception {
+        if (!tablesToClean.contains(tableInfo.tableName)) {
+            return;
+        }
         if (tableInfo.keepRecentSearch || tableInfo.keepUsersWithSecretChats) {
             Set<Long> dialogIdsToDelete = loadDialogIdsToDelete(tableInfo);
             for (Long chatId : dialogIdsToDelete) {
