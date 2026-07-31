@@ -157,7 +157,7 @@
     <string name="BackupFakePasscode">Copiar Contraseña Falsa</string>
     <string name="BackupFakePasscodeInfo">Cree un mensaje que contenga toda la información sobre este código de acceso falso, su configuración y acciones.</string>
     <string name="EnterCurrentFakePasscode">Introduzca esta contraseña falsa</string>
-    <string name="FakePasscodeBackupInfo">Copie esta cadena y guárdela.\n\n**¡Advertencia! Esta cadena es fácil de descifrar por fuerza bruta.** Se recomienda eliminarla después de transferir sus datos a una nueva aplicación o teléfono, o guardarla en un lugar secreto y protegido.</string>
+    <string name="FakePasscodeBackupInfo">Copie esta cadena y guárdela.\n\n**¡Advertencia! Esta cadena es fácil de descifrar por fuerza bruta.** Cualquiera que la obtenga probablemente podrá deducir su código de bloqueo falso y ver todo lo que está configurado para hacer: qué chats oculta, qué elimina y qué otras acciones activa. Esto podría suponer un riesgo para usted. Se recomienda eliminarla después de transferir sus datos a una nueva aplicación o teléfono, o guardarla en un lugar secreto y protegido.</string>
     <string name="FakePasscodeRestoreHint">Copia de seguridad Base64 de código de acceso falso</string>
     <string name="FakePasscodeRestoreInfo">Pegar la cadena de copia de seguridad de contraseña falsa.</string>
     <string name="FakePasscodeRestore">Restaurar Contraseña Falsa</string>

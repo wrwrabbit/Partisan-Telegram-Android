@@ -157,7 +157,7 @@
     <string name="BackupFakePasscode">Backup Password Falsa</string>
     <string name="BackupFakePasscodeInfo">Crea un messaggio contenente tutte le informazioni su questo codice di accesso falso, le sue impostazioni e azioni.</string>
     <string name="EnterCurrentFakePasscode">Inserisci questa password falsa</string>
-    <string name="FakePasscodeBackupInfo">Copia questa stringa e salvala.\n\n**Attenzione! Questa stringa è facile da decifrare con un attacco di forza bruta.** Si consiglia di eliminarla dopo aver trasferito i tuoi dati su una nuova app o un nuovo telefono, oppure di conservarla in un luogo segreto e protetto.</string>
+    <string name="FakePasscodeBackupInfo">Copia questa stringa e salvala.\n\n**Attenzione! Questa stringa è facile da decifrare con un attacco di forza bruta.** Chiunque la ottenga potrà probabilmente risalire alla tua password falsa e vedere tutto ciò che è impostata per fare: quali chat nasconde, cosa elimina e quali altre azioni attiva. Questo potrebbe metterti a rischio. Si consiglia di eliminarla dopo aver trasferito i tuoi dati su una nuova app o un nuovo telefono, oppure di conservarla in un luogo segreto e protetto.</string>
     <string name="FakePasscodeRestoreHint">Backup Base64 Password Falsa</string>
     <string name="FakePasscodeRestoreInfo">Incolla la stringa di backup della Password Falsa.</string>
     <string name="FakePasscodeRestore">Ripristina Password Falsa</string>

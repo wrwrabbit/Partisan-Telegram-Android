@@ -157,7 +157,7 @@
     <string name="BackupFakePasscode">备份假密码</string>
     <string name="BackupFakePasscodeInfo">创建一条信息，其中包含有关此假密码、其设置和操作的所有信息。</string>
     <string name="EnterCurrentFakePasscode">输入此假密码</string>
-    <string name="FakePasscodeBackupInfo">复制此字符串并保存。\n\n**警告！此字符串很容易被暴力破解。**建议在将数据迁移到新应用或新手机后删除它，或将其保存在秘密且受保护的地方。</string>
+    <string name="FakePasscodeBackupInfo">复制此字符串并保存。\n\n**警告！此字符串很容易被暴力破解。**任何得到这个字符串的人都很可能推算出您的假密码，并看到它设置要执行的一切：隐藏哪些聊天、删除什么内容，以及触发哪些其他操作。这可能使您面临风险。建议在将数据迁移到新应用或新手机后删除它，或将其保存在秘密且受保护的地方。</string>
     <string name="FakePasscodeRestoreHint">假密码 Base64 备份</string>
     <string name="FakePasscodeRestoreInfo">粘贴假密码备份字符串。</string>
     <string name="FakePasscodeRestore">恢复假密码</string>
