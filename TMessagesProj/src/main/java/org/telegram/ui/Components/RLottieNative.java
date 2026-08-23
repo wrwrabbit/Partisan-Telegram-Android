@@ -3,7 +3,10 @@ package org.telegram.ui.Components;
 import android.graphics.Bitmap;
 import android.os.Trace;
 
+import androidx.annotation.Nullable;
+
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
 
 /**
  * Thin wrapper around a native Lottie animation pointer.
@@ -63,10 +66,20 @@ public final class RLottieNative {
             int[] colorReplacement,
             boolean limitFps,
             int fitzModifier) {
+        return createFromFile(path, json, w, h, null, precache, colorReplacement, limitFps, fitzModifier, null);
+    }
+
+    public static RLottieNative createFromFile(
+            String path, String json, int w, int h, @Nullable int[] metaOut,
+            boolean precache, int[] colorReplacement, boolean limitFps, int fitzModifier,
+            @Nullable Map<String, Integer> layerColors) {
         int[] meta = new int[3];
-        long ptr = create(path, json, w, h, meta, precache, colorReplacement, limitFps, fitzModifier);
+        long ptr = create(path, json, w, h, meta, precache, colorReplacement, limitFps, fitzModifier, layerColors);
         if (ptr == 0) {
             return null;
+        }
+        if (metaOut != null && metaOut.length == 3) {
+            System.arraycopy(meta, 0, metaOut, 0, 3);
         }
         return new RLottieNative(ptr, meta);
     }
@@ -84,13 +97,32 @@ public final class RLottieNative {
             String json,
             String name,
             int[] colorReplacement) {
+        return createFromRawJson(json, name, null, colorReplacement);
+    }
+
+    public static RLottieNative createFromRawJson(
+            String json,
+            String name,
+            @Nullable int[] metaOut,
+            int[] colorReplacement) {
+        return createFromRawJson(json, name, metaOut, colorReplacement, null);
+    }
+
+    public static RLottieNative createFromRawJson(
+            String json, String name, @Nullable int[] metaOut, int[] colorReplacement,
+            @Nullable Map<String, Integer> layerColors) {
         if (json == null || json.isEmpty()) {
             return null;
         }
         int[] meta = new int[3];
-        long ptr = createWithJson(json, name, meta, colorReplacement);
+        String[] layerNames = layerColors == null ? null : layerColors.keySet().toArray(new String[0]);
+        int[] layerValues = layerColors == null ? null : layerNamesToColors(layerNames, layerColors);
+        long ptr = createWithJson(json, name, meta, colorReplacement, layerNames, layerValues);
         if (ptr == 0) {
             return null;
+        }
+        if (metaOut != null && metaOut.length == 3) {
+            System.arraycopy(meta, 0, metaOut, 0, 3);
         }
         return new RLottieNative(ptr, meta);
     }
@@ -103,7 +135,9 @@ public final class RLottieNative {
      * Renders {@code frame} into {@code bitmap}.
      *
      * @param frame  zero-based frame index
-     * @param bitmap target bitmap; must be {@link Bitmap.Config#ARGB_8888}
+     * @param bitmap target bitmap; must be {@link Bitmap.Config#ARGB_8888} or
+     *               {@link Bitmap.Config#ALPHA_8}. Alpha8 selects tlottie's
+     *               direct alpha-only renderer.
      * @param clear  whether to clear the bitmap before rendering
      * @return the frame index that was rendered, -1 on error, or -5 when the
      *         decoder is busy (caller should retry after a short delay)
@@ -112,29 +146,6 @@ public final class RLottieNative {
     public int getFrame(int frame, Bitmap bitmap, boolean clear) {
         checkNotRecycled();
         return getFrame(mNativePtr, frame, bitmap, clear);
-    }
-
-    /**
-     * Updates the fill color of a named layer.
-     *
-     * @param layer layer name as defined in the Lottie JSON
-     * @param color ARGB color value
-     * @throws IllegalStateException if already recycled
-     */
-    public void setLayerColor(String layer, int color) {
-        checkNotRecycled();
-        setLayerColor(mNativePtr, layer, color);
-    }
-
-    /**
-     * Replaces the animation palette using a flat color-replacement array.
-     *
-     * @param colors interleaved [from, to, from, to, …] ARGB values
-     * @throws IllegalStateException if already recycled
-     */
-    public void replaceColors(int[] colors) {
-        checkNotRecycled();
-        replaceColors(mNativePtr, colors);
     }
 
     // -------------------------------------------------------------------------
@@ -149,21 +160,6 @@ public final class RLottieNative {
     /** Frame-rate in fps ({@code metaData[1]}). */
     public int getFps() {
         return mMetaData[1];
-    }
-
-    /** Animation duration in milliseconds, derived from frame count and fps. */
-    public long getDurationMs() {
-        int fps = mMetaData[1];
-        if (fps == 0) return 0;
-        return (long) (mMetaData[0] / (float) fps * 1000L);
-    }
-
-    /**
-     * Raw metadata array in the form {@code [frameCount, fps, reserved]}.
-     * <p><b>Do not modify</b> the returned array.
-     */
-    public int[] getMetaData() {
-        return mMetaData;
     }
 
     // -------------------------------------------------------------------------
@@ -222,8 +218,6 @@ public final class RLottieNative {
         }
     }
 
-
-
     // -------------------------------------------------------------------------
     // Static native wrappers — for legacy code that still operates on raw pointers
     // -------------------------------------------------------------------------
@@ -233,9 +227,15 @@ public final class RLottieNative {
      * Prefer {@link #createFromFile} for new code.
      */
     public static long create(String src, String json, int w, int h, int[] params, boolean precache, int[] colorReplacement, boolean limitFps, int fitzModifier) {
+        return create(src, json, w, h, params, precache, colorReplacement, limitFps, fitzModifier, null);
+    }
+
+    private static long create(String src, String json, int w, int h, int[] params, boolean precache, int[] colorReplacement, boolean limitFps, int fitzModifier, @Nullable Map<String, Integer> layerColors) {
         Trace.beginSection("RLottieNative#create");
         try {
-            return nCreate(src, json, w, h, params, precache, colorReplacement, limitFps, fitzModifier);
+            String[] layerNames = layerColors == null ? null : layerColors.keySet().toArray(new String[0]);
+            int[] layerValues = layerColors == null ? null : layerNamesToColors(layerNames, layerColors);
+            return nCreate(src, json, w, h, params, precache, colorReplacement, limitFps, fitzModifier, layerNames, layerValues);
         } finally {
             Trace.endSection();
         }
@@ -245,10 +245,10 @@ public final class RLottieNative {
      * Creates a native animation from a JSON string and returns the raw pointer.
      * Prefer {@link #createFromRawJson} for new code.
      */
-    public static long createWithJson(String json, String name, int[] params, int[] colorReplacement) {
+    private static long createWithJson(String json, String name, int[] params, int[] colorReplacement, String[] layerNames, int[] layerColors) {
         Trace.beginSection("RLottieNative#createWithJson");
         try {
-            return nCreateWithJson(json, name, params, colorReplacement);
+            return nCreateWithJson(json, name, params, colorReplacement, layerNames, layerColors);
         } finally {
             Trace.endSection();
         }
@@ -267,20 +267,12 @@ public final class RLottieNative {
         }
     }
 
-    /**
-     * Updates a layer color directly using a raw pointer.
-     * Prefer the instance method {@link #setLayerColor(String, int)} for new code.
-     */
-    public static void setLayerColor(long ptr, String layer, int color) {
-        nSetLayerColor(ptr, layer, color);
-    }
-
-    /**
-     * Replaces colors directly using a raw pointer.
-     * Prefer the instance method {@link #replaceColors(int[])} for new code.
-     */
-    public static void replaceColors(long ptr, int[] colorReplacement) {
-        nReplaceColors(ptr, colorReplacement);
+    private static int[] layerNamesToColors(String[] layerNames, Map<String, Integer> layerColors) {
+        int[] result = new int[layerNames.length];
+        for (int i = 0; i < layerNames.length; i++) {
+            result[i] = layerColors.get(layerNames[i]);
+        }
+        return result;
     }
 
     /**
@@ -288,7 +280,12 @@ public final class RLottieNative {
      * Prefer {@link #recycle()} for new code.
      */
     public static void destroy(long ptr) {
-        nDestroy(ptr);
+        Trace.beginSection("RLottieNative#destroy");
+        try {
+            nDestroy(ptr);
+        } finally {
+            Trace.endSection();
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -300,14 +297,27 @@ public final class RLottieNative {
      * Safe to call on any thread; does not produce an instance.
      */
     public static long getFramesCount(String src, String json) {
-        return nGetFramesCount(src, json);
+        final RLottieNative rLottieNative = createFromFile(src, json, 0, 0, false, null, false, 0);
+        if (rLottieNative != null) {
+            final int framesCount = rLottieNative.getFrameCount();
+            rLottieNative.recycle();
+            return framesCount;
+        }
+        return 0;
     }
 
     /**
      * Returns the animation duration in seconds without keeping the file open.
      */
     public static double getDuration(String src, String json) {
-        return nGetDuration(src, json);
+        final RLottieNative rLottieNative = createFromFile(src, json, 0, 0, false, null, false, 0);
+        if (rLottieNative != null) {
+            final int framesCount = rLottieNative.getFrameCount();
+            final int fps = rLottieNative.getFps();
+            rLottieNative.recycle();
+            return (double) framesCount / fps;
+        }
+        return 0;
     }
 
 
@@ -316,19 +326,11 @@ public final class RLottieNative {
     // Native
     // -------------------------------------------------------------------------
 
-    private static native long nCreate(String src, String json, int w, int h, int[] params, boolean precache, int[] colorReplacement, boolean limitFps, int fitzModifier);
+    private static native long nCreate(String src, String json, int w, int h, int[] params, boolean precache, int[] colorReplacement, boolean limitFps, int fitzModifier, String[] layerNames, int[] layerColors);
 
-    private static native long nCreateWithJson(String json, String name, int[] params, int[] colorReplacement);
+    private static native long nCreateWithJson(String json, String name, int[] params, int[] colorReplacement, String[] layerNames, int[] layerColors);
 
     private static native int nGetFrame(long ptr, int frame, Bitmap bitmap, boolean clear);
 
-    private static native void nSetLayerColor(long ptr, String layer, int color);
-
-    private static native void nReplaceColors(long ptr, int[] colorReplacement);
-
     private static native void nDestroy(long ptr);
-
-    private static native long nGetFramesCount(String src, String json);
-
-    private static native double nGetDuration(String src, String json);
 }
