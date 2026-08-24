@@ -36,11 +36,11 @@ Partisan Telegram is developed and maintained by [Cyber Partisans](https://t.me/
 
 You will require Android Studio 2025.1.4, Android NDK 27.2.12479018 and Android SDK 35.
 
-1. Clone the Telegram source code with its submodules:
+1. Clone the Partisan Telegram source code with its submodules:
    ```bash
-   git clone --recursive --shallow-submodules https://github.com/wrwrabbit/Partisan-Telegram-Android.git Telegram
+   git clone --recursive --shallow-submodules https://github.com/wrwrabbit/Partisan-Telegram-Android.git Partisan-Telegram-Android
    ```
-   In case you forgot the `--recursive` flag, change to the `Telegram` directory and run:
+   In case you forgot the `--recursive` flag, change to the `Partisan-Telegram-Android` directory and run:
    ```bash
    git submodule init && git submodule update --init --recursive --depth=1
    ```
