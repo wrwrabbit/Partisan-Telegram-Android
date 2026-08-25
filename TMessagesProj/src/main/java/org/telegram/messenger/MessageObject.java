@@ -10222,6 +10222,9 @@ public class MessageObject {
     }
 
     public boolean canSetReaction() {
+        if (isEphemeral()) {
+            return false;
+        }
         if (messageOwner instanceof TLRPC.TL_messageService)
             return messageOwner.reactions_are_possible;
         return true;
