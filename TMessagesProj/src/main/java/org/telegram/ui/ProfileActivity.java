@@ -118,7 +118,12 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.LinearSmoothScrollerCustom;
+
+import org.telegram.ui.Components.ScrimOptions;
+import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
+import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
+import org.telegram.ui.Components.blur3.utils.Blur3Utils;
+import org.telegram.ui.recyclerview.LinearSmoothScrollerCustom;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
@@ -164,10 +169,8 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
-import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.masked_ptg.OriginalVersion;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.ui.PTelegramSettingsFragment;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
@@ -351,6 +354,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import me.vkryl.android.animator.BoolAnimator;
+import me.vkryl.core.reference.ReferenceList;
 
 public class ProfileActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate, SharedMediaLayout.SharedMediaPreloaderDelegate, ImageUpdater.ImageUpdaterDelegate, SharedMediaLayout.Delegate, MainTabsActivity.TabFragmentDelegate, AllowShowingActivityInterface {
     private RecyclerListView listView;
@@ -630,8 +634,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int graceSuggestionRow;
     private int graceSuggestionSectionRow;
     private int phoneSuggestionRow;
-    private int securitySuggestionSectionRow;
-    private int securitySuggestionRow;
     private int passwordSuggestionSectionRow;
     private int passwordSuggestionRow;
     private int settingsSectionRow;
@@ -655,9 +657,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int sendLogsRow;
     private int sendLastLogsRow;
     private int clearLogsRow;
-    private int sendLogcatRow;
     private int switchBackendRow;
-    private int testerSettingsRow;
     private int versionRow;
     private int emptyRow;
     private int emptyRow2;
@@ -2096,6 +2096,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             iBlur3SourceGlass = null;
             iBlur3FactoryLiquidGlass = new BlurredBackgroundDrawableViewFactory(iBlur3SourceColor);
         }
+
+        scrimBlur3Factory.setLinkedViewsRef(new ReferenceList<>());
     }
 
     @Override
@@ -3338,6 +3340,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             private final ArrayList<View> sortedChildren = new ArrayList<>();
             private final Comparator<View> viewComparator = (view, view2) -> (int) (view.getY() - view2.getY());
 
+            @Override
+            protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+                super.onSizeChanged(w, h, oldw, oldh);
+                Blur3Utils.checkBitmapSourceMatrixScale(scrimBlur3SourceBitmap, fragmentView);
+                scrimBlur3Factory.invalidateAllLinkedViews();
+            }
 
             @Override
             protected void dispatchDraw(Canvas canvas) {
@@ -3539,6 +3547,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         viewPositionWatcher = new ViewPositionWatcher(fragmentView);
         iBlur3FactoryLiquidGlass.setSourceRootView(viewPositionWatcher, (ViewGroup) fragmentView);
+        scrimBlur3Factory.setSourceRootView(viewPositionWatcher, (ViewGroup) fragmentView);
 
         FrameLayout frameLayout = (FrameLayout) fragmentView;
 
@@ -3999,6 +4008,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         TLRPC.User user = getUserConfig().getCurrentUser();
                         if (user == null) return;
                         ItemOptions itemOptions = ItemOptions.makeOptions(this, actionsView);
+                        itemOptions.setLongPressSelectionEnabled(false);
                         itemOptions.setGravity(Gravity.LEFT);
                         itemOptions.add(R.drawable.msg_qrcode, getString(R.string.QrCode), () -> {
                             Bundle args = new Bundle();
@@ -4086,12 +4096,25 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             editItem.setContentDescription(LocaleController.getString(R.string.Edit));
         }
         otherItem = menu.addItem(10, R.drawable.ic_ab_other, resourcesProvider);
+
+        otherItem.setSubMenuDelegate(new ActionBarMenuItem.ActionBarSubMenuItemDelegate() {
+            @Override
+            public void onShowSubMenu() {
+                updateScrimSourceBitmap();
+            }
+
+            @Override
+            public void onHideSubMenu() {
+
+            }
+        });
         ttlIconView = new ImageView(context);
         ttlIconView.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.MULTIPLY));
         AndroidUtilities.updateViewVisibilityAnimated(ttlIconView, false, 0.8f, false);
         ttlIconView.setImageResource(R.drawable.msg_mini_autodelete_timer);
         otherItem.addView(ttlIconView, LayoutHelper.createFrame(12, 12, Gravity.CENTER_VERTICAL | Gravity.LEFT, 8, 2, 0, 0));
         otherItem.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
+        otherItem.setBlurredBackgroundFactory(scrimBlur3Factory, BlurredBackgroundProviderImpl.messageMenuBackground(resourceProvider));
 
         int scrollTo;
         int scrollToPosition = 0;
@@ -4593,8 +4616,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 sendLogs(getParentActivity(), true);
             } else if (position == clearLogsRow) {
                 FileLog.cleanupLogs();
-            } else if (position == sendLogcatRow) {
-                org.telegram.messenger.partisan.Utils.sendLogcat(this);
             } else if (position == switchBackendRow) {
                 if (getParentActivity() == null) {
                     return;
@@ -4610,8 +4631,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 });
                 builder1.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                 showDialog(builder1.create());
-            } else if (position == testerSettingsRow) {
-                presentFragment(new TesterSettingsFragment());
             } else if (position == languageRow) {
                 presentFragment(new LanguageSelectActivity());
             } else if (position == setUsernameRow) {
@@ -4749,8 +4768,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 "Reload app config",
                                 !SharedConfig.forceForumTabs ? "Force Forum Tabs" : "Do Not Force Forum Tabs",
                             "Make Memory Dump",
-                                BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.fastWallpaperDisabled ? "enable wallpaper shader" : "disable wallpaper shader") : null,
-                                !FakePasscodeUtils.isFakePasscodeActivated() ? "Enter tester settings password" : null
+                                BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.fastWallpaperDisabled ? "enable wallpaper shader" : "disable wallpaper shader") : null
                         };
 
                         builder.setItems(items, (dialog, which) -> {
@@ -5037,8 +5055,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 SharedConfig.toggleUseNewBlur();
                             } else if (which == 32) {
                                 SharedConfig.toggleBrowserAdaptableColors();
-                            } else if (which == items.length - 1) {
-                                showTesterPasswordDialog();
                             } else if (which == 33) {
                                 SharedConfig.toggleDebugVideoQualities();
                             } else if (which == 34) {
@@ -7217,6 +7233,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             ItemOptions.makeOptions(this, view)
                     .setScrimViewBackground(bg)
+                    .setLongPressSelectionEnabled(false)
                     .addIf(!self, R.drawable.msg_discussion, getString(R.string.SendMessage), () -> {
                         presentFragment(ChatActivity.of(user.id));
                     })
@@ -7485,6 +7502,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             final ItemOptions o = ItemOptions.makeOptions(this, view);
             o.setScrimViewBackground(listView.getClipBackground(view));
+            o.setLongPressSelectionEnabled(false);
             if (position == phoneRow) {
                 if (userInfo != null && userInfo.phone_calls_available) {
                     o.add(R.drawable.msg_calls, getString(R.string.CallViaTelegram), () -> {
@@ -7581,6 +7599,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
                 ItemOptions.makeOptions(this, view)
                     .setScrimViewBackground(listView.getClipBackground(view))
+                    .setLongPressSelectionEnabled(false)
                     .add(R.drawable.msg_copy, getString(R.string.Copy), () -> {
                         AndroidUtilities.addToClipboard(finalText);
                         if (position == bioRow) {
@@ -9395,11 +9414,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             updateListAnimated(false);
         } else if (id == NotificationCenter.newSuggestionsAvailable) {
             final int prevRow1 = passwordSuggestionRow;
-            final int prevSecuritySuggestionRow = securitySuggestionRow;
-            int prevRow2 = phoneSuggestionRow;
+            final int prevRow2 = phoneSuggestionRow;
             final int prevRow3 = graceSuggestionRow;
             updateRowsIds();
-            if (listAdapter != null && (prevRow1 != passwordSuggestionRow || prevSecuritySuggestionRow != securitySuggestionRow || prevRow2 != phoneSuggestionRow || prevRow3 != graceSuggestionRow)) {
+            if (listAdapter != null && (prevRow1 != passwordSuggestionRow || prevRow2 != phoneSuggestionRow || prevRow3 != graceSuggestionRow)) {
                 AndroidUtilities.runOnUIThread(() -> listAdapter.notifyDataSetChanged());
             }
         } else if (id == NotificationCenter.topicsDidLoaded) {
@@ -9676,9 +9694,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         updateItemsUsername();
         needLayout(false);
-        if (getUserConfig().showSecuritySuggestions) {
-            SecurityChecker.checkSecurityIssuesAndSave(getParentActivity(), getCurrentAccount(), false);
-        }
     }
 
     @Override
@@ -10547,9 +10562,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         phoneSuggestionSectionRow = -1;
         phoneSuggestionRow = -1;
         secretSettingsSectionRow = -1;
-        securitySuggestionRow = -1;
         passwordSuggestionSectionRow = -1;
-        securitySuggestionSectionRow = -1;
         graceSuggestionRow = -1;
         graceSuggestionSectionRow = -1;
         passwordSuggestionRow = -1;
@@ -10580,9 +10593,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         sendLogsRow = -1;
         sendLastLogsRow = -1;
         clearLogsRow = -1;
-        sendLogcatRow = -1;
         switchBackendRow = -1;
-        testerSettingsRow = -1;
         versionRow = -1;
         botAppRow = -1;
         botPermissionsHeader = -1;
@@ -10713,9 +10724,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 numberRow = rowCount++;
                 setUsernameRow = rowCount++;
                 bioRow = rowCount++;
-                if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showId) {
-                    chatIdRow = rowCount++;
-                }
 
                 settingsSectionRow = rowCount++;
 
@@ -10729,10 +10737,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 } else if (suggestions.contains("VALIDATE_PASSWORD")) {
                     passwordSuggestionRow = rowCount++;
                     passwordSuggestionSectionRow = rowCount++;
-                }
-                if (!FakePasscodeUtils.isFakePasscodeActivated() && getUserConfig().showSecuritySuggestions) {
-                    securitySuggestionRow = rowCount++;
-                    securitySuggestionSectionRow = rowCount++;
                 }
 
                 settingsSectionRow2 = rowCount++;
@@ -10771,7 +10775,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 questionRow = rowCount++;
                 faqRow = rowCount++;
                 policyRow = rowCount++;
-                if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION || org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
+                if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION) {
                     helpSectionCell = rowCount++;
                     debugHeaderRow = rowCount++;
                 }
@@ -10779,16 +10783,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     sendLogsRow = rowCount++;
                     sendLastLogsRow = rowCount++;
                     clearLogsRow = rowCount++;
-                    if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-                        sendLogcatRow = rowCount++;
-                    }
                 }
                 if (BuildVars.DEBUG_VERSION) {
                     switchBackendRow = rowCount++;
-                }
-                if (org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()
-                        && (!FakePasscodeUtils.isFakePasscodeActivated() || org.telegram.messenger.partisan.settings.TesterSettings.showTesterSettingsWithFakePasscode.get().orElse(false)) ) {
-                    testerSettingsRow = rowCount++;
                 }
                 versionRow = rowCount++;
             } else {
@@ -10934,7 +10931,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     sharedMediaRow = rowCount++;
                 } else if (lastSectionRow == -1 && needSendMessage) {
                     sendMessageRow = rowCount++;
-                    reportRow = rowCount++;
+                    // reportRow = rowCount++;
                     lastSectionRow = rowCount++;
                 }
             }
@@ -12461,6 +12458,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             otherItem.hideSubItem(gallery_menu_save);
         }
 
+        if (userId != 0 && !isBot && !myProfile) {
+            otherItem.addSubItem(report, R.drawable.msg_report, LocaleController.getString(R.string.ReportBot)).setColors(getThemedColor(Theme.key_text_RedRegular), getThemedColor(Theme.key_text_RedRegular));
+        }
+
         if (selfUser && !myProfile) {
             otherItem.addSubItem(logout, R.drawable.msg_leave, LocaleController.getString(R.string.LogOut));
         }
@@ -13230,25 +13231,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         });
     }
 
-    private void showTesterPasswordDialog() {
-        AlertDialog.Builder alert = new AlertDialog.Builder(getParentActivity());
-        final EditTextCaption editText = new EditTextCaption(getParentActivity(), null);
-        editText.setTextColor(Theme.getColor(Theme.key_chat_messagePanelText));
-        editText.setHintColor(Theme.getColor(Theme.key_chat_messagePanelHint));
-        editText.setHintTextColor(Theme.getColor(Theme.key_chat_messagePanelHint));
-        editText.setCursorColor(Theme.getColor(Theme.key_chat_messagePanelCursor));
-        alert.setTitle("Enter tester settings password");
-        alert.setView(editText);
-        alert.setPositiveButton(LocaleController.getString("Done", R.string.Done), (dlg, whichButton) -> {
-            TesterSettings.checkTesterSettingsPassword(editText.getText().toString());
-            updateRowsIds();
-            listAdapter.notifyDataSetChanged();
-        });
-        showDialog(alert.create());
-    }
-
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
-        private final static int VIEW_TYPE_SECURITY_SUGGESTION = 100;
         private final static int VIEW_TYPE_HEADER = 1,
                 VIEW_TYPE_TEXT_DETAIL = 2,
                 VIEW_TYPE_ABOUT_LINK = 3,
@@ -13511,23 +13494,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     };
                     break;
                 }
-                case VIEW_TYPE_SECURITY_SUGGESTION: {
-                    view = new SettingsSuggestionCell(mContext, resourcesProvider) {
-                        @Override
-                        protected void onYesClick(int type) {
-                            getUserConfig().showSecuritySuggestions = false;
-                            getUserConfig().lastSecuritySuggestionsShow = System.currentTimeMillis();
-                            getUserConfig().saveConfig(false);
-                            updateListAnimated(false);
-                        }
-
-                        @Override
-                        protected void onNoClick(int type) {
-                            presentFragment(new SecurityIssuesFragment());
-                        }
-                    };
-                    break;
-                }
                 case VIEW_TYPE_PREMIUM_TEXT_CELL:
                 case VIEW_TYPE_STARS_TEXT_CELL:
                     view = new ProfilePremiumCell(mContext, viewType == VIEW_TYPE_PREMIUM_TEXT_CELL ? 0 : 1, resourcesProvider);
@@ -13773,7 +13739,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         TLRPC.User user = UserConfig.getInstance(currentAccount).getCurrentUser();
                         String value;
                         if (user != null && user.phone != null && user.phone.length() != 0) {
-                            value = PhoneFormat.getInstance().format("+" + FakePasscodeUtils.getFakePhoneNumber(UserConfig.selectedAccount, user.phone));
+                            value = PhoneFormat.getInstance().format("+" + user.phone);
                         } else {
                             value = LocaleController.getString(R.string.NumberUnknown);
                         }
@@ -14053,12 +14019,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         textCell.setText(LocaleController.getString(R.string.DebugSendLastLogs), true);
                     } else if (position == clearLogsRow) {
                         textCell.setText(LocaleController.getString(R.string.DebugClearLogs), switchBackendRow != -1);
-                    } else if (position == sendLogcatRow) {
-                        textCell.setText(LocaleController.getString("DebugSendLogcat", R.string.DebugSendLogcat), switchBackendRow != -1);
                     } else if (position == switchBackendRow) {
                         textCell.setText("Switch Backend", false);
-                    } else if (position == testerSettingsRow) {
-                        textCell.setText("Tester Settings", false);
                     } else if (position == devicesRow) {
                         textCell.setTextAndIcon(LocaleController.getString(R.string.Devices), R.drawable.msg2_devices, true);
                     } else if (position == setAvatarRow) {
@@ -14332,10 +14294,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         suggestionCell.setType(SettingsSuggestionCell.TYPE_GRACE);
                     }
                     break;
-                case VIEW_TYPE_SECURITY_SUGGESTION:
-                    SettingsSuggestionCell securitySuggestionCell = (SettingsSuggestionCell) holder.itemView;
-                    securitySuggestionCell.setType(SettingsSuggestionCell.TYPE_SECURITY);
-                    break;
                 case VIEW_TYPE_ADDTOGROUP_INFO:
                     TextInfoPrivacyCell addToGroupInfo = (TextInfoPrivacyCell) holder.itemView;
                     addToGroupInfo.setText(LocaleController.getString(R.string.BotAddToGroupOrChannelInfo));
@@ -14485,7 +14443,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         position == versionRow || position == dataRow || position == chatRow ||
                         position == questionRow || position == devicesRow || position == filtersRow || position == stickersRow ||
                         position == faqRow || position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
-                        position == clearLogsRow || position == sendLogcatRow || position == switchBackendRow || position == testerSettingsRow || position == setAvatarRow
+                        position == clearLogsRow || position == switchBackendRow || position == setAvatarRow
                         || position == chatIdRow ||
                         position == addToGroupButtonRow || position == premiumRow || position == premiumGiftingRow ||
                         position == businessRow || position == liteModeRow || position == birthdayRow || position == channelRow ||
@@ -14532,7 +14490,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     position == languageRow || position == dataRow || position == chatRow ||
                     position == questionRow || position == devicesRow || position == filtersRow || position == stickersRow ||
                     position == faqRow || position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
-                    position == clearLogsRow || position == sendLogcatRow || position == switchBackendRow || position == testerSettingsRow || position == setAvatarRow || position == addToGroupButtonRow ||
+                    position == clearLogsRow || position == switchBackendRow || position == setAvatarRow || position == addToGroupButtonRow ||
                     position == addToContactsRow || position == liteModeRow || position == premiumGiftingRow || position == businessRow ||
                     position == botStarsBalanceRow || position == botTonBalanceRow || position == channelBalanceRow || position == botPermissionLocation ||
                     position == botPermissionBiometry || position == botPermissionEmojiStatus || position == tonRow
@@ -14546,7 +14504,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return VIEW_TYPE_NOTIFICATIONS_CHECK_SIMPLE;
             } else if (position == lastSectionRow || position == membersSectionRow || position == linkedCommunityDividerRow ||
                     position == secretSettingsSectionRow || position == settingsSectionRow || position == devicesSectionRow ||
-                    position == helpSectionCell || position == setAvatarSectionRow || position == passwordSuggestionSectionRow || position == securitySuggestionSectionRow ||
+                    position == helpSectionCell || position == setAvatarSectionRow || position == passwordSuggestionSectionRow ||
                     position == phoneSuggestionSectionRow || position == premiumSectionsRow || position == reportDividerRow ||
                     position == channelDividerRow || position == graceSuggestionSectionRow || position == balanceDividerRow ||
                     position == botPermissionsDivider || position == channelBalanceSectionRow || position == unofficialSecurityRiskDividerRow
@@ -14566,8 +14524,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return VIEW_TYPE_VERSION;
             } else if (position == passwordSuggestionRow || position == phoneSuggestionRow || position == graceSuggestionRow) {
                 return VIEW_TYPE_SUGGESTION;
-            } else if (position == securitySuggestionRow) {
-                return VIEW_TYPE_SECURITY_SUGGESTION;
             } else if (position == addToGroupInfoRow) {
                 return VIEW_TYPE_ADDTOGROUP_INFO;
             } else if (position == premiumRow) {
@@ -15918,8 +15874,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, bioRow, sparseIntArray);
             put(++pointer, phoneSuggestionRow, sparseIntArray);
             put(++pointer, phoneSuggestionSectionRow, sparseIntArray);
-            put(++pointer, securitySuggestionRow, sparseIntArray);
-            put(++pointer, securitySuggestionSectionRow, sparseIntArray);
             put(++pointer, passwordSuggestionRow, sparseIntArray);
             put(++pointer, passwordSuggestionSectionRow, sparseIntArray);
             put(++pointer, graceSuggestionRow, sparseIntArray);
@@ -15950,9 +15904,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, sendLogsRow, sparseIntArray);
             put(++pointer, sendLastLogsRow, sparseIntArray);
             put(++pointer, clearLogsRow, sparseIntArray);
-            put(++pointer, sendLogcatRow, sparseIntArray);
             put(++pointer, switchBackendRow, sparseIntArray);
-            put(++pointer, testerSettingsRow, sparseIntArray);
             put(++pointer, versionRow, sparseIntArray);
             put(++pointer, emptyRow, sparseIntArray);
             put(++pointer, emptyRow2, sparseIntArray);
@@ -16532,6 +16484,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private boolean editNotes(View view, int position) {
         final ItemOptions o = ItemOptions.makeOptions(this, view);
         o.setScrimViewBackground(listView.getClipBackground(view));
+        o.setLongPressSelectionEnabled(false);
         o.addIf(userInfo != null, R.drawable.msg_copy, getString(R.string.Copy), () -> {
             if (userInfo == null) return;
             final CharSequence text = MessageObject.formatTextWithEntities(userInfo.note, false);
@@ -16614,6 +16567,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         final ItemOptions itemOptions = ItemOptions.makeOptions(this, cell);
         itemOptions.setScrimViewBackground(listView.getClipBackground(cell));
+        itemOptions.setLongPressSelectionEnabled(false);
         itemOptions.setGravity(Gravity.LEFT);
 
         if (position == bizLocationRow && userFull.business_location != null) {
@@ -17198,11 +17152,23 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     /* Blur */
 
+    private void updateScrimSourceBitmap() {
+        ScrimOptions.makeGlobalBlurBitmaps((bitmapBg, bitmapOptions) -> {
+            scrimBlur3SourceBitmap.setBitmap(bitmapOptions);
+            Blur3Utils.checkBitmapSourceMatrixScale(scrimBlur3SourceBitmap, fragmentView);
+            scrimBlur3Factory.invalidateAllLinkedViews();
+        });
+    }
+
     private final @Nullable DownscaleScrollableNoiseSuppressor scrollableViewNoiseSuppressor;
     // private final @Nullable BlurredBackgroundSourceRenderNode iBlur3SourceGlassFrosted;
     private final @Nullable BlurredBackgroundSourceRenderNode iBlur3SourceGlass;
     private final @NonNull BlurredBackgroundSourceColor iBlur3SourceColor;
     private final @NonNull BlurredBackgroundDrawableViewFactory iBlur3FactoryLiquidGlass;
+
+    private final BlurredBackgroundSourceBitmap scrimBlur3SourceBitmap = new BlurredBackgroundSourceBitmap();
+    private final BlurredBackgroundDrawableViewFactory scrimBlur3Factory = new BlurredBackgroundDrawableViewFactory(scrimBlur3SourceBitmap);
+
     private ViewPositionWatcher viewPositionWatcher;
 
     private IBlur3Capture iBlur3Capture;
