@@ -169,9 +169,7 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
-import org.telegram.messenger.partisan.SecurityChecker;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
-import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.ui.PTelegramSettingsFragment;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
@@ -635,8 +633,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int graceSuggestionRow;
     private int graceSuggestionSectionRow;
     private int phoneSuggestionRow;
-    private int securitySuggestionSectionRow;
-    private int securitySuggestionRow;
     private int passwordSuggestionSectionRow;
     private int passwordSuggestionRow;
     private int settingsSectionRow;
@@ -660,9 +656,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int sendLogsRow;
     private int sendLastLogsRow;
     private int clearLogsRow;
-    private int sendLogcatRow;
     private int switchBackendRow;
-    private int testerSettingsRow;
     private int versionRow;
     private int emptyRow;
     private int emptyRow2;
@@ -4621,8 +4615,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 sendLogs(getParentActivity(), true);
             } else if (position == clearLogsRow) {
                 FileLog.cleanupLogs();
-            } else if (position == sendLogcatRow) {
-                org.telegram.messenger.partisan.Utils.sendLogcat(this);
             } else if (position == switchBackendRow) {
                 if (getParentActivity() == null) {
                     return;
@@ -4638,8 +4630,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 });
                 builder1.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                 showDialog(builder1.create());
-            } else if (position == testerSettingsRow) {
-                presentFragment(new TesterSettingsFragment());
             } else if (position == languageRow) {
                 presentFragment(new LanguageSelectActivity());
             } else if (position == setUsernameRow) {
@@ -4777,8 +4767,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 "Reload app config",
                                 !SharedConfig.forceForumTabs ? "Force Forum Tabs" : "Do Not Force Forum Tabs",
                             "Make Memory Dump",
-                                BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.fastWallpaperDisabled ? "enable wallpaper shader" : "disable wallpaper shader") : null,
-                                !FakePasscodeUtils.isFakePasscodeActivated() ? "Enter tester settings password" : null
+                                BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.fastWallpaperDisabled ? "enable wallpaper shader" : "disable wallpaper shader") : null
                         };
 
                         builder.setItems(items, (dialog, which) -> {
@@ -5065,8 +5054,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 SharedConfig.toggleUseNewBlur();
                             } else if (which == 32) {
                                 SharedConfig.toggleBrowserAdaptableColors();
-                            } else if (which == items.length - 1) {
-                                showTesterPasswordDialog();
                             } else if (which == 33) {
                                 SharedConfig.toggleDebugVideoQualities();
                             } else if (which == 34) {
@@ -9426,11 +9413,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             updateListAnimated(false);
         } else if (id == NotificationCenter.newSuggestionsAvailable) {
             final int prevRow1 = passwordSuggestionRow;
-            final int prevSecuritySuggestionRow = securitySuggestionRow;
-            int prevRow2 = phoneSuggestionRow;
+            final int prevRow2 = phoneSuggestionRow;
             final int prevRow3 = graceSuggestionRow;
             updateRowsIds();
-            if (listAdapter != null && (prevRow1 != passwordSuggestionRow || prevSecuritySuggestionRow != securitySuggestionRow || prevRow2 != phoneSuggestionRow || prevRow3 != graceSuggestionRow)) {
+            if (listAdapter != null && (prevRow1 != passwordSuggestionRow || prevRow2 != phoneSuggestionRow || prevRow3 != graceSuggestionRow)) {
                 AndroidUtilities.runOnUIThread(() -> listAdapter.notifyDataSetChanged());
             }
         } else if (id == NotificationCenter.topicsDidLoaded) {
@@ -9707,9 +9693,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         updateItemsUsername();
         needLayout(false);
-        if (getUserConfig().showSecuritySuggestions) {
-            SecurityChecker.checkSecurityIssuesAndSave(getParentActivity(), getCurrentAccount(), false);
-        }
     }
 
     @Override
@@ -10578,9 +10561,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         phoneSuggestionSectionRow = -1;
         phoneSuggestionRow = -1;
         secretSettingsSectionRow = -1;
-        securitySuggestionRow = -1;
         passwordSuggestionSectionRow = -1;
-        securitySuggestionSectionRow = -1;
         graceSuggestionRow = -1;
         graceSuggestionSectionRow = -1;
         passwordSuggestionRow = -1;
@@ -10611,9 +10592,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         sendLogsRow = -1;
         sendLastLogsRow = -1;
         clearLogsRow = -1;
-        sendLogcatRow = -1;
         switchBackendRow = -1;
-        testerSettingsRow = -1;
         versionRow = -1;
         botAppRow = -1;
         botPermissionsHeader = -1;
@@ -10744,9 +10723,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 numberRow = rowCount++;
                 setUsernameRow = rowCount++;
                 bioRow = rowCount++;
-                if (!FakePasscodeUtils.isFakePasscodeActivated() && SharedConfig.showId) {
-                    chatIdRow = rowCount++;
-                }
 
                 settingsSectionRow = rowCount++;
 
@@ -10760,10 +10736,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 } else if (suggestions.contains("VALIDATE_PASSWORD")) {
                     passwordSuggestionRow = rowCount++;
                     passwordSuggestionSectionRow = rowCount++;
-                }
-                if (!FakePasscodeUtils.isFakePasscodeActivated() && getUserConfig().showSecuritySuggestions) {
-                    securitySuggestionRow = rowCount++;
-                    securitySuggestionSectionRow = rowCount++;
                 }
 
                 settingsSectionRow2 = rowCount++;
@@ -10802,7 +10774,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 questionRow = rowCount++;
                 faqRow = rowCount++;
                 policyRow = rowCount++;
-                if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION || org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()) {
+                if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION) {
                     helpSectionCell = rowCount++;
                     debugHeaderRow = rowCount++;
                 }
@@ -10810,16 +10782,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     sendLogsRow = rowCount++;
                     sendLastLogsRow = rowCount++;
                     clearLogsRow = rowCount++;
-                    if (!FakePasscodeUtils.isFakePasscodeActivated()) {
-                        sendLogcatRow = rowCount++;
-                    }
                 }
                 if (BuildVars.DEBUG_VERSION) {
                     switchBackendRow = rowCount++;
-                }
-                if (org.telegram.messenger.partisan.settings.TesterSettings.areTesterSettingsActivated()
-                        && (!FakePasscodeUtils.isFakePasscodeActivated() || org.telegram.messenger.partisan.settings.TesterSettings.showTesterSettingsWithFakePasscode.get().orElse(false)) ) {
-                    testerSettingsRow = rowCount++;
                 }
                 versionRow = rowCount++;
             } else {
@@ -13265,25 +13230,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         });
     }
 
-    private void showTesterPasswordDialog() {
-        AlertDialog.Builder alert = new AlertDialog.Builder(getParentActivity());
-        final EditTextCaption editText = new EditTextCaption(getParentActivity(), null);
-        editText.setTextColor(Theme.getColor(Theme.key_chat_messagePanelText));
-        editText.setHintColor(Theme.getColor(Theme.key_chat_messagePanelHint));
-        editText.setHintTextColor(Theme.getColor(Theme.key_chat_messagePanelHint));
-        editText.setCursorColor(Theme.getColor(Theme.key_chat_messagePanelCursor));
-        alert.setTitle("Enter tester settings password");
-        alert.setView(editText);
-        alert.setPositiveButton(LocaleController.getString("Done", R.string.Done), (dlg, whichButton) -> {
-            TesterSettings.checkTesterSettingsPassword(editText.getText().toString());
-            updateRowsIds();
-            listAdapter.notifyDataSetChanged();
-        });
-        showDialog(alert.create());
-    }
-
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
-        private final static int VIEW_TYPE_SECURITY_SUGGESTION = 100;
         private final static int VIEW_TYPE_HEADER = 1,
                 VIEW_TYPE_TEXT_DETAIL = 2,
                 VIEW_TYPE_ABOUT_LINK = 3,
@@ -13546,23 +13493,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     };
                     break;
                 }
-                case VIEW_TYPE_SECURITY_SUGGESTION: {
-                    view = new SettingsSuggestionCell(mContext, resourcesProvider) {
-                        @Override
-                        protected void onYesClick(int type) {
-                            getUserConfig().showSecuritySuggestions = false;
-                            getUserConfig().lastSecuritySuggestionsShow = System.currentTimeMillis();
-                            getUserConfig().saveConfig(false);
-                            updateListAnimated(false);
-                        }
-
-                        @Override
-                        protected void onNoClick(int type) {
-                            presentFragment(new SecurityIssuesFragment());
-                        }
-                    };
-                    break;
-                }
                 case VIEW_TYPE_PREMIUM_TEXT_CELL:
                 case VIEW_TYPE_STARS_TEXT_CELL:
                     view = new ProfilePremiumCell(mContext, viewType == VIEW_TYPE_PREMIUM_TEXT_CELL ? 0 : 1, resourcesProvider);
@@ -13808,7 +13738,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         TLRPC.User user = UserConfig.getInstance(currentAccount).getCurrentUser();
                         String value;
                         if (user != null && user.phone != null && user.phone.length() != 0) {
-                            value = PhoneFormat.getInstance().format("+" + FakePasscodeUtils.getFakePhoneNumber(UserConfig.selectedAccount, user.phone));
+                            value = PhoneFormat.getInstance().format("+" + user.phone);
                         } else {
                             value = LocaleController.getString(R.string.NumberUnknown);
                         }
@@ -14088,12 +14018,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         textCell.setText(LocaleController.getString(R.string.DebugSendLastLogs), true);
                     } else if (position == clearLogsRow) {
                         textCell.setText(LocaleController.getString(R.string.DebugClearLogs), switchBackendRow != -1);
-                    } else if (position == sendLogcatRow) {
-                        textCell.setText(LocaleController.getString("DebugSendLogcat", R.string.DebugSendLogcat), switchBackendRow != -1);
                     } else if (position == switchBackendRow) {
                         textCell.setText("Switch Backend", false);
-                    } else if (position == testerSettingsRow) {
-                        textCell.setText("Tester Settings", false);
                     } else if (position == devicesRow) {
                         textCell.setTextAndIcon(LocaleController.getString(R.string.Devices), R.drawable.msg2_devices, true);
                     } else if (position == setAvatarRow) {
@@ -14367,10 +14293,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         suggestionCell.setType(SettingsSuggestionCell.TYPE_GRACE);
                     }
                     break;
-                case VIEW_TYPE_SECURITY_SUGGESTION:
-                    SettingsSuggestionCell securitySuggestionCell = (SettingsSuggestionCell) holder.itemView;
-                    securitySuggestionCell.setType(SettingsSuggestionCell.TYPE_SECURITY);
-                    break;
                 case VIEW_TYPE_ADDTOGROUP_INFO:
                     TextInfoPrivacyCell addToGroupInfo = (TextInfoPrivacyCell) holder.itemView;
                     addToGroupInfo.setText(LocaleController.getString(R.string.BotAddToGroupOrChannelInfo));
@@ -14520,7 +14442,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         position == versionRow || position == dataRow || position == chatRow ||
                         position == questionRow || position == devicesRow || position == filtersRow || position == stickersRow ||
                         position == faqRow || position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
-                        position == clearLogsRow || position == sendLogcatRow || position == switchBackendRow || position == testerSettingsRow || position == setAvatarRow
+                        position == clearLogsRow || position == switchBackendRow || position == setAvatarRow
                         || position == chatIdRow ||
                         position == addToGroupButtonRow || position == premiumRow || position == premiumGiftingRow ||
                         position == businessRow || position == liteModeRow || position == birthdayRow || position == channelRow ||
@@ -14567,7 +14489,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     position == languageRow || position == dataRow || position == chatRow ||
                     position == questionRow || position == devicesRow || position == filtersRow || position == stickersRow ||
                     position == faqRow || position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
-                    position == clearLogsRow || position == sendLogcatRow || position == switchBackendRow || position == testerSettingsRow || position == setAvatarRow || position == addToGroupButtonRow ||
+                    position == clearLogsRow || position == switchBackendRow || position == setAvatarRow || position == addToGroupButtonRow ||
                     position == addToContactsRow || position == liteModeRow || position == premiumGiftingRow || position == businessRow ||
                     position == botStarsBalanceRow || position == botTonBalanceRow || position == channelBalanceRow || position == botPermissionLocation ||
                     position == botPermissionBiometry || position == botPermissionEmojiStatus || position == tonRow
@@ -14581,7 +14503,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return VIEW_TYPE_NOTIFICATIONS_CHECK_SIMPLE;
             } else if (position == lastSectionRow || position == membersSectionRow || position == linkedCommunityDividerRow ||
                     position == secretSettingsSectionRow || position == settingsSectionRow || position == devicesSectionRow ||
-                    position == helpSectionCell || position == setAvatarSectionRow || position == passwordSuggestionSectionRow || position == securitySuggestionSectionRow ||
+                    position == helpSectionCell || position == setAvatarSectionRow || position == passwordSuggestionSectionRow ||
                     position == phoneSuggestionSectionRow || position == premiumSectionsRow || position == reportDividerRow ||
                     position == channelDividerRow || position == graceSuggestionSectionRow || position == balanceDividerRow ||
                     position == botPermissionsDivider || position == channelBalanceSectionRow || position == unofficialSecurityRiskDividerRow
@@ -14601,8 +14523,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return VIEW_TYPE_VERSION;
             } else if (position == passwordSuggestionRow || position == phoneSuggestionRow || position == graceSuggestionRow) {
                 return VIEW_TYPE_SUGGESTION;
-            } else if (position == securitySuggestionRow) {
-                return VIEW_TYPE_SECURITY_SUGGESTION;
             } else if (position == addToGroupInfoRow) {
                 return VIEW_TYPE_ADDTOGROUP_INFO;
             } else if (position == premiumRow) {
@@ -15953,8 +15873,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, bioRow, sparseIntArray);
             put(++pointer, phoneSuggestionRow, sparseIntArray);
             put(++pointer, phoneSuggestionSectionRow, sparseIntArray);
-            put(++pointer, securitySuggestionRow, sparseIntArray);
-            put(++pointer, securitySuggestionSectionRow, sparseIntArray);
             put(++pointer, passwordSuggestionRow, sparseIntArray);
             put(++pointer, passwordSuggestionSectionRow, sparseIntArray);
             put(++pointer, graceSuggestionRow, sparseIntArray);
@@ -15985,9 +15903,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, sendLogsRow, sparseIntArray);
             put(++pointer, sendLastLogsRow, sparseIntArray);
             put(++pointer, clearLogsRow, sparseIntArray);
-            put(++pointer, sendLogcatRow, sparseIntArray);
             put(++pointer, switchBackendRow, sparseIntArray);
-            put(++pointer, testerSettingsRow, sparseIntArray);
             put(++pointer, versionRow, sparseIntArray);
             put(++pointer, emptyRow, sparseIntArray);
             put(++pointer, emptyRow2, sparseIntArray);
