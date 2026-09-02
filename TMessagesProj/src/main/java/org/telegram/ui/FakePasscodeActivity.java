@@ -385,8 +385,11 @@ public class FakePasscodeActivity extends BaseFragment {
                         editText.setHintColor(Theme.getColor(Theme.key_chat_messagePanelHint));
                         editText.setHintTextColor(Theme.getColor(Theme.key_chat_messagePanelHint));
                         editText.setCursorColor(Theme.getColor(Theme.key_chat_messagePanelCursor));
+                        LinearLayout editTextContainer = new LinearLayout(getParentActivity());
+                        editTextContainer.setOrientation(LinearLayout.VERTICAL);
+                        editTextContainer.addView(editText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 24, 0, 24, 10));
                         alert.setTitle(LocaleController.getString(R.string.ChangeFakePasscodeName));
-                        alert.setView(editText);
+                        alert.setView(editTextContainer);
                         alert.setPositiveButton(LocaleController.getString(R.string.Done), (dialog, whichButton) -> {
                             fakePasscode.name = editText.getText().toString();
                             SharedConfig.saveConfig();
