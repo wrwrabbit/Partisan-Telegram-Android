@@ -577,7 +577,7 @@ public class Utils {
         String tempPath = f.getAbsolutePath();
         String originalPath = f.getAbsolutePath();
 
-        SendMessagesHelper.prepareSendingDocument(AccountInstance.getInstance(accountNum), tempPath, originalPath, null, null, null, dialog_id, null, null, null, null, null, true, 0, null, null, 0, false);
+        SendMessagesHelper.prepareSendingDocument(AccountInstance.getInstance(accountNum), tempPath, originalPath, null, null, null, dialog_id, null, null, null, null, null, true, 0, null, null, false);
         return true;
     }
 
