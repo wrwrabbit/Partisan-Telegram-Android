@@ -75,7 +75,7 @@ public class MaskedUpdateUtils {
     }
 
     public static void requestMaskedUpdateBuild(int accountNum, Context context) {
-        if (!validateBotUpdateUsername(accountNum, context)) {
+        if (SharedConfig.pendingPtgAppUpdate == null || !validateBotUpdateUsername(accountNum, context)) {
             return;
         }
         if (maskedUpdateBotBlocked(accountNum)) {

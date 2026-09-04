@@ -62,12 +62,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 ),
                 new SimpleEditableDataItem(this, "Update Channel Username", TesterSettings.updateChannelUsernameOverride),
                 new ButtonItem(this, "Reset Update", view -> resetUpdate()),
-                new ButtonItem(this, "Reset Masked Update Tag", view -> {
-                    SharedConfig.pendingPtgAppUpdate.botRequestTag = null;
-                    SharedConfig.saveConfig();
-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived);
-                    Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
-                }),
+                new ButtonItem(this, "Reset Masked Update Tag", view -> resetMaskedUpdateTag()),
                 new DelimiterItem(this),
 
 
@@ -253,6 +248,15 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
         SharedConfig.saveConfig();
         Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
+    }
+
+    private void resetMaskedUpdateTag() {
+        if (SharedConfig.pendingPtgAppUpdate != null) {
+            SharedConfig.pendingPtgAppUpdate.botRequestTag = null;
+            SharedConfig.saveConfig();
+            NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.maskedUpdateReceived);
+        }
+        Toast.makeText(getParentActivity(), "Reset", Toast.LENGTH_SHORT).show();
     }
 
     private void checkVerificationUpdates() {
