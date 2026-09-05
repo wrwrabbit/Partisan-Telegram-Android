@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.View;
 import android.widget.LinearLayout;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -57,7 +58,7 @@ public class FakePasscodeDialogBuilder {
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(30, 0, 30, 0);
+        lp.setMargins(AndroidUtilities.dp(24), 0, AndroidUtilities.dp(24), 0);
         for (View view: views) {
             layout.addView(view, lp);
         }

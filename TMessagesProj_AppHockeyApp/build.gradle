@@ -38,8 +38,8 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 35
-    buildToolsVersion '35.0.0'
+    compileSdkVersion 36
+    buildToolsVersion '36.0.0'
 
     defaultConfig.applicationId = APP_PACKAGE
 
@@ -56,6 +56,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
 
         coreLibraryDesugaringEnabled true
+    }
+
+    androidResources {
+        localeFilters += ["en", "ar", "de", "es", "it", "ko", "nl", "pt-rBR", "ru", "uk"]
     }
 
     signingConfigs {
@@ -76,6 +80,7 @@ android {
 
     buildTypes {
         HA_private {
+            matchingFallbacks = ['release']
             debuggable false
             jniDebuggable false
             signingConfig signingConfigs.debug
@@ -86,6 +91,7 @@ android {
             ndk.debugSymbolLevel = 'FULL'
         }
         HA_public {
+            matchingFallbacks = ['release']
             debuggable false
             jniDebuggable false
             signingConfig signingConfigs.debug
@@ -96,6 +102,7 @@ android {
             ndk.debugSymbolLevel = 'FULL'
         }
         HA_hardcore {
+            matchingFallbacks = ['release']
             debuggable false
             jniDebuggable false
             signingConfig signingConfigs.debug
@@ -165,7 +172,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 35
+        targetSdkVersion 36
         versionName APP_VERSION_NAME
         ndkVersion "27.2.12479018"
 
@@ -175,8 +182,9 @@ android {
 
         externalNativeBuild {
             cmake {
-                version '3.10.2'
+                version '3.22.1'
                 arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-21' // , '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+                targets 'tmessages.49'
             }
         }
     }
@@ -190,4 +198,3 @@ android {
         checkReleaseBuilds false
     }
 }
-
