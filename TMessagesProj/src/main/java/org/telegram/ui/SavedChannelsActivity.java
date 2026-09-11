@@ -47,11 +47,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.LinearSmoothScrollerCustom;
+import org.telegram.ui.recyclerview.LinearSmoothScrollerCustom;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AccountInstance;
@@ -155,6 +156,7 @@ import java.util.List;
 
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
+import me.vkryl.android.util.ClickHelper;
 
 public class SavedChannelsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, FloatingDebugProvider, FactorAnimator.Target, MainTabsActivity.TabFragmentDelegate {
     public static final int MAIN_TABS_HEIGHT = 56;
@@ -163,9 +165,9 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
     public static final int FILTER_TABS_HEIGHT = 36;
     public static final int SEARCH_TABS_HEIGHT = 36 + 7 + 7;
 
-    private final int ANIMATOR_ID_SHADOW_VISIBLE = 4;
-    private final int ANIMATOR_ID_ACTION_MODE_VISIBLE = 6;
-    private final int ANIMATOR_ID_FORWARD_BUTTON_VISIBLE = 7;
+    private static final int ANIMATOR_ID_SHADOW_VISIBLE = 4;
+    private static final int ANIMATOR_ID_ACTION_MODE_VISIBLE = 6;
+    private static final int ANIMATOR_ID_FORWARD_BUTTON_VISIBLE = 7;
 
     private final BoolAnimator animatorShadowVisible = new BoolAnimator(ANIMATOR_ID_SHADOW_VISIBLE,
             this, CubicBezierInterpolator.EASE_OUT_QUINT, 350);
@@ -583,6 +585,9 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
             int keyboardSize = measureKeyboardHeight();
             setBottomClip(paddingBottom);
 
+            final int W = getMeasuredWidth();
+            final int H = getMeasuredHeight();
+
             for (int i = 0; i < count; i++) {
                 final View child = getChildAt(i);
                 if (child == null || child.getVisibility() == GONE) {
@@ -606,10 +611,10 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
 
                 switch (absoluteGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
                     case Gravity.CENTER_HORIZONTAL:
-                        childLeft = (r - l - width) / 2 + lp.leftMargin - lp.rightMargin;
+                        childLeft = (W - width) / 2 + lp.leftMargin - lp.rightMargin;
                         break;
                     case Gravity.RIGHT:
-                        childLeft = r - width - lp.rightMargin;
+                        childLeft = W - width - lp.rightMargin;
                         break;
                     case Gravity.LEFT:
                     default:
@@ -621,10 +626,10 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
                         childTop = lp.topMargin + getPaddingTop();
                         break;
                     case Gravity.CENTER_VERTICAL:
-                        childTop = ((b - paddingBottom) - t - height) / 2 + lp.topMargin - lp.bottomMargin;
+                        childTop = ((H - paddingBottom) - height) / 2 + lp.topMargin - lp.bottomMargin;
                         break;
                     case Gravity.BOTTOM:
-                        childTop = ((b - paddingBottom) - t) - height - lp.bottomMargin;
+                        childTop = ((H - paddingBottom)) - height - lp.bottomMargin;
                         break;
                     default:
                         childTop = lp.topMargin;
@@ -653,6 +658,23 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
                 }
             }
             return onTouchEvent(ev);
+        }
+
+        private ClickHelper clickHelper = new ClickHelper(new ClickHelper.Delegate() {
+            @Override
+            public boolean needClickAt(View view, float x, float y) {
+                return isInPreviewMode();
+            }
+
+            @Override
+            public void onClickAt(View view, float x, float y) {
+                parentLayout.expandPreviewFragment();
+            }
+        });
+
+        @Override
+        public boolean dispatchTouchEvent(MotionEvent ev) {
+            return clickHelper.onTouchEvent(this, ev) || super.dispatchTouchEvent(ev);
         }
 
         @Override
@@ -1425,6 +1447,7 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         });
 
         ActionBarMenu menu = actionBar.createMenu();
+        menu.setTranslationX(-dp(5));
         if (!org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated()) {
             refreshItem = menu.addItem(refresh, R.drawable.msg_retry);
             refreshItem.setContentDescription(LocaleController.getString(R.string.Refresh));
@@ -1758,14 +1781,13 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
             updateContextViewPosition();
         });
 
-        BlurredBackgroundDrawable topPanelLayoutBackground = iBlur3FactoryLiquidGlass.create(topPanelLayout,
-            BlurredBackgroundProviderImpl.topPanel(resourceProvider));
+        BlurredBackgroundDrawable topPanelLayoutBackground = iBlur3FactoryLiquidGlass.create(topPanelLayout)
+            .setColorProvider(BlurredBackgroundProviderImpl.topPanel(resourceProvider))
+            .setPadding(dp(7));
 
-
-        topPanelLayoutBackground.setRadius(dp(24));
-        topPanelLayoutBackground.setPadding(dp(7));
         topPanelLayout.setPadding(dp(11), dp(21), dp(11), dp(21));
         topPanelLayout.setBlurredBackground(topPanelLayoutBackground);
+        topPanelLayout.setDefaultRadiusDp(24);
 
         fragmentLocationContextViewWrapper = new FrameLayout(context);
         topPanelLayout.addView(fragmentLocationContextViewWrapper);
@@ -1785,7 +1807,6 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
                 topPanelLayout.setViewVisible(fragmentLocationContextViewWrapper, visibility == VISIBLE);
             }
         };
-        fragmentLocationContextView.isInsideBubble = true;
         fragmentLocationContextViewWrapper.addView(fragmentLocationContextView);
 
         fragmentContextView = new FragmentContextView(context, this, false) {
@@ -1794,14 +1815,11 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
                 topPanelLayout.setViewVisible(fragmentContextViewWrapper, visibility == VISIBLE);
             }
         };
-        fragmentContextView.isInsideBubble = true;
         fragmentContextViewWrapper.addView(fragmentContextView);
+        topPanelLayout.setCallFragmentContextView(fragmentContextView);
 
         //if (!onlySelect || initialDialogsType == DIALOGS_TYPE_FORWARD) {
             final FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT);
-            if (inPreviewMode) {
-                layoutParams.topMargin = AndroidUtilities.statusBarHeight;
-            }
             contentView.addView(actionBar, layoutParams);
         //}
         animatedStatusView = new AnimatedStatusView(context, 20, 60);
@@ -2520,7 +2538,7 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
 
         int flags = ActionBarPopupWindow.ActionBarPopupWindowLayout.FLAG_SHOWN_FROM_BOTTOM;
 
-        final ChatActivity[] chatActivity = new ChatActivity[1];
+        final BaseFragment[] previewActivity = new BaseFragment[1];
         previewMenu[0] = new ActionBarPopupWindow.ActionBarPopupWindowLayout(getParentActivity(), R.drawable.popup_fixed_alert2, getResourceProvider(), flags);
 
         ActionBarMenuSubItem deleteItem = new ActionBarMenuSubItem(getParentActivity(), false, true);
@@ -2538,14 +2556,15 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         if (getMessagesController().checkCanOpenChat(args, SavedChannelsActivity.this)) {
             prepareBlurBitmap();
             parentLayout.setHighlightActionButtons(true);
+            final ChatActivity chatActivity1 = new ChatActivity(args);
             if (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y) {
-                presentFragmentAsPreview(chatActivity[0] = new ChatActivity(args));
+                presentFragmentAsPreview(previewActivity[0] = chatActivity1);
             } else {
-                presentFragmentAsPreviewWithMenu(chatActivity[0] = new ChatActivity(args), previewMenu[0]);
-                if (chatActivity[0] != null) {
-                    chatActivity[0].allowExpandPreviewByClick = true;
+                presentFragmentAsPreviewWithMenu(previewActivity[0] = chatActivity1, previewMenu[0]);
+                if (chatActivity1 != null) {
+                    chatActivity1.allowExpandPreviewByClick = true;
                     try {
-                        chatActivity[0].getAvatarContainer().getAvatarImageView().performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
+                        chatActivity1.getAvatarContainer().getAvatarImageView().performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
                     } catch (Exception ignore) {
                     }
                 }
@@ -2723,8 +2742,9 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
         actionMode.addView(selectedDialogsCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, 72, 0, 0, 0));
         selectedDialogsCountTextView.setOnTouchListener((v, event) -> true);
 
-        pinItem = actionMode.addItemWithWidth(pin, R.drawable.msg_pin, dp(54));
-        deleteItem = actionMode.addItemWithWidth(delete, R.drawable.msg_delete, dp(54), LocaleController.getString(R.string.Delete));
+        pinItem = actionMode.addItemWithWidth(pin, R.drawable.msg_pin, dp(48));
+        deleteItem = actionMode.addItemWithWidth(delete, R.drawable.msg_delete, dp(48), LocaleController.getString(R.string.Delete));
+        actionMode.addView(new View(getContext()), LayoutHelper.createLinear(5, LayoutHelper.MATCH_PARENT));
 
         actionModeViews.add(pinItem);
         actionModeViews.add(deleteItem);
@@ -3730,8 +3750,9 @@ public class SavedChannelsActivity extends BaseFragment implements NotificationC
     private WindowInsetsCompat onApplyWindowInsets(@NonNull View v, @NonNull WindowInsetsCompat insets) {
         windowInsetsStateHolder.setInsets(insets);
 
-        statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.systemBars()).top;
-        navigationBarHeight = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+        final Insets systemInsets = AndroidUtilities.getDefaultWindowInsets(insets, false);
+        statusBarHeight = systemInsets.top;
+        navigationBarHeight = systemInsets.bottom;
         final int imeInsetHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
         if (this.imeInsetHeight != imeInsetHeight) {
             this.imeInsetHeight = imeInsetHeight;
