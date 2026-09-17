@@ -70,11 +70,13 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.support.LongSparseIntArray;
+import org.telegram.messenger.utils.tlutils.TLKeyboardHelper;
 import org.telegram.messenger.utils.tlutils.TlUtils;
 import org.telegram.messenger.voip.VoIPGroupNotification;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
+import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BubbleActivity;
 import org.telegram.ui.Components.AvatarDrawable;
@@ -613,7 +615,9 @@ public class NotificationsController extends BaseController implements Notificat
                             smartNotificationsDialogs.remove(dialogId);
                         }
                         if (!newCount.equals(currentCount)) {
-                            if (getMessagesController().isForum(dialogId)) {
+                            if (getMessagesController().isCommunity(dialogId)) {
+
+                            } else if (getMessagesController().isForum(dialogId)) {
                                 total_unread_count -= currentCount > 0 ? 1 : 0;
                                 total_unread_count += newCount > 0 ? 1 : 0;
                             } else {
@@ -711,7 +715,9 @@ public class NotificationsController extends BaseController implements Notificat
                     smartNotificationsDialogs.remove(dialogId);
                 }
                 if (!newCount.equals(currentCount)) {
-                    if (getMessagesController().isForum(dialogId)) {
+                    if (getMessagesController().isCommunity(dialogId)) {
+
+                    } else if (getMessagesController().isForum(dialogId)) {
                         total_unread_count -= currentCount > 0 ? 1 : 0;
                         total_unread_count += newCount > 0 ? 1 : 0;
                     } else {
@@ -1392,7 +1398,9 @@ public class NotificationsController extends BaseController implements Notificat
                     canAddValue = canAddValue && !messageObject.isStoryPush;
 
                     if (canAddValue) {
-                        if (getMessagesController().isForum(dialog_id)) {
+                        if (getMessagesController().isCommunity(dialog_id)) {
+
+                        } else if (getMessagesController().isForum(dialog_id)) {
                             total_unread_count -= currentCount != null && currentCount > 0 ? 1 : 0;
                             total_unread_count += newCount > 0 ? 1 : 0;
                         } else {
@@ -1459,7 +1467,7 @@ public class NotificationsController extends BaseController implements Notificat
                 boolean forum = false;
                 if (DialogObject.isChatDialog(dialogId)) {
                     TLRPC.Chat chat = getMessagesController().getChat(-dialogId);
-                    if (chat == null || chat.min || ChatObject.isNotInChat(chat)) {
+                    if (chat == null || chat.min || ChatObject.isNotInChat(chat) || ChatObject.isCommunity(chat)) {
                         newCount = 0;
                     }
                     if (chat != null) {
@@ -1536,7 +1544,9 @@ public class NotificationsController extends BaseController implements Notificat
                         }
                     }
                 } else if (canAddValue) {
-                    if (getMessagesController().isForum(dialogId)) {
+                    if (getMessagesController().isCommunity(dialogId)) {
+
+                    } else if (getMessagesController().isForum(dialogId)) {
                         total_unread_count += newCount > 0 ? 1 : 0;
                     } else {
                         total_unread_count += newCount;
@@ -1668,7 +1678,9 @@ public class NotificationsController extends BaseController implements Notificat
                 }
                 int count = dialogs.valueAt(a);
                 pushDialogs.put(dialog_id, count);
-                if (getMessagesController().isForum(dialog_id)) {
+                if (getMessagesController().isCommunity(dialog_id)) {
+
+                } else if (getMessagesController().isForum(dialog_id)) {
                     total_unread_count += count > 0 ? 1 : 0;
                 } else {
                     total_unread_count += count;
@@ -1735,7 +1747,9 @@ public class NotificationsController extends BaseController implements Notificat
                     Integer currentCount = pushDialogs.get(dialogId);
                     int newCount = currentCount != null ? currentCount + 1 : 1;
 
-                    if (getMessagesController().isForum(dialogId)) {
+                    if (getMessagesController().isCommunity(dialogId)) {
+
+                    } else if (getMessagesController().isForum(dialogId)) {
                         if (currentCount != null) {
                             total_unread_count -= currentCount > 0 ? 1 : 0;
                         }
@@ -1784,55 +1798,61 @@ public class NotificationsController extends BaseController implements Notificat
     private int getTotalAllUnreadCount() {
         int count = 0;
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (!UserConfig.getInstance(a).isClientActivated() || !SharedConfig.showNotificationsForAllAccounts && UserConfig.selectedAccount != a) {
+            if (!UserConfig.getInstance(a).isClientActivated()) {
                 continue;
             }
-            NotificationsController controller = getInstance(a);
-            if (controller.showBadgeNumber) {
-                if (controller.showBadgeMessages) {
-                    if (controller.showBadgeMuted) {
-                        try {
-                            final ArrayList<TLRPC.Dialog> dialogs = new ArrayList<>(MessagesController.getInstance(a).allDialogs);
-                            for (int i = 0, N = dialogs.size(); i < N; i++) {
-                                TLRPC.Dialog dialog = dialogs.get(i);
-                                if (dialog != null && DialogObject.isChatDialog(dialog.id)) {
-                                    TLRPC.Chat chat = getMessagesController().getChat(-dialog.id);
-                                    if (ChatObject.isNotInChat(chat)) {
-                                        continue;
-                                    }
-                                }
-                                if (dialog != null) {
-                                    count += MessagesController.getInstance(a).getDialogUnreadCount(dialog);
+            if (!SharedConfig.showNotificationsForAllAccounts && UserConfig.selectedAccount != a) {
+                continue;
+            }
+
+            final NotificationsController controller = getInstance(a);
+            if (!controller.showBadgeNumber) {
+                continue;
+            }
+
+            if (controller.showBadgeMessages) {
+                if (controller.showBadgeMuted) {
+                    try {
+                        final ArrayList<TLRPC.Dialog> dialogs = new ArrayList<>(MessagesController.getInstance(a).allDialogs);
+                        for (int i = 0, N = dialogs.size(); i < N; i++) {
+                            TLRPC.Dialog dialog = dialogs.get(i);
+                            if (dialog != null && DialogObject.isChatDialog(dialog.id)) {
+                                TLRPC.Chat chat = getMessagesController().getChat(-dialog.id);
+                                if (ChatObject.isNotInChat(chat) || ChatObject.isCommunity(chat)) {
+                                    continue;
                                 }
                             }
-                        } catch (Exception e) {
-                            FileLog.e(e);
+                            if (dialog != null) {
+                                count += MessagesController.getInstance(a).getDialogUnreadCount(dialog);
+                            }
                         }
-                    } else {
-                        count += controller.total_unread_count;
+                    } catch (Exception e) {
+                        FileLog.e(e);
                     }
                 } else {
-                    if (controller.showBadgeMuted) {
-                        try {
-                            for (int i = 0, N = MessagesController.getInstance(a).allDialogs.size(); i < N; i++) {
-                                TLRPC.Dialog dialog = MessagesController.getInstance(a).allDialogs.get(i);
-                                if (DialogObject.isChatDialog(dialog.id)) {
-                                    TLRPC.Chat chat = getMessagesController().getChat(-dialog.id);
-                                    if (ChatObject.isNotInChat(chat)) {
-                                        continue;
-                                    }
-                                }
-                                if (MessagesController.getInstance(a).getDialogUnreadCount(dialog) != 0) {
-                                    count++;
+                    count += controller.total_unread_count;
+                }
+            } else {
+                if (controller.showBadgeMuted) {
+                    try {
+                        for (int i = 0, N = MessagesController.getInstance(a).allDialogs.size(); i < N; i++) {
+                            TLRPC.Dialog dialog = MessagesController.getInstance(a).allDialogs.get(i);
+                            if (DialogObject.isChatDialog(dialog.id)) {
+                                TLRPC.Chat chat = getMessagesController().getChat(-dialog.id);
+                                if (ChatObject.isNotInChat(chat) || ChatObject.isCommunity(chat)) {
+                                    continue;
                                 }
                             }
-                        } catch (Exception e) {
-                            //ignore, no thread synchronizations for fast
-                            FileLog.e(e, false);
+                            if (MessagesController.getInstance(a).getDialogUnreadCount(dialog) != 0) {
+                                count++;
+                            }
                         }
-                    } else {
-                        count += controller.pushDialogs.size();
+                    } catch (Exception e) {
+                        //ignore, no thread synchronizations for fast
+                        FileLog.e(e, false);
                     }
+                } else {
+                    count += controller.pushDialogs.size();
                 }
             }
         }
@@ -4778,18 +4798,20 @@ public class NotificationsController extends BaseController implements Notificat
 
             boolean hasCallback = false;
             if (!AndroidUtilities.needShowPasscode() && !SharedConfig.isWaitingForPasscodeEnter && lastMessageObject.getDialogId() == 777000) {
-                if (lastMessageObject.messageOwner.reply_markup != null) {
-                    ArrayList<TLRPC.TL_keyboardButtonRow> rows = lastMessageObject.messageOwner.reply_markup.rows;
+                if (lastMessageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
+                    final TLRPC.TL_replyInlineMarkup replyInlineMarkup = (TLRPC.TL_replyInlineMarkup) lastMessageObject.messageOwner.reply_markup;
+                    ArrayList<TL_keyboard.KeyboardInlineButtonRow> rows = replyInlineMarkup.rows;
                     for (int a = 0, size = rows.size(); a < size; a++) {
-                        TLRPC.TL_keyboardButtonRow row = rows.get(a);
+                        TL_keyboard.KeyboardInlineButtonRow row = rows.get(a);
                         for (int b = 0, size2 = row.buttons.size(); b < size2; b++) {
-                            TLRPC.KeyboardButton button = row.buttons.get(b);
-                            if (button instanceof TLRPC.TL_keyboardButtonCallback) {
+                            TL_keyboard.KeyboardInlineButton button = row.buttons.get(b);
+                            final TL_keyboard.TL_inlineButtonTypeCallback buttonTypeCallback = TLKeyboardHelper.getType(button, TL_keyboard.TL_inlineButtonTypeCallback.class);
+                            if (buttonTypeCallback != null) {
                                 Intent callbackIntent = new Intent(ApplicationLoader.applicationContext, NotificationCallbackReceiver.class);
                                 callbackIntent.putExtra("currentAccount", currentAccount);
                                 callbackIntent.putExtra("did", dialog_id);
-                                if (button.data != null) {
-                                    callbackIntent.putExtra("data", button.data);
+                                if (buttonTypeCallback.data != null) {
+                                    callbackIntent.putExtra("data", buttonTypeCallback.data);
                                 }
                                 callbackIntent.putExtra("mid", lastMessageObject.getId());
                                 mBuilder.addAction(0, button.text, PendingIntent.getBroadcast(ApplicationLoader.applicationContext, lastButtonId++, callbackIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
@@ -5276,7 +5298,7 @@ public class NotificationsController extends BaseController implements Notificat
             StringBuilder text = new StringBuilder();
             String[] senderName = new String[1];
             boolean[] preview = new boolean[1];
-            ArrayList<TLRPC.TL_keyboardButtonRow> rows = null;
+            ArrayList<TL_keyboard.KeyboardInlineButtonRow> rows = null;
             int rowsMid = 0;
             if (dialogKey.story) {
                 ArrayList<String> names = new ArrayList<>();
@@ -5549,8 +5571,8 @@ public class NotificationsController extends BaseController implements Notificat
                         messagingStyle.addMessage(message, ((long) messageObject.messageOwner.date) * 1000, person);
                     }
 
-                    if (dialogId == 777000 && messageObject.messageOwner.reply_markup != null) {
-                        rows = messageObject.messageOwner.reply_markup.rows;
+                    if (dialogId == 777000 && messageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
+                        rows = ((TLRPC.TL_replyInlineMarkup) messageObject.messageOwner.reply_markup).rows;
                         rowsMid = messageObject.getId();
                     }
                 }
@@ -5675,13 +5697,16 @@ public class NotificationsController extends BaseController implements Notificat
                 builder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY);
             }
 
-            TLRPC.TL_keyboardButtonCopy copybutton = null;
-            if (lastMessageObject != null && lastMessageObject.messageOwner != null && lastMessageObject.messageOwner.reply_markup != null) {
-                TLRPC.ReplyMarkup reply_markup = lastMessageObject.messageOwner.reply_markup;
+            TL_keyboard.KeyboardInlineButton copybutton = null;
+            TL_keyboard.TL_inlineButtonTypeCopy copyButtonType = null;
+            if (lastMessageObject != null && lastMessageObject.messageOwner != null && lastMessageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
+                TLRPC.TL_replyInlineMarkup reply_markup = (TLRPC.TL_replyInlineMarkup) lastMessageObject.messageOwner.reply_markup;
                 for (int i = 0; i < reply_markup.rows.size(); ++i) {
                     for (int j = 0; j < reply_markup.rows.get(i).buttons.size(); ++j) {
-                        if (reply_markup.rows.get(i).buttons.get(j) instanceof TLRPC.TL_keyboardButtonCopy) {
-                            copybutton = (TLRPC.TL_keyboardButtonCopy) reply_markup.rows.get(i).buttons.get(j);
+                        final TL_keyboard.KeyboardInlineButton keyboardButton = reply_markup.rows.get(i).buttons.get(j);
+                        copyButtonType = TLKeyboardHelper.getType(keyboardButton, TL_keyboard.TL_inlineButtonTypeCopy.class);
+                        if (copyButtonType != null) {
+                            copybutton = keyboardButton;
                             break;
                         }
                     }
@@ -5692,7 +5717,7 @@ public class NotificationsController extends BaseController implements Notificat
                 Intent copyIntent = new Intent(ApplicationLoader.applicationContext, CopyCodeReceiver.class);
                 copyIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
                 copyIntent.setAction("org.telegram.messenger.ACTION_COPY_CODE");
-                copyIntent.putExtra("text", copybutton.copy_text);
+                copyIntent.putExtra("text", copyButtonType.copy_text);
                 PendingIntent copyPendingIntent = PendingIntent.getBroadcast(ApplicationLoader.applicationContext, internalId, copyIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
                 NotificationCompat.Action copyAction = new NotificationCompat.Action.Builder(R.drawable.msg_copy, copybutton.text, copyPendingIntent)
                         .setShowsUserInterface(false)
@@ -5720,15 +5745,16 @@ public class NotificationsController extends BaseController implements Notificat
             if (!AndroidUtilities.needShowPasscode(false) && !SharedConfig.isWaitingForPasscodeEnter) {
                 if (rows != null) {
                     for (int r = 0, rc = rows.size(); r < rc; r++) {
-                        TLRPC.TL_keyboardButtonRow row = rows.get(r);
+                        TL_keyboard.KeyboardInlineButtonRow row = rows.get(r);
                         for (int c = 0, cc = row.buttons.size(); c < cc; c++) {
-                            TLRPC.KeyboardButton button = row.buttons.get(c);
-                            if (button instanceof TLRPC.TL_keyboardButtonCallback) {
+                            TL_keyboard.KeyboardInlineButton button = row.buttons.get(c);
+                            final TL_keyboard.TL_inlineButtonTypeCallback buttonTypeCallback = TLKeyboardHelper.getType(button, TL_keyboard.TL_inlineButtonTypeCallback.class);
+                            if (buttonTypeCallback != null) {
                                 Intent callbackIntent = new Intent(ApplicationLoader.applicationContext, NotificationCallbackReceiver.class);
                                 callbackIntent.putExtra("currentAccount", currentAccount);
                                 callbackIntent.putExtra("did", dialogId);
-                                if (button.data != null) {
-                                    callbackIntent.putExtra("data", button.data);
+                                if (buttonTypeCallback.data != null) {
+                                    callbackIntent.putExtra("data", buttonTypeCallback.data);
                                 }
                                 callbackIntent.putExtra("mid", rowsMid);
                                 builder.addAction(0, button.text, PendingIntent.getBroadcast(ApplicationLoader.applicationContext, lastButtonId++, callbackIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));

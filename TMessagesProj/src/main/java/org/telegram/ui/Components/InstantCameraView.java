@@ -1047,7 +1047,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         if (bitmap != null && bitmap.getPixel(0, 0) != 0) {
             lastBitmap = Bitmap.createScaledBitmap(textureView.getBitmap(), 50, 50, true);
             if (lastBitmap != null) {
-                Utilities.blurBitmap(lastBitmap, 7, 1, lastBitmap.getWidth(), lastBitmap.getHeight(), lastBitmap.getRowBytes());
+                Utilities.blurBitmap(lastBitmap, 7);
                 try {
                     File file = new File(ApplicationLoader.getFilesDirFixed(), "icthumb.jpg");
                     FileOutputStream stream = new FileOutputStream(file);
@@ -2855,16 +2855,6 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
 
                 @Override
                 public void onRenderedFirstFrame() {
-
-                }
-
-                @Override
-                public boolean onSurfaceDestroyed(SurfaceTexture surfaceTexture) {
-                    return false;
-                }
-
-                @Override
-                public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
 
                 }
             });
