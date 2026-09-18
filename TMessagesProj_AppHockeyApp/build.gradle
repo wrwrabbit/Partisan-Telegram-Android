@@ -3,6 +3,7 @@ plugins {
     id 'com.google.gms.google-services'
     id 'com.google.firebase.crashlytics'
 }
+apply plugin: 'org.telegram.build-app-plugin'
 
 repositories {
     mavenCentral()
@@ -28,10 +29,6 @@ dependencies {
     implementation 'androidx.core:core:1.16.0'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation files('../TMessagesProj/libs/libgsaverification-client.aar')
-
-    implementation "com.microsoft.appcenter:appcenter-distribute:3.3.1"
-    implementation "com.microsoft.appcenter:appcenter-crashes:3.3.1"
-    implementation "com.microsoft.appcenter:appcenter-analytics:3.3.1"
 
     implementation platform("com.google.firebase:firebase-bom:32.7.0")
     implementation "com.google.firebase:firebase-crashlytics:18.6.0"
@@ -59,7 +56,8 @@ android {
     }
 
     androidResources {
-        localeFilters += ["en", "ar", "de", "es", "it", "ko", "nl", "pt-rBR", "ru", "uk"]
+        noCompress += "pack"
+        localeFilters += ["zz"]
     }
 
     signingConfigs {
@@ -87,7 +85,8 @@ android {
             applicationIdSuffix ".beta"
             minifyEnabled true
             multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
             ndk.debugSymbolLevel = 'FULL'
         }
         HA_public {
@@ -98,7 +97,8 @@ android {
             applicationIdSuffix ".beta"
             minifyEnabled true
             multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
             ndk.debugSymbolLevel = 'FULL'
         }
         HA_hardcore {
@@ -109,7 +109,8 @@ android {
             applicationIdSuffix ".beta"
             minifyEnabled true
             multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
             ndk.debugSymbolLevel = 'FULL'
         }
     }
