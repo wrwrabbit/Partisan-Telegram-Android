@@ -123,7 +123,7 @@ target_compile_definitions(sqlite PUBLIC
 target_compile_definitions(sqlite PRIVATE
         SQLITE_TEMP_STORE=2 SQLCIPHER_CRYPTO_OPENSSL)
 target_include_directories(sqlite PRIVATE
-        boringssl/include/)
+        third_party/boringssl/include/)
 target_link_libraries(sqlite
         crypto)
 

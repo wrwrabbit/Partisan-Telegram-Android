@@ -19,12 +19,9 @@ import android.widget.LinearLayout;
 
 import androidx.core.graphics.drawable.DrawableCompat;
 
-import com.google.android.exoplayer2.util.Consumer;
-
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.partisan.AccountControllersProvider;
 import org.telegram.ui.ActionBar.SimpleTextView;
@@ -34,6 +31,8 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.RemoveChatsAction.items.Item;
+
+import java.util.function.Consumer;
 
 public class ChatRemoveCell extends FrameLayout implements AccountControllersProvider {
 

@@ -5,7 +5,6 @@ import static org.telegram.messenger.MessagesController.DIALOG_FILTER_FLAG_EXCLU
 import static org.telegram.messenger.MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildConfig;
@@ -16,6 +15,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
+import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.UserMessagesDeleter;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.support.LongSparseIntArray;
@@ -575,7 +575,7 @@ public class RemoveChatsAction extends AccountAction implements NotificationCent
                         execute(fakePasscode);
                     } catch (Exception e) {
                         if (BuildConfig.DEBUG) {
-                            Log.e("FakePasscode", "Error", e);
+                            PartisanLog.e("FakePasscode error", e);
                         }
                     }
                 }

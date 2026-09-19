@@ -115,16 +115,16 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
                 new HeaderItem(this, getString(R.string.CheckVoiceChanging)),
                 recordItem = new RecordItem(this, () -> audioRecorder != null, this::onRecordClicked)
                         .addEnabledCondition(this::isVoiceChangeEnabled),
-                playChangedItem = new ButtonWithIconItem(this, getString(R.string.PlayChangedVoice), R.drawable.quantum_ic_play_arrow_white_24,
+                playChangedItem = new ButtonWithIconItem(this, getString(R.string.PlayChangedVoice), R.drawable.voice_change_play,
                         view -> onPlayerButtonClicked(view, true))
                         .addEnabledCondition(() -> isVoiceChangeEnabled() && changedOutputAudioBuffer != null),
-                playOriginalItem = new ButtonWithIconItem(this, getString(R.string.PlayNormalVoice), R.drawable.quantum_ic_play_arrow_white_24,
+                playOriginalItem = new ButtonWithIconItem(this, getString(R.string.PlayNormalVoice), R.drawable.voice_change_play,
                         view -> onPlayerButtonClicked(view, false))
                         .addEnabledCondition(() -> isVoiceChangeEnabled() && originalOutputAudioBuffer != null),
                 new DescriptionItem(this, getString(R.string.CheckVoiceChangingDescription)),
 
 
-                new ButtonWithIconItem(this, getString(R.string.GenerateNewVoiceChangeParameters), R.drawable.quantum_ic_refresh_white_24,
+                new ButtonWithIconItem(this, getString(R.string.GenerateNewVoiceChangeParameters), R.drawable.voice_change_regenerate,
                         view -> {
                             new VoiceChangeSettingsGenerator().generateParameters(true);
                             voiceChangingParametersChanged();
@@ -296,7 +296,7 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
             if (buffer != null) {
                 byte[] audioBytes = buffer.toByteArray();
                 player.startPlaying(audioBytes, () -> onPlayingFinished(changed ? playChangedItem.getPosition() : playOriginalItem.getPosition()));
-                ((TextCell)view).setTextAndIcon(getString(R.string.Stop), R.drawable.quantum_ic_stop_white_24, true);
+                ((TextCell)view).setTextAndIcon(getString(R.string.Stop), R.drawable.voice_change_stop, true);
             }
         } else {
             player.stopPlaying();

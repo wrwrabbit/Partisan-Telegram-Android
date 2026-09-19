@@ -2,7 +2,6 @@ package org.telegram.messenger.partisan.update;
 
 import android.text.TextUtils;
 
-import com.google.android.exoplayer2.util.Consumer;
 import com.google.common.base.Strings;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -14,7 +13,7 @@ import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.TLRPC;
 
 import java.util.List;
-import java.util.Objects;
+import java.util.function.Consumer;
 
 public class UpdateChecker extends AbstractChannelChecker {
     public interface UpdateCheckedDelegate {

@@ -14,7 +14,7 @@ public class AppMigrationDialogs {
     public static boolean needShowNewerPtgDialog(Context context) {
         return !FakePasscodeUtils.isFakePasscodeActivated()
                 && !AppMigrator.isMigrationStarted()
-                && !AppMigrator.isConnectionDisabled()
+                && !MigrationConnectionDisabler.isConnectionDisabled()
                 && targetPtgPackageInstalled(context);
     }
 

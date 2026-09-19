@@ -709,7 +709,7 @@ public class EncryptedGroupEditActivity extends BaseFragment implements Notifica
                 setAvatarCell.setTextAndIcon(getString(R.string.ChatSetPhotoOrVideo), R.drawable.msg_addphoto, true);
             }
             if (cameraDrawable == null) {
-                cameraDrawable = new RLottieDrawable(R.raw.camera_outline, "" + R.raw.camera_outline, dp(50), dp(50), false, null);
+                cameraDrawable = new RLottieDrawable(R.raw.camera_outline, dp(50), dp(50), false, null);
             }
             setAvatarCell.imageView.setTranslationX(-dp(8));
             setAvatarCell.imageView.setAnimation(cameraDrawable);

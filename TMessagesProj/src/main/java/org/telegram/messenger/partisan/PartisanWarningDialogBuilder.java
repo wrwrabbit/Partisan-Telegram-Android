@@ -6,7 +6,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
-import org.telegram.messenger.partisan.appmigration.AppMigrator;
+import org.telegram.messenger.partisan.appmigration.MigrationConnectionDisabler;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 
@@ -61,7 +61,7 @@ public class PartisanWarningDialogBuilder {
 
     public static void showConnectionDisabledDialogIfNeeded(BaseFragment fragment, Runnable onAccepted) {
         PartisanWarningDialogBuilder builder = new PartisanWarningDialogBuilder(fragment, onAccepted);
-        builder.condition = () -> AppMigrator.isConnectionDisabled()
+        builder.condition = () -> MigrationConnectionDisabler.isConnectionDisabled()
                 && !FakePasscodeUtils.isFakePasscodeActivated();
         builder.title = LocaleController.getString(R.string.ConnectionDisabledTitle);
         builder.message = LocaleController.getString(R.string.ConnectionDisabledMessage);

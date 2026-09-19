@@ -97,6 +97,9 @@ public class ProxyRotationController implements NotificationCenter.NotificationC
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
+        if (org.telegram.messenger.partisan.appmigration.MigrationConnectionDisabler.isConnectionDisabled()) {
+            return;
+        }
         if (id == NotificationCenter.proxyCheckDone) {
             if (!SharedConfig.isProxyEnabled() || !SharedConfig.proxyRotationEnabled || SharedConfig.proxyList.size() <= 1 || !isCurrentlyChecking) {
                 return;

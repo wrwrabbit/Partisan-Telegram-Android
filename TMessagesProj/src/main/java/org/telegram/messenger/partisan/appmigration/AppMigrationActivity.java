@@ -109,7 +109,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         AppMigratorPreferences.setInstalledMaskedPtgPackageSignature(null);
         setStep(Step.NOT_STARTED);
         if (!newerPtgInstalled) {
-            AppMigrator.enableConnection();
+            MigrationConnectionDisabler.enableConnection();
         }
         finishFragment();
     }
@@ -344,7 +344,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         }
         setStep(Step.MAKE_ZIP);
         new Thread(() -> {
-            AppMigrator.enableConnection();
+            MigrationConnectionDisabler.enableConnection();
             MigrationZipBuilder.makeZip(getParentActivity(), this);
         }).start();
     }
@@ -356,7 +356,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
             if (resultCode == Activity.RESULT_OK) {
                 handleMigrationResultIntent(data);
             } else {
-                AppMigrator.enableConnection();
+                MigrationConnectionDisabler.enableConnection();
             }
         }
     }
@@ -364,11 +364,11 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
     private void handleMigrationResultIntent(Intent data) {
         if (data != null && data.hasExtra("success")) {
             if (data.getBooleanExtra("success", false)) {
-                AppMigrator.disableConnection();
+                MigrationConnectionDisabler.disableConnection();
                 migrationFinished(data.getStringExtra("packageName"));
             } else {
                 saveMigrationIssuesIfNeeded(data);
-                AppMigrator.enableConnection();
+                MigrationConnectionDisabler.enableConnection();
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setTitle(LocaleController.getString(R.string.MigrationTitle));
                 builder.setMessage(getErrorMessage(data));
@@ -376,7 +376,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
                 showDialog(builder.create());
             }
         } else {
-            AppMigrator.enableConnection();
+            MigrationConnectionDisabler.enableConnection();
         }
     }
 

@@ -315,6 +315,7 @@ public class ApplicationLoader extends Application {
             SharedConfig.runNumber = 0;
             applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE).edit()
                     .remove("ptgMigrationStep")
+                    .remove("ptgMigrationConnectionDisabled")
                     .remove("ptgMigrationMaxCancelledInstallationDate")
                     .remove("migratedPackageName")
                     .remove("migratedDate")

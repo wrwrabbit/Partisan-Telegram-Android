@@ -3,7 +3,6 @@ package org.telegram.messenger.fakepasscode;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.google.android.exoplayer2.util.Consumer;
 import com.google.zxing.common.StringUtils;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class RemoveAfterReadingMessages {

@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -20,13 +19,9 @@ import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanVersion;
-import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.LauncherIconController;
 
 import java.security.GeneralSecurityException;
@@ -79,11 +74,11 @@ public class AppMigrator {
         }
 
         try {
-            disableConnection();
+            MigrationConnectionDisabler.disableConnection();
             activity.startActivityForResult(intent, MIGRATE_TO_REGULAR_PTG_CODE);
             return true;
         } catch (Exception e) {
-            enableConnection();
+            MigrationConnectionDisabler.enableConnection();
             PartisanLog.e("MoveDataToOtherPtg", e);
             return false;
         }
@@ -165,49 +160,6 @@ public class AppMigrator {
         intent.putExtra("packageName", componentName.getPackageName());
         intent.putExtra("activityName", componentName.getClassName());
         return intent;
-    }
-
-    public static boolean isConnectionDisabled() {
-        return SharedConfig.isProxyEnabled()
-                && isProxyForDisablingConnection(SharedConfig.currentProxy);
-    }
-
-    public static void enableConnection() {
-        for (SharedConfig.ProxyInfo proxyInfo : new ArrayList<>(SharedConfig.proxyList)) {
-            if (isProxyForDisablingConnection(proxyInfo)) {
-                SharedConfig.deleteProxy(proxyInfo);
-            }
-        }
-    }
-
-    public static boolean isProxyForDisablingConnection(SharedConfig.ProxyInfo proxyInfo) {
-        return "127.0.0.1".equals(proxyInfo.address) && proxyInfo.port == -1;
-    }
-
-    public static void disableConnection() {
-        if (isConnectionDisabled()) {
-            return;
-        }
-        SharedConfig.ProxyInfo proxyInfo = new SharedConfig.ProxyInfo("127.0.0.1", -1, "", "", "");
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        SharedConfig.addProxy(proxyInfo);
-        SharedConfig.currentProxy = proxyInfo;
-        editor.putBoolean("proxy_enabled", true);
-
-        editor.putString("proxy_ip", proxyInfo.address);
-        editor.putString("proxy_pass", proxyInfo.password);
-        editor.putString("proxy_user", proxyInfo.username);
-        editor.putInt("proxy_port", proxyInfo.port);
-        editor.putString("proxy_secret", proxyInfo.secret);
-        ConnectionsManager.setProxySettings(true, proxyInfo.address, proxyInfo.port, proxyInfo.username, proxyInfo.password, proxyInfo.secret);
-        editor.commit();
-
-        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.proxySettingsChanged);
-    }
-
-    public static boolean isPtgPackageName(String packageName) {
-        return packageName != null && getPtgPackageNames().contains(packageName);
     }
 
     public static boolean isNewerPtgInstalled(Context context, boolean checkCancelledDate) {
@@ -317,7 +269,7 @@ public class AppMigrator {
         }
         if (!TextUtils.isEmpty(AppMigratorPreferences.getMigratedPackageName()) && !isMigratedPackageInstalled(context)) {
             AppMigratorPreferences.setStep(Step.NOT_STARTED);
-            enableConnection();
+            MigrationConnectionDisabler.enableConnection();
             AppMigratorPreferences.resetMigrationFinished();
             return false;
         } else {
