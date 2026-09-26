@@ -1083,12 +1083,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
     private NotificationCenter.ObserversGroup observersGroup;
     private NotificationCenter.ObserversGroup updateAccountObserversGroup;
-    private NotificationCenter.ObserversGroup globalObserversGroup;
-
 
     @Override
     public boolean onFragmentCreate() {
-        observersGroup = NotificationCenter.getInstance(currentAccount).createObserversGroup(this)
+        observersGroup = NotificationCenter.getInstance(currentAccount)
+            .createObserversGroup(this)
             .add(NotificationCenter.fileLoaded)
             .add(NotificationCenter.fileLoadProgressChanged)
             .add(NotificationCenter.fileLoadFailed)
@@ -1096,21 +1095,20 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             .add(NotificationCenter.updateInterfaces)
             .add(NotificationCenter.callTabsVisibleToggled)
             .add(NotificationCenter.mainUserInfoChanged)
-            .add(NotificationCenter.contactsPermissionBadgeCheck);
+            .add(NotificationCenter.contactsPermissionBadgeCheck)
+            .addGlobal(NotificationCenter.appUpdateAvailable)
+            .addGlobal(NotificationCenter.fakePasscodeActivated)
+            .addGlobal(NotificationCenter.savedChannelsButtonStateChanged)
+            .addGlobal(NotificationCenter.cacheClearedByPtg)
+            .addGlobal(NotificationCenter.appUpdateLoading)
+            .addGlobal(NotificationCenter.needSetDayNightTheme);
+
         if (updateLayout != null && updateLayout.isCancelIcon() && SharedConfig.pendingPtgAppUpdate != null && SharedConfig.getUpdateAccountNum() != currentAccount) {
             updateAccountObserversGroup = NotificationCenter.getInstance(SharedConfig.getUpdateAccountNum()).createObserversGroup(this)
-                .add(NotificationCenter.fileLoaded)
-                .add(NotificationCenter.fileLoadProgressChanged)
-                .add(NotificationCenter.fileLoadFailed);
+                    .add(NotificationCenter.fileLoaded)
+                    .add(NotificationCenter.fileLoadProgressChanged)
+                    .add(NotificationCenter.fileLoadFailed);
         }
-
-        globalObserversGroup = NotificationCenter.getGlobalInstance().createObserversGroup(this)
-            .add(NotificationCenter.appUpdateAvailable)
-            .add(NotificationCenter.fakePasscodeActivated)
-            .add(NotificationCenter.savedChannelsButtonStateChanged)
-            .add(NotificationCenter.cacheClearedByPtg)
-            .add(NotificationCenter.appUpdateLoading)
-            .add(NotificationCenter.needSetDayNightTheme);
 
         return super.onFragmentCreate();
     }
@@ -1128,10 +1126,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             updateAccountObserversGroup.removeAllObservers();
             updateAccountObserversGroup = null;
         }
-        if (globalObserversGroup != null) {
-            globalObserversGroup.removeAllObservers();
-            globalObserversGroup = null;
-        }
+
         super.onFragmentDestroy();
     }
 

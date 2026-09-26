@@ -1007,8 +1007,6 @@ public class LinkManager {
                     scrollTo("useProxyRow");
                 if ("add-proxy".equalsIgnoreCase(third))
                     scrollTo("proxyAddRow");
-                if ("use-for-calls".equalsIgnoreCase(third))
-                    scrollTo("callsRow");
 
                 return true;
             }

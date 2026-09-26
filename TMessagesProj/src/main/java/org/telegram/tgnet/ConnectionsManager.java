@@ -45,9 +45,9 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.StatsController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
-import org.telegram.proxy.WebProxyConnectionTester;
-import org.telegram.proxy.WebProxyTransport;
-import org.telegram.proxy.ProxySettings;
+import org.telegram.utils.proxy.WebProxyConnectionTester;
+import org.telegram.utils.proxy.WebProxyTransport;
+import org.telegram.utils.proxy.ProxySettings;
 import org.telegram.ui.Components.VideoPlayer;
 import org.telegram.ui.LoginActivity;
 
@@ -79,8 +79,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLException;
-
-@OptIn(markerClass = UnstableApi.class)
 public class ConnectionsManager extends BaseController {
 
     public final static int ConnectionTypeGeneric = 1;

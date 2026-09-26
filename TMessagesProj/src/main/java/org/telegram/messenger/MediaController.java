@@ -141,7 +141,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
-@OptIn(markerClass = UnstableApi.class)
 public class MediaController implements AudioManager.OnAudioFocusChangeListener, NotificationCenter.NotificationCenterDelegate, SensorEventListener {
 
     private native int startRecord(String path, int sampleRate);
