@@ -2957,8 +2957,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             observersGroup.addGlobal(NotificationCenter.didSetPasscode);
         }
 
-        globalObserversGroup.add(NotificationCenter.fakePasscodeActivated);
-        globalObserversGroup.add(NotificationCenter.passwordlessModeActivated);
+        observersGroup.addGlobal(NotificationCenter.fakePasscodeActivated);
+        observersGroup.addGlobal(NotificationCenter.passwordlessModeActivated);
 
         observersGroup
             .add(NotificationCenter.messagesDeleted)

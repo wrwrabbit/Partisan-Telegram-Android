@@ -7,7 +7,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.partisan.PartisanLog;
-import org.telegram.proxy.ProxySettings;
+import org.telegram.utils.proxy.ProxySettings;
 import org.telegram.tgnet.ConnectionsManager;
 
 // The server detects two apps connecting with the same session and terminates that session,
