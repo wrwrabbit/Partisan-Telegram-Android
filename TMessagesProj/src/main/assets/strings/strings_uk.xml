@@ -308,6 +308,15 @@
     <string name="FileProtectionStoreChatsInMemoryOnly">Не зберігати чати на пристрої</string>
     <string name="FileProtectionEncryptDatabase">Шифрувати базу даних</string>
     <string name="FileProtectionEncryptAuthToken">Шифрувати ключ авторизації</string>
+    <string name="FileProtectionStorageHeader">Зберігання даних</string>
+    <string name="FileProtectionEncryptionHeader">Шифрування</string>
+    <string name="FileProtectionAccountsHeader">Захищені акаунти</string>
+    <string name="FileProtectionStoreDataInMemoryOnlyInfo">Повідомлення не зберігаються на пристрої й після перезапуску знову завантажуються з сервера, тому без інтернету старі повідомлення недоступні. Секретні чати все одно зберігаються на пристрої, оскільки їх неможливо завантажити з сервера.</string>
+    <string name="FileProtectionStoreChatsInMemoryOnlyInfo">Список чатів і контакти не зберігаються на пристрої й завантажуються з сервера після кожного перезапуску. Вимкніть цю опцію, щоб чати завантажувалися швидше, а повідомлення й надалі залишалися захищеними.</string>
+    <string name="FileProtectionWorksWithFakePasscodesInfo">Якщо вимкнено, то коли активний фальшивий код блокування, додаток зберігає повідомлення й чати на пристрої, як і офіційний додаток.</string>
+    <string name="FileProtectionEncryptDatabaseInfo">Шифрує дані, що зберігаються на пристрої: повідомлення, чати, секретні чати. Шифрує ті дані, які продовжують зберігатися при увімкненій опції \"Не зберігати дані на пристрої\". Завантажені медіафайли не зачіпаються.</string>
+    <string name="FileProtectionEncryptAuthTokenInfo">Шифрує ключ, який використовується для підключення до серверів Telegram. Шифрування запобігає копіюванню ключа й доступу до вашого акаунта з пристрою зловмисника.</string>
+    <string name="FileProtectionAccountsInfo">Налаштування вище застосовуються лише до вибраних акаунтів.</string>
     <string name="NewPtelegramFeatureTitle">Нова функція PTelegram</string>
     <string name="FileProtectionNewFeatureDetails">У Партизанському Телеграмі з'явилася нова опція: "Захист файлів".\n\nЗахист файлів дозволяє під час огляду захиститися від отримання різної інформації фахівцями. Наприклад, вони не зможуть отримати кеш повідомлень. Ця опція може значно підвищити Вашу безпеку, але має і мінуси:\n- Включення цієї опції призведе до очищення кешу повідомлень. Переписки більше не будуть видно в програмі, якщо немає доступу до інтернету.\n- Можлива неправильна робота програми через включення цієї опції.\n\nМи рекомендуємо увімкнути захист файлів. Ви можете змінити це налаштування пізніше в Партизанських налаштуваннях.</string>
     <string name="FileProtectionDisabledTitle">Захист файлів вимкнено</string>

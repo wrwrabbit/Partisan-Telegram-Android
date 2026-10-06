@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -18,7 +17,6 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.NewFeatureTextSettingsCell;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionActivity;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
-import org.telegram.messenger.partisan.fileprotection.FileProtectionSwitcher;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
@@ -32,7 +30,6 @@ import org.telegram.messenger.partisan.verification.VerificationUtils;
 import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
 import org.telegram.messenger.partisan.voicechange.VoiceChangeSettingsFragment;
 import org.telegram.ui.ActionBar.ActionBar;
-import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
@@ -46,7 +43,6 @@ import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class PartisanSettingsActivity extends BaseFragment {
 
@@ -253,19 +249,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                     verifiedCheckCell.setChecked(SharedConfig.additionalVerifiedBadges);
                 }
             } else if (position == fileProtectionRow) {
-                NotificationsCheckCell fileProtectionCheckCell = (NotificationsCheckCell) view;
-                if (!fileProtectionCheckCell.isCheckboxClicked(x)) {
-                    presentFragment(new FileProtectionActivity());
-                } else {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setMessage(LocaleController.getString(R.string.ApplicationWillBeRestarted));
-                    builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialogInterface, i) -> {
-                        new FileProtectionSwitcher(this).apply(!fileProtectionEnabledForAnyAccount());
-                    });
-                    builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-                    AlertDialog dialog = builder.create();
-                    showDialog(dialog);
-                }
+                presentFragment(new FileProtectionActivity());
             } else if (position == voiceChangeRow) {
                 presentFragment(new VoiceChangeSettingsFragment());
             } else if (position == transferDataToOtherPtgRow) {
@@ -603,6 +587,11 @@ public class PartisanSettingsActivity extends BaseFragment {
                                 break;
                         }
                         textCell.setTextAndValue(LocaleController.getString(R.string.OnScreenLockActionTitle), value, true);
+                    } else if (position == fileProtectionRow) {
+                        String value = fileProtectionEnabledForAnyAccount()
+                                ? LocaleController.getString(R.string.PasswordOn)
+                                : LocaleController.getString(R.string.PasswordOff);
+                        textCell.setTextAndValue(LocaleController.getString(R.string.FileProtection), value, true);
                     } else if (position == transferDataToOtherPtgRow) {
                         textCell.setText(LocaleController.getString(R.string.TransferDataToAnotherPtgButton), true);
                     } else if (position == savedChannelsRow) {
@@ -629,20 +618,6 @@ public class PartisanSettingsActivity extends BaseFragment {
                         String value = storages.size() == 1 ? storages.get(0).chatUsername : "";
                         boolean enabled = SharedConfig.additionalVerifiedBadges;
                         checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.AdditionalVerifiedSetting), value, enabled, false);
-                    } else if (position == fileProtectionRow) {
-                        String value;
-                        if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
-                            value = LocaleController.getString(R.string.PopupEnabled);
-                        } else {
-                            int count = getAccountsWithFileProtectionCount();
-                            if (count > 0) {
-                                value = String.format(Locale.US, "%d/%d", count, UserConfig.getActivatedAccountsCount());
-                            } else {
-                                value = LocaleController.getString(R.string.Disabled);
-                            }
-                        }
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.FileProtection), value,
-                                fileProtectionEnabledForAnyAccount(), false);
                     }
                     break;
                 }
@@ -688,10 +663,10 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == partisanTelegramSettingsPositionDetailRow || position == clearCacheOnLockDetailRow
                     || position == protectPtelegramSettingsDetailRow) {
                 return 1;
-            } else if (position == onScreenLockActionRow || position == transferDataToOtherPtgRow || position == savedChannelsRow
+            } else if (position == onScreenLockActionRow || position == fileProtectionRow || position == transferDataToOtherPtgRow || position == savedChannelsRow
                     || position == partisanTelegramSettingsPositionRow) {
                 return 2;
-            } else if (position == verifiedRow || position == fileProtectionRow) {
+            } else if (position == verifiedRow) {
                 return 3;
             } else if (position == voiceChangeRow) {
                 return 4;

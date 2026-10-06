@@ -11546,6 +11546,15 @@
     <string name="FileProtectionStoreChatsInMemoryOnly">Don\'t store chats on device</string>
     <string name="FileProtectionEncryptDatabase">Encrypt database</string>
     <string name="FileProtectionEncryptAuthToken">Encrypt authorization key</string>
+    <string name="FileProtectionStorageHeader">Storage</string>
+    <string name="FileProtectionEncryptionHeader">Encryption</string>
+    <string name="FileProtectionAccountsHeader">Protected accounts</string>
+    <string name="FileProtectionStoreDataInMemoryOnlyInfo">Messages are not stored on the device and are loaded from the server again after a restart, so old messages aren\'t available offline. Secret chats are still saved on the device, because they can\'t be loaded from the server.</string>
+    <string name="FileProtectionStoreChatsInMemoryOnlyInfo">The chat list and contacts are not stored on the device and are loaded from the server after every restart. Turn this off to load chats faster while still keeping your messages protected.</string>
+    <string name="FileProtectionWorksWithFakePasscodesInfo">If turned off, while a fake passcode is active the app saves messages and chats on the device, just like the official app.</string>
+    <string name="FileProtectionEncryptDatabaseInfo">Encrypts data stored on the device: messages, chats, secret chats. Encrypts the data that is still stored while \"Don\'t store data on device\" is on. Downloaded media files are not affected.</string>
+    <string name="FileProtectionEncryptAuthTokenInfo">Encrypts the key used to connect to Telegram servers. Encryption prevents the key from being copied and used to access your account from an attacker\'s device.</string>
+    <string name="FileProtectionAccountsInfo">The settings above apply only to the selected accounts.</string>
     <string name="NewPtelegramFeatureTitle">New PTelegram Feature</string>
     <string name="FileProtectionNewFeatureDetails">A new option has appeared in Partisan Telegram: "File protection".\n\nFile protection allows you to protect yourself from the extraction of various information by specialists during inspection. For example, they will not be able to extract the message cache. This option can significantly increase your security, but it also has disadvantages:\n- Enabling this option will clear the message cache. Correspondence will no longer be visible in the application if there is no access to the Internet.\n- The application may not work correctly due to the enabling of this option.\n\nWe recommend enabling file protection. You can change this setting later in the Partisan settings.</string>
     <string name="FileProtectionDisabledTitle">File protection is disabled</string>

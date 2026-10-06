@@ -308,6 +308,15 @@
     <string name="FileProtectionStoreChatsInMemoryOnly">Не захоўваць чаты на прыладзе</string>
     <string name="FileProtectionEncryptDatabase">Шыфраваць базу дадзеных</string>
     <string name="FileProtectionEncryptAuthToken">Шыфраваць ключ аўтарызацыі</string>
+    <string name="FileProtectionStorageHeader">Захоўванне даных</string>
+    <string name="FileProtectionEncryptionHeader">Шыфраванне</string>
+    <string name="FileProtectionAccountsHeader">Абароненыя акаўнты</string>
+    <string name="FileProtectionStoreDataInMemoryOnlyInfo">Паведамленні не захоўваюцца на прыладзе і пасля перазапуску зноў загружаюцца з сервера, таму без інтэрнэту старыя паведамленні недаступныя. Сакрэтныя чаты ўсё роўна захоўваюцца на прыладзе, бо іх нельга загрузіць з сервера.</string>
+    <string name="FileProtectionStoreChatsInMemoryOnlyInfo">Спіс чатаў і кантакты не захоўваюцца на прыладзе і загружаюцца з сервера пасля кожнага перазапуску. Выключыце гэтую опцыю, каб чаты загружаліся хутчэй, а паведамленні і далей заставаліся абароненымі.</string>
+    <string name="FileProtectionWorksWithFakePasscodesInfo">Калі выключана, то пры актыўным несапраўдным кодзе блакіроўкі дадатак захоўвае паведамленні і чаты на прыладзе, як і афіцыйны дадатак.</string>
+    <string name="FileProtectionEncryptDatabaseInfo">Шыфруе даныя, якія захоўваюцца на прыладзе: паведамленні, чаты, сакрэтныя чаты. Шыфруе тыя даныя, якія працягваюць захоўвацца пры ўключанай опцыі \"Не захоўваць дадзеныя на прыладзе\". Спампаваныя медыяфайлы не закранаюцца.</string>
+    <string name="FileProtectionEncryptAuthTokenInfo">Шыфруе ключ, які выкарыстоўваецца для падключэння да сервераў Telegram. Шыфраванне прадухіляе капіяванне ключа і доступ да вашага акаўнта з прылады зламысніка.</string>
+    <string name="FileProtectionAccountsInfo">Налады вышэй прымяняюцца толькі да выбраных акаўнтаў.</string>
     <string name="NewPtelegramFeatureTitle">Новая функцыя PTelegram</string>
     <string name="FileProtectionNewFeatureDetails">У Партызанскім Тэлеграме з'явілася новая опцыя: "Абарона файлаў".\n\nАбарона файлаў дазваляе падчас дадгляду абараніцца ад вымання рознай інфармацыі спецыялістамі. Напрыклад, яны не змогуць атрымаць кэш паведамленняў. Гэтая опцыя можа значна павысіць Вашу бяспеку, але ў яе ёсць і мінусы:\n- Уключэнне гэтай опцыі прывядзе да ачысткі кэша паведамленняў. Перапіскі больш не будуць бачныя ў дадатку, калі няма доступу да інтэрнэту.\n- Магчыма няправільная праца прыкладання з-за ўключэння гэтай опцыі.\n\nМы рэкамендуем уключыць абарону файлаў. Вы можаце змяніць гэтую настройку пазней у Партызанскіх наладах.</string>
     <string name="FileProtectionDisabledTitle">Абарона файлаў адключана</string>

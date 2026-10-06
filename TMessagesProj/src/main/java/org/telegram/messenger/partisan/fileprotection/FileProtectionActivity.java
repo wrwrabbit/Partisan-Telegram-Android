@@ -2,6 +2,7 @@ package org.telegram.messenger.partisan.fileprotection;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -23,8 +24,8 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.CheckBoxUserCell;
 import org.telegram.ui.Cells.HeaderCell;
-import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCheckCell;
+import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
@@ -37,14 +38,22 @@ public class FileProtectionActivity extends BaseFragment {
     private ListAdapter listAdapter;
     private RecyclerListView listView;
 
+    private int storageHeaderRow;
     private int storeDataInMemoryOnlyRow;
+    private int storeDataInMemoryOnlyInfoRow;
     private int storeChatsInMemoryOnlyRow;
-    private int encryptDatabaseRow;
-    private int encryptAuthTokenRow;
+    private int storeChatsInMemoryOnlyInfoRow;
     private int worksWithFakePasscodeRow;
-    private int worksWithFakePasscodeDelimiterRow;
+    private int worksWithFakePasscodeInfoRow;
+    private int encryptionHeaderRow;
+    private int encryptDatabaseRow;
+    private int encryptDatabaseInfoRow;
+    private int encryptAuthTokenRow;
+    private int encryptAuthTokenInfoRow;
+    private int accountsHeaderRow;
     private int firstAccountRow;
     private int lastAccountRow;
+    private int accountsInfoRow;
     private int rowCount;
 
     private final List<FileProtectionAccountInfo> accounts = new ArrayList<>();
@@ -112,6 +121,7 @@ public class FileProtectionActivity extends BaseFragment {
                 storeDataInMemoryOnly = !storeDataInMemoryOnly;
                 ((TextCheckCell) view).setChecked(storeDataInMemoryOnly);
                 listAdapter.notifyItemChanged(storeChatsInMemoryOnlyRow);
+                listAdapter.notifyItemChanged(worksWithFakePasscodeRow);
             }
             if (position == storeChatsInMemoryOnlyRow && storeDataInMemoryOnly) {
                 storeChatsInMemoryOnly = !storeChatsInMemoryOnly;
@@ -125,7 +135,7 @@ public class FileProtectionActivity extends BaseFragment {
                 encryptAuthToken = !encryptAuthToken;
                 ((TextCheckCell) view).setChecked(encryptAuthToken);
             }
-            if (position == worksWithFakePasscodeRow) {
+            if (position == worksWithFakePasscodeRow && storeDataInMemoryOnly) {
                 fileProtectionWorksWhenFakePasscodeActivated = !fileProtectionWorksWhenFakePasscodeActivated;
                 TextCheckCell textCell = (TextCheckCell) view;
                 textCell.setChecked(fileProtectionWorksWhenFakePasscodeActivated);
@@ -151,21 +161,45 @@ public class FileProtectionActivity extends BaseFragment {
         }
     }
 
+    @Override
+    public boolean onBackPressed(boolean invoked) {
+        if (isChanged()) {
+            if (invoked) {
+                confirmExit();
+            }
+            return false;
+        }
+        return super.onBackPressed(invoked);
+    }
+
+    @Override
+    public boolean isSwipeBackEnabled(MotionEvent event) {
+        return !isChanged();
+    }
+
     private void updateRows() {
         rowCount = 0;
 
+        storageHeaderRow = rowCount++;
         storeDataInMemoryOnlyRow = rowCount++;
+        storeDataInMemoryOnlyInfoRow = rowCount++;
         storeChatsInMemoryOnlyRow = rowCount++;
-        encryptDatabaseRow = rowCount++;
-        encryptAuthTokenRow = rowCount++;
+        storeChatsInMemoryOnlyInfoRow = rowCount++;
         worksWithFakePasscodeRow = rowCount++;
-        worksWithFakePasscodeDelimiterRow = rowCount++;
+        worksWithFakePasscodeInfoRow = rowCount++;
+        encryptionHeaderRow = rowCount++;
+        encryptDatabaseRow = rowCount++;
+        encryptDatabaseInfoRow = rowCount++;
+        encryptAuthTokenRow = rowCount++;
+        encryptAuthTokenInfoRow = rowCount++;
+        accountsHeaderRow = rowCount++;
         firstAccountRow = rowCount;
         accounts.clear();
         for (int account : Utils.getActivatedAccountsSortedByLoginTime()) {
             accounts.add(new FileProtectionAccountInfo(account));
             lastAccountRow = rowCount++;
         }
+        accountsInfoRow = rowCount++;
     }
 
     private boolean isChanged() {
@@ -261,10 +295,11 @@ public class FileProtectionActivity extends BaseFragment {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            if (position == storeChatsInMemoryOnlyRow) {
+            if (position == storeChatsInMemoryOnlyRow || position == worksWithFakePasscodeRow) {
                 return storeDataInMemoryOnly;
             }
-            return position != worksWithFakePasscodeDelimiterRow;
+            int viewType = holder.getItemViewType();
+            return viewType == 0 || viewType == 1;
         }
 
         @Override
@@ -287,7 +322,11 @@ public class FileProtectionActivity extends BaseFragment {
                     view = new TextCheckCell(mContext);
                     break;
                 case 2:
-                    view = new ShadowSectionCell(mContext);
+                    view = new HeaderCell(mContext);
+                    break;
+                case 3:
+                    view = new TextInfoPrivacyCell(mContext);
+                    view.setBackground(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     break;
             }
             return new RecyclerListView.Holder(view);
@@ -299,29 +338,52 @@ public class FileProtectionActivity extends BaseFragment {
                 case 0: {
                     CheckBoxUserCell userCell = (CheckBoxUserCell) holder.itemView;
                     FileProtectionAccountInfo accountInfo = accounts.get(position - firstAccountRow);
-                    userCell.setUser(accountInfo.getUserConfig().getCurrentUser(), accountInfo.fileProtectionEnabled, true);
+                    userCell.setUser(accountInfo.getUserConfig().getCurrentUser(), accountInfo.fileProtectionEnabled, position != lastAccountRow);
                     break;
                 }
                 case 1: {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
                     if (position == storeDataInMemoryOnlyRow) {
-                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionStoreDataInMemoryOnly), storeDataInMemoryOnly, true);
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionStoreDataInMemoryOnly), storeDataInMemoryOnly, false);
                     } else if (position == storeChatsInMemoryOnlyRow) {
-                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionStoreChatsInMemoryOnly), storeChatsInMemoryOnly, true);
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionStoreChatsInMemoryOnly), storeChatsInMemoryOnly, false);
                     } else if (position == encryptDatabaseRow) {
-                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionEncryptDatabase), encryptDatabase, true);
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionEncryptDatabase), encryptDatabase, false);
                     } else if (position == encryptAuthTokenRow) {
-                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionEncryptAuthToken), encryptAuthToken, true);
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionEncryptAuthToken), encryptAuthToken, false);
                     } else if (position == worksWithFakePasscodeRow) {
-                        textCell.setTextAndCheck(LocaleController.getString(R.string.WorksWithFakePasscodes), fileProtectionWorksWhenFakePasscodeActivated, true);
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.WorksWithFakePasscodes), fileProtectionWorksWhenFakePasscodeActivated, false);
                     }
-                    textCell.setEnabled(position != storeChatsInMemoryOnlyRow || storeDataInMemoryOnly, null);
+                    textCell.setEnabled(position != storeChatsInMemoryOnlyRow && position != worksWithFakePasscodeRow || storeDataInMemoryOnly, null);
                     break;
                 }
                 case 2: {
-                    View sectionCell = holder.itemView;
-                    sectionCell.setTag(position);
-                    sectionCell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider, getThemedColor(Theme.key_windowBackgroundGrayShadow)));
+                    HeaderCell headerCell = (HeaderCell) holder.itemView;
+                    headerCell.setHeight(46);
+                    if (position == storageHeaderRow) {
+                        headerCell.setText(LocaleController.getString(R.string.FileProtectionStorageHeader));
+                    } else if (position == encryptionHeaderRow) {
+                        headerCell.setText(LocaleController.getString(R.string.FileProtectionEncryptionHeader));
+                    } else if (position == accountsHeaderRow) {
+                        headerCell.setText(LocaleController.getString(R.string.FileProtectionAccountsHeader));
+                    }
+                    break;
+                }
+                case 3: {
+                    TextInfoPrivacyCell infoCell = (TextInfoPrivacyCell) holder.itemView;
+                    if (position == storeDataInMemoryOnlyInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionStoreDataInMemoryOnlyInfo));
+                    } else if (position == storeChatsInMemoryOnlyInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionStoreChatsInMemoryOnlyInfo));
+                    } else if (position == worksWithFakePasscodeInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionWorksWithFakePasscodesInfo));
+                    } else if (position == encryptDatabaseInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionEncryptDatabaseInfo));
+                    } else if (position == encryptAuthTokenInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionEncryptAuthTokenInfo));
+                    } else if (position == accountsInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionAccountsInfo));
+                    }
                     break;
                 }
             }
@@ -331,8 +393,11 @@ public class FileProtectionActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == storeDataInMemoryOnlyRow || position == storeChatsInMemoryOnlyRow || position == encryptDatabaseRow || position == encryptAuthTokenRow || position == worksWithFakePasscodeRow) {
                 return 1;
-            } else if (position == worksWithFakePasscodeDelimiterRow) {
+            } else if (position == storageHeaderRow || position == encryptionHeaderRow || position == accountsHeaderRow) {
                 return 2;
+            } else if (position == storeDataInMemoryOnlyInfoRow || position == storeChatsInMemoryOnlyInfoRow || position == worksWithFakePasscodeInfoRow
+                    || position == encryptDatabaseInfoRow || position == encryptAuthTokenInfoRow || position == accountsInfoRow) {
+                return 3;
             } if (firstAccountRow <= position && position <= lastAccountRow) {
                 return 0;
             }
@@ -373,6 +438,9 @@ public class FileProtectionActivity extends BaseFragment {
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_TEXTCOLOR | ThemeDescription.FLAG_CHECKTAG, new Class[]{TextSettingsCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueText4));
 
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{HeaderCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueHeader));
+
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow));
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText4));
 
         return themeDescriptions;
     }
