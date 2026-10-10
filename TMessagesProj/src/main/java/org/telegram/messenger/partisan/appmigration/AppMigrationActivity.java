@@ -40,6 +40,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
     private RadialProgressView progressBar;
     private TextView buttonTextView;
     private boolean destroyed;
+    private volatile boolean cancelled;
     private long spaceSizeNeeded;
     private Intent migrationResultIntent;
 
@@ -100,7 +101,8 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         }
     }
 
-    private void cancelMigration() {
+    private synchronized void cancelMigration() {
+        cancelled = true;
         if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
             AppMigratorPreferences.updateMaxCancelledInstallationDate();
         }
@@ -323,15 +325,22 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         this.migrationResultIntent = migrationResultIntent;
     }
 
+    // A build that outlives this screen must not change the step, or it revives a cancelled migration
     @Override
     public void makeZipCompleted() {
-        AndroidUtilities.runOnUIThread(() -> setStep(Step.MAKE_ZIP_COMPLETED));
+        AndroidUtilities.runOnUIThread(() -> {
+            if (!cancelled && !destroyed) {
+                setStep(Step.MAKE_ZIP_COMPLETED);
+            }
+        });
     }
 
     @Override
     public void makeZipFailed() {
         AndroidUtilities.runOnUIThread(() -> {
-            setStep(Step.MAKE_ZIP_FAILED);
+            if (!cancelled && !destroyed) {
+                setStep(Step.MAKE_ZIP_FAILED);
+            }
         });
     }
 
@@ -430,7 +439,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
     }
 
     private void checkThread() {
-        while (!destroyed) {
+        while (!destroyed && !cancelled) {
             try {
                 synchronized (this) {
                     long freeSize = getFreeMemorySize();
