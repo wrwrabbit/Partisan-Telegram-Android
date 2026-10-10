@@ -21,16 +21,12 @@ import org.telegram.messenger.partisan.ui.items.DescriptionItem;
 import org.telegram.messenger.partisan.ui.items.HeaderItem;
 import org.telegram.messenger.partisan.ui.items.ItemsGenerator;
 import org.telegram.messenger.partisan.ui.items.ToggleItem;
-import org.telegram.messenger.partisan.voicechange.VoiceChangeSettings;
-import org.telegram.messenger.partisan.voicechange.VoiceChangeSettingsFragment;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.FakePasscodeActivity;
 import org.telegram.ui.FakePasscodeRestoreActivity;
-import org.telegram.ui.PartisanSettingsActivity;
 import org.telegram.ui.PasscodeActivity;
-import org.telegram.ui.SecurityIssuesFragment;
 
 public class PTelegramSettingsFragment extends PartisanBaseFragment {
 
@@ -107,23 +103,13 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
                 new ButtonItem(this, getString(R.string.BadPasscodeReaction), v ->
                         presentFragment(new org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment())),
                 new DescriptionItem(this, getString(R.string.BadPasscodeReactionInfo)),
-                new ButtonItem(this, getString(R.string.VoiceChange),
-                        () -> VoiceChangeSettings.voiceChangeEnabled.get().orElse(false)
-                                ? getString(R.string.PasswordOn)
-                                : getString(R.string.PasswordOff),
-                        v -> presentFragment(new VoiceChangeSettingsFragment())),
-                new DescriptionItem(this, getString(R.string.VoiceChangeDescription)),
-                new ButtonItem(this, getString(R.string.InterfaceTweaks),
-                        InterfaceTweaksFragment::getEnabledSummary,
-                        v -> presentFragment(new InterfaceTweaksFragment())),
-                new DescriptionItem(this, getString(R.string.InterfaceTweaksInfo)),
-                new ButtonItem(this, getString(R.string.SecurityIssuesTitle),
-                        () -> String.valueOf(getUserConfig().getActiveSecurityIssues().size()),
-                        v -> presentFragment(new SecurityIssuesFragment())),
-                new DescriptionItem(this, getString(R.string.SecurityIssuesInfo)),
-                new ButtonItem(this, getString(R.string.OtherSettings), v ->
-                        presentFragment(new PartisanSettingsActivity(true))),
-                new DescriptionItem(this, getString(R.string.PartisanSettingsInfo)),
+                new ButtonItem(this, getString(R.string.ChatsAndChannelsSettings),
+                        ChatsAndChannelsSettingsFragment::getEnabledSummary,
+                        v -> presentFragment(new ChatsAndChannelsSettingsFragment())),
+                new DescriptionItem(this, getString(R.string.ChatsAndChannelsSettingsInfo)),
+                new ButtonItem(this, getString(R.string.PartisanGeneralSettings), v ->
+                        presentFragment(new GeneralSettingsFragment())),
+                new DescriptionItem(this, getString(R.string.PartisanGeneralSettingsInfo)),
                 new HeaderItem(this, getString(R.string.PartisanTelegramSettings)),
                 new ToggleItem(this, getString(R.string.ProtectPartisanSettings),
                         () -> SharedConfig.protectPtelegramSettings,

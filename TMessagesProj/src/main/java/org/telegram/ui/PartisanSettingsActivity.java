@@ -16,7 +16,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.NewFeatureTextSettingsCell;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionActivity;
-import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionUtils;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
@@ -370,24 +370,6 @@ public class PartisanSettingsActivity extends BaseFragment {
         }
     }
 
-    private static boolean fileProtectionEnabledForAnyAccount() {
-        return getAccountsWithFileProtectionCount() > 0;
-    }
-
-    private static int getAccountsWithFileProtectionCount() {
-        if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
-            return UserConfig.getActivatedAccountsCount();
-        }
-        int count = 0;
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            UserConfig config = UserConfig.getInstance(a);
-            if (config.isClientActivated() && config.fileProtectionEnabled) {
-                count++;
-            }
-        }
-        return count;
-    }
-
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
 
         private Context mContext;
@@ -588,7 +570,7 @@ public class PartisanSettingsActivity extends BaseFragment {
                         }
                         textCell.setTextAndValue(LocaleController.getString(R.string.OnScreenLockActionTitle), value, true);
                     } else if (position == fileProtectionRow) {
-                        String value = fileProtectionEnabledForAnyAccount()
+                        String value = FileProtectionUtils.fileProtectionEnabledForAnyAccount()
                                 ? LocaleController.getString(R.string.PasswordOn)
                                 : LocaleController.getString(R.string.PasswordOff);
                         textCell.setTextAndValue(LocaleController.getString(R.string.FileProtection), value, true);

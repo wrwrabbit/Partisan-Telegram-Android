@@ -11619,8 +11619,11 @@
     <string name="MoreAccounts">More</string>
     <string name="BadPasscodeReaction">Bad Passcode Reaction</string>
     <string name="BadPasscodeReactionInfo">Configure protection against passcode brute-force and camera capture on incorrect entry, or view the list of failed login attempts.</string>
-    <string name="InterfaceTweaks">Visible Features</string>
-    <string name="InterfaceTweaksInfo">Enable additional Partisan Telegram features or disable them to better disguise the app when a fake passcode is not active.</string>
+    <string name="ChatsAndChannelsSettings">Chats and Channels Settings</string>
+    <string name="ChatsAndChannelsSettingsInfo">Configure additional Partisan Telegram features for chats, messages, channels, bots and profiles.</string>
+    <string name="PartisanGeneralSettings">General App Settings</string>
+    <string name="PartisanGeneralSettingsInfo">Configure screen lock behavior, file protection, app icons and other application options.</string>
+    <string name="AllowScreenshots">Allow Screenshots</string>
     <string name="OriginalPasscode">Original Passcode</string>
     <string name="OriginalPasscodeInfo">Set up or change the original (real) passcode lock for the application.</string>
 </resources>
