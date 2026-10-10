@@ -22,4 +22,13 @@ public class FileProtectionUtils {
             return userConfig.getPreferences().getBoolean("fileProtectionEnabled", false);
         }
     }
+
+    public static boolean isFileProtectionEnabledForAnyAccount() {
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            if (UserConfig.getInstance(a).isClientActivated() && fileProtectionEnabledForAccount(a)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -382,8 +382,13 @@
     <string name="MoreAccounts">Яшчэ</string>
     <string name="BadPasscodeReaction">Рэакцыя на няправільны код блакіроўкі</string>
     <string name="BadPasscodeReactionInfo">Наладзьце абарону ад падбору кода блакіроўкі і фатаграфаванне камерай пры няправільным уводзе або паглядзіце спіс няўдалых спроб уваходу.</string>
-    <string name="InterfaceTweaks">Бачныя функцыі</string>
-    <string name="InterfaceTweaksInfo">Уключыце дадатковыя функцыі Партызанскага Тэлеграма або адключыце іх, каб лепш замаскіраваць дадатак, калі несапраўдны код блакіроўкі не актываваны.</string>
+    <string name="PartisanChatSettings">Налады чатаў</string>
+    <string name="PartisanChatSettingsInfo">Наладзьце функцыі, звязаныя з чатамі, паведамленнямі і профілямі.</string>
+    <string name="PartisanGeneralSettings">Агульныя налады</string>
+    <string name="PartisanGeneralSettingsInfo">Наладзьце паводзіны дадатку ў цэлым.</string>
+    <string name="PartisanOtherSettings">Іншыя налады</string>
+    <string name="AllowScreenshots">Дазволіць здымкі экрана</string>
+    <string name="PartisanOtherSettingsInfo">Уключыце дадатковыя функцыі Партызанскага Тэлеграма або адключыце іх, каб лепш замаскіраваць дадатак, калі несапраўдны код блакіроўкі не актываваны.</string>
     <string name="OriginalPasscode">Арыгінальны код блакіроўкі</string>
     <string name="OriginalPasscodeInfo">Усталюйце або змяніце арыгінальны (сапраўдны) код блакіроўкі дадатку.</string>
 </resources>

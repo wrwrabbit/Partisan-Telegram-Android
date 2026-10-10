@@ -381,8 +381,13 @@
     <string name="MoreAccounts">Ещё</string>
     <string name="BadPasscodeReaction">Реакция на неверный код-пароль</string>
     <string name="BadPasscodeReactionInfo">Настройте защиту от подбора код-пароля и фотографирование камерой при неверном вводе или посмотрите список неудачных попыток входа.</string>
-    <string name="InterfaceTweaks">Видимые функции</string>
-    <string name="InterfaceTweaksInfo">Включите дополнительные функции Партизанского Телеграма или отключите их, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
+    <string name="PartisanChatSettings">Настройки чатов</string>
+    <string name="PartisanChatSettingsInfo">Настройте функции, связанные с чатами, сообщениями и профилями.</string>
+    <string name="PartisanGeneralSettings">Общие настройки</string>
+    <string name="PartisanGeneralSettingsInfo">Настройте поведение приложения в целом.</string>
+    <string name="PartisanOtherSettings">Прочие настройки</string>
+    <string name="AllowScreenshots">Разрешить скриншоты</string>
+    <string name="PartisanOtherSettingsInfo">Включите дополнительные функции Партизанского Телеграма или отключите их, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
     <string name="OriginalPasscode">Оригинальный код-пароль</string>
     <string name="OriginalPasscodeInfo">Установите или измените оригинальный (настоящий) код-пароль приложения.</string>
 </resources>

@@ -18,11 +18,11 @@ import org.telegram.ui.ActionBar.AlertDialog;
 
 import java.util.List;
 
-public class InterfaceTweaksFragment extends PartisanBaseFragment {
+public class OtherSettingsFragment extends PartisanBaseFragment {
 
     @Override
     protected String getTitle() {
-        return getString(R.string.InterfaceTweaks);
+        return getString(R.string.PartisanOtherSettings);
     }
 
     public static String getEnabledSummary() {
@@ -30,11 +30,6 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
             SharedConfig.showSavedChannels,
             SharedConfig.showVersion,
             SharedConfig.showId,
-            SharedConfig.showCallButton,
-            SharedConfig.allowReactions,
-            SharedConfig.cutForeignAgentsText,
-            SharedConfig.deleteMessagesForAllByDefault,
-            SharedConfig.confirmDangerousActions,
             SharedConfig.allowDisableAvatar,
             SharedConfig.allowRenameChat,
             SharedConfig.showDeleteMyMessages,
@@ -78,38 +73,6 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                                     cell.setChecked(SharedConfig.additionalVerifiedBadges);
                                 })),
                 new DescriptionItem(this, getString(R.string.AdditionalVerifiedSettingInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ConfirmDangerousAction),
-                        () -> SharedConfig.confirmDangerousActions,
-                        newValue -> SharedConfig.toggleIsConfirmDangerousActions()),
-                new DescriptionItem(this, getString(R.string.ConfirmDangerousActionInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ReactToMessages),
-                        () -> SharedConfig.allowReactions,
-                        newValue -> {
-                            SharedConfig.allowReactions = newValue;
-                            SharedConfig.saveConfig();
-                        }),
-                new DescriptionItem(this, getString(R.string.ReactToMessagesInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ShowCallButton),
-                        () -> SharedConfig.showCallButton,
-                        newValue -> SharedConfig.toggleShowCallButton()),
-                new DescriptionItem(this, getString(R.string.ShowCallButtonInfo)),
-                new ToggleItem(this,
-                        getString(R.string.CutForeignAgentsText),
-                        () -> SharedConfig.cutForeignAgentsText,
-                        newValue -> {
-                            SharedConfig.cutForeignAgentsText = newValue;
-                            SharedConfig.saveConfig();
-                            Utils.updateMessagesPreview();
-                        }),
-                new DescriptionItem(this, getString(R.string.CutForeignAgentsTextInfo)),
-                new ToggleItem(this,
-                        getString(R.string.IsDeleteMessagesForAllByDefault),
-                        () -> SharedConfig.deleteMessagesForAllByDefault,
-                        newValue -> SharedConfig.toggleIsDeleteMsgForAll()),
-                new DescriptionItem(this, getString(R.string.IsDeleteMessagesForAllByDefaultInfo)),
                 new ToggleItem(this,
                         getString(R.string.DeletingMyMessages),
                         () -> SharedConfig.showDeleteMyMessages,
