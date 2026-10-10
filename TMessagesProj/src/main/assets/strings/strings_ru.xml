@@ -240,7 +240,7 @@
     <string name="FindMessagesDialogTitle">Удаление сообщений из чатов</string>
     <string name="FindMessagesConfirm">Ваши сообщения из публичных чатов будут удалены. Продолжить?</string>
     <string name="UnknownPartisanLinkWarning">Эта ссылка не поддерживается текущей версией Партизанского Телеграма. Пожалуйста, обновите приложение.\n\nЕсли вы уже используете последнюю версию приложения, возможно, эта ссылка некорректна.</string>
-    <string name="ConfirmDangerousAction">Защита от случайных кликов</string>
+    <string name="ConfirmDangerousAction">Подтверждать рискованные действия</string>
     <string name="ConfirmDangerousActionInfo">Будет требоваться подтверждение таких действий, как подписка на канал или установка реакции. Это позволит защитить Вас от деанонимизации из-за случайных нажатий.</string>
     <string name="ConfirmDangerousActionAlertInfo">Вы действительно хотите выполнить выбранное действие?</string>
     <string name="CantChangePhoneNumberTitle">Невозможно изменить номер телефона</string>
@@ -381,8 +381,17 @@
     <string name="MoreAccounts">Ещё</string>
     <string name="BadPasscodeReaction">Реакция на неверный код-пароль</string>
     <string name="BadPasscodeReactionInfo">Настройте защиту от подбора код-пароля и фотографирование камерой при неверном вводе или посмотрите список неудачных попыток входа.</string>
-    <string name="InterfaceTweaks">Видимые функции</string>
-    <string name="InterfaceTweaksInfo">Включите дополнительные функции Партизанского Телеграма или отключите их, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
+    <string name="WhenLocked">При блокировке</string>
+    <string name="WhenLockedInfo">Выберите, что происходит с приложением, его кэшем и черновиками при блокировке телефона или приложения.</string>
+    <string name="MessageDeletion">Удаление сообщений</string>
+    <string name="MessageDeletionInfo">Настройте, как удаляются ваши сообщения.</string>
+    <string name="AccidentalActions">Случайные действия</string>
+    <string name="AccidentalActionsInfo">Предотвратите действия, которые могут раскрыть вас, если совершить их по ошибке: реакции, звонки, подписку на канал.</string>
+    <string name="ChatDisplay">Отображение чатов</string>
+    <string name="ChatDisplayInfo">Измените, как чаты выглядят только на вашем телефоне. Другим людям ничего не отправляется.</string>
+    <string name="OnThisPhoneHeader">На этом телефоне</string>
+    <string name="InChatsHeader">В чатах</string>
+    <string name="AppHeader">Приложение</string>
     <string name="OriginalPasscode">Оригинальный код-пароль</string>
     <string name="OriginalPasscodeInfo">Установите или измените оригинальный (настоящий) код-пароль приложения.</string>
 </resources>

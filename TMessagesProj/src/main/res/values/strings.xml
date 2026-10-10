@@ -11478,7 +11478,7 @@
     <string name="FindMessagesDialogTitle">Removing messages from chats</string>
     <string name="FindMessagesConfirm">Your messages from chats will be deleted. Continue?</string>
     <string name="UnknownPartisanLinkWarning">This link is not supported by the current version of Partisan Telegram. Please update the application.\n\nIf you are already using the latest version of the application, this link may not be correct.</string>
-    <string name="ConfirmDangerousAction">Protection against accidental clicks</string>
+    <string name="ConfirmDangerousAction">Confirm Risky Actions</string>
     <string name="ConfirmDangerousActionInfo">Confirmation will be required for actions such as subscribing to a channel or setting a reaction. This will protect you from de-anonymization due to accidental clicks.</string>
     <string name="ConfirmDangerousActionAlertInfo">Are you sure you want to perform the selected action?</string>
     <string name="CantChangePhoneNumberTitle">Can\'t Change Phone Number</string>
@@ -11619,8 +11619,17 @@
     <string name="MoreAccounts">More</string>
     <string name="BadPasscodeReaction">Bad Passcode Reaction</string>
     <string name="BadPasscodeReactionInfo">Configure protection against passcode brute-force and camera capture on incorrect entry, or view the list of failed login attempts.</string>
-    <string name="InterfaceTweaks">Visible Features</string>
-    <string name="InterfaceTweaksInfo">Enable additional Partisan Telegram features or disable them to better disguise the app when a fake passcode is not active.</string>
+    <string name="WhenLocked">When Locked</string>
+    <string name="WhenLockedInfo">Choose what happens to the app, its cache and drafts when you lock the phone or the app.</string>
+    <string name="MessageDeletion">Message Deletion</string>
+    <string name="MessageDeletionInfo">Configure how your messages are deleted.</string>
+    <string name="AccidentalActions">Accidental Actions</string>
+    <string name="AccidentalActionsInfo">Prevent actions that could reveal you if done by mistake, such as reactions, calls or joining a channel.</string>
+    <string name="ChatDisplay">Chat Display</string>
+    <string name="ChatDisplayInfo">Change how chats look on your phone only. Nothing is sent to other people.</string>
+    <string name="OnThisPhoneHeader">On This Phone</string>
+    <string name="InChatsHeader">In Chats</string>
+    <string name="AppHeader">App</string>
     <string name="OriginalPasscode">Original Passcode</string>
     <string name="OriginalPasscodeInfo">Set up or change the original (real) passcode lock for the application.</string>
 </resources>

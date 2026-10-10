@@ -77,4 +77,14 @@ public abstract class PartisanBaseFragment extends BaseFragment {
 
     protected abstract AbstractSourceItem[] createItems();
     protected abstract String getTitle();
+
+    protected static String formatEnabledCount(boolean... values) {
+        int enabled = 0;
+        for (boolean value : values) {
+            if (value) {
+                enabled++;
+            }
+        }
+        return enabled + "/" + values.length;
+    }
 }

@@ -240,7 +240,7 @@
     <string name="FindMessagesDialogTitle">Видалення повідомлень із чатів</string>
     <string name="FindMessagesConfirm">Ваші повідомлення з чату будуть видалені. Продовжити?</string>
     <string name="UnknownPartisanLinkWarning">Це посилання не підтримується поточною версією телеграми. Будь ласка, оновіть програму. Якщо ви вже використовуєте останню версію програми, це посилання неправильне.</string>
-    <string name="ConfirmDangerousAction">Захист від випадкових кліків</string>
+    <string name="ConfirmDangerousAction">Підтверджувати ризиковані дії</string>
     <string name="ConfirmDangerousActionInfo">Вимагатиметься підтвердження таких дій, як передплата на канал або встановлення реакції. Це дозволить захистити Вас від деанонімізації через випадкові натискання.</string>
     <string name="ConfirmDangerousActionAlertInfo">Ви дійсно хочете виконати вибрану дію?</string>
     <string name="CantChangePhoneNumberTitle">Неможливо змінити номер телефону</string>
@@ -382,8 +382,17 @@
     <string name="MoreAccounts">Ще</string>
     <string name="BadPasscodeReaction">Реакція на невірний код блокування</string>
     <string name="BadPasscodeReactionInfo">Налаштуйте захист від підбору коду блокування та фотографування камерою при невірному введенні або перегляньте список невдалих спроб входу.</string>
-    <string name="InterfaceTweaks">Видимі функції</string>
-    <string name="InterfaceTweaksInfo">Увімкніть додаткові функції Партизанського Телеграму або вимкніть їх, щоб краще замаскувати додаток, коли фальшивий код блокування не активовано.</string>
+    <string name="WhenLocked">При блокуванні</string>
+    <string name="WhenLockedInfo">Оберіть, що відбувається з додатком, його кешем і чернетками під час блокування телефона або додатка.</string>
+    <string name="MessageDeletion">Видалення повідомлень</string>
+    <string name="MessageDeletionInfo">Налаштуйте, як видаляються ваші повідомлення.</string>
+    <string name="AccidentalActions">Випадкові дії</string>
+    <string name="AccidentalActionsInfo">Запобігайте діям, які можуть вас викрити, якщо виконати їх помилково: реакції, дзвінки, підписка на канал.</string>
+    <string name="ChatDisplay">Відображення чатів</string>
+    <string name="ChatDisplayInfo">Змініть, як чати виглядають лише на вашому телефоні. Іншим людям нічого не надсилається.</string>
+    <string name="OnThisPhoneHeader">На цьому телефоні</string>
+    <string name="InChatsHeader">У чатах</string>
+    <string name="AppHeader">Додаток</string>
     <string name="OriginalPasscode">Оригінальний код блокування</string>
     <string name="OriginalPasscodeInfo">Встановіть або змініть оригінальний (справжній) код блокування додатку.</string>
 </resources>

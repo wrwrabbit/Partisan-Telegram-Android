@@ -11,6 +11,15 @@ public class FileProtectionUtils {
         return FileProtectionSettings.encryptAuthToken.get().orElse(true) && fileProtectionEnabledForAccount(account);
     }
 
+    public static boolean fileProtectionEnabledForAnyAccount() {
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            if (UserConfig.getInstance(a).isClientActivated() && fileProtectionEnabledForAccount(a)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean fileProtectionEnabledForAccount(int account) {
         if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
             return true;

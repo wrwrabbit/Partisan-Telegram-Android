@@ -240,7 +240,7 @@
     <string name="FindMessagesDialogTitle">Выдаленне паведамленняў з чатаў</string>
     <string name="FindMessagesConfirm">Вашы паведамленні з публічных чатаў будуць выдаленыя. Працягнуць?</string>
     <string name="UnknownPartisanLinkWarning">Гэтая спасылка не падтрымліваецца бягучай версіяй Партызанскага Тэлеграма. Калі ласка, абнавіце праграму.\n\nКалі вы ўжо карыстаецеся апошнюю версію прыкладання, магчыма, гэтая спасылка некарэктная.</string>
-    <string name="ConfirmDangerousAction">Ахова ад выпадковых клікаў</string>
+    <string name="ConfirmDangerousAction">Пацвярджаць рызыкоўныя дзеянні</string>
     <string name="ConfirmDangerousActionInfo">Будзе патрабавацца пацвярджэнне такіх дзеянняў, як падпіска на канал або ўстаноўка рэакцыі. Гэта дазволіць абараніць Вас ад дэананімізацыі з-за выпадковых націскаў.</string>
     <string name="ConfirmDangerousActionAlertInfo">Вы сапраўды хочаце выканаць выбранае дзеянне?</string>
     <string name="CantChangePhoneNumberTitle">Немагчыма змяніць нумар тэлефона</string>
@@ -382,8 +382,17 @@
     <string name="MoreAccounts">Яшчэ</string>
     <string name="BadPasscodeReaction">Рэакцыя на няправільны код блакіроўкі</string>
     <string name="BadPasscodeReactionInfo">Наладзьце абарону ад падбору кода блакіроўкі і фатаграфаванне камерай пры няправільным уводзе або паглядзіце спіс няўдалых спроб уваходу.</string>
-    <string name="InterfaceTweaks">Бачныя функцыі</string>
-    <string name="InterfaceTweaksInfo">Уключыце дадатковыя функцыі Партызанскага Тэлеграма або адключыце іх, каб лепш замаскіраваць дадатак, калі несапраўдны код блакіроўкі не актываваны.</string>
+    <string name="WhenLocked">Пры блакаванні</string>
+    <string name="WhenLockedInfo">Выберыце, што адбываецца з дадаткам, яго кэшам і чарнавікамі пры блакаванні тэлефона або дадатка.</string>
+    <string name="MessageDeletion">Выдаленне паведамленняў</string>
+    <string name="MessageDeletionInfo">Наладзьце, як выдаляюцца вашы паведамленні.</string>
+    <string name="AccidentalActions">Выпадковыя дзеянні</string>
+    <string name="AccidentalActionsInfo">Прадухіліце дзеянні, якія могуць вас выдаць, калі зрабіць іх памылкова: рэакцыі, званкі, падпіску на канал.</string>
+    <string name="ChatDisplay">Адлюстраванне чатаў</string>
+    <string name="ChatDisplayInfo">Змяніце, як чаты выглядаюць толькі на вашым тэлефоне. Іншым людзям нічога не адпраўляецца.</string>
+    <string name="OnThisPhoneHeader">На гэтым тэлефоне</string>
+    <string name="InChatsHeader">У чатах</string>
+    <string name="AppHeader">Дадатак</string>
     <string name="OriginalPasscode">Арыгінальны код блакіроўкі</string>
     <string name="OriginalPasscodeInfo">Усталюйце або змяніце арыгінальны (сапраўдны) код блакіроўкі дадатку.</string>
 </resources>

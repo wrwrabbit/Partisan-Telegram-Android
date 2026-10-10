@@ -8,10 +8,16 @@ import android.widget.LinearLayout;
 import java.util.function.Supplier;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscode;
+import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
+import org.telegram.messenger.partisan.appmigration.AppMigrator;
+import org.telegram.messenger.partisan.appmigration.AppMigratorPreferences;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionActivity;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionUtils;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.ui.items.AbstractSourceItem;
 import org.telegram.messenger.partisan.ui.items.ButtonItem;
@@ -28,7 +34,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.FakePasscodeActivity;
 import org.telegram.ui.FakePasscodeRestoreActivity;
-import org.telegram.ui.PartisanSettingsActivity;
+import org.telegram.ui.LauncherIconController;
 import org.telegram.ui.PasscodeActivity;
 import org.telegram.ui.SecurityIssuesFragment;
 
@@ -107,24 +113,46 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
                 new ButtonItem(this, getString(R.string.BadPasscodeReaction), v ->
                         presentFragment(new org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment())),
                 new DescriptionItem(this, getString(R.string.BadPasscodeReactionInfo)),
+                new HeaderItem(this, getString(R.string.OnThisPhoneHeader)),
+                new ButtonItem(this, getString(R.string.FileProtection),
+                        () -> FileProtectionUtils.fileProtectionEnabledForAnyAccount()
+                                ? getString(R.string.PasswordOn)
+                                : getString(R.string.PasswordOff),
+                        v -> presentFragment(new FileProtectionActivity())),
+                new DescriptionItem(this, getString(R.string.FileProtectionInfo)),
+                new ButtonItem(this, getString(R.string.WhenLocked),
+                        v -> presentFragment(new WhenLockedFragment())),
+                new DescriptionItem(this, getString(R.string.WhenLockedInfo)),
+                new HeaderItem(this, getString(R.string.InChatsHeader)),
                 new ButtonItem(this, getString(R.string.VoiceChange),
                         () -> VoiceChangeSettings.voiceChangeEnabled.get().orElse(false)
                                 ? getString(R.string.PasswordOn)
                                 : getString(R.string.PasswordOff),
                         v -> presentFragment(new VoiceChangeSettingsFragment())),
                 new DescriptionItem(this, getString(R.string.VoiceChangeDescription)),
-                new ButtonItem(this, getString(R.string.InterfaceTweaks),
-                        InterfaceTweaksFragment::getEnabledSummary,
-                        v -> presentFragment(new InterfaceTweaksFragment())),
-                new DescriptionItem(this, getString(R.string.InterfaceTweaksInfo)),
+                new ButtonItem(this, getString(R.string.MessageDeletion),
+                        MessageDeletionFragment::getEnabledSummary,
+                        v -> presentFragment(new MessageDeletionFragment())),
+                new DescriptionItem(this, getString(R.string.MessageDeletionInfo)),
+                new ButtonItem(this, getString(R.string.AccidentalActions),
+                        AccidentalActionsFragment::getEnabledSummary,
+                        v -> presentFragment(new AccidentalActionsFragment())),
+                new DescriptionItem(this, getString(R.string.AccidentalActionsInfo)),
+                new ButtonItem(this, getString(R.string.ChatDisplay),
+                        ChatDisplayFragment::getEnabledSummary,
+                        v -> presentFragment(new ChatDisplayFragment())),
+                new DescriptionItem(this, getString(R.string.ChatDisplayInfo)),
+                new ButtonItem(this, getString(R.string.SavedChannelsSetting),
+                        () -> SharedConfig.showSavedChannels
+                                ? getString(R.string.PasswordOn)
+                                : getString(R.string.PasswordOff),
+                        v -> presentFragment(new SavedChannelsSettingsFragment())),
+                new DescriptionItem(this, getString(R.string.SavedChannelsSettingInfo)),
+                new HeaderItem(this, getString(R.string.AppHeader)),
                 new ButtonItem(this, getString(R.string.SecurityIssuesTitle),
                         () -> String.valueOf(getUserConfig().getActiveSecurityIssues().size()),
                         v -> presentFragment(new SecurityIssuesFragment())),
                 new DescriptionItem(this, getString(R.string.SecurityIssuesInfo)),
-                new ButtonItem(this, getString(R.string.OtherSettings), v ->
-                        presentFragment(new PartisanSettingsActivity(true))),
-                new DescriptionItem(this, getString(R.string.PartisanSettingsInfo)),
-                new HeaderItem(this, getString(R.string.PartisanTelegramSettings)),
                 new ToggleItem(this, getString(R.string.ProtectPartisanSettings),
                         () -> SharedConfig.protectPtelegramSettings,
                         newValue -> {
@@ -143,7 +171,30 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
                         v -> presentFragment(new PartisanTelegramSettingsLocationFragment()))
                         .withEllipsizeValue(),
                 new DescriptionItem(this, getString(R.string.PartisanTelegramSettingsPositionInfo)),
+                new ToggleItem(this, getString(R.string.ShowVersion),
+                        () -> SharedConfig.showVersion,
+                        newValue -> {
+                            SharedConfig.showVersion = newValue;
+                            SharedConfig.saveConfig();
+                        }),
+                new DescriptionItem(this, getString(R.string.ShowVersionInfo)),
+                new ToggleItem(this, getString(R.string.MarketIcons),
+                        () -> SharedConfig.marketIcons,
+                        newValue -> LauncherIconController.toggleMarketIcons())
+                        .addCondition(ApplicationLoader::isRealBuildStandaloneBuild),
+                new DescriptionItem(this, getString(R.string.MarketIconsInfo))
+                        .addCondition(ApplicationLoader::isRealBuildStandaloneBuild),
+                new ButtonItem(this, getString(R.string.TransferDataToAnotherPtgButton),
+                        v -> presentFragment(new AppMigrationActivity()))
+                        .addCondition(PTelegramSettingsFragment::canTransferDataToOtherPtg),
+                new DescriptionItem(this, getString(R.string.TransferDataToOtherPtgInfo))
+                        .addCondition(PTelegramSettingsFragment::canTransferDataToOtherPtg),
         };
+    }
+
+    private static boolean canTransferDataToOtherPtg() {
+        return AppMigrator.isNewerPtgInstalled(ApplicationLoader.applicationContext, false)
+                || AppMigratorPreferences.isMigrationToMaskedPtg();
     }
 
     private static boolean isNeedFoldFakePasscodes() {

@@ -7,7 +7,6 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
-import org.telegram.messenger.partisan.ui.items.ButtonItem;
 import org.telegram.messenger.partisan.ui.items.CombinedToggleItem;
 import org.telegram.messenger.partisan.ui.items.DescriptionItem;
 import org.telegram.messenger.partisan.ui.items.ToggleItem;
@@ -18,48 +17,36 @@ import org.telegram.ui.ActionBar.AlertDialog;
 
 import java.util.List;
 
-public class InterfaceTweaksFragment extends PartisanBaseFragment {
+public class ChatDisplayFragment extends PartisanBaseFragment {
 
     @Override
     protected String getTitle() {
-        return getString(R.string.InterfaceTweaks);
+        return getString(R.string.ChatDisplay);
     }
 
     public static String getEnabledSummary() {
-        boolean[] toggleValues = {
-            SharedConfig.showSavedChannels,
-            SharedConfig.showVersion,
-            SharedConfig.showId,
-            SharedConfig.showCallButton,
-            SharedConfig.allowReactions,
-            SharedConfig.cutForeignAgentsText,
-            SharedConfig.deleteMessagesForAllByDefault,
-            SharedConfig.confirmDangerousActions,
-            SharedConfig.allowDisableAvatar,
-            SharedConfig.allowRenameChat,
-            SharedConfig.showDeleteMyMessages,
-            SharedConfig.showDeleteAfterRead,
-            SharedConfig.additionalVerifiedBadges,
-        };
-        int enabled = 0;
-        for (boolean toggleValue : toggleValues) {
-            if (toggleValue) {
-                enabled++;
-            }
-        }
-        return enabled + "/" + toggleValues.length;
+        return formatEnabledCount(
+                SharedConfig.allowRenameChat,
+                SharedConfig.allowDisableAvatar,
+                SharedConfig.additionalVerifiedBadges,
+                SharedConfig.cutForeignAgentsText,
+                SharedConfig.showId
+        );
     }
 
     @Override
     protected AbstractViewItem[] createItems() {
         return new AbstractViewItem[]{
-                new ButtonItem(this,
-                        getString(R.string.SavedChannelsSetting),
-                        () -> SharedConfig.showSavedChannels
-                                ? getString(R.string.PasswordOn)
-                                : getString(R.string.PasswordOff),
-                        v -> presentFragment(new SavedChannelsSettingsFragment())),
-                new DescriptionItem(this, getString(R.string.SavedChannelsSettingInfo)),
+                new ToggleItem(this,
+                        getString(R.string.ChatRenaming),
+                        () -> SharedConfig.allowRenameChat,
+                        this::onAllowRenameChatChanged),
+                new DescriptionItem(this, getString(R.string.ChatRenamingInfo)),
+                new ToggleItem(this,
+                        getString(R.string.AvatarDisabling),
+                        () -> SharedConfig.allowDisableAvatar,
+                        this::onAllowDisableAvatarChanged),
+                new DescriptionItem(this, getString(R.string.AvatarDisablingInfo)),
                 new CombinedToggleItem(this,
                         getString(R.string.AdditionalVerifiedSetting),
                         () -> {
@@ -79,24 +66,6 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                                 })),
                 new DescriptionItem(this, getString(R.string.AdditionalVerifiedSettingInfo)),
                 new ToggleItem(this,
-                        getString(R.string.ConfirmDangerousAction),
-                        () -> SharedConfig.confirmDangerousActions,
-                        newValue -> SharedConfig.toggleIsConfirmDangerousActions()),
-                new DescriptionItem(this, getString(R.string.ConfirmDangerousActionInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ReactToMessages),
-                        () -> SharedConfig.allowReactions,
-                        newValue -> {
-                            SharedConfig.allowReactions = newValue;
-                            SharedConfig.saveConfig();
-                        }),
-                new DescriptionItem(this, getString(R.string.ReactToMessagesInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ShowCallButton),
-                        () -> SharedConfig.showCallButton,
-                        newValue -> SharedConfig.toggleShowCallButton()),
-                new DescriptionItem(this, getString(R.string.ShowCallButtonInfo)),
-                new ToggleItem(this,
                         getString(R.string.CutForeignAgentsText),
                         () -> SharedConfig.cutForeignAgentsText,
                         newValue -> {
@@ -106,37 +75,6 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                         }),
                 new DescriptionItem(this, getString(R.string.CutForeignAgentsTextInfo)),
                 new ToggleItem(this,
-                        getString(R.string.IsDeleteMessagesForAllByDefault),
-                        () -> SharedConfig.deleteMessagesForAllByDefault,
-                        newValue -> SharedConfig.toggleIsDeleteMsgForAll()),
-                new DescriptionItem(this, getString(R.string.IsDeleteMessagesForAllByDefaultInfo)),
-                new ToggleItem(this,
-                        getString(R.string.DeletingMyMessages),
-                        () -> SharedConfig.showDeleteMyMessages,
-                        newValue -> {
-                            SharedConfig.showDeleteMyMessages = newValue;
-                            SharedConfig.saveConfig();
-                        }),
-                new DescriptionItem(this, getString(R.string.DeletingMyMessagesInfo)),
-                new ToggleItem(this,
-                        getString(R.string.DeletingAfterRead),
-                        () -> SharedConfig.showDeleteAfterRead,
-                        newValue -> {
-                            SharedConfig.showDeleteAfterRead = newValue;
-                            SharedConfig.saveConfig();
-                        }),
-                new DescriptionItem(this, getString(R.string.DeletingAfterReadInfo)),
-                new ToggleItem(this,
-                        getString(R.string.AvatarDisabling),
-                        () -> SharedConfig.allowDisableAvatar,
-                        this::onAllowDisableAvatarChanged),
-                new DescriptionItem(this, getString(R.string.AvatarDisablingInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ChatRenaming),
-                        () -> SharedConfig.allowRenameChat,
-                        this::onAllowRenameChatChanged),
-                new DescriptionItem(this, getString(R.string.ChatRenamingInfo)),
-                new ToggleItem(this,
                         getString(R.string.ShowId),
                         () -> SharedConfig.showId,
                         newValue -> {
@@ -144,14 +82,6 @@ public class InterfaceTweaksFragment extends PartisanBaseFragment {
                             SharedConfig.saveConfig();
                         }),
                 new DescriptionItem(this, getString(R.string.ShowIdInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ShowVersion),
-                        () -> SharedConfig.showVersion,
-                        newValue -> {
-                            SharedConfig.showVersion = newValue;
-                            SharedConfig.saveConfig();
-                        }),
-                new DescriptionItem(this, getString(R.string.ShowVersionInfo)),
         };
     }
 
