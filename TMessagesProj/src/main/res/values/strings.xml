@@ -11626,4 +11626,12 @@
     <string name="AllowScreenshots">Allow Screenshots</string>
     <string name="OriginalPasscode">Original Passcode</string>
     <string name="OriginalPasscodeInfo">Set up or change the original (real) passcode lock for the application.</string>
+    <string name="OnScreenLockActionsSummaryInfo">Choose what happens when the phone screen is locked: for example, hide or close the app, clear the cache, or delete all drafts.</string>
+    <string name="OnScreenLockActionNothingInfo">The app stays open when the screen is locked.</string>
+    <string name="OnScreenLockActionHideInfo">The app is minimized, and the home screen opens when the phone is unlocked.</string>
+    <string name="OnScreenLockActionCloseInfo">The app is closed and removed from the list of recent apps.</string>
+    <string name="OnScreenLockClearCacheInfo">The app cache is cleared every time the screen is locked.</string>
+    <string name="OnScreenLockAppBehavior">App Behavior</string>
+    <string name="OnScreenLockDataCleanup">Data Cleanup</string>
+    <string name="OnScreenLockDeleteAllDrafts">Delete all drafts</string>
 </resources>

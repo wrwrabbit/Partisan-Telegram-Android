@@ -389,4 +389,12 @@
     <string name="AllowScreenshots">Дозволити скриншоти</string>
     <string name="OriginalPasscode">Оригінальний код блокування</string>
     <string name="OriginalPasscodeInfo">Встановіть або змініть оригінальний (справжній) код блокування додатку.</string>
+    <string name="OnScreenLockActionsSummaryInfo">Оберіть, що відбуватиметься під час блокування екрану телефону: наприклад, згорнути або закрити додаток, очистити кеш або видалити всі чернетки.</string>
+    <string name="OnScreenLockActionNothingInfo">Додаток залишається відкритим під час блокування екрану.</string>
+    <string name="OnScreenLockActionHideInfo">Додаток буде згорнуто, і після розблокування телефону відкриється домашній екран.</string>
+    <string name="OnScreenLockActionCloseInfo">Додаток буде закрито і вилучено зі списку останніх додатків.</string>
+    <string name="OnScreenLockClearCacheInfo">Кеш додатку буде очищатися під час кожного блокування екрану.</string>
+    <string name="OnScreenLockAppBehavior">Поведінка додатку</string>
+    <string name="OnScreenLockDataCleanup">Очищення даних</string>
+    <string name="OnScreenLockDeleteAllDrafts">Видаляти чернетки</string>
 </resources>

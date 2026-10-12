@@ -389,4 +389,12 @@
     <string name="AllowScreenshots">Дазволіць скрыншоты</string>
     <string name="OriginalPasscode">Арыгінальны код блакіроўкі</string>
     <string name="OriginalPasscodeInfo">Усталюйце або змяніце арыгінальны (сапраўдны) код блакіроўкі дадатку.</string>
+    <string name="OnScreenLockActionsSummaryInfo">Выберыце, што будзе адбывацца пры блакаванні экрана тэлефона: напрыклад, згарнуць або зачыніць дадатак, ачысціць кэш або выдаліць усе чарнавікі.</string>
+    <string name="OnScreenLockActionNothingInfo">Дадатак застаецца адкрытым пры блакаванні экрана.</string>
+    <string name="OnScreenLockActionHideInfo">Дадатак будзе згорнуты, і пры разблакіроўцы тэлефона адкрыецца хатні экран.</string>
+    <string name="OnScreenLockActionCloseInfo">Дадатак будзе зачынены і выдалены са спісу адкрытых дадаткаў.</string>
+    <string name="OnScreenLockClearCacheInfo">Кэш дадатку будзе ачышчацца пры кожным блакаванні экрана.</string>
+    <string name="OnScreenLockAppBehavior">Паводзіны дадатку</string>
+    <string name="OnScreenLockDataCleanup">Ачыстка даных</string>
+    <string name="OnScreenLockDeleteAllDrafts">Выдаляць чарнавікі</string>
 </resources>

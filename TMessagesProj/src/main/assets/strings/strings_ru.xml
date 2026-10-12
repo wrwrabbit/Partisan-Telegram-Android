@@ -388,4 +388,12 @@
     <string name="AllowScreenshots">Разрешить скриншоты</string>
     <string name="OriginalPasscode">Оригинальный код-пароль</string>
     <string name="OriginalPasscodeInfo">Установите или измените оригинальный (настоящий) код-пароль приложения.</string>
+    <string name="OnScreenLockActionsSummaryInfo">Выберите, что будет происходить при блокировке экрана телефона: например, свернуть или закрыть приложение, очистить кэш или удалить все черновики.</string>
+    <string name="OnScreenLockActionNothingInfo">Приложение остаётся открытым при блокировке экрана.</string>
+    <string name="OnScreenLockActionHideInfo">Приложение будет свёрнуто, и при разблокировке телефона откроется домашний экран.</string>
+    <string name="OnScreenLockActionCloseInfo">Приложение будет закрыто и удалено из списка открытых приложений.</string>
+    <string name="OnScreenLockClearCacheInfo">Кэш приложения будет очищаться при каждой блокировке экрана.</string>
+    <string name="OnScreenLockAppBehavior">Поведение приложения</string>
+    <string name="OnScreenLockDataCleanup">Очистка данных</string>
+    <string name="OnScreenLockDeleteAllDrafts">Очищать черновики</string>
 </resources>

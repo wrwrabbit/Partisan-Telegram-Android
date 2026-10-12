@@ -21,8 +21,6 @@ import org.telegram.ui.SecurityIssuesFragment;
 
 public class GeneralSettingsFragment extends PartisanBaseFragment {
 
-    private AbstractViewItem onScreenLockActionItem;
-
     @Override
     protected String getTitle() {
         return getString(R.string.PartisanGeneralSettings);
@@ -31,13 +29,12 @@ public class GeneralSettingsFragment extends PartisanBaseFragment {
     @Override
     protected AbstractViewItem[] createItems() {
         return new AbstractViewItem[]{
-                onScreenLockActionItem = new ButtonItem(this,
+                new ButtonItem(this,
                         getString(R.string.OnScreenLockActionTitle),
-                        GeneralSettingsFragment::getOnScreenLockActionName,
-                        v -> AlertsCreator.showOnScreenLockActionsAlert(this, getParentActivity(),
-                                () -> listAdapter.notifyItemChanged(onScreenLockActionItem.getPosition()), null))
+                        OnScreenLockActionFragment::getSelectedActionName,
+                        v -> presentFragment(new OnScreenLockActionFragment()))
                         .withEllipsizeValue(),
-                new DescriptionItem(this, getString(R.string.OnScreenLockActionInfo)),
+                new DescriptionItem(this, getString(R.string.OnScreenLockActionsSummaryInfo)),
                 new ToggleItem(this,
                         getString(R.string.ClearCacheOnLock),
                         () -> SharedConfig.clearCacheOnLock,
@@ -46,11 +43,6 @@ public class GeneralSettingsFragment extends PartisanBaseFragment {
                             SharedConfig.saveConfig();
                         }),
                 new DescriptionItem(this, getString(R.string.ClearCacheOnLockInfo)),
-                new ToggleItem(this,
-                        getString(R.string.IsClearAllDraftsOnScreenLock),
-                        () -> SharedConfig.clearAllDraftsOnScreenLock,
-                        newValue -> SharedConfig.toggleClearAllDraftsOnScreenLock()),
-                new DescriptionItem(this, getString(R.string.IsClearAllDraftsOnScreenLockInfo)),
                 new ToggleItem(this,
                         getString(R.string.MarketIcons),
                         () -> SharedConfig.marketIcons,
@@ -92,18 +84,6 @@ public class GeneralSettingsFragment extends PartisanBaseFragment {
                 new DescriptionItem(this, getString(R.string.TransferDataToOtherPtgInfo))
                         .addCondition(GeneralSettingsFragment::canTransferDataToOtherPtg),
         };
-    }
-
-    private static String getOnScreenLockActionName() {
-        switch (SharedConfig.onScreenLockAction) {
-            case 1:
-                return getString(R.string.OnScreenLockActionHide);
-            case 2:
-                return getString(R.string.OnScreenLockActionClose);
-            case 0:
-            default:
-                return getString(R.string.OnScreenLockActionNothing);
-        }
     }
 
     private void setAllowScreenCapture(boolean allow) {

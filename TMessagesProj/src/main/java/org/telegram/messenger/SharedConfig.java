@@ -2296,14 +2296,6 @@ public class SharedConfig {
         return animationsEnabled;
     }
 
-    public static void setOnScreenLockAction(int value) {
-        onScreenLockAction = value;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putInt("onScreenLockAction", onScreenLockAction);
-        editor.commit();
-    }
-
     public static boolean isAppLocked() {
         return appLocked;
     }
