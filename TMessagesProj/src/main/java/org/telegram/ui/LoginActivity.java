@@ -3817,7 +3817,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 innerLinearLayout.addView(frameLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL));
 
                 blueImageView = new RLottieImageView(context);
-                hintDrawable = new RLottieDrawable(R.raw.phone_flash_call, String.valueOf(R.raw.phone_flash_call), AndroidUtilities.dp(64), AndroidUtilities.dp(64), true, null);
+                hintDrawable = new RLottieDrawable(R.raw.phone_flash_call, AndroidUtilities.dp(64), AndroidUtilities.dp(64), true, null);
                 blueImageView.setAnimation(hintDrawable);
                 frameLayout.addView(blueImageView, LayoutHelper.createFrame(64, 64));
 
@@ -3832,13 +3832,13 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
                 int size = currentType == AUTH_TYPE_MESSAGE ? 128 : 64;
                 if (currentType == AUTH_TYPE_MESSAGE) {
-                    hintDrawable = new RLottieDrawable(R.raw.code_laptop, String.valueOf(R.raw.code_laptop), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    hintDrawable = new RLottieDrawable(R.raw.code_laptop, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
                 } else {
-                    hintDrawable = new RLottieDrawable(R.raw.sms_incoming_info, String.valueOf(R.raw.sms_incoming_info), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    hintDrawable = new RLottieDrawable(R.raw.sms_incoming_info, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
 
-                    starsToDotsDrawable = new RLottieDrawable(R.raw.phone_stars_to_dots, String.valueOf(R.raw.phone_stars_to_dots), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
-                    dotsDrawable = new RLottieDrawable(R.raw.phone_dots, String.valueOf(R.raw.phone_dots), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
-                    dotsToStarsDrawable = new RLottieDrawable(R.raw.phone_dots_to_stars, String.valueOf(R.raw.phone_dots_to_stars), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    starsToDotsDrawable = new RLottieDrawable(R.raw.phone_stars_to_dots, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    dotsDrawable = new RLottieDrawable(R.raw.phone_dots, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    dotsToStarsDrawable = new RLottieDrawable(R.raw.phone_dots_to_stars, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
                 }
                 blueImageView = new RLottieImageView(context);
                 blueImageView.setAnimation(hintDrawable);
@@ -4271,13 +4271,25 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 nextPressed = false;
                 if (error == null) {
                     nextCodeParams = params;
-                    nextCodeAuth = (TLRPC.TL_auth_sentCode) response;
-                    if (nextCodeAuth.type instanceof TLRPC.TL_auth_sentCodeTypeSmsPhrase) {
-                        nextType = AUTH_TYPE_PHRASE;
-                    } else if (nextCodeAuth.type instanceof TLRPC.TL_auth_sentCodeTypeSmsWord) {
-                        nextType = AUTH_TYPE_WORD;
+                    if (response instanceof TLRPC.TL_auth_sentCode) {
+                        nextCodeAuth = (TLRPC.TL_auth_sentCode) response;
+                        if (nextCodeAuth.type instanceof TLRPC.TL_auth_sentCodeTypeSmsPhrase) {
+                            nextType = AUTH_TYPE_PHRASE;
+                        } else if (nextCodeAuth.type instanceof TLRPC.TL_auth_sentCodeTypeSmsWord) {
+                            nextType = AUTH_TYPE_WORD;
+                        }
+                        fillNextCodeParams(nextCodeParams, nextCodeAuth);
+                    } else if (response instanceof TLRPC.TL_auth_sentCodePaymentRequired) {
+                        final TLRPC.TL_auth_sentCodePaymentRequired auth = (TLRPC.TL_auth_sentCodePaymentRequired) response;
+                        params.putString("product", auth.store_product);
+                        params.putString("phoneHash", auth.phone_code_hash);
+                        params.putString("support_email_address", auth.support_email_address);
+                        params.putString("support_email_subject", auth.support_email_subject);
+                        params.putString("currency", auth.currency);
+                        params.putInt("premium_days", auth.premium_days);
+                        params.putLong("amount", auth.amount);
+                        setPage(VIEW_PAY, true, params, true);
                     }
-                    fillNextCodeParams(nextCodeParams, nextCodeAuth);
                 } else {
                     if (error.text != null) {
                         if (error.text.contains("PHONE_NUMBER_INVALID")) {
@@ -6054,7 +6066,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             signInWithGoogleView.setMaxLines(2);
 
             SpannableStringBuilder str = new SpannableStringBuilder("d ");
-            Drawable dr = ContextCompat.getDrawable(context, R.drawable.googleg_standard_color_18);
+            Drawable dr = ContextCompat.getDrawable(context, com.google.android.gms.base.R.drawable.googleg_standard_color_18);
             dr.setBounds(0, AndroidUtilities.dp(9), AndroidUtilities.dp(18), AndroidUtilities.dp(18 + 9));
             str.setSpan(new ImageSpan(dr, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             str.setSpan(new ReplacementSpan() {
@@ -6400,7 +6412,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             signInWithGoogleView.setMaxLines(2);
 
             SpannableStringBuilder str = new SpannableStringBuilder("d ");
-            Drawable dr = ContextCompat.getDrawable(context, R.drawable.googleg_standard_color_18);
+            Drawable dr = ContextCompat.getDrawable(context, com.google.android.gms.base.R.drawable.googleg_standard_color_18);
             dr.setBounds(0, AndroidUtilities.dp(9), AndroidUtilities.dp(18), AndroidUtilities.dp(18 + 9));
             str.setSpan(new ImageSpan(dr, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             str.setSpan(new ReplacementSpan() {
@@ -7963,8 +7975,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 avatarEditor.playAnimation();
             });
 
-            cameraDrawable = new RLottieDrawable(R.raw.camera, String.valueOf(R.raw.camera), AndroidUtilities.dp(70), AndroidUtilities.dp(70), false, null);
-            cameraWaitDrawable = new RLottieDrawable(R.raw.camera_wait, String.valueOf(R.raw.camera_wait), AndroidUtilities.dp(70), AndroidUtilities.dp(70), false, null);
+            cameraDrawable = new RLottieDrawable(R.raw.camera, AndroidUtilities.dp(70), AndroidUtilities.dp(70), false, null);
+            cameraWaitDrawable = new RLottieDrawable(R.raw.camera_wait, AndroidUtilities.dp(70), AndroidUtilities.dp(70), false, null);
 
             avatarEditor = new RLottieImageView(context) {
                 @Override

@@ -85,11 +85,20 @@ public class WindowInsetsStateHolder implements WindowInsetsProvider, WindowInse
         setInsets(insets, lastInsets != null);
     }
 
+    @Nullable
+    protected WindowInsetsCompat filterInsets(@Nullable WindowInsetsCompat insets) {
+        return insets;
+    }
+
     private void setInsets(@Nullable WindowInsetsCompat insets, boolean animated) {
+        insets = filterInsets(insets);
         this.lastInsets = insets;
 
         final int insetsType = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout();
-        final Insets systemInsets = insets != null ? insets.getInsetsIgnoringVisibility(insetsType) : Insets.NONE;
+        final Insets systemInsets = insets != null ? Insets.max(
+            insets.getInsets(insetsType),
+            insets.getInsetsIgnoringVisibility(insetsType)
+        ) : Insets.NONE;
         final Insets imeInsets = insets != null ? insets.getInsets(WindowInsetsCompat.Type.ime()) : Insets.NONE;
 
         final KeyboardState.State oldKeyboardState = keyboardState.getState();
@@ -268,7 +277,8 @@ public class WindowInsetsStateHolder implements WindowInsetsProvider, WindowInse
 
     @Override
     public void onAnimatedInsetsChanged(View view, WindowInsetsCompat insets) {
-        animatedImeInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+        insets = filterInsets(insets);
+        animatedImeInset = insets != null ? insets.getInsets(WindowInsetsCompat.Type.ime()).bottom : 0;
         onUpdateListener.run();
     }
 

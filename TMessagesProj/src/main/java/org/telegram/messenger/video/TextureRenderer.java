@@ -43,7 +43,6 @@ import androidx.annotation.RequiresApi;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.Bitmaps;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLog;
@@ -1513,7 +1512,7 @@ public class TextureRenderer {
                 return;
             }
             entity.bitmap = Bitmap.createBitmap(entity.W, entity.H, Bitmap.Config.ARGB_8888);
-            entity.lottieNative = RLottieNative.createFromFile(entity.text, null, entity.W, entity.H, false, null, false, 0);
+            entity.lottieNative = RLottieNative.createFromFile(entity.text);
             entity.framesPerDraw = entity.lottieNative != null ? entity.lottieNative.getFps() / videoFps : 0;
         } else if ((entity.subType & 4) != 0) {
             entity.looped = false;
@@ -1665,7 +1664,9 @@ public class TextureRenderer {
                     matrix.postScale(orientation.second == 1 ? -1 : 1, orientation.second == 2 ? -1 : 1);
                 if (orientation.first != 0)
                     matrix.postRotate(orientation.first);
-                bitmap = Bitmaps.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                int width1 = bitmap.getWidth();
+                int height1 = bitmap.getHeight();
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, width1, height1, matrix, true);
             }
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
             width.set(bitmap.getWidth());
