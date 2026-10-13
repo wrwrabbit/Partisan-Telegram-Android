@@ -149,7 +149,7 @@
     <string name="NotClear">Не ачышчаць</string>
     <string name="NotReset">Не скідваць</string>
     <string name="ShowCallButton">Паказваць кнопку званка</string>
-    <string name="ShowCallButtonInfo">Паказваць кнопку званка ў экране чата.</string>
+    <string name="ShowCallButtonInfo">Паказваць кнопку званка ў экране чата. Калі адключана, кнопка ўсё яшчэ будзе паказвацца ў профілі суразмоўцы. Карысна для таго, каб выпадкова не пачаць званок.</string>
     <string name="IsClearAllDraftsOnScreenLock">Выдаляць чарнавікі пры блакаванні экрана</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Усе чарнавікі будуць выдаляцца, калі карыстач заблакуе экран.</string>
     <string name="IsDeleteMessagesForAllByDefault">Выдаляць паведамленні ў усех па змаўчанні</string>
@@ -382,8 +382,23 @@
     <string name="MoreAccounts">Яшчэ</string>
     <string name="BadPasscodeReaction">Рэакцыя на няправільны код блакіроўкі</string>
     <string name="BadPasscodeReactionInfo">Наладзьце абарону ад падбору кода блакіроўкі і фатаграфаванне камерай пры няправільным уводзе або паглядзіце спіс няўдалых спроб уваходу.</string>
-    <string name="InterfaceTweaks">Бачныя функцыі</string>
-    <string name="InterfaceTweaksInfo">Уключыце дадатковыя функцыі Партызанскага Тэлеграма або адключыце іх, каб лепш замаскіраваць дадатак, калі несапраўдны код блакіроўкі не актываваны.</string>
+    <string name="ChatsAndChannelsSettings">Налады чатаў і каналаў</string>
+    <string name="ChatsAndChannelsSettingsInfo">Наладзьце дадатковыя функцыі Партызанскага Тэлеграма для чатаў, паведамленняў, каналаў, ботаў і профіляў.</string>
+    <string name="PartisanGeneralSettings">Агульныя налады дадатку</string>
+    <string name="PartisanGeneralSettingsInfo">Наладзьце паводзіны пры блакіроўцы экрана, абарону файлаў, іконкі дадатку і іншыя опцыі дадатку.</string>
+    <string name="AllowScreenshots">Дазволіць скрыншоты</string>
     <string name="OriginalPasscode">Арыгінальны код блакіроўкі</string>
     <string name="OriginalPasscodeInfo">Усталюйце або змяніце арыгінальны (сапраўдны) код блакіроўкі дадатку.</string>
+    <string name="OnScreenLockActionsSummaryInfo">Выберыце, што будзе адбывацца пры блакаванні экрана тэлефона: напрыклад, згарнуць або зачыніць дадатак, ачысціць кэш або выдаліць усе чарнавікі.</string>
+    <string name="OnScreenLockActionNothingInfo">Дадатак застаецца адкрытым пры блакаванні экрана.</string>
+    <string name="OnScreenLockActionHideInfo">Дадатак будзе згорнуты, і пры разблакіроўцы тэлефона адкрыецца хатні экран.</string>
+    <string name="OnScreenLockActionCloseInfo">Дадатак будзе зачынены і выдалены са спісу адкрытых дадаткаў.</string>
+    <string name="OnScreenLockClearCacheInfo">Кэш дадатку будзе ачышчацца пры кожным блакаванні экрана.</string>
+    <string name="OnScreenLockAppBehavior">Паводзіны дадатку</string>
+    <string name="OnScreenLockDataCleanup">Ачыстка даных</string>
+    <string name="OnScreenLockDeleteAllDrafts">Выдаляць чарнавікі</string>
+    <string name="InterfaceElements">Элементы інтэрфейсу</string>
+    <string name="ShowQuotedLabel">Паказваць «%s»</string>
+    <string name="AccidentalActionsProtection">Ахова ад выпадковых дзеянняў</string>
+    <string name="CancelDataTransfer">Адмяніць перанос дадзеных</string>
 </resources>

@@ -150,7 +150,7 @@
     <string name="NotClear">Не очищати</string>
     <string name="NotReset">Не скидати</string>
     <string name="ShowCallButton">Показувати кнопку виклику</string>
-    <string name="ShowCallButtonInfo">Показувати кнопку виклику у чаті</string>
+    <string name="ShowCallButtonInfo">Показувати кнопку виклику у вікні чату. Якщо вимкнено, кнопка все одно показуватиметься в профілі співрозмовника. Корисно для того, щоб випадково не почати дзвінок.</string>
     <string name="IsClearAllDraftsOnScreenLock">Видаляти чернетки під час блокування екрану</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Усі чернетки будуть видалятися, якщо користувач заблокує екран.</string>
     <string name="IsDeleteMessagesForAllByDefault">Видаляти повідомлення у всіх за замовчуванням</string>
@@ -382,8 +382,23 @@
     <string name="MoreAccounts">Ще</string>
     <string name="BadPasscodeReaction">Реакція на невірний код блокування</string>
     <string name="BadPasscodeReactionInfo">Налаштуйте захист від підбору коду блокування та фотографування камерою при невірному введенні або перегляньте список невдалих спроб входу.</string>
-    <string name="InterfaceTweaks">Видимі функції</string>
-    <string name="InterfaceTweaksInfo">Увімкніть додаткові функції Партизанського Телеграму або вимкніть їх, щоб краще замаскувати додаток, коли фальшивий код блокування не активовано.</string>
+    <string name="ChatsAndChannelsSettings">Налаштування чатів і каналів</string>
+    <string name="ChatsAndChannelsSettingsInfo">Налаштуйте додаткові функції Партизанського Телеграму для чатів, повідомлень, каналів, ботів і профілів.</string>
+    <string name="PartisanGeneralSettings">Загальні налаштування додатку</string>
+    <string name="PartisanGeneralSettingsInfo">Налаштуйте поведінку при блокуванні екрана, захист файлів, іконки додатку та інші опції додатку.</string>
+    <string name="AllowScreenshots">Дозволити скриншоти</string>
     <string name="OriginalPasscode">Оригінальний код блокування</string>
     <string name="OriginalPasscodeInfo">Встановіть або змініть оригінальний (справжній) код блокування додатку.</string>
+    <string name="OnScreenLockActionsSummaryInfo">Оберіть, що відбуватиметься під час блокування екрану телефону: наприклад, згорнути або закрити додаток, очистити кеш або видалити всі чернетки.</string>
+    <string name="OnScreenLockActionNothingInfo">Додаток залишається відкритим під час блокування екрану.</string>
+    <string name="OnScreenLockActionHideInfo">Додаток буде згорнуто, і після розблокування телефону відкриється домашній екран.</string>
+    <string name="OnScreenLockActionCloseInfo">Додаток буде закрито і вилучено зі списку останніх додатків.</string>
+    <string name="OnScreenLockClearCacheInfo">Кеш додатку буде очищатися під час кожного блокування екрану.</string>
+    <string name="OnScreenLockAppBehavior">Поведінка додатку</string>
+    <string name="OnScreenLockDataCleanup">Очищення даних</string>
+    <string name="OnScreenLockDeleteAllDrafts">Видаляти чернетки</string>
+    <string name="InterfaceElements">Елементи інтерфейсу</string>
+    <string name="ShowQuotedLabel">Показувати «%s»</string>
+    <string name="AccidentalActionsProtection">Захист від випадкових дій</string>
+    <string name="CancelDataTransfer">Скасувати перенесення даних</string>
 </resources>

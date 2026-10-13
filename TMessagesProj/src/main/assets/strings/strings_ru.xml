@@ -149,7 +149,7 @@
     <string name="NotClear">Не очищать</string>
     <string name="NotReset">Не сбрасывать</string>
     <string name="ShowCallButton">Показывать кнопку звонка</string>
-    <string name="ShowCallButtonInfo">Показывать кнопку звонка в окне чата.</string>
+    <string name="ShowCallButtonInfo">Показывать кнопку звонка в окне чата. Если отключено, кнопка всё ещё будет показываться в профиле собеседника. Полезно для того, чтобы случайно не начать звонок.</string>
     <string name="IsClearAllDraftsOnScreenLock">Очищать черновики при блокировке экрана</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Все черновики будут удаляться, если пользователь заблокирует экран.</string>
     <string name="IsDeleteMessagesForAllByDefault">Удалять сообщения у всех по умолчанию</string>
@@ -381,8 +381,23 @@
     <string name="MoreAccounts">Ещё</string>
     <string name="BadPasscodeReaction">Реакция на неверный код-пароль</string>
     <string name="BadPasscodeReactionInfo">Настройте защиту от подбора код-пароля и фотографирование камерой при неверном вводе или посмотрите список неудачных попыток входа.</string>
-    <string name="InterfaceTweaks">Видимые функции</string>
-    <string name="InterfaceTweaksInfo">Включите дополнительные функции Партизанского Телеграма или отключите их, чтобы лучше замаскировать приложение, когда ложный код-пароль не активирован.</string>
+    <string name="ChatsAndChannelsSettings">Настройки чатов и каналов</string>
+    <string name="ChatsAndChannelsSettingsInfo">Настройте дополнительные функции Партизанского Телеграма для чатов, сообщений, каналов, ботов и профилей.</string>
+    <string name="PartisanGeneralSettings">Общие настройки приложения</string>
+    <string name="PartisanGeneralSettingsInfo">Настройте поведение при блокировке экрана, защиту файлов, иконки приложения и другие опции приложения.</string>
+    <string name="AllowScreenshots">Разрешить скриншоты</string>
     <string name="OriginalPasscode">Оригинальный код-пароль</string>
     <string name="OriginalPasscodeInfo">Установите или измените оригинальный (настоящий) код-пароль приложения.</string>
+    <string name="OnScreenLockActionsSummaryInfo">Выберите, что будет происходить при блокировке экрана телефона: например, свернуть или закрыть приложение, очистить кэш или удалить все черновики.</string>
+    <string name="OnScreenLockActionNothingInfo">Приложение остаётся открытым при блокировке экрана.</string>
+    <string name="OnScreenLockActionHideInfo">Приложение будет свёрнуто, и при разблокировке телефона откроется домашний экран.</string>
+    <string name="OnScreenLockActionCloseInfo">Приложение будет закрыто и удалено из списка открытых приложений.</string>
+    <string name="OnScreenLockClearCacheInfo">Кэш приложения будет очищаться при каждой блокировке экрана.</string>
+    <string name="OnScreenLockAppBehavior">Поведение приложения</string>
+    <string name="OnScreenLockDataCleanup">Очистка данных</string>
+    <string name="OnScreenLockDeleteAllDrafts">Очищать черновики</string>
+    <string name="InterfaceElements">Элементы интерфейса</string>
+    <string name="ShowQuotedLabel">Показывать «%s»</string>
+    <string name="AccidentalActionsProtection">Защита от случайных действий</string>
+    <string name="CancelDataTransfer">Отменить перенос данных</string>
 </resources>

@@ -11688,7 +11688,7 @@
     <string name="NotClear">Not Clear</string>
     <string name="NotReset">Not Reset</string>
     <string name="ShowCallButton">Show Call Button</string>
-    <string name="ShowCallButtonInfo">Show call button in chat</string>
+    <string name="ShowCallButtonInfo">Show the call button in the chat window. If disabled, the button will still be shown in the contact\'s profile. Useful to avoid starting a call by accident.</string>
     <string name="IsClearAllDraftsOnScreenLock">Delete all drafts on screen lock</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Drafts will be deleted when user will lock screen.</string>
     <string name="IsDeleteMessagesForAllByDefault">Delete messages for all by default</string>
@@ -11919,8 +11919,23 @@
     <string name="MoreAccounts">More</string>
     <string name="BadPasscodeReaction">Bad Passcode Reaction</string>
     <string name="BadPasscodeReactionInfo">Configure protection against passcode brute-force and camera capture on incorrect entry, or view the list of failed login attempts.</string>
-    <string name="InterfaceTweaks">Visible Features</string>
-    <string name="InterfaceTweaksInfo">Enable additional Partisan Telegram features or disable them to better disguise the app when a fake passcode is not active.</string>
+    <string name="ChatsAndChannelsSettings">Chats and Channels Settings</string>
+    <string name="ChatsAndChannelsSettingsInfo">Configure additional Partisan Telegram features for chats, messages, channels, bots and profiles.</string>
+    <string name="PartisanGeneralSettings">General App Settings</string>
+    <string name="PartisanGeneralSettingsInfo">Configure screen lock behavior, file protection, app icons and other application options.</string>
+    <string name="AllowScreenshots">Allow Screenshots</string>
     <string name="OriginalPasscode">Original Passcode</string>
     <string name="OriginalPasscodeInfo">Set up or change the original (real) passcode lock for the application.</string>
+    <string name="OnScreenLockActionsSummaryInfo">Choose what happens when the phone screen is locked: for example, hide or close the app, clear the cache, or delete all drafts.</string>
+    <string name="OnScreenLockActionNothingInfo">The app stays open when the screen is locked.</string>
+    <string name="OnScreenLockActionHideInfo">The app is minimized, and the home screen opens when the phone is unlocked.</string>
+    <string name="OnScreenLockActionCloseInfo">The app is closed and removed from the list of recent apps.</string>
+    <string name="OnScreenLockClearCacheInfo">The app cache is cleared every time the screen is locked.</string>
+    <string name="OnScreenLockAppBehavior">App Behavior</string>
+    <string name="OnScreenLockDataCleanup">Data Cleanup</string>
+    <string name="OnScreenLockDeleteAllDrafts">Delete all drafts</string>
+    <string name="InterfaceElements">Interface Elements</string>
+    <string name="ShowQuotedLabel">Show \"%s\"</string>
+    <string name="AccidentalActionsProtection">Protection from Accidental Actions</string>
+    <string name="CancelDataTransfer">Cancel Data Transfer</string>
 </resources>
