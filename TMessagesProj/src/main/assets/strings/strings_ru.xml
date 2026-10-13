@@ -149,7 +149,7 @@
     <string name="NotClear">Не очищать</string>
     <string name="NotReset">Не сбрасывать</string>
     <string name="ShowCallButton">Показывать кнопку звонка</string>
-    <string name="ShowCallButtonInfo">Показывать кнопку звонка в окне чата.</string>
+    <string name="ShowCallButtonInfo">Показывать кнопку звонка в окне чата. Если отключено, кнопка всё ещё будет показываться в профиле собеседника. Полезно для того, чтобы случайно не начать звонок.</string>
     <string name="IsClearAllDraftsOnScreenLock">Очищать черновики при блокировке экрана</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Все черновики будут удаляться, если пользователь заблокирует экран.</string>
     <string name="IsDeleteMessagesForAllByDefault">Удалять сообщения у всех по умолчанию</string>
@@ -396,4 +396,8 @@
     <string name="OnScreenLockAppBehavior">Поведение приложения</string>
     <string name="OnScreenLockDataCleanup">Очистка данных</string>
     <string name="OnScreenLockDeleteAllDrafts">Очищать черновики</string>
+    <string name="InterfaceElements">Элементы интерфейса</string>
+    <string name="ShowQuotedLabel">Показывать «%s»</string>
+    <string name="AccidentalActionsProtection">Защита от случайных действий</string>
+    <string name="CancelDataTransfer">Отменить перенос данных</string>
 </resources>

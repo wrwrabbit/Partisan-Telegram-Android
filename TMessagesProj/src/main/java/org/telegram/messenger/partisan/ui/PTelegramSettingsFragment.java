@@ -104,7 +104,6 @@ public class PTelegramSettingsFragment extends PartisanBaseFragment {
                         presentFragment(new org.telegram.messenger.partisan.ui.BadPasscodeReactionFragment())),
                 new DescriptionItem(this, getString(R.string.BadPasscodeReactionInfo)),
                 new ButtonItem(this, getString(R.string.ChatsAndChannelsSettings),
-                        ChatsAndChannelsSettingsFragment::getEnabledSummary,
                         v -> presentFragment(new ChatsAndChannelsSettingsFragment())),
                 new DescriptionItem(this, getString(R.string.ChatsAndChannelsSettingsInfo)),
                 new ButtonItem(this, getString(R.string.PartisanGeneralSettings), v ->

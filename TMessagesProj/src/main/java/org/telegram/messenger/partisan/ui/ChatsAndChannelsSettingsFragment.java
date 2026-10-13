@@ -1,5 +1,6 @@
 package org.telegram.messenger.partisan.ui;
 
+import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 
 import org.telegram.messenger.R;
@@ -10,6 +11,7 @@ import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
 import org.telegram.messenger.partisan.ui.items.ButtonItem;
 import org.telegram.messenger.partisan.ui.items.CombinedToggleItem;
 import org.telegram.messenger.partisan.ui.items.DescriptionItem;
+import org.telegram.messenger.partisan.ui.items.HeaderItem;
 import org.telegram.messenger.partisan.ui.items.ToggleItem;
 import org.telegram.messenger.partisan.verification.VerificationRepository;
 import org.telegram.messenger.partisan.verification.VerificationStorage;
@@ -55,33 +57,6 @@ public class ChatsAndChannelsSettingsFragment extends PartisanBaseFragment {
     @Override
     protected AbstractViewItem[] createItems() {
         return new AbstractViewItem[]{
-                new ToggleItem(this,
-                        getString(R.string.ShowCallButton),
-                        () -> SharedConfig.showCallButton,
-                        newValue -> SharedConfig.toggleShowCallButton()),
-                new DescriptionItem(this, getString(R.string.ShowCallButtonInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ConfirmDangerousAction),
-                        () -> SharedConfig.confirmDangerousActions,
-                        newValue -> SharedConfig.toggleIsConfirmDangerousActions()),
-                new DescriptionItem(this, getString(R.string.ConfirmDangerousActionInfo)),
-                new ToggleItem(this,
-                        getString(R.string.ReactToMessages),
-                        () -> SharedConfig.allowReactions,
-                        newValue -> {
-                            SharedConfig.allowReactions = newValue;
-                            SharedConfig.saveConfig();
-                        }),
-                new DescriptionItem(this, getString(R.string.ReactToMessagesInfo)),
-                new ToggleItem(this,
-                        getString(R.string.CutForeignAgentsText),
-                        () -> SharedConfig.cutForeignAgentsText,
-                        newValue -> {
-                            SharedConfig.cutForeignAgentsText = newValue;
-                            SharedConfig.saveConfig();
-                            Utils.updateMessagesPreview();
-                        }),
-                new DescriptionItem(this, getString(R.string.CutForeignAgentsTextInfo)),
                 new ButtonItem(this,
                         getString(R.string.VoiceChange),
                         () -> VoiceChangeSettings.voiceChangeEnabled.get().orElse(false)
@@ -115,7 +90,41 @@ public class ChatsAndChannelsSettingsFragment extends PartisanBaseFragment {
                                 })),
                 new DescriptionItem(this, getString(R.string.AdditionalVerifiedSettingInfo)),
                 new ToggleItem(this,
-                        getString(R.string.DeletingMyMessages),
+                        getString(R.string.IsDeleteMessagesForAllByDefault),
+                        () -> SharedConfig.deleteMessagesForAllByDefault,
+                        newValue -> SharedConfig.toggleIsDeleteMsgForAll()),
+                new DescriptionItem(this, getString(R.string.IsDeleteMessagesForAllByDefaultInfo)),
+                new ToggleItem(this,
+                        getString(R.string.CutForeignAgentsText),
+                        () -> SharedConfig.cutForeignAgentsText,
+                        newValue -> {
+                            SharedConfig.cutForeignAgentsText = newValue;
+                            SharedConfig.saveConfig();
+                            Utils.updateMessagesPreview();
+                        }),
+                new DescriptionItem(this, getString(R.string.CutForeignAgentsTextInfo)),
+                new HeaderItem(this, getString(R.string.AccidentalActionsProtection)),
+                new ToggleItem(this,
+                        getString(R.string.ConfirmDangerousAction),
+                        () -> SharedConfig.confirmDangerousActions,
+                        newValue -> SharedConfig.toggleIsConfirmDangerousActions()),
+                new DescriptionItem(this, getString(R.string.ConfirmDangerousActionInfo)),
+                new ToggleItem(this,
+                        getString(R.string.ShowCallButton),
+                        () -> SharedConfig.showCallButton,
+                        newValue -> SharedConfig.toggleShowCallButton()),
+                new DescriptionItem(this, getString(R.string.ShowCallButtonInfo)),
+                new ToggleItem(this,
+                        getString(R.string.ReactToMessages),
+                        () -> SharedConfig.allowReactions,
+                        newValue -> {
+                            SharedConfig.allowReactions = newValue;
+                            SharedConfig.saveConfig();
+                        }),
+                new DescriptionItem(this, getString(R.string.ReactToMessagesInfo)),
+                new HeaderItem(this, getString(R.string.InterfaceElements)),
+                new ToggleItem(this,
+                        formatString(R.string.ShowQuotedLabel, getString(R.string.DeleteMyMessages)),
                         () -> SharedConfig.showDeleteMyMessages,
                         newValue -> {
                             SharedConfig.showDeleteMyMessages = newValue;
@@ -123,7 +132,7 @@ public class ChatsAndChannelsSettingsFragment extends PartisanBaseFragment {
                         }),
                 new DescriptionItem(this, getString(R.string.DeletingMyMessagesInfo)),
                 new ToggleItem(this,
-                        getString(R.string.DeletingAfterRead),
+                        formatString(R.string.ShowQuotedLabel, getString(R.string.DeleteAsRead)),
                         () -> SharedConfig.showDeleteAfterRead,
                         newValue -> {
                             SharedConfig.showDeleteAfterRead = newValue;
@@ -131,17 +140,12 @@ public class ChatsAndChannelsSettingsFragment extends PartisanBaseFragment {
                         }),
                 new DescriptionItem(this, getString(R.string.DeletingAfterReadInfo)),
                 new ToggleItem(this,
-                        getString(R.string.IsDeleteMessagesForAllByDefault),
-                        () -> SharedConfig.deleteMessagesForAllByDefault,
-                        newValue -> SharedConfig.toggleIsDeleteMsgForAll()),
-                new DescriptionItem(this, getString(R.string.IsDeleteMessagesForAllByDefaultInfo)),
-                new ToggleItem(this,
-                        getString(R.string.AvatarDisabling),
+                        formatString(R.string.ShowQuotedLabel, getString(R.string.DisableAvatar)),
                         () -> SharedConfig.allowDisableAvatar,
                         this::onAllowDisableAvatarChanged),
                 new DescriptionItem(this, getString(R.string.AvatarDisablingInfo)),
                 new ToggleItem(this,
-                        getString(R.string.ChatRenaming),
+                        formatString(R.string.ShowQuotedLabel, getString(R.string.EditChatName)),
                         () -> SharedConfig.allowRenameChat,
                         this::onAllowRenameChatChanged),
                 new DescriptionItem(this, getString(R.string.ChatRenamingInfo)),

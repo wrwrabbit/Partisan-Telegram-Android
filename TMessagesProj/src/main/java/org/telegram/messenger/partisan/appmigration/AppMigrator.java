@@ -263,6 +263,19 @@ public class AppMigrator {
         return AppMigratorPreferences.getStep() != Step.NOT_STARTED;
     }
 
+    public static void cancelMigration(Context context) {
+        if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
+            AppMigratorPreferences.updateMaxCancelledInstallationDate();
+        }
+        boolean newerPtgInstalled = isNewerPtgInstalled(context, false);
+        AppMigratorPreferences.setInstalledMaskedPtgPackageName(null);
+        AppMigratorPreferences.setInstalledMaskedPtgPackageSignature(null);
+        AppMigratorPreferences.setStep(Step.NOT_STARTED);
+        if (!newerPtgInstalled) {
+            MigrationConnectionDisabler.enableConnection();
+        }
+    }
+
     public static boolean checkMigrationNeedToResume(Context context) {
         if (!isMigrationStarted()) {
             return false;

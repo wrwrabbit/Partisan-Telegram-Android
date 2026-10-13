@@ -149,7 +149,7 @@
     <string name="NotClear">Не ачышчаць</string>
     <string name="NotReset">Не скідваць</string>
     <string name="ShowCallButton">Паказваць кнопку званка</string>
-    <string name="ShowCallButtonInfo">Паказваць кнопку званка ў экране чата.</string>
+    <string name="ShowCallButtonInfo">Паказваць кнопку званка ў экране чата. Калі адключана, кнопка ўсё яшчэ будзе паказвацца ў профілі суразмоўцы. Карысна для таго, каб выпадкова не пачаць званок.</string>
     <string name="IsClearAllDraftsOnScreenLock">Выдаляць чарнавікі пры блакаванні экрана</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Усе чарнавікі будуць выдаляцца, калі карыстач заблакуе экран.</string>
     <string name="IsDeleteMessagesForAllByDefault">Выдаляць паведамленні ў усех па змаўчанні</string>
@@ -397,4 +397,8 @@
     <string name="OnScreenLockAppBehavior">Паводзіны дадатку</string>
     <string name="OnScreenLockDataCleanup">Ачыстка даных</string>
     <string name="OnScreenLockDeleteAllDrafts">Выдаляць чарнавікі</string>
+    <string name="InterfaceElements">Элементы інтэрфейсу</string>
+    <string name="ShowQuotedLabel">Паказваць «%s»</string>
+    <string name="AccidentalActionsProtection">Ахова ад выпадковых дзеянняў</string>
+    <string name="CancelDataTransfer">Адмяніць перанос дадзеных</string>
 </resources>

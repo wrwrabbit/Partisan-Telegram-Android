@@ -11388,7 +11388,7 @@
     <string name="NotClear">Not Clear</string>
     <string name="NotReset">Not Reset</string>
     <string name="ShowCallButton">Show Call Button</string>
-    <string name="ShowCallButtonInfo">Show call button in chat</string>
+    <string name="ShowCallButtonInfo">Show the call button in the chat window. If disabled, the button will still be shown in the contact\'s profile. Useful to avoid starting a call by accident.</string>
     <string name="IsClearAllDraftsOnScreenLock">Delete all drafts on screen lock</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Drafts will be deleted when user will lock screen.</string>
     <string name="IsDeleteMessagesForAllByDefault">Delete messages for all by default</string>
@@ -11634,4 +11634,8 @@
     <string name="OnScreenLockAppBehavior">App Behavior</string>
     <string name="OnScreenLockDataCleanup">Data Cleanup</string>
     <string name="OnScreenLockDeleteAllDrafts">Delete all drafts</string>
+    <string name="InterfaceElements">Interface Elements</string>
+    <string name="ShowQuotedLabel">Show \"%s\"</string>
+    <string name="AccidentalActionsProtection">Protection from Accidental Actions</string>
+    <string name="CancelDataTransfer">Cancel Data Transfer</string>
 </resources>

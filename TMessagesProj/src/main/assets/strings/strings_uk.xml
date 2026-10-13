@@ -150,7 +150,7 @@
     <string name="NotClear">Не очищати</string>
     <string name="NotReset">Не скидати</string>
     <string name="ShowCallButton">Показувати кнопку виклику</string>
-    <string name="ShowCallButtonInfo">Показувати кнопку виклику у чаті</string>
+    <string name="ShowCallButtonInfo">Показувати кнопку виклику у вікні чату. Якщо вимкнено, кнопка все одно показуватиметься в профілі співрозмовника. Корисно для того, щоб випадково не почати дзвінок.</string>
     <string name="IsClearAllDraftsOnScreenLock">Видаляти чернетки під час блокування екрану</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Усі чернетки будуть видалятися, якщо користувач заблокує екран.</string>
     <string name="IsDeleteMessagesForAllByDefault">Видаляти повідомлення у всіх за замовчуванням</string>
@@ -397,4 +397,8 @@
     <string name="OnScreenLockAppBehavior">Поведінка додатку</string>
     <string name="OnScreenLockDataCleanup">Очищення даних</string>
     <string name="OnScreenLockDeleteAllDrafts">Видаляти чернетки</string>
+    <string name="InterfaceElements">Елементи інтерфейсу</string>
+    <string name="ShowQuotedLabel">Показувати «%s»</string>
+    <string name="AccidentalActionsProtection">Захист від випадкових дій</string>
+    <string name="CancelDataTransfer">Скасувати перенесення даних</string>
 </resources>

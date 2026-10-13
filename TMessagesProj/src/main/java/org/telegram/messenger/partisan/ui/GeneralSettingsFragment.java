@@ -30,6 +30,16 @@ public class GeneralSettingsFragment extends PartisanBaseFragment {
     protected AbstractViewItem[] createItems() {
         return new AbstractViewItem[]{
                 new ButtonItem(this,
+                        getString(R.string.TransferDataToAnotherPtgButton),
+                        v -> presentFragment(new AppMigrationActivity()))
+                        .addCondition(GeneralSettingsFragment::canTransferDataToOtherPtg),
+                new ButtonItem(this,
+                        getString(R.string.CancelDataTransfer),
+                        v -> AppMigrationActivity.showCancelWarningIfNeeded(this, this::cancelMigration))
+                        .addCondition(AppMigrator::isMigrationStarted),
+                new DescriptionItem(this, getString(R.string.TransferDataToOtherPtgInfo))
+                        .addCondition(GeneralSettingsFragment::canTransferDataToOtherPtg),
+                new ButtonItem(this,
                         getString(R.string.OnScreenLockActionTitle),
                         OnScreenLockActionFragment::getSelectedActionName,
                         v -> presentFragment(new OnScreenLockActionFragment()))
@@ -43,13 +53,6 @@ public class GeneralSettingsFragment extends PartisanBaseFragment {
                             SharedConfig.saveConfig();
                         }),
                 new DescriptionItem(this, getString(R.string.ClearCacheOnLockInfo)),
-                new ToggleItem(this,
-                        getString(R.string.MarketIcons),
-                        () -> SharedConfig.marketIcons,
-                        newValue -> LauncherIconController.toggleMarketIcons())
-                        .addCondition(ApplicationLoader::isRealBuildStandaloneBuild),
-                new DescriptionItem(this, getString(R.string.MarketIconsInfo))
-                        .addCondition(ApplicationLoader::isRealBuildStandaloneBuild),
                 new ButtonItem(this,
                         getString(R.string.FileProtection),
                         () -> FileProtectionUtils.fileProtectionEnabledForAnyAccount()
@@ -63,6 +66,20 @@ public class GeneralSettingsFragment extends PartisanBaseFragment {
                         v -> presentFragment(new SecurityIssuesFragment())),
                 new DescriptionItem(this, getString(R.string.SecurityIssuesInfo)),
                 new ToggleItem(this,
+                        getString(R.string.AllowScreenshots),
+                        () -> SharedConfig.allowScreenCapture,
+                        this::setAllowScreenCapture)
+                        .addCondition(SharedConfig::passcodeEnabled),
+                new DescriptionItem(this, getString(R.string.ScreenCaptureInfo))
+                        .addCondition(SharedConfig::passcodeEnabled),
+                new ToggleItem(this,
+                        getString(R.string.MarketIcons),
+                        () -> SharedConfig.marketIcons,
+                        newValue -> LauncherIconController.toggleMarketIcons())
+                        .addCondition(ApplicationLoader::isRealBuildStandaloneBuild),
+                new DescriptionItem(this, getString(R.string.MarketIconsInfo))
+                        .addCondition(ApplicationLoader::isRealBuildStandaloneBuild),
+                new ToggleItem(this,
                         getString(R.string.ShowVersion),
                         () -> SharedConfig.showVersion,
                         newValue -> {
@@ -70,19 +87,6 @@ public class GeneralSettingsFragment extends PartisanBaseFragment {
                             SharedConfig.saveConfig();
                         }),
                 new DescriptionItem(this, getString(R.string.ShowVersionInfo)),
-                new ToggleItem(this,
-                        getString(R.string.AllowScreenshots),
-                        () -> SharedConfig.allowScreenCapture,
-                        this::setAllowScreenCapture)
-                        .addCondition(SharedConfig::passcodeEnabled),
-                new DescriptionItem(this, getString(R.string.ScreenCaptureInfo))
-                        .addCondition(SharedConfig::passcodeEnabled),
-                new ButtonItem(this,
-                        getString(R.string.TransferDataToAnotherPtgButton),
-                        v -> presentFragment(new AppMigrationActivity()))
-                        .addCondition(GeneralSettingsFragment::canTransferDataToOtherPtg),
-                new DescriptionItem(this, getString(R.string.TransferDataToOtherPtgInfo))
-                        .addCondition(GeneralSettingsFragment::canTransferDataToOtherPtg),
         };
     }
 
@@ -93,6 +97,12 @@ public class GeneralSettingsFragment extends PartisanBaseFragment {
         if (!allow) {
             AlertsCreator.showSimpleAlert(this, getString(R.string.ScreenCaptureAlert));
         }
+    }
+
+    private void cancelMigration() {
+        AppMigrator.cancelMigration(getContext());
+        listAdapter.updateRows();
+        listAdapter.notifyDataSetChanged();
     }
 
     private static boolean canTransferDataToOtherPtg() {

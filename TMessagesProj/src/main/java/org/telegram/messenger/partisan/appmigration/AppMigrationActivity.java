@@ -94,25 +94,20 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
     }
 
     private void handleCancelling() {
+        showCancelWarningIfNeeded(this, this::cancelMigration);
+    }
+
+    public static void showCancelWarningIfNeeded(BaseFragment fragment, Runnable onAccepted) {
         if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
-            cancelMigration();
+            onAccepted.run();
         } else {
-            PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(this, this::cancelMigration);
+            PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(fragment, onAccepted);
         }
     }
 
     private synchronized void cancelMigration() {
         cancelled = true;
-        if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
-            AppMigratorPreferences.updateMaxCancelledInstallationDate();
-        }
-        boolean newerPtgInstalled = AppMigrator.isNewerPtgInstalled(getContext(), false);
-        AppMigratorPreferences.setInstalledMaskedPtgPackageName(null);
-        AppMigratorPreferences.setInstalledMaskedPtgPackageSignature(null);
-        setStep(Step.NOT_STARTED);
-        if (!newerPtgInstalled) {
-            MigrationConnectionDisabler.enableConnection();
-        }
+        AppMigrator.cancelMigration(getContext());
         finishFragment();
     }
 
