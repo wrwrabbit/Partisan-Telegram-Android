@@ -1095,7 +1095,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             AndroidUtilities.runOnUIThread(this::hidePasscodeView, 500);
             return;
         }
-        ValueAnimator va = hideAnimator =ValueAnimator.ofFloat(shownT, 0);
+        ValueAnimator va = hideAnimator = ValueAnimator.ofFloat(shownT, 0);
         va.addUpdateListener(anm -> {
             shownT = (float) anm.getAnimatedValue();
             onAnimationUpdate(shownT);
@@ -1103,13 +1103,14 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         });
         va.addListener(new AnimatorListenerAdapter() {
             @Override
-            public void onAnimationEnd(Animator animation) {hideAnimator = null;
-                    passwordEditText.setText("");
-                    passwordEditText2.eraseAllCharacters(false);
+            public void onAnimationEnd(Animator animation) {
+                hideAnimator = null;
+                passwordEditText.setText("");
+                passwordEditText2.eraseAllCharacters(false);
                 setVisibility(View.GONE);
-
                 onAnimationUpdate(shownT = 0f);
-                setAlpha(0f);onHidden();
+                setAlpha(0f);
+                onHidden();
             }
         });
         va.setDuration(420);
@@ -1381,7 +1382,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             fingerprintImage.setVisibility(fingerprintView.getVisibility());
         }
         subtitleView.setText(subtitle != null ? subtitle : LocaleController.getString(
-                SharedConfig.passcodeType == SharedConfig.PASSCODE_TYPE_PASSWORD ? R.string.EnterPassword :
+                SharedConfig.getPasscodeType() == SharedConfig.PASSCODE_TYPE_PASSWORD ? R.string.EnterPassword :
                 hasFingerprint ? R.string.EnterPINorFingerprint : R.string.EnterPIN));
     }
 

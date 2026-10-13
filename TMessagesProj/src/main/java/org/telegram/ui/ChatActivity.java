@@ -45673,7 +45673,7 @@ public class ChatActivity extends BaseFragment implements
         showDialog(dialog);
     }
 
-
+    
     public void didPressTonAddress(ChatMessageCell cell, CharacterStyle link, String address) {
         final GramWallet wallet = GramWallet.getInstance(currentAccount);
         final boolean valid = WalletEngine2.isValidAddress(address);

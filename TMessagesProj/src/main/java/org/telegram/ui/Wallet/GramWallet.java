@@ -888,7 +888,7 @@ public class GramWallet implements GramWalletStreaming.IGramWalletStreamingSubsc
     }
 
     public boolean needsPasscode() {
-        return usePasscodeSetting && !SharedConfig.passcodeHash.isEmpty();
+        return usePasscodeSetting && SharedConfig.passcodeEnabled();
     }
 
     public boolean needsFingerprint() {

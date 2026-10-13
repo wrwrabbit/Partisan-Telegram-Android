@@ -1355,7 +1355,7 @@ public class GramWalletTonConnect {
                     android.app.Activity activity = (android.app.Activity) context;
                     if (activity.isFinishing() || activity.isDestroyed()
                             || !org.telegram.ui.LaunchActivity.isResumed
-                            || org.telegram.messenger.SharedConfig.appLocked
+                            || org.telegram.messenger.SharedConfig.isAppLocked()
                             || org.telegram.messenger.SharedConfig.isWaitingForPasscodeEnter
                             || org.telegram.messenger.UserConfig.selectedAccount != currentAccount) {
                         wallet.tonConnect.release(request);

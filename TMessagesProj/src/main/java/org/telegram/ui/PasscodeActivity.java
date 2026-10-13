@@ -1045,7 +1045,6 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
             walletInfoRow = rowCount++;
         }
 
-
         if (!FakePasscodeUtils.isFakePasscodeActivated() && !originalSettings) {
             fakePasscodesHeaderRow = rowCount++;
             if (!SharedConfig.fakePasscodes.isEmpty()) {
@@ -1322,8 +1321,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
             } else {
                 animateSuccessAnimation(() -> {
                     PasscodeActivity passcodeActivity = new PasscodeActivity(TYPE_MANAGE_CODE_SETTINGS);
-                passcodeActivity.originalSettings = originalSettings;
-                presentFragment(passcodeActivity, true);
+                    passcodeActivity.originalSettings = originalSettings;
+                    presentFragment(passcodeActivity, true);
                     if (openedSettings != null) {
                         AndroidUtilities.runOnUIThread(openedSettings);
                         openedSettings = null;
