@@ -14,7 +14,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.partisan.NewFeatureTextSettingsCell;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionActivity;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionUtils;
 import org.telegram.messenger.partisan.Utils;
@@ -407,11 +406,6 @@ public class PartisanSettingsActivity extends BaseFragment {
                 case 3:
                     view = new NotificationsCheckCell(mContext);
                     break;
-                case 4:
-                    NewFeatureTextSettingsCell newTextCell = new NewFeatureTextSettingsCell(mContext);
-                    newTextCell.setCanDisable(true);
-                    view = newTextCell;
-                    break;
                 case 1:
                 default:
                     view = new TextInfoPrivacyCell(mContext);
@@ -560,6 +554,11 @@ public class PartisanSettingsActivity extends BaseFragment {
                                 ? LocaleController.getString(R.string.PasswordOn)
                                 : LocaleController.getString(R.string.PasswordOff);
                         textCell.setTextAndValue(LocaleController.getString(R.string.FileProtection), value, true);
+                    } else if (position == voiceChangeRow) {
+                        String value = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false)
+                                ? LocaleController.getString(R.string.PasswordOn)
+                                : LocaleController.getString(R.string.PasswordOff);
+                        textCell.setTextAndValue(LocaleController.getString(R.string.VoiceChange), value, true);
                     } else if (position == transferDataToOtherPtgRow) {
                         textCell.setText(LocaleController.getString(R.string.TransferDataToAnotherPtgButton), true);
                     } else if (position == savedChannelsRow) {
@@ -588,15 +587,6 @@ public class PartisanSettingsActivity extends BaseFragment {
                         checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.AdditionalVerifiedSetting), value, enabled, false);
                     }
                     break;
-                }
-                case 4: {
-                    NewFeatureTextSettingsCell textCell = (NewFeatureTextSettingsCell) holder.itemView;
-                    if (position == voiceChangeRow) {
-                        String value = VoiceChangeSettings.voiceChangeEnabled.get().orElse(false)
-                                ? LocaleController.getString(R.string.PasswordOn)
-                                : LocaleController.getString(R.string.PasswordOff);
-                        textCell.setTextAndValue(LocaleController.getString(R.string.VoiceChange), value, true);
-                    }
                 }
             }
         }
@@ -632,12 +622,10 @@ public class PartisanSettingsActivity extends BaseFragment {
                     || position == protectPtelegramSettingsDetailRow) {
                 return 1;
             } else if (position == onScreenLockActionRow || position == fileProtectionRow || position == transferDataToOtherPtgRow || position == savedChannelsRow
-                    || position == partisanTelegramSettingsPositionRow) {
+                    || position == partisanTelegramSettingsPositionRow || position == voiceChangeRow) {
                 return 2;
             } else if (position == verifiedRow) {
                 return 3;
-            } else if (position == voiceChangeRow) {
-                return 4;
             }
             return 0;
         }
