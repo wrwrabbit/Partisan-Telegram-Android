@@ -350,6 +350,7 @@ import me.vkryl.core.reference.ReferenceList;
 
 @SuppressLint("WrongConstant")
 @SuppressWarnings("unchecked")
+@OptIn(markerClass = UnstableApi.class)
 public class PhotoViewer implements NotificationCenter.NotificationCenterDelegate, GestureDetector2.OnGestureListener, GestureDetector2.OnDoubleTapListener, IPipSourceDelegate, FactorAnimator.Target {
 
     private static final int ANIMATOR_ID_POLL_ATTACH_BUTTONS_VISIBLE = 0;
@@ -3141,7 +3142,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     continue;
                 }
                 if (child == aspectRatioFrameLayout) {
-                    int heightSpec = MeasureSpec.makeMeasureSpec(AndroidUtilities.displaySize.y + (isStatusBarVisible() ? AndroidUtilities.statusBarHeight : 0), MeasureSpec.EXACTLY);
+                    int heightSpec = MeasureSpec.makeMeasureSpec(getMeasuredHeight(), MeasureSpec.EXACTLY);
                     child.measure(widthMeasureSpec, heightSpec);
                 } else if (child == paintingOverlay) {
                     int width;
@@ -11347,7 +11348,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 } else if (orientation[1] == 2) {
                     matrix.postScale(1, -1);
                 }
-                croppedBitmap = Bitmaps.createBitmap(croppedBitmap, 0, 0, croppedBitmap.getWidth(), croppedBitmap.getHeight(), matrix, true);
+                int width = croppedBitmap.getWidth();
+                int height = croppedBitmap.getHeight();
+                croppedBitmap = Bitmap.createBitmap(croppedBitmap, 0, 0, width, height, matrix, true);
                 recycleCropped = true;
             } else {
                 recycleCropped = false;
@@ -11667,7 +11670,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         } else if (orientation[1] == 2) {
                             matrix.postScale(1, -1);
                         }
-                        croppedBitmap = Bitmaps.createBitmap(croppedBitmap, 0, 0, croppedBitmap.getWidth(), croppedBitmap.getHeight(), matrix, true);
+                        int width = croppedBitmap.getWidth();
+                        int height = croppedBitmap.getHeight();
+                        croppedBitmap = Bitmap.createBitmap(croppedBitmap, 0, 0, width, height, matrix, true);
                         recycleCropped = true;
                     } else {
                         recycleCropped = false;
@@ -18824,10 +18829,21 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         return isVisible && placeProvider != null;
     }
 
+    private int getVideoFitHeight() {
+        int height = getContainerViewHeight();
+        if (containerView != null) {
+            int measured = containerView.getMeasuredHeight();
+            if (measured > 0) {
+                height = Math.min(height, measured);
+            }
+        }
+        return height;
+    }
+
     private void updateMinMax(float scale) {
         if (aspectRatioFrameLayout != null && aspectRatioFrameLayout.getVisibility() == View.VISIBLE && textureUploaded) {
             View view = usedSurfaceView ? videoSurfaceView : videoTextureView;
-            scale *= Math.min(getContainerViewWidth() / (float) view.getMeasuredWidth(), getContainerViewHeight() / (float) view.getMeasuredHeight());
+            scale *= Math.min(getContainerViewWidth() / (float) view.getMeasuredWidth(), getVideoFitHeight() / (float) view.getMeasuredHeight());
         }
         float w = centerImage.getImageWidth();
         float h = centerImage.getImageHeight();
@@ -19718,6 +19734,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
         int containerWidth = getContainerViewWidth();
         int containerHeight = getContainerViewHeight();
+        if (videoSizeSet && aspectRatioFrameLayout != null && aspectRatioFrameLayout.getVisibility() == View.VISIBLE) {
+            containerHeight = getVideoFitHeight();
+        }
         if (animationInProgress != 2 && animationInProgress != 4 && !pipAnimationInProgress && !isInline) {
             if (currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR && sendPhotoType != SELECT_TYPE_STICKER && scale == 1 && aty != -1 && !zoomAnimation) {
                 float maxValue = containerWidth / 4.0f;
@@ -22164,6 +22183,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
         int containerWidth = getContainerViewWidth();
         int containerHeight = getContainerViewHeight();
+        if (videoSizeSet && aspectRatioFrameLayout != null && aspectRatioFrameLayout.getVisibility() == View.VISIBLE) {
+            containerHeight = getVideoFitHeight();
+        }
         ImageReceiver sideImage = null;
         if (currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR) {
             if (scale >= 1.0f && !zoomAnimation && !zooming) {

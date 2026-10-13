@@ -285,6 +285,8 @@ public class NotificationCenter {
     public static final int joinedGroup = totalEvents++;
     public static final int loadedAiComposeTones = totalEvents++;
     public static final int updatedChatbot = totalEvents++;
+    public static final int walletUpdate = totalEvents++;
+    public static final int walletTransactionsUpdate = totalEvents++;
 
     //partisan
     public static final int dialogDeletedByAction = totalEvents++;
