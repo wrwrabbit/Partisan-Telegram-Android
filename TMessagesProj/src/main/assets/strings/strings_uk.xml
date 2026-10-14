@@ -401,4 +401,6 @@
     <string name="ShowQuotedLabel">Показувати «%s»</string>
     <string name="AccidentalActionsProtection">Захист від випадкових дій</string>
     <string name="CancelDataTransfer">Скасувати перенесення даних</string>
+    <string name="PartisanUnsupportedMediaSetting">Партизанське повідомлення-заглушка</string>
+    <string name="PartisanUnsupportedMediaSettingInfo">Якщо повідомлення не підтримується, буде показуватися повідомлення про швидкий вихід Партизанського Телеграма. Вимкніть, щоб показувати стандартне повідомлення.</string>
 </resources>

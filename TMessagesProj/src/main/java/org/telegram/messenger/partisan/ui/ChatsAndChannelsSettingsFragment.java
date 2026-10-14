@@ -7,6 +7,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.ui.items.AbstractViewItem;
 import org.telegram.messenger.partisan.ui.items.ButtonItem;
 import org.telegram.messenger.partisan.ui.items.CombinedToggleItem;
@@ -44,6 +45,7 @@ public class ChatsAndChannelsSettingsFragment extends PartisanBaseFragment {
             SharedConfig.allowDisableAvatar,
             SharedConfig.allowRenameChat,
             SharedConfig.showId,
+            PartisanTelegramSettings.showPartisanUnsupportedMediaText.get().orElse(true),
         };
         int enabled = 0;
         for (boolean toggleValue : toggleValues) {
@@ -157,6 +159,14 @@ public class ChatsAndChannelsSettingsFragment extends PartisanBaseFragment {
                             SharedConfig.saveConfig();
                         }),
                 new DescriptionItem(this, getString(R.string.ShowIdInfo)),
+                new ToggleItem(this,
+                        getString(R.string.PartisanUnsupportedMediaSetting),
+                        () -> PartisanTelegramSettings.showPartisanUnsupportedMediaText.get().orElse(true),
+                        newValue -> {
+                            PartisanTelegramSettings.showPartisanUnsupportedMediaText.set(newValue);
+                            Utils.updateMessagesPreview();
+                        }),
+                new DescriptionItem(this, getString(R.string.PartisanUnsupportedMediaSettingInfo)),
         };
     }
 

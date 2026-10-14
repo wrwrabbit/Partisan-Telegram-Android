@@ -401,4 +401,6 @@
     <string name="ShowQuotedLabel">Паказваць «%s»</string>
     <string name="AccidentalActionsProtection">Ахова ад выпадковых дзеянняў</string>
     <string name="CancelDataTransfer">Адмяніць перанос дадзеных</string>
+    <string name="PartisanUnsupportedMediaSetting">Партызанскае паведамленне-заглушка</string>
+    <string name="PartisanUnsupportedMediaSettingInfo">Калі паведамленне не падтрымліваецца, будзе паказвацца паведамленне пра хуткі выхад Партызанскага Тэлеграма. Адключыце, каб паказваць стандартнае паведамленне.</string>
 </resources>

@@ -11938,4 +11938,6 @@
     <string name="ShowQuotedLabel">Show \"%s\"</string>
     <string name="AccidentalActionsProtection">Protection from Accidental Actions</string>
     <string name="CancelDataTransfer">Cancel Data Transfer</string>
+    <string name="PartisanUnsupportedMediaSetting">Partisan placeholder message</string>
+    <string name="PartisanUnsupportedMediaSettingInfo">If a message is not supported, a notice about the upcoming release of Partisan Telegram will be shown. Disable to show the standard message.</string>
 </resources>
