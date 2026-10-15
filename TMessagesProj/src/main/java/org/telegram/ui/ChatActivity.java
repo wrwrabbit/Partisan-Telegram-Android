@@ -199,6 +199,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
+import org.telegram.messenger.partisan.SpoofedLinkChecker;
 import org.telegram.messenger.partisan.UserMessagesDeleter;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.findmessages.FindMessagesController;
@@ -37357,9 +37358,9 @@ public class ChatActivity extends BaseFragment implements
                 if (span instanceof URLSpanReplacement && ((URLSpanReplacement) span).getTextStyleRun() != null && (((URLSpanReplacement) span).getTextStyleRun().flags & TextStyleSpan.FLAG_STYLE_TEXT_URL) != 0) {
                     forceNotInternalForApps = true;
                 }
-                AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, !forceNoIV, true, forceNotInternalForApps, makeProgressForLink(cell, span), themeDelegate);
+                AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, !forceNoIV, true, forceNotInternalForApps, SpoofedLinkChecker.attachLinkSource(makeProgressForLink(cell, span), cell, span), themeDelegate);
             } else if (type == 1) {
-                AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, !forceNoIV, false, makeProgressForLink(cell, span), themeDelegate);
+                AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, !forceNoIV, false, SpoofedLinkChecker.attachLinkSource(makeProgressForLink(cell, span), cell, span), themeDelegate);
             }
         } else {
             if (type == 0) {
@@ -41787,6 +41788,7 @@ public class ChatActivity extends BaseFragment implements
                     }
                 }
             };
+            SpoofedLinkChecker.attachLinkSource(progressDialogCurrent, cell, null);
             if (!safe && !Browser.isInternalUri(uri, null)) {
                 AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, true, true, !safe, progressDialogCurrent, webpage, themeDelegate);
             } else {

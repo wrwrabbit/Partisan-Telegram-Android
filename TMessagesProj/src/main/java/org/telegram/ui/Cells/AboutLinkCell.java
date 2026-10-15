@@ -526,6 +526,7 @@ public class AboutLinkCell extends FrameLayout {
                 }, replacing ? 0 : 350);
             }
         } : null;
+        org.telegram.messenger.partisan.SpoofedLinkChecker.attachLinkSource(currentProgress, stringBuilder, pressedLink);
         if (pressedLink instanceof URLSpanNoUnderline) {
             String url = ((URLSpanNoUnderline) pressedLink).getURL();
             if (url.startsWith("@") || url.startsWith("#") || url.startsWith("$") || url.startsWith("/")) {
