@@ -89,7 +89,7 @@ public class ChatsWidgetProvider extends AppWidgetProvider {
             ArrayList<Long> selectedDialogs = new ArrayList<>();
             if (accountId >= 0) {
                 AccountInstance.getInstance(accountId).getMessagesStorage().getWidgetDialogIds(appWidgetId, EditWidgetActivity.TYPE_CHATS, selectedDialogs, null, null, false);
-                org.telegram.messenger.partisan.WidgetUtils.removeHiddenDialogIds(selectedDialogs, accountId);
+                org.telegram.messenger.partisan.WidgetUtils.removeHiddenAndLeftDialogIds(selectedDialogs, accountId);
             }
 
             if (rows == 1 || selectedDialogs.size() <= 1) {

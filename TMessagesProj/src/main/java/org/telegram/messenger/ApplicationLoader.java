@@ -41,6 +41,7 @@ import org.telegram.messenger.utils.Choreographer60FpsContent;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.WidgetUtils;
 import org.telegram.messenger.partisan.update.UpdateData;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
@@ -293,6 +294,7 @@ public class ApplicationLoader extends Application {
             }
         }
         FakePasscodeUtils.autoAddHidingsToAllFakePasscodes();
+        WidgetUtils.updateAllWidgets();
 
         ApplicationLoader app = (ApplicationLoader) ApplicationLoader.applicationContext;
         app.initPushServices();

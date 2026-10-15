@@ -7,10 +7,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ChatsWidgetProvider;
 import org.telegram.messenger.ContactsWidgetProvider;
+import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.tgnet.TLRPC;
 
 import java.util.HashSet;
 import java.util.List;
@@ -19,10 +24,42 @@ import java.util.Optional;
 public class WidgetUtils {
     private static final String REFRESH_COUNTER_KEY = "refreshCount";
 
-    public static void removeHiddenDialogIds(List<Long> dialogIds, int account) {
+    public static void removeHiddenAndLeftDialogIds(List<Long> dialogIds, int account) {
         if (dialogIds == null) {
             return;
         }
+        if (FakePasscodeUtils.isLogOutOrHideAccountInAnyFakePasscode(account)) {
+            dialogIds.clear();
+            return;
+        }
+        removeHiddenDialogIds(dialogIds, account);
+        removeDialogIdsListedByAnyFakePasscode(dialogIds, account);
+        dialogIds.removeIf(id -> isLeftChannel(id, account));
+    }
+
+    // Widgets are visible before any passcode is entered, so they skip everything any fake passcode would hide or delete.
+    private static void removeDialogIdsListedByAnyFakePasscode(List<Long> dialogIds, int account) {
+        Optional<Integer> accountOpt = Optional.of(account);
+        dialogIds.removeIf(id -> FakePasscodeUtils.isHideOrRemoveDialogInAnyFakePasscode(id, account)
+                || FakePasscodeUtils.isHideOrRemoveDialogInAnyFakePasscode(Utils.getChatOrUserId(id, accountOpt), account));
+    }
+
+    private static boolean isLeftChannel(long dialogId, int account) {
+        if (!DialogObject.isChatDialog(dialogId)) {
+            return false;
+        }
+        MessagesController controller = MessagesController.getInstance(account);
+        TLRPC.Chat chat = controller.getChat(-dialogId);
+        if (chat == null) {
+            chat = MessagesStorage.getInstance(account).getChatSync(-dialogId);
+        }
+        return chat != null
+                && ChatObject.isChannel(chat)
+                && chat.left
+                && !controller.isPromoDialog(dialogId, false);
+    }
+
+    private static void removeHiddenDialogIds(List<Long> dialogIds, int account) {
         if (FakePasscodeUtils.isHideAccount(account)) {
             dialogIds.clear();
             return;

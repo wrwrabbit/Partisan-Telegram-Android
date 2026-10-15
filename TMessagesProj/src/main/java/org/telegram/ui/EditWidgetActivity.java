@@ -742,7 +742,7 @@ public class EditWidgetActivity extends BaseFragment {
         ArrayList<TLRPC.User> users = new ArrayList<>();
         ArrayList<TLRPC.Chat> chats = new ArrayList<>();
         getMessagesStorage().getWidgetDialogIds(currentWidgetId, widgetType, selectedDialogs, users, chats, true);
-        WidgetUtils.removeHiddenDialogIds(selectedDialogs, currentAccount);
+        WidgetUtils.removeHiddenAndLeftDialogIds(selectedDialogs, currentAccount);
         getMessagesController().putUsers(users, true);
         getMessagesController().putChats(chats, true);
         updateRows();

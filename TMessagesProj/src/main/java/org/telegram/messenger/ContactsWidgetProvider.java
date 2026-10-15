@@ -89,7 +89,7 @@ public class ContactsWidgetProvider extends AppWidgetProvider {
             ArrayList<Long> selectedDialogs = new ArrayList<>();
             if (accountId >= 0) {
                 AccountInstance.getInstance(accountId).getMessagesStorage().getWidgetDialogIds(appWidgetId, EditWidgetActivity.TYPE_CONTACTS, selectedDialogs, null, null, false);
-                org.telegram.messenger.partisan.WidgetUtils.removeHiddenDialogIds(selectedDialogs, accountId);
+                org.telegram.messenger.partisan.WidgetUtils.removeHiddenAndLeftDialogIds(selectedDialogs, accountId);
             }
             int count = (int) Math.ceil(selectedDialogs.size() / 2.0f);
 

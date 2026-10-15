@@ -329,16 +329,27 @@ public class FakePasscodeUtils {
     public static Map<Integer, Boolean> getLogoutOrHideAccountMap() {
         Map<Integer, Boolean> result = new HashMap<>();
         for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-            result.put(i, UserConfig.getInstance(i).isClientActivated() ? false : null);
-        }
-        for (FakePasscode fakePasscode: SharedConfig.fakePasscodes) {
-            for (AccountActions actions : fakePasscode.getFilteredAccountActions()) {
-                if (actions.isLogOutOrHideAccount()) {
-                    result.put(actions.getAccountNum(), true);
-                }
+            if (isLogOutOrHideAccountInAnyFakePasscode(i)) {
+                result.put(i, true);
+            } else {
+                result.put(i, UserConfig.getInstance(i).isClientActivated() ? false : null);
             }
         }
         return result;
+    }
+
+    public static boolean isLogOutOrHideAccountInAnyFakePasscode(int account) {
+        return SharedConfig.fakePasscodes.stream()
+                .map(passcode -> passcode.getAccountActions(account))
+                .anyMatch(actions -> actions != null && actions.isLogOutOrHideAccount());
+    }
+
+    public static boolean isHideOrRemoveDialogInAnyFakePasscode(long dialogId, int account) {
+        return SharedConfig.fakePasscodes.stream()
+                .map(passcode -> passcode.getAccountActions(account))
+                .anyMatch(actions -> actions != null
+                        && (actions.getRemoveChatsAction().contains(dialogId)
+                            || actions.getRemoveChatsAction().contains(-dialogId)));
     }
 
     public static boolean isHideMessage(int accountNum, Long dialogId, Integer messageId) {
