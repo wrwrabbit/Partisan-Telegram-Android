@@ -153,7 +153,7 @@
     <string name="IsClearAllDraftsOnScreenLock">Очищать черновики при блокировке экрана</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Все черновики будут удаляться, если пользователь заблокирует экран.</string>
     <string name="IsDeleteMessagesForAllByDefault">Удалять сообщения у всех по умолчанию</string>
-    <string name="IsDeleteMessagesForAllByDefaultInfo">Сообщения и чаты по умолчанию будут удаляться и у собеседника.</string>
+    <string name="IsDeleteMessagesForAllByDefaultInfo">В окнах удаления сообщений и чатов будет установлена галочка удаления сообщений у собеседника. Вы сможете снять её при необходимости.</string>
     <string name="ChatsToRemoveInfo">Выберите чаты, которые будут удалены или скрыты после активации ложного код-пароля. Если все чаты из папки удалятся этим действием, то папка тоже удалится. Если скроются - папка тоже скроется.</string>
     <string name="SessionsToTerminate">Сеансы для завершения</string>
     <string name="SessionsToHide">Сеансы для скрытия</string>
@@ -313,9 +313,9 @@
     <string name="FileProtectionStorageHeader">Хранение данных</string>
     <string name="FileProtectionEncryptionHeader">Шифрование</string>
     <string name="FileProtectionAccountsHeader">Защищённые аккаунты</string>
-    <string name="FileProtectionStoreDataInMemoryOnlyInfo">Сообщения хранятся не хранятся на устройстве и после перезапуска заново загружаются с сервера, поэтому без интернета старые сообщения недоступны. Секретные чаты по-прежнему сохраняются на устройстве, так как их нельзя загрузить с сервера.</string>
+    <string name="FileProtectionStoreDataInMemoryOnlyInfo">Сообщения не хранятся на устройстве и после перезапуска заново загружаются с сервера, поэтому без интернета старые сообщения недоступны. Секретные чаты по-прежнему сохраняются на устройстве, так как их нельзя загрузить с сервера.</string>
     <string name="FileProtectionStoreChatsInMemoryOnlyInfo">Список чатов и контакты не хранятся на устройстве и загружаются с сервера после каждого перезапуска. Выключите эту опцию, чтобы чаты загружались быстрее, а сообщения продолжали оставаться защищёнными.</string>
-    <string name="FileProtectionWorksWithFakePasscodesInfo">Если выключено, активном ложном код-пароле приложение сохраняет сообщения и чаты на устройстве, как и официальное приложение.</string>
+    <string name="FileProtectionWorksWithFakePasscodesInfo">Если включено, при активном ложном код-пароле приложение не сохраняет сообщения и чаты на устройстве, как и при основном код-пароле. Это может повысить безопасность, но снизить маскировку под официальное приложение.</string>
     <string name="FileProtectionEncryptDatabaseInfo">Шифрует данные, хранящиеся на устройстве: сообщения, чаты, секретные чаты. Шифрует те данные, которые продолжают храниться при включённой опции \"Не хранить данные на устройстве\". Скачанные медиафайлы не затрагиваются.</string>
     <string name="FileProtectionEncryptAuthTokenInfo">Шифрует ключ, который используется для подключения к серверам Telegram. Шифрование предотвращает копирование ключа и доступа к вашему аккаунту с устройства злоумышленника.</string>
     <string name="FileProtectionAccountsInfo">Настройки выше применяются только к выбранным аккаунтам.</string>

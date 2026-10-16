@@ -153,7 +153,7 @@
     <string name="IsClearAllDraftsOnScreenLock">Выдаляць чарнавікі пры блакаванні экрана</string>
     <string name="IsClearAllDraftsOnScreenLockInfo">Усе чарнавікі будуць выдаляцца, калі карыстач заблакуе экран.</string>
     <string name="IsDeleteMessagesForAllByDefault">Выдаляць паведамленні ў усех па змаўчанні</string>
-    <string name="IsDeleteMessagesForAllByDefaultInfo">Паведамлені і чаты па змаўчанні будуць выдаляцца і ў cуразмоўцы.</string>
+    <string name="IsDeleteMessagesForAllByDefaultInfo">У вокнах выдалення паведамленняў і чатаў будзе пастаўлена адзнака выдалення паведамленняў у суразмоўцы. Вы зможаце зняць яе пры неабходнасці.</string>
     <string name="ChatsToRemoveInfo">Абярыце чаты, якія будуць выдаленыя ці схаваныя пасля актывацыі несапраўднага кода блакіроўкі. Калі ўсе чаты з тэчкі выдаляюцца гэтым дзеяннем, то папка таксама выдаліцца. Калі схаваюцца - папка таксама схаваецца.</string>
     <string name="SessionsToTerminate">Сеансы для завяршэння</string>
     <string name="SessionsToHide">Сеансы для хавання</string>
@@ -315,7 +315,7 @@
     <string name="FileProtectionAccountsHeader">Абароненыя акаўнты</string>
     <string name="FileProtectionStoreDataInMemoryOnlyInfo">Паведамленні не захоўваюцца на прыладзе і пасля перазапуску зноў загружаюцца з сервера, таму без інтэрнэту старыя паведамленні недаступныя. Сакрэтныя чаты ўсё роўна захоўваюцца на прыладзе, бо іх нельга загрузіць з сервера.</string>
     <string name="FileProtectionStoreChatsInMemoryOnlyInfo">Спіс чатаў і кантакты не захоўваюцца на прыладзе і загружаюцца з сервера пасля кожнага перазапуску. Выключыце гэтую опцыю, каб чаты загружаліся хутчэй, а паведамленні і далей заставаліся абароненымі.</string>
-    <string name="FileProtectionWorksWithFakePasscodesInfo">Калі выключана, то пры актыўным несапраўдным кодзе блакіроўкі дадатак захоўвае паведамленні і чаты на прыладзе, як і афіцыйны дадатак.</string>
+    <string name="FileProtectionWorksWithFakePasscodesInfo">Калі ўключана, то пры актыўным несапраўдным кодзе блакіроўкі дадатак не захоўвае паведамленні і чаты на прыладзе, як і пры асноўным кодзе блакіроўкі. Гэта можа павысіць бяспеку, але пагоршыць маскіроўку пад афіцыйны дадатак.</string>
     <string name="FileProtectionEncryptDatabaseInfo">Шыфруе даныя, якія захоўваюцца на прыладзе: паведамленні, чаты, сакрэтныя чаты. Шыфруе тыя даныя, якія працягваюць захоўвацца пры ўключанай опцыі \"Не захоўваць дадзеныя на прыладзе\". Спампаваныя медыяфайлы не закранаюцца.</string>
     <string name="FileProtectionEncryptAuthTokenInfo">Шыфруе ключ, які выкарыстоўваецца для падключэння да сервераў Telegram. Шыфраванне прадухіляе капіяванне ключа і доступ да вашага акаўнта з прылады зламысніка.</string>
     <string name="FileProtectionAccountsInfo">Налады вышэй прымяняюцца толькі да выбраных акаўнтаў.</string>
