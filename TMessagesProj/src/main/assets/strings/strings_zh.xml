@@ -212,7 +212,6 @@
     <string name="RemoveReplaceOriginalPasscodeIncompatibleSettingsDescription">启用该选项后，将删除所有隐藏和伪装操作，禁止通过错误登录尝试激活，并允许使用假密码登录。</string>
     <string name="RemovePasswordlessIncompatibleSettingsDescription">启用该选项后，将禁止通过不良登录尝试进行激活，并允许使用假密码登录。</string>
     <string name="CannotDisableLoginIfOptionEnabledDescription">如果启用了\"%1$s\"设置，则无法禁用使用假密码登录应用程序。</string>
-    <string name="DidNotGetTheCodePartisanVersionInfo">**Partisan Telegram** 仅向已登录的其他应用程序发送代码，而不是通过短信发送。\n\n要通过短信登录应用程序，请执行以下操作：\n1. 从 Google Play 下载 **官方 Telegram 应用程序**。\n2. 登录您的账户。\n3. 使用通过官方应用程序收到的代码登录 Partisan Telegram。\n4. 卸载官方应用程序。\n\n如果官方应用程序中没有收到包含代码的消息，您必须在登录账户后等待 24 小时。在此之后，代码将开始到达。\n\n如果您有任何问题，请写信给我们： **@partisan_telegram_bot**</string>
     <string name="StrictHiding">严格隐藏</string>
     <string name="StrictHidingDialogDescription">启用此选项后，对话将隐藏得更安全，但使用起来可能会不太方便。如果计划经常使用隐藏对话，我们不建议启用此选项。</string>
     <string name="AccountHidingSettingsTitle">账户隐藏设置</string>
