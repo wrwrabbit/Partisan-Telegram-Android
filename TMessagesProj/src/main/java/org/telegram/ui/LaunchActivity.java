@@ -1288,6 +1288,16 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
     }
 
+    private void handleIntentAfterFakePasscodeActivation(Intent intent, boolean isNew, boolean restore) {
+        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+            handleIntent(intent, isNew, restore, true, null, false, true);
+            return;
+        }
+        // Waits for the queued fakePasscodeActivated handling: the account switch (UI thread), then the fragment pop (globalQueue).
+        AndroidUtilities.runOnUIThread(() -> Utilities.globalQueue.postRunnable(() ->
+                AndroidUtilities.runOnUIThread(() -> handleIntent(intent, isNew, restore, true, null, false, true))));
+    }
+
     private void switchToAvailableAccountOrLogout() {
         int account = -1;
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
@@ -1517,7 +1527,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         PasscodeView.PasscodeViewDelegate delegate = view -> {
             SharedConfig.isWaitingForPasscodeEnter = false;
             if (passcodeSaveIntent != null) {
-                handleIntent(passcodeSaveIntent, passcodeSaveIntentIsNew, passcodeSaveIntentIsRestore, true, null, false, true);
+                handleIntentAfterFakePasscodeActivation(passcodeSaveIntent, passcodeSaveIntentIsNew, passcodeSaveIntentIsRestore);
                 passcodeSaveIntent = null;
             }
             actionBarLayout.getView().setVisibility(View.VISIBLE);

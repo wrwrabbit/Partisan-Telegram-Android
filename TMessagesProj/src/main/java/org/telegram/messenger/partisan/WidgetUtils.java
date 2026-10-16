@@ -15,33 +15,73 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.tgnet.TLRPC;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class WidgetUtils {
     private static final String REFRESH_COUNTER_KEY = "refreshCount";
 
-    public static void removeHiddenAndLeftDialogIds(List<Long> dialogIds, int account) {
+    public static boolean isDialogAllowedInWidget(long dialogId, int account) {
+        return !isAccountHiddenInWidgets(account) && !isDialogHiddenInWidgets(dialogId, account);
+    }
+
+    public static void removeDialogIdsNotAllowedInWidget(List<Long> dialogIds, int account) {
         if (dialogIds == null) {
             return;
         }
-        if (FakePasscodeUtils.isLogOutOrHideAccountInAnyFakePasscode(account)) {
+        if (isAccountHiddenInWidgets(account)) {
             dialogIds.clear();
             return;
         }
-        removeHiddenDialogIds(dialogIds, account);
-        removeDialogIdsListedByAnyFakePasscode(dialogIds, account);
-        dialogIds.removeIf(id -> isLeftChannel(id, account));
+        dialogIds.removeIf(id -> isDialogHiddenInWidgets(id, account));
+    }
+
+    public static ArrayList<TLRPC.Dialog> filterDialogsAllowedInWidget(List<TLRPC.Dialog> dialogs, int account) {
+        if (isAccountHiddenInWidgets(account)) {
+            return new ArrayList<>();
+        }
+        return dialogs.stream()
+                .filter(dialog -> !isDialogHiddenInWidgets(dialog.id, account))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public static List<TLRPC.TL_topPeer> filterHintsAllowedInWidget(List<TLRPC.TL_topPeer> hints, int account) {
+        if (isAccountHiddenInWidgets(account)) {
+            return new ArrayList<>();
+        }
+        return hints.stream()
+                .filter(hint -> !isDialogHiddenInWidgets(hint.peer.user_id, account))
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isAccountHiddenInWidgets(int account) {
+        return FakePasscodeUtils.isHideAccount(account)
+                || FakePasscodeUtils.isLogOutOrHideAccountInAnyFakePasscode(account);
     }
 
     // Widgets are visible before any passcode is entered, so they skip everything any fake passcode would hide or delete.
-    private static void removeDialogIdsListedByAnyFakePasscode(List<Long> dialogIds, int account) {
-        Optional<Integer> accountOpt = Optional.of(account);
-        dialogIds.removeIf(id -> FakePasscodeUtils.isHideOrRemoveDialogInAnyFakePasscode(id, account)
-                || FakePasscodeUtils.isHideOrRemoveDialogInAnyFakePasscode(Utils.getChatOrUserId(id, accountOpt), account));
+    private static boolean isDialogHiddenInWidgets(long dialogId, int account) {
+        long chatOrUserId = Utils.getChatOrUserId(dialogId, Optional.of(account));
+        return FakePasscodeUtils.isHideChat(chatOrUserId, account)
+                || FakePasscodeUtils.isHideOrRemoveDialogInAnyFakePasscode(dialogId, account)
+                || FakePasscodeUtils.isHideOrRemoveDialogInAnyFakePasscode(chatOrUserId, account)
+                || isEncryptedGroupOrInnerChat(dialogId, account)
+                || isLeftChannel(dialogId, account);
+    }
+
+    private static boolean isEncryptedGroupOrInnerChat(long dialogId, int account) {
+        if (!DialogObject.isEncryptedDialog(dialogId)) {
+            return false;
+        }
+        EncryptedGroupUtils encryptedGroupUtils = new EncryptedGroupUtils(account);
+        encryptedGroupUtils.cacheEncryptedGroupBlockingIfNeeded(dialogId);
+        return MessagesController.getInstance(account).isEncryptedGroup(dialogId)
+                || encryptedGroupUtils.isInnerEncryptedGroupChat(dialogId);
     }
 
     private static boolean isLeftChannel(long dialogId, int account) {
@@ -57,19 +97,6 @@ public class WidgetUtils {
                 && ChatObject.isChannel(chat)
                 && chat.left
                 && !controller.isPromoDialog(dialogId, false);
-    }
-
-    private static void removeHiddenDialogIds(List<Long> dialogIds, int account) {
-        if (FakePasscodeUtils.isHideAccount(account)) {
-            dialogIds.clear();
-            return;
-        }
-        Optional<Integer> accountOpt = Optional.of(account);
-        List<Long> visibleIds = FakePasscodeUtils.filterItems(dialogIds, accountOpt,
-                (id, filter) -> !filter.isHideChat(Utils.getChatOrUserId(id, accountOpt)));
-        if (visibleIds != dialogIds) {
-            dialogIds.retainAll(new HashSet<>(visibleIds));
-        }
     }
 
     // The launcher keeps its cached rows while the service intent stays filterEquals, and hiding a chat

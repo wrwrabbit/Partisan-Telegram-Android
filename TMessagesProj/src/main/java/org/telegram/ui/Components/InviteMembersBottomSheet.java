@@ -39,6 +39,7 @@ import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.WidgetUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -54,7 +55,6 @@ import org.telegram.ui.GroupCreateActivity;
 import org.telegram.ui.LaunchActivity;
 
 import java.util.ArrayList;
-import java.util.Optional;
 
 public class InviteMembersBottomSheet extends UsersAlertBase implements NotificationCenter.NotificationCenterDelegate {
 
@@ -204,6 +204,9 @@ public class InviteMembersBottomSheet extends UsersAlertBase implements Notifica
                     id = 0;
                 }
                 if (ignoreUsers != null && ignoreUsers.indexOfKey(id) >= 0) {
+                    return;
+                }
+                if (dialogsDelegate != null && !WidgetUtils.isDialogAllowedInWidget(id, currentAccount)) {
                     return;
                 }
                 if (id != 0) {
@@ -479,7 +482,7 @@ public class InviteMembersBottomSheet extends UsersAlertBase implements Notifica
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.dialogsNeedReload) {
             if (dialogsDelegate != null && dialogsServerOnly.isEmpty()) {
-                dialogsServerOnly = (ArrayList<TLRPC.Dialog>) FakePasscodeUtils.filterDialogs(MessagesController.getInstance(currentAccount).dialogsServerOnly, Optional.of(currentAccount));
+                dialogsServerOnly = WidgetUtils.filterDialogsAllowedInWidget(MessagesController.getInstance(currentAccount).dialogsServerOnly, currentAccount);
                 listViewAdapter.notifyDataSetChanged();
             }
         }
@@ -1243,7 +1246,7 @@ public class InviteMembersBottomSheet extends UsersAlertBase implements Notifica
     public void setDelegate(InviteMembersBottomSheetDelegate inviteMembersBottomSheetDelegate, ArrayList<Long> selectedDialogs) {
         dialogsDelegate = inviteMembersBottomSheetDelegate;
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.dialogsNeedReload);
-        dialogsServerOnly = (ArrayList<TLRPC.Dialog>) FakePasscodeUtils.filterDialogs(MessagesController.getInstance(currentAccount).dialogsServerOnly, Optional.of(currentAccount));
+        dialogsServerOnly = WidgetUtils.filterDialogsAllowedInWidget(MessagesController.getInstance(currentAccount).dialogsServerOnly, currentAccount);
         updateRows();
     }
 
