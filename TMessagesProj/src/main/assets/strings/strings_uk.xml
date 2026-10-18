@@ -263,6 +263,8 @@
     <string name="UninstallSelf">Видалити цю версію PTelegram</string>
     <string name="ConnectionDisabledTitle">З'єднання розірвано</string>
     <string name="ConnectionDisabledMessage">Ваші дані були перенесені в іншу програму, а з'єднання в поточній програмі розірвано. Увімкніть його лише у випадку проблем із новою версією програми.</string>
+    <string name="EnableConnection">Увімкнути з'єднання</string>
+    <string name="ShowProxySettings">Налаштування проксі</string>
     <string name="UpdateCompletedTitle">PTelegram оновлено</string>
     <string name="UpdateCompletedMessage">Ці програми успішно перенесені. Перевірте це та видаліть стару програму. **Не виходьте з облікових записів у старій програмі, оскільки це може призвести до виходу з обох програм.**</string>
     <string name="OldAppNotRemovedTitle">Стару версію PTelegram не видалено</string>

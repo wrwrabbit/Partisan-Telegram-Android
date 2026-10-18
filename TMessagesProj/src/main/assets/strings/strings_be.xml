@@ -263,6 +263,8 @@
     <string name="UninstallSelf">Выдаліць гэтую версію PTelegram</string>
     <string name="ConnectionDisabledTitle">Падключэнне да інтэрнэту разарванае</string>
     <string name="ConnectionDisabledMessage">Вашы дадзеныя былі перанесены ў іншае прыкладанне, а падключэнне да інтэрнэту ў бягучым прыкладанні разарванае. Уключайце яго толькі ў выпадку праблем з новай версіяй прыкладання.</string>
+    <string name="EnableConnection">Уключыць падключэнне</string>
+    <string name="ShowProxySettings">Налады проксі</string>
     <string name="UpdateCompletedTitle">PTelegram абноўлены</string>
     <string name="UpdateCompletedMessage">Дадзеныя прыкладанні паспяхова перанесеныя. Праверце гэта і выдаліце старое прыкладанне. **Не выходзьце з акаўнтаў у старым прыкладанні, паколькі гэта можа прывесці да выхаду з абодвух прыкладанняў.**</string>
     <string name="OldAppNotRemovedTitle">Старая версія PTelegram не выдаленая</string>

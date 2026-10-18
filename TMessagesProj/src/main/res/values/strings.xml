@@ -11801,6 +11801,8 @@
     <string name="UninstallSelf">Uninstall This PTelegram Version</string>
     <string name="ConnectionDisabledTitle">Connection is Disabled</string>
     <string name="ConnectionDisabledMessage">Your data has been transferred to another app and connection in current app is disabled. Turn it on only if there are problems with the new version of the app.</string>
+    <string name="EnableConnection">Enable Connection</string>
+    <string name="ShowProxySettings">Proxy Settings</string>
     <string name="UpdateCompletedTitle">PTelegram updated</string>
     <string name="UpdateCompletedMessage">Application data has been migrated successfully. Check it out and uninstall the old app. **Do not log out of your accounts in the old app as this may result in you being logged out of both apps.**</string>
     <string name="OldAppNotRemovedTitle">Old PTelegram Version Not Removed</string>

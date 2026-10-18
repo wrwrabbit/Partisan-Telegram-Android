@@ -144,6 +144,7 @@ import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrationDialogs;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
+import org.telegram.messenger.partisan.appmigration.MigrationConnectionDisabler;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
@@ -10535,7 +10536,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         checkUi_itemDownloadsVisibility();
 
         final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
-        boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false);
+        boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false) || MigrationConnectionDisabler.isConnectionDisabled();
         final boolean connected = currentConnectionState == ConnectionsManager.ConnectionStateConnected || currentConnectionState == ConnectionsManager.ConnectionStateUpdating;
         proxyMenuSubItem.setSubtext(getString(proxyEnabled ? (connected ? R.string.MenuProxyConnected : R.string.MenuProxyConnecting) : R.string.MenuProxyDisabled));
         proxyDrawable.setConnected(proxyEnabled, connected, animated);
@@ -14187,6 +14188,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             final String proxyAddress = preferences.getString("proxy_ip", "");
             final boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false);
             final boolean proxyVisible = proxyEnabled && !TextUtils.isEmpty(proxyAddress)
+                    || MigrationConnectionDisabler.isConnectionDisabled()
                     || getMessagesController().blockedCountry && !SharedConfig.proxyList.isEmpty();
 
             if (proxyVisible) {
