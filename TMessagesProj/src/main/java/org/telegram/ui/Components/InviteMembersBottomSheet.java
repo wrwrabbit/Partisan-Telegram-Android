@@ -206,9 +206,6 @@ public class InviteMembersBottomSheet extends UsersAlertBase implements Notifica
                 if (ignoreUsers != null && ignoreUsers.indexOfKey(id) >= 0) {
                     return;
                 }
-                if (dialogsDelegate != null && !WidgetUtils.isDialogAllowedInWidget(id, currentAccount)) {
-                    return;
-                }
                 if (id != 0) {
                     if (selectedContacts.indexOfKey(id) >= 0) {
                         GroupCreateSpan groupCreateSpan = selectedContacts.get(id);
@@ -634,7 +631,12 @@ public class InviteMembersBottomSheet extends UsersAlertBase implements Notifica
         private Runnable searchRunnable;
 
         public SearchAdapter() {
-            searchAdapterHelper = new SearchAdapterHelper(false);
+            searchAdapterHelper = new SearchAdapterHelper(false) {
+                @Override
+                protected boolean filter(TLObject obj) {
+                    return dialogsDelegate == null || WidgetUtils.isDialogAllowedInWidget(DialogObject.getDialogId(obj), currentAccount);
+                }
+            };
             searchAdapterHelper.setDelegate((searchId) -> {
                 showItemsAnimated(currentItemsCount - 1);
                 if (searchRunnable == null && !searchAdapterHelper.isSearchInProgress() && getItemCount() <= 2) {
@@ -870,6 +872,9 @@ public class InviteMembersBottomSheet extends UsersAlertBase implements Notifica
 
                         for (int a = 0; a < contacts.size(); a++) {
                             TLObject object = contacts.get(a);
+                            if (dialogsDelegate != null && !WidgetUtils.isDialogAllowedInWidget(DialogObject.getDialogId(object), currentAccount)) {
+                                continue;
+                            }
 
                             String name;
                             String username;

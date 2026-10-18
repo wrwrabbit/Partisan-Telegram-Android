@@ -360,6 +360,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     private HashMap<String, String> englishLocaleStrings;
 
     private Intent passcodeSaveIntent;
+    private Intent deferredPasscodeSaveIntent;
     private boolean passcodeSaveIntentIsNew;
     private boolean passcodeSaveIntentIsRestore;
 
@@ -1293,9 +1294,18 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             handleIntent(intent, isNew, restore, true, null, false, true);
             return;
         }
-        // Waits for the queued fakePasscodeActivated handling: the account switch (UI thread), then the fragment pop (globalQueue).
+        deferredPasscodeSaveIntent = intent;
         AndroidUtilities.runOnUIThread(() -> Utilities.globalQueue.postRunnable(() ->
-                AndroidUtilities.runOnUIThread(() -> handleIntent(intent, isNew, restore, true, null, false, true))));
+                AndroidUtilities.runOnUIThread(() -> handleDeferredPasscodeSaveIntent(intent, isNew, restore))));
+    }
+
+    private void handleDeferredPasscodeSaveIntent(Intent intent, boolean isNew, boolean restore) {
+        // An intent handled during the wait is newer, so the saved one must not navigate away from it.
+        if (deferredPasscodeSaveIntent != intent) {
+            return;
+        }
+        deferredPasscodeSaveIntent = null;
+        handleIntent(intent, isNew, restore, true, null, false, true);
     }
 
     private void switchToAvailableAccountOrLogout() {
@@ -1569,6 +1579,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @SuppressLint("Range")
     private boolean handleIntent(Intent intent, boolean isNew, boolean restore, boolean fromPassword, Browser.Progress progress, boolean rebuildFragments, boolean openedTelegram) {
+        if (!fromPassword) {
+            deferredPasscodeSaveIntent = null;
+        }
         if (GiftInfoBottomSheet.handleIntent(intent, progress)) {
             return true;
         }

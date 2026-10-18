@@ -498,13 +498,14 @@ public class EditWidgetActivity extends BaseFragment {
                 cells[0].findViewById(R.id.shortcut_widget_item_divider).setVisibility(cells[1].getVisibility());
                 cells[1].findViewById(R.id.shortcut_widget_item_divider).setVisibility(GONE);
             } else if (widgetType == TYPE_CONTACTS) {
+                java.util.List<TLRPC.TL_topPeer> allowedHints = WidgetUtils.filterHintsAllowedInWidget(getMediaDataController().hints, currentAccount);
                 for (int position = 0; position < 2; position++) {
                     for (int a = 0; a < 2; a++) {
                         int num = position * 2 + a;
                         TLRPC.Dialog dialog;
                         if (selectedDialogs.isEmpty()) {
-                            if (num < WidgetUtils.filterHintsAllowedInWidget(getMediaDataController().hints, currentAccount).size()) {
-                                long userId = WidgetUtils.filterHintsAllowedInWidget(getMediaDataController().hints, currentAccount).get(num).peer.user_id;
+                            if (num < allowedHints.size()) {
+                                long userId = allowedHints.get(num).peer.user_id;
                                 dialog = getMessagesController().dialogs_dict.get(userId);
                                 if (dialog == null) {
                                     dialog = new TLRPC.TL_dialog();
