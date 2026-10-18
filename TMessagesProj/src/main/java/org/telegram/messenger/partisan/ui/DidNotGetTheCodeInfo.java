@@ -31,7 +31,7 @@ public class DidNotGetTheCodeInfo {
     }
 
     private static boolean isReleaseBuild() {
-        return !ApplicationLoader.isStandaloneBuild() && !BuildVars.isBetaApp() && !BuildVars.isAlphaApp();
+        return !ApplicationLoader.isRealBuildStandaloneBuild() && !BuildVars.isBetaApp();
     }
 
     private static SpannableStringBuilder replaceLinksWithExternalOnes(String text) {
