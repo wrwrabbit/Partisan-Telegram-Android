@@ -15,7 +15,9 @@ import android.widget.FrameLayout;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BadPasscodeAttempt;
 import org.telegram.messenger.FingerprintController;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
@@ -181,21 +183,10 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         if (isAppLock() || dismissing) return;
         dismissing = true;
         onPause();
-        passwordEditText.clearFocus();
-        AndroidUtilities.hideKeyboard(passwordEditText);
         hide(false);
     }
 
     private void hide(boolean accepted) {
-        if (showAnimator != null) {
-            showAnimator.cancel();
-            showAnimator = null;
-        }
-        if (imageAnimator != null) {
-            imageAnimator.cancel();
-            imageAnimator = null;
-        }
-
         AndroidUtilities.runOnUIThread(this::hidePasscodeView);
     }
 
@@ -214,8 +205,6 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             @Override
             public void onAnimationEnd(Animator animation) {
                 hideAnimator = null;
-                passwordEditText.setText("");
-                passwordEditText2.eraseAllCharacters(false);
                 setVisibility(View.GONE);
                 onAnimationUpdate(shownT = 0f);
                 setAlpha(0f);
@@ -309,8 +298,6 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         super.onDetachedFromWindow();
         onPause();
         dismissing = true;
-        if (showAnimator != null) showAnimator.cancel();
-        if (imageAnimator != null) imageAnimator.cancel();
         if (hideAnimator != null) {
             hideAnimator.removeAllListeners();
             hideAnimator.cancel();
