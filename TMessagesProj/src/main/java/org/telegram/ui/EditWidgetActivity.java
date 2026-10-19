@@ -58,11 +58,8 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
-import org.telegram.messenger.fakepasscode.FakePasscode;
-import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.WidgetUtils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -239,10 +236,11 @@ public class EditWidgetActivity extends BaseFragment {
         
         public void updateDialogs() {
             if (widgetType == TYPE_CHATS) {
+                ArrayList<TLRPC.Dialog> allowedDialogs = WidgetUtils.filterDialogsAllowedInWidget(getMessagesController().dialogsServerOnly, currentAccount);
                 for (int a = 0; a < 2; a++) {
                     TLRPC.Dialog dialog;
                     if (selectedDialogs.isEmpty()) {
-                        dialog = a < getMessagesController().dialogsServerOnly.size() ? getMessagesController().dialogsServerOnly.get(a) : null;
+                        dialog = a < allowedDialogs.size() ? allowedDialogs.get(a) : null;
                     } else {
                         if (a < selectedDialogs.size()) {
                             dialog = getMessagesController().dialogs_dict.get(selectedDialogs.get(a));
@@ -500,13 +498,14 @@ public class EditWidgetActivity extends BaseFragment {
                 cells[0].findViewById(R.id.shortcut_widget_item_divider).setVisibility(cells[1].getVisibility());
                 cells[1].findViewById(R.id.shortcut_widget_item_divider).setVisibility(GONE);
             } else if (widgetType == TYPE_CONTACTS) {
+                java.util.List<TLRPC.TL_topPeer> allowedHints = WidgetUtils.filterHintsAllowedInWidget(getMediaDataController().hints, currentAccount);
                 for (int position = 0; position < 2; position++) {
                     for (int a = 0; a < 2; a++) {
                         int num = position * 2 + a;
                         TLRPC.Dialog dialog;
                         if (selectedDialogs.isEmpty()) {
-                            if (num < getMediaDataController().hints.size()) {
-                                long userId = getMediaDataController().hints.get(num).peer.user_id;
+                            if (num < allowedHints.size()) {
+                                long userId = allowedHints.get(num).peer.user_id;
                                 dialog = getMessagesController().dialogs_dict.get(userId);
                                 if (dialog == null) {
                                     dialog = new TLRPC.TL_dialog();
@@ -743,6 +742,7 @@ public class EditWidgetActivity extends BaseFragment {
         ArrayList<TLRPC.User> users = new ArrayList<>();
         ArrayList<TLRPC.Chat> chats = new ArrayList<>();
         getMessagesStorage().getWidgetDialogIds(currentWidgetId, widgetType, selectedDialogs, users, chats, true);
+        WidgetUtils.removeDialogIdsNotAllowedInWidget(selectedDialogs, currentAccount);
         getMessagesController().putUsers(users, true);
         getMessagesController().putChats(chats, true);
         updateRows();
@@ -854,7 +854,8 @@ public class EditWidgetActivity extends BaseFragment {
                 InviteMembersBottomSheet bottomSheet = new InviteMembersBottomSheet(context, currentAccount, null, 0, EditWidgetActivity.this, null);
                 bottomSheet.setDelegate(dids -> {
                     selectedDialogs.clear();
-                    selectedDialogs.addAll(FakePasscodeUtils.filterDialogIds(dids, currentAccount));
+                    selectedDialogs.addAll(dids);
+                    WidgetUtils.removeDialogIdsNotAllowedInWidget(selectedDialogs, currentAccount);
                     updateRows();
                     if (widgetPreviewCell != null) {
                         widgetPreviewCell.updateDialogs();

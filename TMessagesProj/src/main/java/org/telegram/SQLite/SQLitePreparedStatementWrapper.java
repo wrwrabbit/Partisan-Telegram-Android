@@ -13,10 +13,16 @@ import java.util.Map;
 
 public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
     private final Map<DbSelector, SQLitePreparedStatement> statements;
+    private final DbSelector baseDbSelector;
     private DbSelector dbSelector = DbSelector.BOTH_DB;
 
     public SQLitePreparedStatementWrapper(Map<DbSelector, SQLitePreparedStatement> statements) {
+        this(statements, DbSelector.BOTH_DB);
+    }
+
+    public SQLitePreparedStatementWrapper(Map<DbSelector, SQLitePreparedStatement> statements, DbSelector baseDbSelector) {
         this.statements = statements;
+        this.baseDbSelector = baseDbSelector;
     }
 
     private void setDbSelector(DbSelector dbSelector) {
@@ -28,7 +34,7 @@ public class SQLitePreparedStatementWrapper extends SQLitePreparedStatement {
     }
 
     public void setDbSelectorByDialogId(long dialogId, int account, boolean keepRecentSearch, boolean keepUsersWithEncryptedChats) {
-        DbSelector dbSelector = DbSelector.MEMORY_DB;
+        DbSelector dbSelector = baseDbSelector;
         if (DialogObject.isEncryptedDialog(dialogId)) {
             dbSelector = DbSelector.BOTH_DB;
         }

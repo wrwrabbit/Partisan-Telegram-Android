@@ -14,6 +14,7 @@
 #include "ConnectionsManager.h"
 #include "FileLog.h"
 #include "BuffersStorage.h"
+#include "ConfigEncryption.h"
 
 Config::Config(int32_t instance, std::string fileName) {
     instanceNum = instance;
@@ -28,7 +29,7 @@ Config::Config(int32_t instance, std::string fileName) {
     }
 }
 
-NativeByteBuffer *Config::readConfig() {
+NativeByteBuffer *Config::readConfig(bool *wasEncrypted) {
     NativeByteBuffer *buffer = nullptr;
     FILE *file = fopen(configPath.c_str(), "rb");
     if (file != nullptr) {
@@ -38,6 +39,22 @@ NativeByteBuffer *Config::readConfig() {
             if (LOGS_ENABLED) DEBUG_E("Config(%p, %s) failed fseek to begin, reopen it", this, configPath.c_str());
             fclose(file);
             file = fopen(configPath.c_str(), "rb");
+        }
+        uint32_t marker = 0;
+        bool encrypted = file != nullptr && fileSize >= (long) sizeof(marker)
+                && fread(&marker, sizeof(uint32_t), 1, file) == 1
+                && ConfigEncryption::isEncryptionMarker(marker);
+        if (wasEncrypted != nullptr) {
+            *wasEncrypted = encrypted;
+        }
+        if (encrypted) {
+            ConnectionsManager &manager = ConnectionsManager::getInstance(instanceNum);
+            buffer = ConfigEncryption::readEncryptedConfig(file, fileSize, manager.configEncryptionKeySet ? manager.configEncryptionKey : nullptr);
+            fclose(file);
+            return buffer;
+        }
+        if (file != nullptr) {
+            fseek(file, 0, SEEK_SET);
         }
         uint32_t size = 0;
         size_t bytesRead = fread(&size, sizeof(uint32_t), 1, file);
@@ -56,6 +73,13 @@ NativeByteBuffer *Config::readConfig() {
 
 void Config::writeConfig(NativeByteBuffer *buffer) {
     if (LOGS_ENABLED) DEBUG_D("Config(%p, %s) start write config", this, configPath.c_str());
+    ConnectionsManager &manager = ConnectionsManager::getInstance(instanceNum);
+    if (manager.configEncryptionEncryptOnWrite && !manager.configEncryptionKeySet) {
+        // Encryption is enabled but the key is temporarily unavailable (e.g. keystore locked at boot).
+        // Skip the write so the existing encrypted file is preserved for decryption once the key returns.
+        if (LOGS_ENABLED) DEBUG_E("Config(%p, %s) skip write: encryption key unavailable", this, configPath.c_str());
+        return;
+    }
     FILE *file = fopen(configPath.c_str(), "rb");
     FILE *backup = fopen(backupPath.c_str(), "rb");
     bool error = false;
@@ -87,7 +111,12 @@ void Config::writeConfig(NativeByteBuffer *buffer) {
         return;
     }
     uint32_t size = buffer->position();
-    if (fwrite(&size, sizeof(uint32_t), 1, file) == 1) {
+    if (manager.configEncryptionKeySet && manager.configEncryptionEncryptOnWrite) {
+        if (!ConfigEncryption::writeEncryptedPayload(file, manager.configEncryptionKey, buffer->bytes(), size)) {
+            if (LOGS_ENABLED) DEBUG_E("Config(%p, %s) failed to write encrypted config data to file", this, configPath.c_str());
+            error = true;
+        }
+    } else if (fwrite(&size, sizeof(uint32_t), 1, file) == 1) {
         if (fwrite(buffer->bytes(), sizeof(uint8_t), size, file) != size) {
             if (LOGS_ENABLED) DEBUG_E("Config(%p, %s) failed to write config data to file", this, configPath.c_str());
             error = true;

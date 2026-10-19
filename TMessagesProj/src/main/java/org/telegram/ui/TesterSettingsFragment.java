@@ -17,6 +17,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.appmigration.MigrationConnectionDisabler;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.SecurityChecker;
@@ -121,6 +122,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 ),
                 new ToggleItem(this, "Show No Main Passcode Warning", () -> SharedConfig.showFakePasscodeNoMainPasscodeWarning,
                         value -> SharedConfig.showFakePasscodeNoMainPasscodeWarning = value),
+                new ToggleItem(this, "Show Voice Change Warning Timer", VoiceChangeSettings.showVoiceChangeWarningTimer),
                 new SimpleEditableDataItem(this, "Phone Override", TesterSettings.phoneOverride)
                         .addCondition(() -> SharedConfig.activatedTesterSettingType == 2),
                 new ButtonItem(this, "Reset Security Issues", view -> {
@@ -146,6 +148,11 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 new ToggleItem(this, "More Timer Values", TesterSettings.moreTimerValues),
                 new ToggleItem(this, "Show T.Settings with fake passcode", TesterSettings.showTesterSettingsWithFakePasscode),
                 new ToggleItem(this, "Fill Account Selector With Dummies", TesterSettings.fillAccountSelectorWithDummies),
+                new ToggleItem(this, "Simulate Keystore Failure", TesterSettings.simulateKeystoreFailure),
+                new ToggleItem(this, "Disable Connection",
+                        MigrationConnectionDisabler::isConnectionDisabled,
+                        this::setConnectionDisabled
+                ),
                 new DelimiterItem(this),
 
 
@@ -165,7 +172,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 new ReadOnlyDataItem(this, "Memory DB size",
                         () -> getMemoryDbSize() != null ? AndroidUtilities.formatFileSize(getMemoryDbSize()) : "error")
                         .setOnClickListener(this::showMemoryDialog)
-                        .addCondition(() -> getMessagesStorage().fileProtectionEnabled()),
+                        .addCondition(() -> getMessagesStorage().isUsingInMemoryDatabase()),
                 new ReadOnlyDataItem(this, "Account num", () -> Integer.toString(currentAccount)),
                 new DelimiterItem(this),
         };
@@ -240,6 +247,14 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
             getUserConfig().savedChannels.add(name);
         }
         getUserConfig().saveConfig(false);
+    }
+
+    private void setConnectionDisabled(boolean disabled) {
+        if (disabled) {
+            MigrationConnectionDisabler.disableConnection();
+        } else {
+            MigrationConnectionDisabler.enableConnection();
+        }
     }
 
     private void resetUpdate() {

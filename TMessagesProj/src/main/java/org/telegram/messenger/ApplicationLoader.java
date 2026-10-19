@@ -37,9 +37,11 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import org.json.JSONObject;
+import org.telegram.messenger.utils.Choreographer60FpsContent;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.WidgetUtils;
 import org.telegram.messenger.partisan.update.UpdateData;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
@@ -292,6 +294,7 @@ public class ApplicationLoader extends Application {
             }
         }
         FakePasscodeUtils.autoAddHidingsToAllFakePasscodes();
+        WidgetUtils.updateAllWidgets();
 
         ApplicationLoader app = (ApplicationLoader) ApplicationLoader.applicationContext;
         app.initPushServices();
@@ -319,6 +322,7 @@ public class ApplicationLoader extends Application {
             }
             applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE).edit()
                     .remove("ptgMigrationStep")
+                    .remove("ptgMigrationConnectionDisabled")
                     .remove("ptgMigrationMaxCancelledInstallationDate")
                     .remove("migratedPackageName")
                     .remove("migratedDate")
@@ -416,7 +420,15 @@ public class ApplicationLoader extends Application {
 
         LauncherIconController.tryFixLauncherIconIfNeeded();
         ProxyRotationController.init();
+
+        //if (BuildConfig.DEBUG_PRIVATE_VERSION) {
+        //    Choreographer60FpsContent.getInstance().addFrameCallback(debugEverySecondChecks, 1);
+        //}
     }
+
+    private final Runnable debugEverySecondChecks = () -> AndroidUtilities.runOnUIThread(() -> {
+        NotificationCenter.sanitize();
+    });
 
     private static void saveLogcatFile() {
         File downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);

@@ -1688,6 +1688,16 @@ public class DatabaseMigrationHelper {
             database.executeFast("PRAGMA user_version = 177").stepThis().dispose();
             version = 177;
         }
+        if (version == 177) {
+            database.executeFast("CREATE INDEX IF NOT EXISTS media_v4_music_browse_idx ON media_v4(uid, date DESC, mid DESC) WHERE type = 4 AND mid > 0 AND uid != 0;").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 178").stepThis().dispose();
+            version = 178;
+        }
+        if (version == 178) {
+            database.executeFast("DELETE FROM downloading_documents").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 179").stepThis().dispose();
+            version = 179;
+        }
 
         return version;
     }
@@ -1734,7 +1744,7 @@ public class DatabaseMigrationHelper {
             newDatabase.executeFast("PRAGMA journal_size_limit = 10485760").stepThis().dispose();
 
             MessagesStorage.createTables(newDatabase);
-            newDatabase.executeFast("ATTACH DATABASE \"" + oldDatabaseFile.getAbsolutePath() + "\" AS old;").stepThis().dispose();
+            newDatabase.executeFast("ATTACH DATABASE \"" + oldDatabaseFile.getAbsolutePath() + "\" AS old" + org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption.getAttachKeyClauseIfNeeded(currentAccount, oldDatabaseFile) + ";").stepThis().dispose();
 
             int version = newDatabase.executeInt("PRAGMA old.user_version");
             if (version != MessagesStorage.LAST_DB_VERSION) {

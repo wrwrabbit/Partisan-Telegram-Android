@@ -40,6 +40,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
     private RadialProgressView progressBar;
     private TextView buttonTextView;
     private boolean destroyed;
+    private volatile boolean cancelled;
     private long spaceSizeNeeded;
     private Intent migrationResultIntent;
 
@@ -93,24 +94,20 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
     }
 
     private void handleCancelling() {
+        showCancelWarningIfNeeded(this, this::cancelMigration);
+    }
+
+    public static void showCancelWarningIfNeeded(BaseFragment fragment, Runnable onAccepted) {
         if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
-            cancelMigration();
+            onAccepted.run();
         } else {
-            PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(this, this::cancelMigration);
+            PartisanWarningDialogBuilder.showConnectionDisabledDialogIfNeeded(fragment, onAccepted);
         }
     }
 
-    private void cancelMigration() {
-        if (AppMigratorPreferences.getStep() != Step.UNINSTALL_SELF) {
-            AppMigratorPreferences.updateMaxCancelledInstallationDate();
-        }
-        boolean newerPtgInstalled = AppMigrator.isNewerPtgInstalled(getContext(), false);
-        AppMigratorPreferences.setInstalledMaskedPtgPackageName(null);
-        AppMigratorPreferences.setInstalledMaskedPtgPackageSignature(null);
-        setStep(Step.NOT_STARTED);
-        if (!newerPtgInstalled) {
-            AppMigrator.enableConnection();
-        }
+    private synchronized void cancelMigration() {
+        cancelled = true;
+        AppMigrator.cancelMigration(getContext());
         finishFragment();
     }
 
@@ -323,15 +320,22 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         this.migrationResultIntent = migrationResultIntent;
     }
 
+    // A build that outlives this screen must not change the step, or it revives a cancelled migration
     @Override
     public void makeZipCompleted() {
-        AndroidUtilities.runOnUIThread(() -> setStep(Step.MAKE_ZIP_COMPLETED));
+        AndroidUtilities.runOnUIThread(() -> {
+            if (!cancelled && !destroyed) {
+                setStep(Step.MAKE_ZIP_COMPLETED);
+            }
+        });
     }
 
     @Override
     public void makeZipFailed() {
         AndroidUtilities.runOnUIThread(() -> {
-            setStep(Step.MAKE_ZIP_FAILED);
+            if (!cancelled && !destroyed) {
+                setStep(Step.MAKE_ZIP_FAILED);
+            }
         });
     }
 
@@ -344,7 +348,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
         }
         setStep(Step.MAKE_ZIP);
         new Thread(() -> {
-            AppMigrator.enableConnection();
+            MigrationConnectionDisabler.enableConnection();
             MigrationZipBuilder.makeZip(getParentActivity(), this);
         }).start();
     }
@@ -356,7 +360,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
             if (resultCode == Activity.RESULT_OK) {
                 handleMigrationResultIntent(data);
             } else {
-                AppMigrator.enableConnection();
+                MigrationConnectionDisabler.enableConnection();
             }
         }
     }
@@ -364,11 +368,11 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
     private void handleMigrationResultIntent(Intent data) {
         if (data != null && data.hasExtra("success")) {
             if (data.getBooleanExtra("success", false)) {
-                AppMigrator.disableConnection();
+                MigrationConnectionDisabler.disableConnection();
                 migrationFinished(data.getStringExtra("packageName"));
             } else {
                 saveMigrationIssuesIfNeeded(data);
-                AppMigrator.enableConnection();
+                MigrationConnectionDisabler.enableConnection();
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setTitle(LocaleController.getString(R.string.MigrationTitle));
                 builder.setMessage(getErrorMessage(data));
@@ -376,7 +380,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
                 showDialog(builder.create());
             }
         } else {
-            AppMigrator.enableConnection();
+            MigrationConnectionDisabler.enableConnection();
         }
     }
 
@@ -430,7 +434,7 @@ public class AppMigrationActivity extends BaseFragment implements MigrationZipBu
     }
 
     private void checkThread() {
-        while (!destroyed) {
+        while (!destroyed && !cancelled) {
             try {
                 synchronized (this) {
                     long freeSize = getFreeMemorySize();

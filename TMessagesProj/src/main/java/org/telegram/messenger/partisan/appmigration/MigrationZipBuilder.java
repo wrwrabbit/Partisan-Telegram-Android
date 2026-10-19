@@ -11,6 +11,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.partisan.PartisanLog;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionEncryptionKeyStore.KeyType;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -136,10 +137,28 @@ public class MigrationZipBuilder {
         ZipOutputStream zipStream = new ZipOutputStream(cipherStream);
 
         File filesDir = contextWrapper.getFilesDir();
+        KeyMigrationSender.deleteStaleKeysFile(KeyType.DATABASE);
+        KeyMigrationSender.deleteStaleKeysFile(KeyType.AUTH_TOKEN);
         addDirToZip(zipStream, "", filesDir);
         addDirToZip(zipStream, "", new File(filesDir.getParentFile(), "shared_prefs"));
+        addKeysToZip(zipStream, KeyType.DATABASE);
+        addKeysToZip(zipStream, KeyType.AUTH_TOKEN);
         zipStream.close();
         return zipFile;
+    }
+
+    // Each KeyType's raw per-account keys are wrapped by this app's Android Keystore, which the
+    // target app can't access, so they're transferred inside the migration zip. Inside the zip
+    // they're never unencrypted on disk (the zip stream is wrapped in a CipherOutputStream); once
+    // extracted on the target they exist briefly as a plaintext file, shredded as each key is consumed.
+    private static void addKeysToZip(ZipOutputStream zos, KeyType type) throws IOException {
+        byte[] keysFileContent = KeyMigrationSender.serializeKeysForMigration(type);
+        if (keysFileContent == null) {
+            return;
+        }
+        zos.putNextEntry(new ZipEntry("files/" + type.migrationFileName));
+        zos.write(keysFileContent);
+        zos.closeEntry();
     }
 
     public static void deleteZipFile() {

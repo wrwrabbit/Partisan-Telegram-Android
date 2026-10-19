@@ -15,7 +15,9 @@ import android.widget.FrameLayout;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BadPasscodeAttempt;
 import org.telegram.messenger.FingerprintController;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
@@ -29,7 +31,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.passcodeDismissed) {
+        if (id == NotificationCenter.passcodeDismissed && isAppLock()) {
             if (args[0] != this) {
                 setVisibility(GONE);
             }
@@ -45,11 +47,21 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
     }
 
     private PasscodeViewDelegate delegate;
+    private final String title;
+    private final String subtitle;
+    private boolean dismissing;
+    private ValueAnimator hideAnimator;
 
     AbstractMaskedPasscodeScreen screen;
 
     public PasscodeView(final Context context) {
+        this(context, LocaleController.getString(R.string.UnlockToUse), null);
+    }
+
+    public PasscodeView(final Context context, String title, String subtitle) {
         super(context);
+        this.title = title;
+        this.subtitle = subtitle;
 
 
         setWillNotDraw(false);
@@ -69,7 +81,12 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         this.delegate = delegate;
     }
 
+    protected boolean isAppLock() {
+        return true;
+    }
+
     public void processDone(boolean fingerprint, String password) {
+        if (dismissing || getVisibility() != VISIBLE) return;
         if (!fingerprint) {
             if (password.length() == 0 && SharedConfig.passcodeEnabled()) {
                 if (screen != null) {
@@ -133,10 +150,12 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
                 return;
             }
         }
+        dismissing = true;
+        onPause();
         SharedConfig.badPasscodeTries = 0;
         SharedConfig.needShowMaskedPasscodeScreenTutorial = false;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && FingerprintController.isKeyReady() && FingerprintController.checkDeviceFingerprintsChanged()) {
+        if (isAppLock() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && FingerprintController.isKeyReady() && FingerprintController.checkDeviceFingerprintsChanged()) {
             FingerprintController.deleteInvalidKey();
         }
 
@@ -144,14 +163,30 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
     }
 
     private void appUnlocked() {
-        SharedConfig.setAppLocked(false);
+        if (isAppLock()) {
+            SharedConfig.setAppLocked(false);
+        }
         SharedConfig.saveConfig();
-        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.didSetPasscode);
+        if (isAppLock()) {
+            NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.didSetPasscode);
+        }
         setOnTouchListener(null);
         if (delegate != null) {
             delegate.didAcceptedPassword(this);
         }
 
+        hide(true);
+    }
+
+    /** Cancels a confirmation view without accepting the passcode or unlocking the app. */
+    public void dismiss() {
+        if (isAppLock() || dismissing) return;
+        dismissing = true;
+        onPause();
+        hide(false);
+    }
+
+    private void hide(boolean accepted) {
         AndroidUtilities.runOnUIThread(this::hidePasscodeView);
     }
 
@@ -160,7 +195,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             AndroidUtilities.runOnUIThread(this::hidePasscodeView, 500);
             return;
         }
-        ValueAnimator va = ValueAnimator.ofFloat(shownT, 0);
+        ValueAnimator va = hideAnimator = ValueAnimator.ofFloat(shownT, 0);
         va.addUpdateListener(anm -> {
             shownT = (float) anm.getAnimatedValue();
             onAnimationUpdate(shownT);
@@ -169,10 +204,11 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         va.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
+                hideAnimator = null;
                 setVisibility(View.GONE);
-                onHidden();
                 onAnimationUpdate(shownT = 0f);
                 setAlpha(0f);
+                onHidden();
             }
         });
         va.setDuration(420);
@@ -202,7 +238,6 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         @Override
         public void run() {
             checkRetryTextView();
-            AndroidUtilities.runOnUIThread(checkRunnable, 100);
         }
     };
 
@@ -231,6 +266,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
     }
 
     public void onResume() {
+        if (dismissing) return;
         checkRetryTextView();
     }
 
@@ -250,14 +286,23 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             screen.onAttachedToWindow();
         }
 
-        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didGenerateFingerprintKeyPair);
-        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.passcodeDismissed);
-        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
+        if (isAppLock()) {
+            NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didGenerateFingerprintKeyPair);
+            NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.passcodeDismissed);
+            NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.fakePasscodeActivated);
+        }
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        onPause();
+        dismissing = true;
+        if (hideAnimator != null) {
+            hideAnimator.removeAllListeners();
+            hideAnimator.cancel();
+            hideAnimator = null;
+        }
 
         if (screen != null) {
             screen.onDetachedFromWindow();
@@ -273,6 +318,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
     }
 
     public void onShow(boolean fingerprint, boolean animated, int x, int y, Runnable onShow, Runnable onStart) {
+        if (getVisibility() != VISIBLE) dismissing = false;
         Context context = getContext();
         if (context instanceof LaunchActivity) {
             ((LaunchActivity)context).invalidateFlagSecureReason();
@@ -307,6 +353,8 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
+                    getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    if (dismissing || !isAttachedToWindow()) return;
                     setAlpha(1.0f);
                     getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     AndroidUtilities.runOnUIThread(() -> performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING), 350);

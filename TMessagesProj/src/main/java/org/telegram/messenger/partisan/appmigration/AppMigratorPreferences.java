@@ -35,6 +35,16 @@ public class AppMigratorPreferences {
         return step;
     }
 
+    public static boolean isConnectionDisabled() {
+        return getPrefs().getBoolean("ptgMigrationConnectionDisabled", false);
+    }
+
+    public static void setConnectionDisabled(boolean disabled) {
+        getPrefs().edit()
+                .putBoolean("ptgMigrationConnectionDisabled", disabled)
+                .commit();
+    }
+
     public static synchronized long getMaxCancelledInstallationDate() {
         if (maxCancelledInstallationDate == null) {
             maxCancelledInstallationDate = getPrefs()

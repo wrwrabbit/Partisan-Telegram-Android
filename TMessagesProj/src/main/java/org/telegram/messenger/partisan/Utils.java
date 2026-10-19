@@ -46,6 +46,9 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.FilteredArrayList;
+import org.telegram.messenger.partisan.appmigration.TgnetKeyMigrationReceiver;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionEncryptionKeyStore;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionTgnetEncryption;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -54,7 +57,9 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.CacheControlActivity;
 import org.telegram.ui.Cells.CheckBoxUserCell;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 import org.telegram.ui.web.BrowserHistory;
 import org.telegram.ui.web.WebBrowserSettings;
 import org.telegram.ui.web.WebMetadataCache;
@@ -66,6 +71,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -540,6 +546,31 @@ public class Utils {
         return path.delete();
     }
 
+    public static void shredFile(File file) throws Exception {
+        try {
+            shredFileContent(file);
+        } finally {
+            file.delete();
+        }
+    }
+
+    public static void shredFileContent(File file) throws Exception {
+        final int shredChunkSize = 64 * 1024;
+        long length = file.length();
+        if (length <= 0) {
+            return;
+        }
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rwd")) {
+            byte[] junk = new byte[(int) Math.min(length, shredChunkSize)];
+            randomAccessFile.seek(0);
+            for (long written = 0; written < length; written += junk.length) {
+                int chunkSize = (int) Math.min(junk.length, length - written);
+                Utilities.random.nextBytes(junk);
+                randomAccessFile.write(junk, 0, chunkSize);
+            }
+        }
+    }
+
     public static String removeUsernamePrefixed(String username) {
         return username.replace("@", "")
                 .replace("https://t.me/", "")
@@ -653,10 +684,9 @@ public class Utils {
         if (!account.isPresent() || TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false)) {
             return filteredDialogsByPasscode;
         }
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());
-        Set<Integer> innerChatIdsFromEncryptedGroups = messagesStorage.getAllInnerChatIdsFromEncryptedGroups();
+        MessagesController messagesController = MessagesController.getInstance(account.get());
         List<TLRPC.Dialog> filteredDialogs = filteredDialogsByPasscode.stream()
-                .filter(d -> !DialogObject.isEncryptedDialog(d.id) || !innerChatIdsFromEncryptedGroups.contains(DialogObject.getEncryptedChatId(d.id)))
+                .filter(d -> !DialogObject.isEncryptedDialog(d.id) || messagesController.getEncryptedGroupIdByInnerEncryptedChatId(DialogObject.getEncryptedChatId(d.id)) == null)
                 .collect(Collectors.toList());
         if (filteredDialogsByPasscode.size() == filteredDialogs.size()) {
             return filteredDialogsByPasscode;
@@ -681,6 +711,11 @@ public class Utils {
     }
 
     public static void deleteAccountFiles(int accountNum) {
+        // tgnet.dat is about to go, so its key is useless. Leaving it behind would make the next
+        // login unable to persist a session if the blob has become unreadable.
+        FileProtectionEncryptionKeyStore.deleteKey(FileProtectionEncryptionKeyStore.KeyType.AUTH_TOKEN, accountNum);
+        FileProtectionTgnetEncryption.clearConfigKeyState(accountNum);
+        TgnetKeyMigrationReceiver.clearMigrationTakeoverMarker(accountNum);
         if (accountNum == 0) {
             deleteZeroAccountFiles();
             return;
@@ -855,5 +890,44 @@ public class Utils {
 
     public static boolean needShowSavedChannels() {
         return !org.telegram.messenger.fakepasscode.FakePasscodeUtils.isFakePasscodeActivated() && org.telegram.messenger.SharedConfig.showSavedChannels;
+    }
+
+    public static void showBadPasscodePhotoWarning(BaseFragment fragment, Runnable callback) {
+        if (SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack) {
+            callback.run();
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
+            builder.setTitle(LocaleController.getString(R.string.Warning));
+            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarningAndroid12));
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            AlertDialog dialog = builder.create();
+            DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_POSITIVE, LocaleController.getString(R.string.Continue), 5,
+                    (d, v) -> callback.run());
+            fragment.showDialog(dialog);
+        } else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
+            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarning));
+            builder.setTitle(LocaleController.getString(R.string.Warning));
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), (d, v) -> callback.run());
+            fragment.showDialog(builder.create());
+        }
+    }
+
+    public static void showBadPasscodePhotoCameraPermissionDeniedDialog(BaseFragment fragment) {
+        new AlertDialog.Builder(fragment.getParentActivity())
+                .setTopAnimation(R.raw.permission_request_camera, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground))
+                .setMessage(AndroidUtilities.replaceTags(LocaleController.getString(R.string.PermissionNoCameraWithHint)))
+                .setPositiveButton(LocaleController.getString(R.string.PermissionOpenSettings), (dialogInterface, i) -> {
+                    try {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
+                        fragment.getParentActivity().startActivity(intent);
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
+                })
+                .setNegativeButton(LocaleController.getString(R.string.ContactsPermissionAlertNotNow), null)
+                .create()
+                .show();
     }
 }
