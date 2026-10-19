@@ -15,7 +15,7 @@ public class HideAccountAction extends AccountAction {
         if (fakePasscode.replaceOriginalPasscode) {
             return;
         }
-        fakePasscode.actionsResult.hiddenAccountEntries.add(new HideAccountResult(accountNum, strictHiding));
+        fakePasscode.actionsResult.addHideAccountResult(new HideAccountResult(accountNum, strictHiding));
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.accountHidingChanged);
         getNotificationsController().removeAllNotifications();
 

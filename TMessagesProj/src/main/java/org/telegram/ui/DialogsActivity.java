@@ -138,11 +138,13 @@ import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionKeyUnavailableDialog;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrationDialogs;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
+import org.telegram.messenger.partisan.appmigration.MigrationConnectionDisabler;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
@@ -235,6 +237,7 @@ import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.StealthModeAlert;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
+import org.telegram.ui.Wallet.WalletActivity;
 import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
@@ -2856,7 +2859,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
 
     private NotificationCenter.ObserversGroup observersGroup;
-    private NotificationCenter.ObserversGroup globalObserversGroup;
 
     @Override
     public boolean onFragmentCreate() {
@@ -2917,15 +2919,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         observersGroup = getNotificationCenter().createObserversGroup(this);
-        globalObserversGroup = NotificationCenter.getGlobalInstance().createObserversGroup(this);
 
         if (searchString == null) {
             currentConnectionState = getConnectionsManager().getConnectionState();
 
-            globalObserversGroup.add(NotificationCenter.emojiLoaded);
+            observersGroup.addGlobal(NotificationCenter.emojiLoaded);
             if (!onlySelect) {
-                globalObserversGroup.add(NotificationCenter.closeSearchByActiveAction);
-                globalObserversGroup.add(NotificationCenter.proxySettingsChanged);
+                observersGroup.addGlobal(NotificationCenter.closeSearchByActiveAction);
+                observersGroup.addGlobal(NotificationCenter.proxySettingsChanged);
                 observersGroup.add(NotificationCenter.filterSettingsUpdated);
                 observersGroup.add(NotificationCenter.dialogsUnreadCounterChanged);
             }
@@ -2956,12 +2957,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 .add(NotificationCenter.userEmojiStatusUpdated)
                 .add(NotificationCenter.currentUserPremiumStatusChanged);
 
-            globalObserversGroup.add(NotificationCenter.didSetPasscode);
-            globalObserversGroup.add(NotificationCenter.maskedUpdateReceived);
+            observersGroup.addGlobal(NotificationCenter.didSetPasscode);
+            observersGroup.addGlobal(NotificationCenter.maskedUpdateReceived);
         }
 
-        globalObserversGroup.add(NotificationCenter.fakePasscodeActivated);
-        globalObserversGroup.add(NotificationCenter.passwordlessModeActivated);
+        observersGroup.addGlobal(NotificationCenter.fakePasscodeActivated);
+        observersGroup.addGlobal(NotificationCenter.passwordlessModeActivated);
 
         observersGroup
             .add(NotificationCenter.messagesDeleted)
@@ -3112,10 +3113,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (observersGroup != null) {
             observersGroup.removeAllObservers();
             observersGroup = null;
-        }
-        if (globalObserversGroup != null) {
-            globalObserversGroup.removeAllObservers();
-            globalObserversGroup = null;
         }
 
         if (commentView != null) {
@@ -7274,10 +7271,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else if (!AndroidUtilities.needShowPasscode(false)) {
             checkOtherPtg();
             checkPtgPermissions();
+            showPtgDialog(FileProtectionKeyUnavailableDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionNewFeatureDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionTemporaryDisabledDialog.createDialogIfNeeded(this), true);
         }
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().isUsingInMemoryDatabase()) {
             getMessagesController().sortDialogs(null);
         }
         org.telegram.messenger.partisan.Utils.showAccountWillBeHiddenDialogIfNeeded(this);
@@ -7934,6 +7932,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return !AppMigrationDialogs.needShowNewerPtgDialog(getContext())
                 && !getOlderPtgStatus().needShowDialog()
                 && !needCameraPermission()
+                && !FileProtectionKeyUnavailableDialog.needShow(currentAccount)
                 && !FileProtectionNewFeatureDialog.needShow()
                 && !FileProtectionTemporaryDisabledDialog.needShow();
     }
@@ -9549,7 +9548,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                 hasDialogsToRevoke = true;
                                 dialogsIdsPossibleToRevoke.add(selectedDialog);
                             }
-                        } else if (getMessagesStorage().isEncryptedGroup(selectedDialog)) {
+                        } else if (getMessagesController().isEncryptedGroup(selectedDialog)) {
                             hasDialogsToRevoke = true;
                             dialogsIdsPossibleToRevoke.add(selectedDialog);
                         }
@@ -9887,7 +9886,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private void performDeleteOrClearDialogAction(int action, long selectedDialog, TLRPC.Chat chat, boolean isBot, boolean revoke) {
         if (action == clear) {
-            int onlyHistory = getMessagesStorage().isEncryptedGroup(selectedDialog) ? 2 : 1;
+            int onlyHistory = getMessagesController().isEncryptedGroup(selectedDialog) ? 2 : 1;
             getMessagesController().deleteDialog(selectedDialog, onlyHistory, revoke);
         } else {
             if (chat != null) {
@@ -10539,7 +10538,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         checkUi_itemDownloadsVisibility();
 
         final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
-        boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false);
+        boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false) || MigrationConnectionDisabler.isConnectionDisabled();
         final boolean connected = currentConnectionState == ConnectionsManager.ConnectionStateConnected || currentConnectionState == ConnectionsManager.ConnectionStateUpdating;
         proxyMenuSubItem.setSubtext(getString(proxyEnabled ? (connected ? R.string.MenuProxyConnected : R.string.MenuProxyConnecting) : R.string.MenuProxyDisabled));
         proxyDrawable.setConnected(proxyEnabled, connected, animated);
@@ -11625,9 +11624,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         filterTabsView.selectTabWithId(Integer.MAX_VALUE, 1);
         if (viewPages != null) {
             viewPages[0].selectedType = Integer.MAX_VALUE;
-            MessagesController.DialogFilter filter = FakePasscodeUtils.filterFolders(getMessagesController().getDialogFilters(), currentAccount).get(0);
+            List<MessagesController.DialogFilter> filteredFolders = FakePasscodeUtils.filterFolders(getMessagesController().getDialogFilters(), currentAccount);
             int dialogsType;
-            if (filter.isDefault()) {
+            if (filteredFolders.isEmpty() || filteredFolders.get(0).isDefault()) {
                 dialogsType = initialDialogsType;
             } else {
                 dialogsType = viewPages[0].dialogsType;
@@ -14140,27 +14139,33 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (ApplicationLoader.applicationLoaderInstance != null) {
             ApplicationLoader.applicationLoaderInstance.addItemOptions(io);
         }
-        TLRPC.TL_attachMenuBots menuBots = MediaDataController.getInstance(UserConfig.selectedAccount).getAttachMenuBots();
-        if (launchActivity != null && menuBots != null && menuBots.bots != null && !menuBots.bots.isEmpty()) {
-            for (TLRPC.TL_attachMenuBot attachMenuBot : menuBots.bots) {
-                if (attachMenuBot.show_in_side_menu) {
-                    io.addBot(attachMenuBot, () -> {
-                        if (attachMenuBot.inactive || attachMenuBot.side_menu_disclaimer_needed) {
-                            WebAppDisclaimerAlert.show(getContext(), (allowSendMessage) -> {
-                                TLRPC.TL_messages_toggleBotInAttachMenu botRequest = new TLRPC.TL_messages_toggleBotInAttachMenu();
-                                botRequest.bot = MessagesController.getInstance(currentAccount).getInputUser(attachMenuBot.bot_id);
-                                botRequest.enabled = true;
-                                botRequest.write_allowed = true;
-                                ConnectionsManager.getInstance(currentAccount).sendRequest(botRequest, (response2, error2) -> AndroidUtilities.runOnUIThread(() -> {
-                                    attachMenuBot.inactive = attachMenuBot.side_menu_disclaimer_needed = false;
-                                    LaunchActivity.showAttachMenuBot(launchActivity, currentAccount, attachMenuBot, null, true);
-                                    MediaDataController.getInstance(currentAccount).updateAttachMenuBotsInCache();
-                                }), ConnectionsManager.RequestFlagInvokeAfter | ConnectionsManager.RequestFlagFailOnServerErrors);
-                            }, null, null);
-                        } else {
-                            LaunchActivity.showAttachMenuBot(launchActivity, currentAccount, attachMenuBot, null, true);
-                        }
-                    }, () -> BotWebViewSheet.deleteBot(currentAccount, attachMenuBot.bot_id, null));
+        if (getMessagesController().config.walletAvailable.get()) {
+            io.add(R.drawable.ic_gram, LocaleController.getString(R.string.WalletAttachMoney), () -> {
+                presentFragment(new WalletActivity());
+            });
+        } else {
+            TLRPC.TL_attachMenuBots menuBots = MediaDataController.getInstance(UserConfig.selectedAccount).getAttachMenuBots();
+            if (launchActivity != null && menuBots != null && menuBots.bots != null && !menuBots.bots.isEmpty()) {
+                for (TLRPC.TL_attachMenuBot attachMenuBot : menuBots.bots) {
+                    if (attachMenuBot.show_in_side_menu) {
+                        io.addBot(attachMenuBot, () -> {
+                            if (attachMenuBot.inactive || attachMenuBot.side_menu_disclaimer_needed) {
+                                WebAppDisclaimerAlert.show(getContext(), (allowSendMessage) -> {
+                                    TLRPC.TL_messages_toggleBotInAttachMenu botRequest = new TLRPC.TL_messages_toggleBotInAttachMenu();
+                                    botRequest.bot = MessagesController.getInstance(currentAccount).getInputUser(attachMenuBot.bot_id);
+                                    botRequest.enabled = true;
+                                    botRequest.write_allowed = true;
+                                    ConnectionsManager.getInstance(currentAccount).sendRequest(botRequest, (response2, error2) -> AndroidUtilities.runOnUIThread(() -> {
+                                        attachMenuBot.inactive = attachMenuBot.side_menu_disclaimer_needed = false;
+                                        LaunchActivity.showAttachMenuBot(launchActivity, currentAccount, attachMenuBot, null, true);
+                                        MediaDataController.getInstance(currentAccount).updateAttachMenuBotsInCache();
+                                    }), ConnectionsManager.RequestFlagInvokeAfter | ConnectionsManager.RequestFlagFailOnServerErrors);
+                                }, null, null);
+                            } else {
+                                LaunchActivity.showAttachMenuBot(launchActivity, currentAccount, attachMenuBot, null, true);
+                            }
+                        }, () -> BotWebViewSheet.deleteBot(currentAccount, attachMenuBot.bot_id, null));
+                    }
                 }
             }
         }
@@ -14185,6 +14190,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             final String proxyAddress = preferences.getString("proxy_ip", "");
             final boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false);
             final boolean proxyVisible = proxyEnabled && !TextUtils.isEmpty(proxyAddress)
+                    || MigrationConnectionDisabler.isConnectionDisabled()
                     || getMessagesController().blockedCountry && !SharedConfig.proxyList.isEmpty();
 
             if (proxyVisible) {

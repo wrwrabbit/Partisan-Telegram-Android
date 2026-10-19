@@ -860,6 +860,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         recentSearchObject.date = (int) (System.currentTimeMillis() / 1000);
         filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
+        putRecentSearch(currentAccount, did);
+    }
+
+    public static void putRecentSearch(int currentAccount, long did) {
         FileProtectionData.addAddedRecentSearch(currentAccount, did);
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
@@ -869,6 +873,16 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 state.bindInteger(2, (int) (System.currentTimeMillis() / 1000));
                 state.step();
                 state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public static void clearRecentSearch(int currentAccount) {
+        MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
+            try {
+                MessagesStorage.getInstance(currentAccount).getDatabase().executeFast("DELETE FROM search_recent WHERE 1").stepThis().dispose();
             } catch (Exception e) {
                 FileLog.e(e);
             }
@@ -905,6 +919,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         final StringBuilder finalQueryFilter = queryFilter;
         filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
+        if (!searchWas) {
+            clearRecentSearch(currentAccount);
+            return;
+        }
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
                 finalQueryFilter.insert(0, "DELETE FROM search_recent WHERE ");
@@ -2427,7 +2445,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             setOrientation(LinearLayout.VERTICAL);
 
             BackupImageView imageView = new BackupImageView(context);
-            imageView.setImageDrawable(new RLottieDrawable(R.raw.utyan_empty, "utyan_empty", dp(120), dp(120)));
+            imageView.setImageDrawable(new RLottieDrawable(R.raw.utyan_empty, dp(120), dp(120)));
             addView(imageView, LayoutHelper.createLinear(120, 120, Gravity.CENTER_HORIZONTAL, 0, 27, 0, 0));
 
             TextView titleView = new TextView(context);

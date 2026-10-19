@@ -802,6 +802,39 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
         AlertsCreator.showSimpleAlert(this, getString(R.string.Warning), getString(R.string.SlowSecretGroupCreationWarning));
     }
 
+    private void showSecretGroupCreationDisclosureWarning(String positiveButtonText, Runnable onConfirmed) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle(getString(R.string.Warning));
+        builder.setMessage(getString(R.string.SecretGroupCreationDisclosureWarning));
+        builder.setPositiveButton(positiveButtonText, (dialog, which) -> onConfirmed.run());
+        builder.setNegativeButton(getString(R.string.Cancel), null);
+        showDialog(builder.create());
+    }
+
+    private void addMembersToEncryptedGroup(List<TLRPC.User> users) {
+        getEncryptedGroupUtils().addNewMembers(encryptedGroup, users);
+        AndroidUtilities.runOnUIThread(() -> {
+            getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
+            finishFragment();
+        });
+    }
+
+    private void createEncryptedGroup(String chatName, List<TLRPC.User> users) {
+        EncryptedGroupStarter.startEncryptedGroup(currentAccount, users, chatName, group -> {
+            if (!group.isPresent()) {
+                return;
+            }
+            AndroidUtilities.runOnUIThread(() -> {
+                getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
+
+                Bundle args = new Bundle();
+                args.putInt("enc_group_id", group.get().getInternalId());
+                args.putBoolean("just_created_chat", true);
+                presentFragment(new ChatActivity(args), true);
+            });
+        });
+    }
+
     private void showLimitReachedDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
         builder.setTitle(getString(R.string.AppName));
@@ -958,19 +991,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                         .map(id -> getMessagesController().getUser(id))
                         .collect(Collectors.toList());
 
-                EncryptedGroupStarter.startEncryptedGroup(currentAccount, users, chatName, group -> {
-                    if (!group.isPresent()) {
-                        return;
-                    }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
-
-                        Bundle args = new Bundle();
-                        args.putInt("enc_group_id", group.get().getInternalId());
-                        args.putBoolean("just_created_chat", true);
-                        presentFragment(new ChatActivity(args), true);
-                    });
-                });
+                showSecretGroupCreationDisclosureWarning(getString(R.string.Create), () -> createEncryptedGroup(chatName, users));
             };
             showDialog(FakePasscodeDialogBuilder.build(getContext(), template));
         } else {
@@ -978,11 +999,7 @@ public class EncryptedGroupCreateActivity extends BaseFragment implements Notifi
                     .map(id -> getMessagesController().getUser(id))
                     .collect(Collectors.toList());
 
-            getEncryptedGroupUtils().addNewMembers(encryptedGroup, users);
-            AndroidUtilities.runOnUIThread(() -> {
-                getNotificationCenter().postNotificationName(NotificationCenter.encryptedGroupMembersAdded, encryptedGroup.getInternalId());
-                finishFragment();
-            });
+            showSecretGroupCreationDisclosureWarning(getString(R.string.Add), () -> addMembersToEncryptedGroup(users));
         }
         return true;
     }

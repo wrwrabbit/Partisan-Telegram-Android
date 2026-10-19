@@ -18,7 +18,7 @@ public class LogOutAction extends AccountAction {
 
     @Override
     public void execute(FakePasscode fakePasscode) {
-        fakePasscode.actionsResult.hiddenAccountEntries.removeIf(entry -> entry.accountNum == accountNum);
+        fakePasscode.actionsResult.unhideAccount(accountNum);
         MessagesController.getInstance(accountNum).performLogout(1);
         if (fakePasscode.replaceOriginalPasscode) {
             removeAccountFromOtherPasscodes();
@@ -34,7 +34,7 @@ public class LogOutAction extends AccountAction {
     }
 
     public void hideAccount(FakePasscode fakePasscode) {
-        fakePasscode.actionsResult.hiddenAccountEntries.add(new HideAccountResult(accountNum, true));
+        fakePasscode.actionsResult.addHideAccountResult(new HideAccountResult(accountNum, true));
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.accountHidingChanged);
         AccountInstance.getInstance(accountNum).getNotificationsController().removeAllNotifications();
     }

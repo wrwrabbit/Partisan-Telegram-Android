@@ -33,7 +33,7 @@ public class RecordItem extends AbstractViewItem {
     public void onBindViewHolderInternal(RecyclerView.ViewHolder holder, int position) {
         RecordTextCell recordCell = (RecordTextCell) holder.itemView;
         if (isRecording.get()) {
-            recordCell.setTextAndIcon(getString(R.string.Stop), R.drawable.quantum_ic_stop_white_24, true);
+            recordCell.setTextAndIcon(getString(R.string.Stop), R.drawable.voice_change_stop, true);
             recordCell.setRecording(true);
         } else {
             recordCell.setTextAndIcon(getString(R.string.RecordVoiceChangeExample), R.drawable.input_mic, true);

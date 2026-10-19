@@ -51,7 +51,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AiTonesController;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.CodeHighlighting;
+import org.telegram.utils.code.highlight.CodeHighlighting;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
@@ -956,7 +956,7 @@ public class AIEditorAlert extends BottomSheetWithRecyclerListView implements No
     protected CharSequence getTitle() {
         if (title == null) {
             title = getString(R.string.AIEditor);
-            titleLoadingDrawable = new RLottieDrawable(R.raw.emoji_stars, "emoji_stars", dp(24), dp(24));
+            titleLoadingDrawable = new RLottieDrawable(R.raw.emoji_stars, dp(24), dp(24));
             titleLoadingDrawable.setAllowDecodeSingleFrame(true);
             titleLoadingDrawable.setAutoRepeat(1);
         }
