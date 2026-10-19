@@ -112,16 +112,16 @@ dependencies {
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.12.2'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.12.2'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.2'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.12.7'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.12.7'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.7.1'
 
     implementation 'be.tarsos.dsp:core:2.5'
 
-    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: '2.12.2'
-    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.12.2'
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.12.2'
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.12.2'
+    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: '2.12.7'
+    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.12.7'
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.12.7'
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.12.7'
     implementation 'com.jakewharton:process-phoenix:3.0.0'
 }
 

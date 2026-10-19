@@ -4,10 +4,13 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.partisan.serialization.PartisanDefaultTyping;
+import org.telegram.messenger.partisan.serialization.PartisanPolymorphicTypeValidator;
 import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
@@ -58,7 +61,12 @@ public class TlrpcJsonDeserializer extends StdDeserializer<TLObject> {
             if (hadStartArray && p.currentToken() == JsonToken.END_ARRAY) {
                 return getNullValue(ctxt);
             }
-            Object obj = deserializeObject(p.getValueAsString(), Class.forName(typeId));
+            PartisanDefaultTyping.requireNonGenericTypeId(typeId);
+            JavaType type = ctxt.resolveAndValidateSubType(ctxt.constructType(handledType()), typeId, PartisanPolymorphicTypeValidator.INSTANCE);
+            if (type == null) {
+                throw new IOException("Unknown TLObject type: " + typeId);
+            }
+            Object obj = deserializeObject(p.getValueAsString(), type.getRawClass());
 
             if (hadStartArray && p.nextToken() != JsonToken.END_ARRAY) {
                 ctxt.reportWrongTokenException(TLObject.class, JsonToken.END_ARRAY,

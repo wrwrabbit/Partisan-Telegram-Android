@@ -21,6 +21,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SecurityIssue;
+import org.telegram.messenger.partisan.serialization.PartisanDefaultTyping;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.tgnet.ConnectionsManager;
@@ -138,7 +139,7 @@ public class UserConfig extends BaseController {
         }
         jsonMapper = new ObjectMapper();
         jsonMapper.registerModule(new JavaTimeModule());
-        jsonMapper.activateDefaultTyping(jsonMapper.getPolymorphicTypeValidator());
+        PartisanDefaultTyping.activate(jsonMapper);
         jsonMapper.setVisibility(jsonMapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)

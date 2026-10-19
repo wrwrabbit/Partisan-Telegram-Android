@@ -48,6 +48,7 @@ import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.settings.TesterSettings;
+import org.telegram.messenger.partisan.serialization.PartisanDefaultTyping;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
 import org.telegram.messenger.partisan.update.AppVersion;
 import org.telegram.messenger.partisan.SecurityIssue;
@@ -580,7 +581,7 @@ public class SharedConfig {
         jsonMapper.registerModule(tlrpcModule);
         jsonMapper.registerModule(new JavaTimeModule());
         jsonMapper.registerModule(new KotlinModule());
-        jsonMapper.activateDefaultTyping(jsonMapper.getPolymorphicTypeValidator());
+        PartisanDefaultTyping.activate(jsonMapper);
         jsonMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         jsonMapper.setVisibility(jsonMapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
