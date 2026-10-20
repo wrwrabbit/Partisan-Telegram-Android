@@ -5322,7 +5322,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			RemoteViews customView = new RemoteViews(getPackageName(), LocaleController.isRTL ? R.layout.call_notification_rtl : R.layout.call_notification);
 			customView.setTextViewText(R.id.name, name);
 			customView.setViewVisibility(R.id.subtitle, View.GONE);
-			if (UserConfig.getActivatedAccountsCount() > 1) {
+			if (UserConfig.getActivatedAccountsCount() > 1 && MaskedPtgConfig.allowNotHiddenNotifications()) {
 				TLRPC.User self = UserConfig.getInstance(currentAccount).getCurrentUser();
 				customView.setTextViewText(R.id.title, MaskedPtgUtils.replaceTelegramBrandingWithAppName(video ? LocaleController.formatString("VoipInVideoCallBrandingWithName", R.string.VoipInVideoCallBrandingWithName, ContactsController.formatName(self.first_name, self.last_name)) : LocaleController.formatString("VoipInCallBrandingWithName", R.string.VoipInCallBrandingWithName, ContactsController.formatName(self.first_name, self.last_name))));
 			} else {
