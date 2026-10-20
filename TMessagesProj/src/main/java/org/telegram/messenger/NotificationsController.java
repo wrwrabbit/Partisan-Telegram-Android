@@ -4284,7 +4284,7 @@ public class NotificationsController extends BaseController implements Notificat
                 ArrayList<String> names = new ArrayList<>();
                 ArrayList<Object> avatars = new ArrayList<>();
                 parseStoryPushes(names, avatars);
-                if (SharedConfig.getDevicePerformanceClass() >= SharedConfig.PERFORMANCE_CLASS_AVERAGE) {
+                if (SharedConfig.getDevicePerformanceClass() >= SharedConfig.PERFORMANCE_CLASS_AVERAGE && MaskedPtgConfig.allowNotHiddenNotifications()) {
                     largeBitmap = loadMultipleAvatars(avatars);
                 }
                 String name;
@@ -4393,6 +4393,9 @@ public class NotificationsController extends BaseController implements Notificat
                     } else {
                         name = LocaleController.getString(R.string.NotificationHiddenName);
                     }
+                    if (!MaskedPtgConfig.allowNotHiddenNotifications()) {
+                        chatName = name;
+                    }
                 } else {
                     name = LocaleController.getString(R.string.AppName);
                 }
@@ -4406,7 +4409,7 @@ public class NotificationsController extends BaseController implements Notificat
 
             String detailText;
             if (allowSummary) {
-                if (UserConfig.getActivatedAccountsCount() > 1) {
+                if (UserConfig.getActivatedAccountsCount() > 1 && MaskedPtgConfig.allowNotHiddenNotifications()) {
                     if (pushDialogs.size() == 1) {
                         detailText = UserObject.getFirstName(getUserConfig().getCurrentUser());
                     } else {
@@ -4979,11 +4982,8 @@ public class NotificationsController extends BaseController implements Notificat
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
 
         ArrayList<DialogKey> sortedDialogs = new ArrayList<>();
-        if (!storyPushMessages.isEmpty()) {
+        if (!storyPushMessages.isEmpty() && MaskedPtgConfig.allowNotHiddenNotifications()) {
             sortedDialogs.add(new DialogKey(0, 0, true));
-        }
-        if (!MaskedPtgConfig.allowNotHiddenNotifications()) {
-            sortedDialogs.add(new DialogKey(0, 0, false));
         }
         LongSparseArray<ArrayList<MessageObject>> messagesByDialogs = new LongSparseArray<>();
         List<MessageObject> filteredMessages = filteredPushMessages();
@@ -5008,6 +5008,9 @@ public class NotificationsController extends BaseController implements Notificat
                 sortedDialogs.add(new DialogKey(dialog_id, topicId, false));
             }
             arrayList.add(messageObject);
+        }
+        if (!MaskedPtgConfig.allowNotHiddenNotifications() && messagesByDialogs.size() > 0) {
+            sortedDialogs.add(new DialogKey(0, 0, false));
         }
 
         LongSparseArray<Integer> oldIdsWear = new LongSparseArray<>();
@@ -5052,7 +5055,7 @@ public class NotificationsController extends BaseController implements Notificat
 
         ArrayList<NotificationHolder> holders = new ArrayList<>();
 
-        boolean useSummaryNotification = Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1 || sortedDialogs.size() > (storyPushMessages.isEmpty() ? 1 : 2);
+        boolean useSummaryNotification = Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1 || sortedDialogs.size() > (storyPushMessages.isEmpty() || !MaskedPtgConfig.allowNotHiddenNotifications() ? 1 : 2);
         if (useSummaryNotification && Build.VERSION.SDK_INT >= 26) {
             checkOtherNotificationsChannel();
         }
