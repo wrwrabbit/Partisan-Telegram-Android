@@ -1295,8 +1295,16 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             return;
         }
         deferredPasscodeSaveIntent = intent;
-        AndroidUtilities.runOnUIThread(() -> Utilities.globalQueue.postRunnable(() ->
-                AndroidUtilities.runOnUIThread(() -> handleDeferredPasscodeSaveIntent(intent, isNew, restore))));
+        // fakePasscodeActivated may be held back while an animation (e.g. keyboard hide) locks NotificationCenter.
+        AndroidUtilities.runOnUIThread(() ->
+                NotificationCenter.getGlobalInstance().doOnIdle(() ->
+                        Utilities.globalQueue.postRunnable(() ->
+                                AndroidUtilities.runOnUIThread(() ->
+                                        handleDeferredPasscodeSaveIntent(intent, isNew, restore)
+                                )
+                        )
+                )
+        );
     }
 
     private void handleDeferredPasscodeSaveIntent(Intent intent, boolean isNew, boolean restore) {
