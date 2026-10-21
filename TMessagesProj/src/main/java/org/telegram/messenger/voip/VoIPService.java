@@ -3983,6 +3983,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	}
 
 	private void showNotification(String name, Bitmap photo) {
+		name = MaskedPtgUtils.maskCallerNameIfNeeded(name);
 		Intent intent = new Intent(this, LaunchActivity.class).setAction(groupCall != null ? "voip_chat" : "voip");
 		if (groupCall != null) {
 			intent.putExtra("currentAccount", currentAccount);
@@ -4496,7 +4497,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				AndroidUtilities.runOnUIThread(delayedStartOutgoingCall, 2000);
 			}
 			systemCallConnection.setAddress(Uri.fromParts("tel", "+99084" + user.id, null), TelecomManager.PRESENTATION_ALLOWED);
-			systemCallConnection.setCallerDisplayName(ContactsController.formatName(user.first_name, user.last_name), TelecomManager.PRESENTATION_ALLOWED);
+			systemCallConnection.setCallerDisplayName(MaskedPtgUtils.maskCallerNameIfNeeded(ContactsController.formatName(user.first_name, user.last_name)), TelecomManager.PRESENTATION_ALLOWED);
 		}
 		return systemCallConnection;
 	}
@@ -5140,6 +5141,10 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 
 	public static Bitmap getRoundAvatarBitmap(Context context, int currentAccount, TLObject userOrChat) {
 		Bitmap bitmap = null;
+		if (!MaskedPtgConfig.allowNotHiddenNotifications()) {
+			bitmap = MaskedPtgUtils.createAppIconBitmap(context);
+			userOrChat = null; // skip loading the peer's photo; the bitmap still gets the circle clip below
+		}
 		try {
 			if (userOrChat instanceof TLRPC.User) {
 				TLRPC.User user = (TLRPC.User) userOrChat;
@@ -5204,6 +5209,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (!MaskedPtgConfig.allowCallNotification()) {
 			return;
 		}
+		name = MaskedPtgUtils.maskCallerNameIfNeeded(name);
 		Intent intent = new Intent(this, LaunchActivity.class);
 		intent.setAction("voip");
 
@@ -5292,7 +5298,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			builder.setVibrate(new long[0]);
 			builder.setCategory(Notification.CATEGORY_CALL);
 			builder.setFullScreenIntent(PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_MUTABLE), true);
-			if (userOrChat instanceof TLRPC.User) {
+			if (userOrChat instanceof TLRPC.User && MaskedPtgConfig.allowNotHiddenNotifications()) {
 				TLRPC.User user = (TLRPC.User) userOrChat;
 				if (!TextUtils.isEmpty(user.phone)) {
 					builder.addPerson("tel:" + user.phone);
@@ -5302,7 +5308,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		Notification incomingNotification;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 			Bitmap avatar = getRoundAvatarBitmap(this, currentAccount, userOrChat);
-			String personName = ContactsController.formatName(userOrChat);
+			String personName = MaskedPtgUtils.maskCallerNameIfNeeded(ContactsController.formatName(userOrChat));
 			if (TextUtils.isEmpty(personName)) {
 				//java.lang.IllegalArgumentException: person must have a non-empty a name
 				personName = "___";

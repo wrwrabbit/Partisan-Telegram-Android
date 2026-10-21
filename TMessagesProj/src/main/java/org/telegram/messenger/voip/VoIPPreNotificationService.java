@@ -244,7 +244,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
             builder.setVibrate(new long[0]);
             builder.setCategory(Notification.CATEGORY_CALL);
             builder.setFullScreenIntent(PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_MUTABLE), true);
-            if (user != null && !TextUtils.isEmpty(user.phone)) {
+            if (user != null && !TextUtils.isEmpty(user.phone) && org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig.allowNotHiddenNotifications()) {
                 builder.addPerson("tel:" + user.phone);
             }
         }
@@ -261,7 +261,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
         builder.setDeleteIntent(hidePendingIntent);
 
         Bitmap avatar = VoIPService.getRoundAvatarBitmap(context, account, user);
-        String personName = ContactsController.formatName(user);
+        String personName = org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils.maskCallerNameIfNeeded(ContactsController.formatName(user));
         if (TextUtils.isEmpty(personName)) {
             //java.lang.IllegalArgumentException: person must have a non-empty a name
             personName = "___";

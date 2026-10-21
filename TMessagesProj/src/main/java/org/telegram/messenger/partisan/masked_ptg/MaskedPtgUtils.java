@@ -3,8 +3,14 @@ package org.telegram.messenger.partisan.masked_ptg;
 import android.Manifest;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
@@ -93,5 +99,31 @@ public class MaskedPtgUtils {
         return text.replaceAll("(?i)telegram", Matcher.quoteReplacement(appName))
                 .replaceAll("\\s{2,}", " ")
                 .trim();
+    }
+
+    public static String maskCallerNameIfNeeded(String name) {
+        return MaskedPtgConfig.allowNotHiddenNotifications() ? name : LocaleController.getString(R.string.NotificationHiddenName);
+    }
+
+    public static Bitmap createAppIconBitmap(Context context) {
+        Drawable icon = loadLauncherIcon(context);
+        int size = AndroidUtilities.dp(48);
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        icon.setBounds(0, 0, size, size);
+        icon.draw(new Canvas(bitmap));
+        return bitmap;
+    }
+
+    private static Drawable loadLauncherIcon(Context context) {
+        PackageManager pm = context.getPackageManager();
+        try {
+            Intent launchIntent = pm.getLaunchIntentForPackage(context.getPackageName());
+            if (launchIntent != null) {
+                return pm.getActivityIcon(launchIntent);
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return pm.getApplicationIcon(context.getApplicationInfo());
     }
 }
