@@ -199,6 +199,7 @@ import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
+import org.telegram.messenger.partisan.SpoofedLinkChecker;
 import org.telegram.messenger.partisan.UserMessagesDeleter;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.findmessages.FindMessagesController;
@@ -13231,7 +13232,7 @@ public class ChatActivity extends BaseFragment implements
                     getMessagesController().getTopicsController().onTopicsDeletedServerSide(currentChat.id, threadId);
                 }
             } else {
-                int onlyHistory = getMessagesStorage().isEncryptedGroup(dialog_id) ? 2 : 1;
+                int onlyHistory = getMessagesController().isEncryptedGroup(dialog_id) ? 2 : 1;
                 getMessagesController().deleteDialog(dialog_id, onlyHistory, revoke);
                 getMessagesStorage().removeAllTopics(dialog_id);
                 getMessagesController().getTopicsController().reloadTopics(-dialog_id);
@@ -37357,9 +37358,9 @@ public class ChatActivity extends BaseFragment implements
                 if (span instanceof URLSpanReplacement && ((URLSpanReplacement) span).getTextStyleRun() != null && (((URLSpanReplacement) span).getTextStyleRun().flags & TextStyleSpan.FLAG_STYLE_TEXT_URL) != 0) {
                     forceNotInternalForApps = true;
                 }
-                AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, !forceNoIV, true, forceNotInternalForApps, makeProgressForLink(cell, span), themeDelegate);
+                AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, !forceNoIV, true, forceNotInternalForApps, SpoofedLinkChecker.attachLinkSource(makeProgressForLink(cell, span), cell, span), themeDelegate);
             } else if (type == 1) {
-                AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, !forceNoIV, false, makeProgressForLink(cell, span), themeDelegate);
+                AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, !forceNoIV, false, SpoofedLinkChecker.attachLinkSource(makeProgressForLink(cell, span), cell, span), themeDelegate);
             }
         } else {
             if (type == 0) {
@@ -41787,6 +41788,7 @@ public class ChatActivity extends BaseFragment implements
                     }
                 }
             };
+            SpoofedLinkChecker.attachLinkSource(progressDialogCurrent, cell, null);
             if (!safe && !Browser.isInternalUri(uri, null)) {
                 AlertsCreator.showOpenUrlAlert(ChatActivity.this, url, true, true, true, !safe, progressDialogCurrent, webpage, themeDelegate);
             } else {
@@ -45232,7 +45234,7 @@ public class ChatActivity extends BaseFragment implements
             }
         } else {
             boolean isEncryptedChatFromEncryptedGroup = enc_id != 0 &&
-                    getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(enc_id) != null;
+                    getMessagesController().getEncryptedGroupIdByInnerEncryptedChatId(enc_id) != null;
             if (!org.telegram.messenger.partisan.settings.TesterSettings.showEncryptedChatsFromEncryptedGroups.get().orElse(false) && isEncryptedChatFromEncryptedGroup) {
                 return false;
             }
@@ -45673,7 +45675,7 @@ public class ChatActivity extends BaseFragment implements
         showDialog(dialog);
     }
 
-
+    
     public void didPressTonAddress(ChatMessageCell cell, CharacterStyle link, String address) {
         final GramWallet wallet = GramWallet.getInstance(currentAccount);
         final boolean valid = WalletEngine2.isValidAddress(address);

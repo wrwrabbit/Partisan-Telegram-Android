@@ -157,7 +157,7 @@
     <string name="BackupFakePasscode">Copiar Contraseña Falsa</string>
     <string name="BackupFakePasscodeInfo">Cree un mensaje que contenga toda la información sobre este código de acceso falso, su configuración y acciones.</string>
     <string name="EnterCurrentFakePasscode">Introduzca esta contraseña falsa</string>
-    <string name="FakePasscodeBackupInfo">Copie y guarde cada vez que esta cadena.</string>
+    <string name="FakePasscodeBackupInfo">Copie esta cadena y guárdela.\n\n**¡Advertencia! Esta cadena es fácil de descifrar por fuerza bruta.** Cualquiera que la obtenga probablemente podrá deducir su código de bloqueo falso y ver todo lo que está configurado para hacer: qué chats oculta, qué elimina y qué otras acciones activa. Esto podría suponer un riesgo para usted. Se recomienda eliminarla después de transferir sus datos a una nueva aplicación o teléfono, o guardarla en un lugar secreto y protegido.</string>
     <string name="FakePasscodeRestoreHint">Copia de seguridad Base64 de código de acceso falso</string>
     <string name="FakePasscodeRestoreInfo">Pegar la cadena de copia de seguridad de contraseña falsa.</string>
     <string name="FakePasscodeRestore">Restaurar Contraseña Falsa</string>
@@ -212,7 +212,6 @@
     <string name="RemoveReplaceOriginalPasscodeIncompatibleSettingsDescription">Cuando esta opción está activada, se eliminarán todas las acciones ocultas y disfrazadas, se deshabilitará la activación por intentos de inicio de sesión incorrectos, y se permitirá el inicio de sesión con el código de acceso falso.</string>
     <string name="RemovePasswordlessIncompatibleSettingsDescription">Cuando esta opción está habilitada, la activación por intentos de inicio de sesión incorrectos se desactivará y se permitirá el inicio de sesión con el código de acceso falso.</string>
     <string name="CannotDisableLoginIfOptionEnabledDescription">No puede desactivar el inicio de sesión de la aplicación con el código de acceso falso si la configuración\"%1$s\" está habilitada.</string>
-    <string name="DidNotGetTheCodePartisanVersionInfo">**Telegram Partidista** envía el código solo a otras aplicaciones que ya están conectadas, y no a través de SMS.\n\n Para iniciar sesión en la aplicación a través de SMS, haga lo siguiente:\n 1. Descarga **la aplicación oficial de Telegram** de la Tienda de Google Play.\n 2. Inicie sesión en su cuenta.\n3. Inicie sesión en Partisan Telegram con el código recibido a través de la aplicación oficial.\n 4. Eliminar la aplicación oficial.\n\n Si tiene algún problema con esto, escríbanos: **@partisan_telegram_bot**</string>
     <string name="StrictHiding">Ocultamiento estricto</string>
     <string name="StrictHidingDialogDescription">Cuando esta opción está activada, el diálogo se ocultará con mayor seguridad, pero puede ser menos conveniente de usar. No recomendamos activar esta opción si planea utilizar la ocultación del diálogo con frecuencia.</string>
     <string name="AccountHidingSettingsTitle">Ajustes de ocultación de cuentas</string>

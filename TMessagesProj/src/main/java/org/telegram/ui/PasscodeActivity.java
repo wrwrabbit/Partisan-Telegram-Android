@@ -65,6 +65,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.MaskedMigrationIssue;
 import org.telegram.messenger.partisan.appmigration.MaskedMigratorHelper;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -444,7 +445,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     } else if (position == badPasscodeAttemptsRow) {
                         presentFragment(new BadPasscodeAttemptsActivity());
                     } else if (position == badPasscodePhotoFrontRow) {
-                        showPhotoWarning(() -> {
+                        Utils.showBadPasscodePhotoWarning(this, () -> {
                             Activity parentActivity = getParentActivity();
                             if (SharedConfig.takePhotoWithBadPasscodeFront || ContextCompat.checkSelfPermission(parentActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                                 SharedConfig.takePhotoWithBadPasscodeFront = !SharedConfig.takePhotoWithBadPasscodeFront;
@@ -459,7 +460,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                             }
                         });
                     } else if (position == badPasscodePhotoBackRow) {
-                        showPhotoWarning(() -> {
+                        Utils.showBadPasscodePhotoWarning(this, () -> {
                             Activity parentActivity = getParentActivity();
                             if (SharedConfig.takePhotoWithBadPasscodeBack || ContextCompat.checkSelfPermission(parentActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                                 SharedConfig.takePhotoWithBadPasscodeBack = !SharedConfig.takePhotoWithBadPasscodeBack;
@@ -947,36 +948,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     }
                 });
             } else {
-                new AlertDialog.Builder(getParentActivity())
-                        .setTopAnimation(R.raw.permission_request_camera, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground))
-                        .setMessage(AndroidUtilities.replaceTags(LocaleController.getString(R.string.PermissionNoCameraWithHint)))
-                        .setPositiveButton(LocaleController.getString("PermissionOpenSettings", R.string.PermissionOpenSettings), (dialogInterface, i) -> {
-                            try {
-                                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                                intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
-                                getParentActivity().startActivity(intent);
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                        })
-                        .setNegativeButton(LocaleController.getString("ContactsPermissionAlertNotNow", R.string.ContactsPermissionAlertNotNow), null)
-                        .create()
-                        .show();
+                Utils.showBadPasscodePhotoCameraPermissionDeniedDialog(this);
             }
-        }
-
-        if (requestCode == 2000 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-        } else if (requestCode == 2001 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            AndroidUtilities.runOnUIThread(() -> {
-                SharedConfig.takePhotoWithBadPasscodeBack = !SharedConfig.takePhotoWithBadPasscodeBack;
-                SharedConfig.saveConfig();
-                backPhotoTextCell.setChecked(SharedConfig.takePhotoWithBadPasscodeBack);
-                updateRows();
-                if (listAdapter != null) {
-                    listAdapter.notifyDataSetChanged();
-                }
-            });
         }
     }
 
@@ -1071,7 +1044,6 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
             }
             walletInfoRow = rowCount++;
         }
-
 
         if (!FakePasscodeUtils.isFakePasscodeActivated() && !originalSettings) {
             fakePasscodesHeaderRow = rowCount++;
@@ -1349,8 +1321,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
             } else {
                 animateSuccessAnimation(() -> {
                     PasscodeActivity passcodeActivity = new PasscodeActivity(TYPE_MANAGE_CODE_SETTINGS);
-                passcodeActivity.originalSettings = originalSettings;
-                presentFragment(passcodeActivity, true);
+                    passcodeActivity.originalSettings = originalSettings;
+                    presentFragment(passcodeActivity, true);
                     if (openedSettings != null) {
                         AndroidUtilities.runOnUIThread(openedSettings);
                         openedSettings = null;
@@ -1425,19 +1397,6 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                 outlinePasswordView.animateError(0f);
             }
         }, isPinCode() ? 150 : 1000));
-    }
-
-    private void showPhotoWarning(Runnable callback) {
-        if (SharedConfig.takePhotoWithBadPasscodeFront || SharedConfig.takePhotoWithBadPasscodeBack) {
-            callback.run();
-        } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setMessage(LocaleController.getString(R.string.TakePhotoWarning));
-            builder.setTitle(LocaleController.getString(R.string.Warning));
-            builder.setPositiveButton(LocaleController.getString(R.string.OK), (d, v) -> callback.run());
-            AlertDialog alertDialog = builder.create();
-            showDialog(alertDialog);
-        }
     }
 
     private boolean needToShowPasswordToPinSwitchWarning() {

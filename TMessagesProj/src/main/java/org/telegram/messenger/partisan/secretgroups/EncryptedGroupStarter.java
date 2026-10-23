@@ -1,7 +1,5 @@
 package org.telegram.messenger.partisan.secretgroups;
 
-import com.google.android.exoplayer2.util.Consumer;
-
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.NotificationCenter;
@@ -13,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class EncryptedGroupStarter implements AccountControllersProvider {

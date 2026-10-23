@@ -61,6 +61,7 @@ import org.telegram.messenger.partisan.secretgroups.action.DeleteAvatarAction;
 import org.telegram.messenger.partisan.secretgroups.action.DeleteMemberAction;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
 import org.telegram.messenger.partisan.secretgroups.action.NewAvatarAction;
+import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
@@ -6204,7 +6205,8 @@ public class MessageObject {
 
     private String getUnsupportedMessageText() {
         int resourceId;
-        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+        if (!FakePasscodeUtils.isFakePasscodeActivated()
+                && PartisanTelegramSettings.showPartisanUnsupportedMediaText.get().orElse(true)) {
             resourceId = R.string.PartisanUnsupportedMedia;
         } else {
             resourceId = R.string.UnsupportedMedia2Original;

@@ -1440,7 +1440,7 @@ public class MessagesController extends BaseController implements NotificationCe
                             return true;
                         }
                     }
-                } else if (accountInstance.getMessagesStorage().isEncryptedGroup(dialogId)) {
+                } else if (accountInstance.getMessagesController().isEncryptedGroup(dialogId)) {
                     if ((flags & DIALOG_FILTER_FLAG_GROUPS) != 0) {
                         return true;
                     }
@@ -6885,6 +6885,36 @@ public class MessagesController extends BaseController implements NotificationCe
         return new ArrayList<>(encryptedGroups.values());
     }
 
+    public EncryptedGroup getEncryptedGroupByInnerEncryptedChatId(int encryptedChatId) {
+        return encryptedGroups.values().stream()
+                .filter(g -> g.containsEncryptedChatId(encryptedChatId))
+                .findAny()
+                .orElse(null);
+    }
+
+    public Integer getEncryptedGroupIdByInnerEncryptedChatId(int encryptedChatId) {
+        EncryptedGroup encryptedGroup = getEncryptedGroupByInnerEncryptedChatId(encryptedChatId);
+        return encryptedGroup != null ? encryptedGroup.getInternalId() : null;
+    }
+
+    public EncryptedGroup getEncryptedGroupByEncryptedChat(TLRPC.EncryptedChat encryptedChat) {
+        if (encryptedChat == null) {
+            return null;
+        }
+        return getEncryptedGroupByInnerEncryptedChatId(encryptedChat.id);
+    }
+
+    public EncryptedGroup getEncryptedGroupByDialogId(long dialogId) {
+        if (!DialogObject.isEncryptedDialog(dialogId)) {
+            return null;
+        }
+        return getEncryptedGroup(DialogObject.getEncryptedChatId(dialogId));
+    }
+
+    public boolean isEncryptedGroup(long dialogId) {
+        return getEncryptedGroupByDialogId(dialogId) != null;
+    }
+
     public TLRPC.EncryptedChat getEncryptedChatDB(int chatId, boolean created) {
         TLRPC.EncryptedChat chat = encryptedChats.get(chatId);
         if (chat == null || created && (chat instanceof TLRPC.TL_encryptedChatWaiting || chat instanceof TLRPC.TL_encryptedChatRequested)) {
@@ -11513,7 +11543,7 @@ public class MessagesController extends BaseController implements NotificationCe
         for (int i = 0; i < newStrings.size(); i++) {
             long dialogId = newStrings.keyAt(i);
             if (DialogObject.isEncryptedDialog(dialogId)) {
-                Integer encryptedGroupId = getMessagesStorage().getEncryptedGroupIdByInnerEncryptedChatId(DialogObject.getEncryptedChatId(dialogId));
+                Integer encryptedGroupId = getEncryptedGroupIdByInnerEncryptedChatId(DialogObject.getEncryptedChatId(dialogId));
                 if (encryptedGroupId != null) {
                     long encryptedGroupDialogId = DialogObject.makeEncryptedDialogId(encryptedGroupId);
                     newStrings.put(encryptedGroupDialogId, newStrings.get(dialogId).clone());
@@ -13858,7 +13888,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         continue;
                     }
                 }
-                if (getMessagesStorage().fileProtectionEnabled() && fromCache) {
+                if (getMessagesStorage().chatListMemoryOnly() && fromCache) {
                     TLRPC.Dialog oldDialog = getDialog(d.id);
                     if (oldDialog != null && oldDialog.pinned && !d.pinned) {
                         continue;
@@ -14148,7 +14178,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
                 if (loadType != DIALOGS_LOAD_TYPE_CHANNEL && loadType != DIALOGS_LOAD_TYPE_UNKNOWN) {
                     if (!migrate) {
-                        dialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().fileProtectionEnabled() || dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id)))) && loadType == 0);
+                        dialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().chatListMemoryOnly() || dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id)))) && loadType == 0);
                         if (archivedDialogsCount > 0 && archivedDialogsCount < 20 && folderId == 0) {
                             dialogsEndReached.put(1, true);
                             long[] dialogsLoadOffsetArchived = getUserConfig().getDialogLoadOffsets(folderId);
@@ -14157,7 +14187,7 @@ public class MessagesController extends BaseController implements NotificationCe
                             }
                         }
                         if (!fromCache) {
-                            serverDialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().fileProtectionEnabled() || dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id)))) && loadType == 0);
+                            serverDialogsEndReached.put(folderId, (dialogsRes.dialogs.size() == 0 || dialogsRes.dialogs.size() != count && (!getMessagesStorage().chatListMemoryOnly() || dialogsRes.dialogs.stream().allMatch(d -> !dialogs_dict.containsKey(d.id)))) && loadType == 0);
                         }
                     }
                 }
@@ -17927,7 +17957,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
                     int pinnedNum = firstIsFolder ? 1 : 0;
                     // It looks like there is a bug in the original app here. We fixed pinning all encrypted dialogs and reordering their position.
-                    boolean needFixPinning = !FakePasscodeUtils.isFakePasscodeActivated() || getMessagesStorage().fileProtectionEnabled();
+                    boolean needFixPinning = !FakePasscodeUtils.isFakePasscodeActivated() || getMessagesStorage().isUsingInMemoryDatabase();
                     if (needFixPinning) {
                         Comparator<TLRPC.Dialog> pinnedNumComparator = Comparator.comparingInt(dlg -> dlg.pinnedNum);
                         dialogs = dialogs.stream()
@@ -17946,7 +17976,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                         if (DialogObject.isEncryptedDialog(dialog.id)
                                 && (FakePasscodeUtils.isFakePasscodeActivated() || dialog.pinned)
-                                && (!getEncryptedGroupUtils().isInnerEncryptedGroupChat(dialog.id) && !getMessagesStorage().isEncryptedGroup(dialog.id))) {
+                                && (!getEncryptedGroupUtils().isInnerEncryptedGroupChat(dialog.id) && !isEncryptedGroup(dialog.id))) {
                             int targetPosition = needFixPinning
                                     ? Math.max(targetCount - dialog.pinnedNum, 0)
                                     : pinnedNum;
@@ -17999,7 +18029,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 if (messageObjects != null) {
                                     for (int i = 0; i < messageObjects.size(); ++i) {
                                         MessageObject messageObject = messageObjects.get(i);
-                                        if (getMessagesStorage().fileProtectionEnabled()) {
+                                        if (getMessagesStorage().isUsingInMemoryDatabase()) {
                                             TLRPC.Message message = messageObject.messageOwner;
                                             if (message != null && message.out) {
                                                 message.unread = dialog.read_outbox_max_id < message.id;
@@ -22091,7 +22121,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isDialogNotificationsSoundEnabled(long dialogId, long topicId) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByDialogId(dialogId);
+        EncryptedGroup encryptedGroup = getEncryptedGroupByDialogId(dialogId);
         if (encryptedGroup != null) {
             return encryptedGroup.getInnerEncryptedChatIds(false).stream().anyMatch(innerId ->
                     isDialogNotificationsSoundEnabled(DialogObject.makeEncryptedDialogId(innerId), topicId)
@@ -22101,7 +22131,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isDialogMuted(long dialogId, long topicId, TLRPC.Chat chat) {
-        EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByDialogId(dialogId);
+        EncryptedGroup encryptedGroup = getEncryptedGroupByDialogId(dialogId);
         if (encryptedGroup != null) {
             return encryptedGroup.getInnerEncryptedChatIds(false).stream().anyMatch(innerId ->
                     isDialogMuted(DialogObject.makeEncryptedDialogId(innerId), topicId, chat)
@@ -22454,7 +22484,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
         if (messages.stream().anyMatch(m -> FakePasscodeUtils.isHideMessage(currentAccount, dialogId, m.getId()))
                 && !getEncryptedGroupUtils().isInnerEncryptedGroupChat(dialogId)) {
-            if (getMessagesStorage().fileProtectionEnabled()) {
+            if (getMessagesStorage().isUsingInMemoryDatabase()) {
                 loadUnknownDialog(getInputPeer(dialogId), 0);
             }
             return false;

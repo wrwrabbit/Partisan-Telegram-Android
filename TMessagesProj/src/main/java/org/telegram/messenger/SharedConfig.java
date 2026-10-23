@@ -45,11 +45,13 @@ import org.telegram.messenger.fakepasscode.FakePasscode;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
 import org.telegram.messenger.partisan.settings.TesterSettings;
 import org.telegram.messenger.partisan.update.UpdateApkRemoveRunnable;
 import org.telegram.messenger.partisan.update.AppVersion;
 import org.telegram.messenger.partisan.SecurityIssue;
+import org.telegram.messenger.partisan.WidgetUtils;
 import org.telegram.messenger.partisan.TlrpcJsonDeserializer;
 import org.telegram.messenger.partisan.TlrpcJsonSerializer;
 import org.telegram.messenger.partisan.update.UpdateData;
@@ -447,9 +449,6 @@ public class SharedConfig {
     public static int runNumber;
     public static Set<SecurityIssue> ignoredSecurityIssues = new HashSet<>();
     public static boolean confirmDangerousActions;
-    public static boolean fileProtectionForAllAccountsEnabled = true;
-    public static boolean disableFileProtectionAfterRestart = false;
-    public static boolean fileProtectionWorksWhenFakePasscodeActivated = true;
     public static String previousMessageActivatorId = "";
 
     private static final int[] LOW_SOC = {
@@ -713,6 +712,9 @@ public class SharedConfig {
         for (FakePasscode p: fakePasscodes) {
             p.migrate();
         }
+        if (fakePasscodeActionsResult != null) {
+            fakePasscodeActionsResult.migrate();
+        }
 
         if (!fakePasscodeLoadedWithErrors) {
             SharedPreferences.Editor editor = preferences.edit();
@@ -754,7 +756,7 @@ public class SharedConfig {
                 editor.putBoolean("needShowFileProtectionNewFeatureDialog", true);
                 editor.apply();
 
-                fileProtectionForAllAccountsEnabled = false;
+                FileProtectionSettings.fileProtectionForAllAccountsEnabled.set(false);
             }
             sharedConfigMigrationVersion++;
         }
@@ -873,6 +875,7 @@ public class SharedConfig {
 
             TesterSettings.loadSettings();
             VoiceChangeSettings.loadSettings();
+            FileProtectionSettings.loadSettings();
             PartisanTelegramSettings.loadSettings();
 
             String authKeyString = preferences.getString("pushAuthKey", null);
@@ -995,9 +998,6 @@ public class SharedConfig {
             clearAllDraftsOnScreenLock = preferences.getBoolean("clearAllDraftsOnScreenLock", false);
             deleteMessagesForAllByDefault = preferences.getBoolean("deleteMessagesForAllByDefault", false);
             confirmDangerousActions = preferences.getBoolean("confirmDangerousActions", false);
-            fileProtectionForAllAccountsEnabled = preferences.getBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
-            disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
-            fileProtectionWorksWhenFakePasscodeActivated = preferences.getBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
             previousMessageActivatorId = preferences.getString("previousMessageActivatorId", previousMessageActivatorId);
             dayNightWallpaperSwitchHint = preferences.getInt("dayNightWallpaperSwitchHint", 0);
             bigCameraForRound = preferences.getBoolean("bigCameraForRound", false);
@@ -1091,30 +1091,6 @@ public class SharedConfig {
         editor.commit();
     }
 
-    public static void setFileProtectionForAllAccounts(boolean enabled) {
-        fileProtectionForAllAccountsEnabled = enabled;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("fileProtectionForAllAccountsEnabled", fileProtectionForAllAccountsEnabled);
-        editor.commit();
-    }
-
-    public static void setDisableFileProtectionAfterRestart(boolean value) {
-        disableFileProtectionAfterRestart = value;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("disableFileProtectionAfterRestart", value);
-        editor.commit();
-    }
-
-    public static void toggleFileProtectionWorksWhenFakePasscodeActivated() {
-        fileProtectionWorksWhenFakePasscodeActivated = !fileProtectionWorksWhenFakePasscodeActivated;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("fileProtectionWorksWhenFakePasscodeActivated", fileProtectionWorksWhenFakePasscodeActivated);
-        editor.commit();
-    }
-
     public static void savePreviousMessageActivatorId(String previousMessageActivatorId) {
         SharedConfig.previousMessageActivatorId = previousMessageActivatorId;
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
@@ -1127,6 +1103,10 @@ public class SharedConfig {
         return badPasscodeAttemptList;
     }
 
+    public static boolean hasBadPasscodeAttemptPhotos() {
+        return badPasscodeAttemptList.stream().anyMatch(attempt -> !attempt.photoPaths.isEmpty());
+    }
+
     public static void addBadPasscodeAttempt(BadPasscodeAttempt badAttempt) {
         SharedConfig.badPasscodeAttemptList.add(badAttempt);
         saveBadPasscodeAttempts();
@@ -1135,6 +1115,11 @@ public class SharedConfig {
     public static void clearBadPasscodeAttemptList() {
         badPasscodeAttemptList.stream().forEach(BadPasscodeAttempt::clear);
         badPasscodeAttemptList.clear();
+        saveBadPasscodeAttempts();
+    }
+
+    public static void deleteAllBadPasscodeAttemptPhotos() {
+        badPasscodeAttemptList.stream().forEach(BadPasscodeAttempt::clear);
         saveBadPasscodeAttempts();
     }
 
@@ -1204,6 +1189,7 @@ public class SharedConfig {
         fakePasscodeActivatedIndex = fakePasscodeIndex;
         if (oldIndex != fakePasscodeIndex) {
             FakePasscodeUtils.hideFakePasscodeTraces();
+            WidgetUtils.updateAllWidgets();
             AndroidUtilities.runOnUIThread(() ->
                     NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.fakePasscodeActivated)
             );
@@ -1216,11 +1202,6 @@ public class SharedConfig {
         }
         for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
             if (UserConfig.getInstance(i).isClientActivated()) {
-                ArrayList<Long> overriddenDialogIds = UserConfig.getInstance(i).chatInfoOverrides
-                        .keySet().stream().map(str -> -Long.parseLong(str)).collect(Collectors.toCollection(ArrayList::new));
-                if (!overriddenDialogIds.isEmpty()) {
-                    MessagesStorage.getInstance(i).updateOverriddenWidgets(overriddenDialogIds);
-                }
                 MessagesStorage.getInstance(i).unreadCounterChangedByFakePasscode();
             }
         }
@@ -1392,20 +1373,24 @@ public class SharedConfig {
     public static void clearConfig() {
         saveIncomingPhotos = false;
         appLocked = false;
-        passcodeType = PASSCODE_TYPE_PIN;
         passcodeRetryInMs = 0;
         lastUptimeMillis = 0;
         badPasscodeTries = 0;
-        passcodeHash = "";
         synchronized (FakePasscode.class) {
-            for (FakePasscode p: fakePasscodes) {
-                p.onDelete();
+            if (FakePasscodeUtils.isFakePasscodeActivated()) {
+                FakePasscodeUtils.enterPasswordlessModeAfterLogout();
+            } else {
+                passcodeHash = "";
+                passcodeType = PASSCODE_TYPE_PIN;
+                passcodeSalt = new byte[0];
+                for (FakePasscode p: fakePasscodes) {
+                    p.onDelete();
+                }
+                fakePasscodes.clear();
+                fakePasscodeActivatedIndex = -1;
             }
-            fakePasscodes.clear();
-            fakePasscodeActivatedIndex = -1;
         }
         filesCopiedFromOldTelegram = false;
-        passcodeSalt = new byte[0];
         autoLockIn = 60 * 60;
         lastPauseTime = 0;
         useFingerprintLock = false;
@@ -2313,14 +2298,6 @@ public class SharedConfig {
             animationsEnabled = MessagesController.getGlobalMainSettings().getBoolean("view_animations", true);
         }
         return animationsEnabled;
-    }
-
-    public static void setOnScreenLockAction(int value) {
-        onScreenLockAction = value;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putInt("onScreenLockAction", onScreenLockAction);
-        editor.commit();
     }
 
     public static boolean isAppLocked() {

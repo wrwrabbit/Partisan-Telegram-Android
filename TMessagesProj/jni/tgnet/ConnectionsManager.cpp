@@ -441,7 +441,9 @@ void ConnectionsManager::loadConfig() {
     if (config == nullptr) {
         config = new Config(instanceNum, "tgnet.dat");
     }
-    NativeByteBuffer *buffer = config->readConfig();
+    bool wasEncrypted = false;
+    NativeByteBuffer *buffer = config->readConfig(&wasEncrypted);
+    bool encryptionFormatMismatch = false;
     if (buffer != nullptr) {
         uint32_t version = buffer->readUint32(nullptr);
         if (LOGS_ENABLED) DEBUG_D("config version = %u", version);
@@ -488,6 +490,7 @@ void ConnectionsManager::loadConfig() {
             }
         }
         buffer->reuse();
+        encryptionFormatMismatch = wasEncrypted != (configEncryptionKeySet && configEncryptionEncryptOnWrite);
     }
 
     if (currentDatacenterId != 0 && currentUserId) {
@@ -508,7 +511,7 @@ void ConnectionsManager::loadConfig() {
 
     initDatacenters();
 
-    if ((!datacenters.empty() && currentDatacenterId == 0) || pushSessionId == 0) {
+    if ((!datacenters.empty() && currentDatacenterId == 0) || pushSessionId == 0 || encryptionFormatMismatch) {
         if (pushSessionId == 0) {
             RAND_bytes((uint8_t *) &pushSessionId, 8);
         }
@@ -3752,6 +3755,17 @@ void ConnectionsManager::applyDnsConfig(NativeByteBuffer *buffer, std::string ph
         }
         buffer->reuse();
     });
+}
+
+void ConnectionsManager::setConfigEncryptionKey(const uint8_t *key, int32_t length, bool encryptOnWrite) {
+    configEncryptionEncryptOnWrite = encryptOnWrite;
+    if (key != nullptr && length == sizeof(configEncryptionKey)) {
+        memcpy(configEncryptionKey, key, sizeof(configEncryptionKey));
+        configEncryptionKeySet = true;
+    } else {
+        memset(configEncryptionKey, 0, sizeof(configEncryptionKey));
+        configEncryptionKeySet = false;
+    }
 }
 
 void ConnectionsManager::init(uint32_t version, int32_t layer, int32_t apiId, std::string deviceModel, std::string systemVersion, std::string appVersion, std::string langCode, std::string systemLangCode, std::string configPath, std::string logPath, std::string regId, std::string cFingerpting, std::string installerId, std::string packageId, int32_t timezoneOffset, int64_t userId, bool userPremium, bool isPaused, bool enablePushConnection, bool hasNetwork, int32_t networkType, int32_t performanceClass) {

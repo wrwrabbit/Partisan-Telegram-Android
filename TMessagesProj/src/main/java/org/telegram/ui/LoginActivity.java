@@ -4069,7 +4069,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         getConnectionsManager().sendRequest(req, null, ConnectionsManager.RequestFlagWithoutLogin);
                         new AlertDialog.Builder(context)
                                 .setTitle(getString(R.string.RestorePasswordNoEmailTitle))
-                                .setMessage(AndroidUtilities.replaceTags(!FakePasscodeUtils.isFakePasscodeActivated() ? LocaleController.getString(R.string.DidNotGetTheCodePartisanVersionInfo) : LocaleController.formatString(R.string.DidNotGetTheCodeInfo, phone)))
+                                .setMessage(!FakePasscodeUtils.isFakePasscodeActivated() ? org.telegram.messenger.partisan.ui.DidNotGetTheCodeInfo.build() : AndroidUtilities.replaceTags(LocaleController.formatString(R.string.DidNotGetTheCodeInfo, phone)))
                                 .setNeutralButton(getString(R.string.DidNotGetTheCodeHelpButton), (dialog, which) -> {
                                     try {
                                         PackageInfo pInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);

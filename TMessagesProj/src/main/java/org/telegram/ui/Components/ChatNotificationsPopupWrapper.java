@@ -196,7 +196,7 @@ public class ChatNotificationsPopupWrapper {
             backItem.setVisibility(View.GONE);
         }
 
-        if (org.telegram.messenger.MessagesStorage.getInstance(currentAccount).isEncryptedGroup(dialogId)) {
+        if (org.telegram.messenger.MessagesController.getInstance(currentAccount).isEncryptedGroup(dialogId)) {
             customizeSubItem.setVisibility(View.GONE);
         }
 

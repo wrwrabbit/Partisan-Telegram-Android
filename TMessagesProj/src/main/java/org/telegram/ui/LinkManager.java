@@ -1601,7 +1601,7 @@ public class LinkManager {
 
     private boolean canOpenTonConnectTransaction() {
         return !tonConnectCancelled && !activity.isFinishing() && !activity.isDestroyed()
-                && LaunchActivity.isResumed && !SharedConfig.appLocked
+                && LaunchActivity.isResumed && !SharedConfig.isAppLocked()
                 && !SharedConfig.isWaitingForPasscodeEnter
                 && UserConfig.selectedAccount == currentAccount;
     }

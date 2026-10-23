@@ -138,11 +138,13 @@ import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.fakepasscode.TelegramMessageAction;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionKeyUnavailableDialog;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionNewFeatureDialog;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.appmigration.AppMigrationActivity;
 import org.telegram.messenger.partisan.appmigration.AppMigrationDialogs;
 import org.telegram.messenger.partisan.appmigration.AppMigrator;
+import org.telegram.messenger.partisan.appmigration.MigrationConnectionDisabler;
 import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
@@ -2958,8 +2960,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             observersGroup.addGlobal(NotificationCenter.didSetPasscode);
         }
 
-        globalObserversGroup.add(NotificationCenter.fakePasscodeActivated);
-        globalObserversGroup.add(NotificationCenter.passwordlessModeActivated);
+        observersGroup.addGlobal(NotificationCenter.fakePasscodeActivated);
+        observersGroup.addGlobal(NotificationCenter.passwordlessModeActivated);
 
         observersGroup
             .add(NotificationCenter.messagesDeleted)
@@ -7269,10 +7271,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else if (!AndroidUtilities.needShowPasscode(false)) {
             checkOtherPtg();
             checkPtgPermissions();
+            showPtgDialog(FileProtectionKeyUnavailableDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionNewFeatureDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionTemporaryDisabledDialog.createDialogIfNeeded(this), true);
         }
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().isUsingInMemoryDatabase()) {
             getMessagesController().sortDialogs(null);
         }
         org.telegram.messenger.partisan.Utils.showAccountWillBeHiddenDialogIfNeeded(this);
@@ -7929,6 +7932,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return !AppMigrationDialogs.needShowNewerPtgDialog(getContext())
                 && !getOlderPtgStatus().needShowDialog()
                 && !needCameraPermission()
+                && !FileProtectionKeyUnavailableDialog.needShow(currentAccount)
                 && !FileProtectionNewFeatureDialog.needShow()
                 && !FileProtectionTemporaryDisabledDialog.needShow();
     }
@@ -9544,7 +9548,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                 hasDialogsToRevoke = true;
                                 dialogsIdsPossibleToRevoke.add(selectedDialog);
                             }
-                        } else if (getMessagesStorage().isEncryptedGroup(selectedDialog)) {
+                        } else if (getMessagesController().isEncryptedGroup(selectedDialog)) {
                             hasDialogsToRevoke = true;
                             dialogsIdsPossibleToRevoke.add(selectedDialog);
                         }
@@ -9882,7 +9886,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private void performDeleteOrClearDialogAction(int action, long selectedDialog, TLRPC.Chat chat, boolean isBot, boolean revoke) {
         if (action == clear) {
-            int onlyHistory = getMessagesStorage().isEncryptedGroup(selectedDialog) ? 2 : 1;
+            int onlyHistory = getMessagesController().isEncryptedGroup(selectedDialog) ? 2 : 1;
             getMessagesController().deleteDialog(selectedDialog, onlyHistory, revoke);
         } else {
             if (chat != null) {
@@ -10534,7 +10538,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         checkUi_itemDownloadsVisibility();
 
         final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
-        boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false);
+        boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false) || MigrationConnectionDisabler.isConnectionDisabled();
         final boolean connected = currentConnectionState == ConnectionsManager.ConnectionStateConnected || currentConnectionState == ConnectionsManager.ConnectionStateUpdating;
         proxyMenuSubItem.setSubtext(getString(proxyEnabled ? (connected ? R.string.MenuProxyConnected : R.string.MenuProxyConnecting) : R.string.MenuProxyDisabled));
         proxyDrawable.setConnected(proxyEnabled, connected, animated);
@@ -11620,9 +11624,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         filterTabsView.selectTabWithId(Integer.MAX_VALUE, 1);
         if (viewPages != null) {
             viewPages[0].selectedType = Integer.MAX_VALUE;
-            MessagesController.DialogFilter filter = FakePasscodeUtils.filterFolders(getMessagesController().getDialogFilters(), currentAccount).get(0);
+            List<MessagesController.DialogFilter> filteredFolders = FakePasscodeUtils.filterFolders(getMessagesController().getDialogFilters(), currentAccount);
             int dialogsType;
-            if (filter.isDefault()) {
+            if (filteredFolders.isEmpty() || filteredFolders.get(0).isDefault()) {
                 dialogsType = initialDialogsType;
             } else {
                 dialogsType = viewPages[0].dialogsType;
@@ -14231,6 +14235,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             final String proxyAddress = preferences.getString("proxy_ip", "");
             final boolean proxyEnabled = preferences.getBoolean("proxy_enabled", false);
             final boolean proxyVisible = proxyEnabled && !TextUtils.isEmpty(proxyAddress)
+                    || MigrationConnectionDisabler.isConnectionDisabled()
                     || getMessagesController().blockedCountry && !SharedConfig.proxyList.isEmpty();
 
             if (proxyVisible) {

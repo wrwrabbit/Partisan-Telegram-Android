@@ -2,9 +2,8 @@ package org.telegram.messenger.partisan;
 
 import android.net.Uri;
 import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.style.CharacterStyle;
 import android.text.style.URLSpan;
 import android.util.Patterns;
 
@@ -14,12 +13,9 @@ import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
-import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.Cells.AboutLinkCell;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.LaunchActivity;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,18 +28,37 @@ public class SpoofedLinkChecker {
         public String label = null;
     }
 
+    public static class LinkSource {
+        private final CharSequence text;
+        private final CharacterStyle span;
+
+        private LinkSource(CharSequence text, CharacterStyle span) {
+            this.text = text;
+            this.span = span;
+        }
+    }
+
     private final String url;
-    private final BaseFragment fragment;
     private final Browser.Progress progress;
 
-    private SpoofedLinkChecker(String url, BaseFragment fragment, Browser.Progress progress) {
+    private SpoofedLinkChecker(String url, Browser.Progress progress) {
         this.url = url;
-        this.fragment = fragment;
         this.progress = progress;
     }
 
-    public static SpoofedLinkInfo isSpoofedLink(String url, BaseFragment fragment, Browser.Progress progress) {
-        return new SpoofedLinkChecker(url, fragment, progress).isSpoofedLinkInternal();
+    public static SpoofedLinkInfo isSpoofedLink(String url, Browser.Progress progress) {
+        return new SpoofedLinkChecker(url, progress).isSpoofedLinkInternal();
+    }
+
+    public static Browser.Progress attachLinkSource(Browser.Progress progress, ChatMessageCell cell, CharacterStyle span) {
+        return attachLinkSource(progress, getMessageText(cell), span);
+    }
+
+    public static Browser.Progress attachLinkSource(Browser.Progress progress, CharSequence text, CharacterStyle span) {
+        if (progress != null) {
+            progress.setSpoofedLinkSource(new LinkSource(text, span));
+        }
+        return progress;
     }
 
     private SpoofedLinkInfo isSpoofedLinkInternal() {
@@ -54,13 +69,13 @@ public class SpoofedLinkChecker {
                 return result;
             }
 
-            CharSequence text = getLinkMessageObjectFromProgress();
-            if (!(text instanceof Spannable)) {
+            LinkSource source = progress != null ? progress.getSpoofedLinkSource() : null;
+            if (source == null || !(source.text instanceof Spannable)) {
                 return result;
             }
-            Spannable spannableText = (Spannable) text;
+            Spannable spannableText = (Spannable) source.text;
 
-            URLSpan spoofedSpan = getSpans(spannableText).stream()
+            URLSpan spoofedSpan = getSpans(spannableText, source.span).stream()
                     .filter(span -> isSpoofSpan(spannableText, span))
                     .findAny()
                     .orElse(null);
@@ -81,23 +96,11 @@ public class SpoofedLinkChecker {
         }
     }
 
-    private CharSequence getLinkMessageObjectFromProgress() {
-        CharSequence charSequence = getLinkCharSequenceFromChatMessageCell();
-        if (charSequence == null) {
-            charSequence = getLinkCharSequenceFromAboutLinkCell();
-        }
-        return charSequence;
-    }
-
-    private CharSequence getLinkCharSequenceFromChatMessageCell() {
-        if (progress == null) {
-            return null;
-        }
-        MessageObject messageObject = null;
-        ChatMessageCell cell = tryGetObjectFieldBySuffix(progress, "cell", ChatMessageCell.class);
+    private static CharSequence getMessageText(ChatMessageCell cell) {
         if (cell == null) {
             return null;
         }
+        MessageObject messageObject = null;
         if (cell.getCurrentMessagesGroup() != null) {
             MessageObject.GroupedMessages groupedMessages = cell.getCurrentMessagesGroup();
             if (!groupedMessages.messages.isEmpty()) {
@@ -114,56 +117,12 @@ public class SpoofedLinkChecker {
         return messageObject.caption != null ? messageObject.caption : messageObject.messageText;
     }
 
-    private CharSequence getLinkCharSequenceFromAboutLinkCell() {
-        if (progress == null) {
-            return null;
-        }
-        AboutLinkCell cell = tryGetObjectFieldBySuffix(progress, "this$0", AboutLinkCell.class);
-        if (cell == null) {
-            return null;
-        }
-        return tryGetObjectFieldBySuffix(cell, "stringBuilder", SpannableStringBuilder.class);
-    }
-
-    private static <T> T tryGetObjectFieldBySuffix(Object object, String suffix, Class<T> kind) {
-        if (object == null) {
-            return null;
-        }
-        for (Class<?> clazz = object.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
-            try {
-                Field[] fields = clazz.getDeclaredFields();
-                for (Field field : fields) {
-                    if (!field.getName().endsWith(suffix)) {
-                        continue;
-                    }
-                    field.setAccessible(true);
-                    Object value = field.get(object);
-                    if (value != null && kind.isAssignableFrom(value.getClass())) {
-                        return (T) value;
-                    }
-                }
-            } catch (IllegalAccessException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    private List<URLSpan> getSpans(Spannable spannableText) {
-        URLSpan progressSpan = getSpanFromProgress();
-        if (progressSpan != null) {
-            return Collections.singletonList(progressSpan);
+    private List<URLSpan> getSpans(Spannable spannableText, CharacterStyle sourceSpan) {
+        if (sourceSpan instanceof URLSpan) {
+            return Collections.singletonList((URLSpan) sourceSpan);
         } else {
             return getSpansByUrl(spannableText);
         }
-    }
-
-    private URLSpan getSpanFromProgress() {
-        URLSpan progressSpan = tryGetObjectFieldBySuffix(progress, "span", URLSpan.class);
-        if (progressSpan == null) {
-            progressSpan = tryGetObjectFieldBySuffix(progress, "pressedLink", URLSpan.class);
-        }
-        return progressSpan;
     }
 
     private List<URLSpan> getSpansByUrl(Spannable spannableText) {

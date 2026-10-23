@@ -3091,7 +3091,7 @@ public class LocaleController {
                         editor.putString("language", localeInfo.getKey());
                         editor.commit();
 
-                        localeValues = addAssetStrings(valuesToSet, localeInfo);
+                        valuesToSet.putAll(addAssetStrings(valuesToSet, localeInfo));
                         localizationExternal = new Localization.Builder()
                             .addLocalization(valuesToSet)
                             .build();

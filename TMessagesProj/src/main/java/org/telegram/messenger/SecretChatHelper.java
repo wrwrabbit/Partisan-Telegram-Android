@@ -250,7 +250,7 @@ public class SecretChatHelper extends BaseController {
                 getNotificationCenter().postNotificationName(NotificationCenter.encryptedChatUpdated, newChat);
             });
         }
-        AndroidUtilities.runOnUIThread(() -> new EncryptedGroupChatUpdateHandler(currentAccount).processEncryptedChatUpdate(newChat));
+        new EncryptedGroupChatUpdateHandler(currentAccount).processEncryptedChatUpdate(newChat);
         if (newChat instanceof TLRPC.TL_encryptedChatDiscarded && newChat.history_deleted) {
             AndroidUtilities.runOnUIThread(() -> getMessagesController().deleteDialog(dialog_id, 0));
         }
