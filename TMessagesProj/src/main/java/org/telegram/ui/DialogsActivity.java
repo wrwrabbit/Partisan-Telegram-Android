@@ -149,6 +149,7 @@ import org.telegram.messenger.partisan.appmigration.MigrationZipBuilder;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionTemporaryDisabledDialog;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.settings.PartisanTelegramSettings;
+import org.telegram.messenger.partisan.ui.DatabaseNotEncryptedDialog;
 import org.telegram.messenger.partisan.verification.VerificationUpdatesChecker;
 import org.telegram.messenger.utils.FBool;
 import org.telegram.messenger.utils.GradientProtectionDrawable;
@@ -7272,6 +7273,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             checkOtherPtg();
             checkPtgPermissions();
             showPtgDialog(FileProtectionKeyUnavailableDialog.createDialogIfNeeded(this), true);
+            showPtgDialog(DatabaseNotEncryptedDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionNewFeatureDialog.createDialogIfNeeded(this), true);
             showPtgDialog(FileProtectionTemporaryDisabledDialog.createDialogIfNeeded(this), true);
         }
@@ -7933,6 +7935,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 && !getOlderPtgStatus().needShowDialog()
                 && !needCameraPermission()
                 && !FileProtectionKeyUnavailableDialog.needShow(currentAccount)
+                && !DatabaseNotEncryptedDialog.needShow(currentAccount)
                 && !FileProtectionNewFeatureDialog.needShow()
                 && !FileProtectionTemporaryDisabledDialog.needShow();
     }
