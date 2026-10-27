@@ -6,7 +6,6 @@ import android.text.TextUtils;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
@@ -45,6 +44,13 @@ public class FakePasscodeUtils {
         return getActivatedFakePasscode() != null;
     }
 
+    public static void enterPasswordlessModeAfterLogout() {
+        FakePasscode activated = getActivatedFakePasscode();
+        if (activated != null) {
+            activated.checkPasswordlessMode();
+        }
+    }
+
     private static ActionsResult getActivatedActionsResult() {
         if (isFakePasscodeActivated()) {
             return getActivatedFakePasscode().actionsResult.merge(SharedConfig.fakePasscodeActionsResult);
@@ -64,7 +70,7 @@ public class FakePasscodeUtils {
     public static RemoveChatsResult getJustActivatedRemoveChatsResult(int accountNum) {
         ActionsResult result = getActivatedActionsResult();
         if (result != null && result.isJustActivated()) {
-            return result.removeChatsResults.get(accountNum);
+            return result.getRemoveChatsResult(accountNum);
         }
         return null;
     }
@@ -131,9 +137,9 @@ public class FakePasscodeUtils {
             return filteredDialogs;
         }
 
-        MessagesStorage messagesStorage = MessagesStorage.getInstance(account.get());
+        MessagesController messagesController = MessagesController.getInstance(account.get());
         List<TLRPC.Dialog> filteredDialogsWithoutEncryptedGroups = filteredDialogs.stream()
-                .filter(d -> !messagesStorage.isEncryptedGroup(d.id))
+                .filter(d -> !messagesController.isEncryptedGroup(d.id))
                 .collect(Collectors.toList());
         return new FilteredArrayList<>(filteredDialogsWithoutEncryptedGroups, filteredDialogs);
     }
@@ -289,6 +295,7 @@ public class FakePasscodeUtils {
     }
 
     public static boolean autoAddHidingsToAllFakePasscodes() {
+        ActionsResultIdHashRunnable.start();
         boolean result = false;
         for (FakePasscode fakePasscode: SharedConfig.fakePasscodes) {
             result |= fakePasscode.autoAddAccountHidings();
@@ -322,16 +329,27 @@ public class FakePasscodeUtils {
     public static Map<Integer, Boolean> getLogoutOrHideAccountMap() {
         Map<Integer, Boolean> result = new HashMap<>();
         for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-            result.put(i, UserConfig.getInstance(i).isClientActivated() ? false : null);
-        }
-        for (FakePasscode fakePasscode: SharedConfig.fakePasscodes) {
-            for (AccountActions actions : fakePasscode.getFilteredAccountActions()) {
-                if (actions.isLogOutOrHideAccount()) {
-                    result.put(actions.getAccountNum(), true);
-                }
+            if (isLogOutOrHideAccountInAnyFakePasscode(i)) {
+                result.put(i, true);
+            } else {
+                result.put(i, UserConfig.getInstance(i).isClientActivated() ? false : null);
             }
         }
         return result;
+    }
+
+    public static boolean isLogOutOrHideAccountInAnyFakePasscode(int account) {
+        return SharedConfig.fakePasscodes.stream()
+                .map(passcode -> passcode.getAccountActions(account))
+                .anyMatch(actions -> actions != null && actions.isLogOutOrHideAccount());
+    }
+
+    public static boolean isHideOrRemoveDialogInAnyFakePasscode(long dialogId, int account) {
+        return SharedConfig.fakePasscodes.stream()
+                .map(passcode -> passcode.getAccountActions(account))
+                .anyMatch(actions -> actions != null
+                        && (actions.getRemoveChatsAction().contains(dialogId)
+                            || actions.getRemoveChatsAction().contains(-dialogId)));
     }
 
     public static boolean isHideMessage(int accountNum, Long dialogId, Integer messageId) {

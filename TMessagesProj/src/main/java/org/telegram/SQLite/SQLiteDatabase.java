@@ -31,7 +31,11 @@ public class SQLiteDatabase {
 	}
 
 	public SQLiteDatabase(String fileName) throws SQLiteException {
-		sqliteHandle = opendb(fileName, ApplicationLoader.getFilesDirFixed().getPath());
+		this(fileName, null);
+	}
+
+	public SQLiteDatabase(String fileName, byte[] encryptionKey) throws SQLiteException {
+		sqliteHandle = opendb(fileName, ApplicationLoader.getFilesDirFixed().getPath(), encryptionKey);
 		isOpen = true;
 	}
 
@@ -126,7 +130,7 @@ public class SQLiteDatabase {
 		internalBackup(sqliteHandle, other.sqliteHandle);
 	}
 
-	native long opendb(String fileName, String tempDir) throws SQLiteException;
+	native long opendb(String fileName, String tempDir, byte[] encryptionKey) throws SQLiteException;
 	native void closedb(long sqliteHandle) throws SQLiteException;
     native void beginTransaction(long sqliteHandle);
     native void commitTransaction(long sqliteHandle);

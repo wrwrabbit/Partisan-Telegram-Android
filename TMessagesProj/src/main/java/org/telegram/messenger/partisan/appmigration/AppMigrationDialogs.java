@@ -14,7 +14,7 @@ public class AppMigrationDialogs {
     public static boolean needShowNewerPtgDialog(Context context) {
         return !FakePasscodeUtils.isFakePasscodeActivated()
                 && !AppMigrator.isMigrationStarted()
-                && !AppMigrator.isConnectionDisabled()
+                && !MigrationConnectionDisabler.isConnectionDisabled()
                 && targetPtgPackageInstalled(context);
     }
 
@@ -61,6 +61,19 @@ public class AppMigrationDialogs {
         dialog.setCancelable(false);
         DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_NEGATIVE, LocaleController.getString(R.string.OK), 10,
                 (dlg, which) -> dlg.dismiss());
+        return dialog;
+    }
+
+    public static AlertDialog createConnectionDisabledDialog(Context context, Runnable onShowProxySettings) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString(R.string.ConnectionDisabledTitle));
+        builder.setMessage(LocaleController.getString(R.string.ConnectionDisabledMessage));
+        builder.setNeutralButton(LocaleController.getString(R.string.ShowProxySettings),
+                (dlg, which) -> onShowProxySettings.run());
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+        AlertDialog dialog = builder.create();
+        DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_POSITIVE, LocaleController.getString(R.string.EnableConnection), 5,
+                (dlg, which) -> MigrationConnectionDisabler.enableConnection());
         return dialog;
     }
 }

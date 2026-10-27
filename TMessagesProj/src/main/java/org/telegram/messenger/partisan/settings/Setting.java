@@ -14,6 +14,7 @@ public abstract class Setting<T> {
     protected final String key;
     protected final T defaultValue;
     private Supplier<Boolean> conditionForGet;
+    private String preferencesName = "userconfing";
 
     public Setting(String key, T defaultValue) {
         this.key = key;
@@ -57,8 +58,12 @@ public abstract class Setting<T> {
         this.conditionForGet = conditionForGet;
     }
 
-    protected static SharedPreferences getLocalPreferences() {
-        return ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
+    public void setPreferencesName(String preferencesName) {
+        this.preferencesName = preferencesName;
+    }
+
+    protected SharedPreferences getLocalPreferences() {
+        return ApplicationLoader.applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE);
     }
 
     protected T cloneValue(T value) {

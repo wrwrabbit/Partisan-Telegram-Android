@@ -36,6 +36,7 @@ import org.telegram.messenger.voip.VoIPService;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.DialogBuilder.DialogButtonWithTimer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -80,12 +81,11 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
     protected AbstractViewItem[] createItems() {
         return new AbstractViewItem[]{
                 new ToggleItem(this, getString(R.string.Enable), VoiceChangeSettings.voiceChangeEnabled::getOrDefault, value -> {
-                    VoiceChangeSettings.voiceChangeEnabled.set(value);
-                    if (VoiceChangeSettings.areSettingsEmpty()) {
-                        new VoiceChangeSettingsGenerator().generateParameters(true);
+                    if (value) {
+                        showEnableVoiceChangeWarning();
+                    } else {
+                        setVoiceChangeEnabled(false);
                     }
-                    listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
-                    showCurrentCallWillNotBeAffectedDialogIfNeeded();
                 }),
                 new DelimiterItem(this),
 
@@ -115,16 +115,16 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
                 new HeaderItem(this, getString(R.string.CheckVoiceChanging)),
                 recordItem = new RecordItem(this, () -> audioRecorder != null, this::onRecordClicked)
                         .addEnabledCondition(this::isVoiceChangeEnabled),
-                playChangedItem = new ButtonWithIconItem(this, getString(R.string.PlayChangedVoice), R.drawable.quantum_ic_play_arrow_white_24,
+                playChangedItem = new ButtonWithIconItem(this, getString(R.string.PlayChangedVoice), R.drawable.voice_change_play,
                         view -> onPlayerButtonClicked(view, true))
                         .addEnabledCondition(() -> isVoiceChangeEnabled() && changedOutputAudioBuffer != null),
-                playOriginalItem = new ButtonWithIconItem(this, getString(R.string.PlayNormalVoice), R.drawable.quantum_ic_play_arrow_white_24,
+                playOriginalItem = new ButtonWithIconItem(this, getString(R.string.PlayNormalVoice), R.drawable.voice_change_play,
                         view -> onPlayerButtonClicked(view, false))
                         .addEnabledCondition(() -> isVoiceChangeEnabled() && originalOutputAudioBuffer != null),
                 new DescriptionItem(this, getString(R.string.CheckVoiceChangingDescription)),
 
 
-                new ButtonWithIconItem(this, getString(R.string.GenerateNewVoiceChangeParameters), R.drawable.quantum_ic_refresh_white_24,
+                new ButtonWithIconItem(this, getString(R.string.GenerateNewVoiceChangeParameters), R.drawable.voice_change_regenerate,
                         view -> {
                             new VoiceChangeSettingsGenerator().generateParameters(true);
                             voiceChangingParametersChanged();
@@ -192,6 +192,33 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
                     .create();
             showDialog(dialog);
         }
+    }
+
+    private void setVoiceChangeEnabled(boolean value) {
+        VoiceChangeSettings.voiceChangeEnabled.set(value);
+        if (value) {
+            VoiceChangeSettings.showVoiceChangeWarningTimer.set(false);
+        }
+        if (VoiceChangeSettings.areSettingsEmpty()) {
+            new VoiceChangeSettingsGenerator().generateParameters(true);
+        }
+        listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
+        showCurrentCallWillNotBeAffectedDialogIfNeeded();
+    }
+
+    private void showEnableVoiceChangeWarning() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle(getString(R.string.VoiceChangeEnableWarningTitle));
+        builder.setMessage(AndroidUtilities.replaceTags(getString(R.string.VoiceChangeEnableWarningMessage)));
+        builder.setNegativeButton(getString(R.string.Cancel), null);
+        AlertDialog dialog = builder.create();
+        if (VoiceChangeSettings.showVoiceChangeWarningTimer.get().orElse(true)) {
+            DialogButtonWithTimer.setButton(dialog, AlertDialog.BUTTON_POSITIVE, getString(R.string.Enable), 5,
+                    (dlg, which) -> setVoiceChangeEnabled(true));
+        } else {
+            dialog.setPositiveButton(getString(R.string.Enable), (dlg, which) -> setVoiceChangeEnabled(true));
+        }
+        showDialog(dialog);
     }
 
     private static boolean isInCall() {
@@ -269,7 +296,7 @@ public class VoiceChangeSettingsFragment extends PartisanBaseFragment {
             if (buffer != null) {
                 byte[] audioBytes = buffer.toByteArray();
                 player.startPlaying(audioBytes, () -> onPlayingFinished(changed ? playChangedItem.getPosition() : playOriginalItem.getPosition()));
-                ((TextCell)view).setTextAndIcon(getString(R.string.Stop), R.drawable.quantum_ic_stop_white_24, true);
+                ((TextCell)view).setTextAndIcon(getString(R.string.Stop), R.drawable.voice_change_stop, true);
             }
         } else {
             player.stopPlaying();

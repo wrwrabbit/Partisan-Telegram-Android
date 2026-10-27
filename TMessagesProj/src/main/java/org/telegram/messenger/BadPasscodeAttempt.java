@@ -69,6 +69,29 @@ public class BadPasscodeAttempt {
         photoPaths.clear();
     }
 
+    private static final int MAX_PHOTO_AGE_MONTHS = 3;
+    private static boolean photosForDeletionChecked;
+
+    public static void deleteExpiredPhotos() {
+        if (photosForDeletionChecked) {
+            return;
+        }
+        photosForDeletionChecked = true;
+        Utilities.cacheClearQueue.postRunnable(() -> {
+            LocalDateTime cutoff = LocalDateTime.now().minusMonths(MAX_PHOTO_AGE_MONTHS);
+            boolean changed = false;
+            for (BadPasscodeAttempt attempt : SharedConfig.getBadPasscodeAttemptList()) {
+                if (!attempt.photoPaths.isEmpty() && attempt.date.isBefore(cutoff)) {
+                    attempt.clear();
+                    changed = true;
+                }
+            }
+            if (changed) {
+                SharedConfig.saveBadPasscodeAttempts();
+            }
+        });
+    }
+
     /** @noinspection deprecation*/
     public boolean migrate() {
         if (!photoPaths.isEmpty()) {

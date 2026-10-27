@@ -345,7 +345,7 @@ public class GramWalletStorage {
 
     public static boolean deviceHasFingerprint(Context context) {
         if (context == null || Build.VERSION.SDK_INT < 23) return false;
-        if (SharedConfig.passcodeHash == null || SharedConfig.passcodeHash.length() == 0) return false;
+        if (!SharedConfig.passcodeEnabled()) return false;
         try {
             KeyguardManager manager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
             return manager != null && manager.isDeviceSecure();

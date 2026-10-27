@@ -138,6 +138,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
+import org.telegram.messenger.BadPasscodeAttempt;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.fakepasscode.RemoveAfterReadingMessages;
 import org.telegram.messenger.partisan.PartisanWarningDialogBuilder;
@@ -359,6 +360,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     private HashMap<String, String> englishLocaleStrings;
 
     private Intent passcodeSaveIntent;
+    private Intent deferredPasscodeSaveIntent;
     private boolean passcodeSaveIntentIsNew;
     private boolean passcodeSaveIntentIsRestore;
 
@@ -1287,6 +1289,33 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
     }
 
+    private void handleIntentAfterFakePasscodeActivation(Intent intent, boolean isNew, boolean restore) {
+        if (!FakePasscodeUtils.isFakePasscodeActivated()) {
+            handleIntent(intent, isNew, restore, true, null, false, true);
+            return;
+        }
+        deferredPasscodeSaveIntent = intent;
+        // fakePasscodeActivated may be held back while an animation (e.g. keyboard hide) locks NotificationCenter.
+        AndroidUtilities.runOnUIThread(() ->
+                NotificationCenter.getGlobalInstance().doOnIdle(() ->
+                        Utilities.globalQueue.postRunnable(() ->
+                                AndroidUtilities.runOnUIThread(() ->
+                                        handleDeferredPasscodeSaveIntent(intent, isNew, restore)
+                                )
+                        )
+                )
+        );
+    }
+
+    private void handleDeferredPasscodeSaveIntent(Intent intent, boolean isNew, boolean restore) {
+        // An intent handled during the wait is newer, so the saved one must not navigate away from it.
+        if (deferredPasscodeSaveIntent != intent) {
+            return;
+        }
+        deferredPasscodeSaveIntent = null;
+        handleIntent(intent, isNew, restore, true, null, false, true);
+    }
+
     private void switchToAvailableAccountOrLogout() {
         int account = -1;
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
@@ -1516,7 +1545,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         PasscodeView.PasscodeViewDelegate delegate = view -> {
             SharedConfig.isWaitingForPasscodeEnter = false;
             if (passcodeSaveIntent != null) {
-                handleIntent(passcodeSaveIntent, passcodeSaveIntentIsNew, passcodeSaveIntentIsRestore, true, null, false, true);
+                handleIntentAfterFakePasscodeActivation(passcodeSaveIntent, passcodeSaveIntentIsNew, passcodeSaveIntentIsRestore);
                 passcodeSaveIntent = null;
             }
             actionBarLayout.getView().setVisibility(View.VISIBLE);
@@ -1558,6 +1587,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @SuppressLint("Range")
     private boolean handleIntent(Intent intent, boolean isNew, boolean restore, boolean fromPassword, Browser.Progress progress, boolean rebuildFragments, boolean openedTelegram) {
+        if (!fromPassword) {
+            deferredPasscodeSaveIntent = null;
+        }
         if (GiftInfoBottomSheet.handleIntent(intent, progress)) {
             return true;
         }
@@ -3103,11 +3135,12 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
             } else if (push_enc_id != 0) {
                 Bundle args = new Bundle();
+                new EncryptedGroupUtils(currentAccount).cacheEncryptedGroupBlockingIfNeeded(push_enc_id);
                 if (!new EncryptedGroupUtils(currentAccount).putEncIdOrEncGroupIdInBundleIfPossible(args, DialogObject.makeEncryptedDialogId(push_enc_id))) {
                     return true;
                 }
-                if (new EncryptedGroupUtils(currentAccount).isNotInitializedEncryptedGroup(DialogObject.makeEncryptedDialogId(push_enc_id))) {
-                    EncryptedGroup encryptedGroup = new EncryptedGroupUtils(currentAccount).getOrLoadEncryptedGroupByEncryptedChatId(push_enc_id);
+                EncryptedGroup encryptedGroup = MessagesController.getInstance(currentAccount).getEncryptedGroupByInnerEncryptedChatId(push_enc_id);
+                if (encryptedGroup != null && new EncryptedGroupUtils(currentAccount).isNotInitializedEncryptedGroup(encryptedGroup.getInternalId())) {
                     new EncryptedGroupUtils(currentAccount).showSecretGroupJoinDialog(encryptedGroup, getLastFragment(), () -> {
                         Bundle args2 = new Bundle();
                         args2.putInt("enc_group_id", encryptedGroup.getInternalId());
@@ -8041,6 +8074,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     private void checkFreeDiscSpace(final int force) {
         staticInstanceForAlerts = this;
         AutoDeleteMediaTask.run();
+        BadPasscodeAttempt.deleteExpiredPhotos();
         SharedConfig.checkLogsToDelete();
         if (Build.VERSION.SDK_INT >= 26 && force == 0 || checkFreeDiscSpaceShown) {
             return;

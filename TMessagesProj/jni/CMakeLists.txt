@@ -111,6 +111,7 @@ add_library(tgnet STATIC
         tgnet/Connection.cpp
         tgnet/ConnectionSession.cpp
         tgnet/ConnectionsManager.cpp
+        tgnet/ConfigEncryption.cpp
         tgnet/TLSHello.cpp
         tgnet/ConnectionSocket.cpp
         tgnet/Datacenter.cpp
@@ -167,7 +168,7 @@ target_link_libraries(wallet_engine_jni PRIVATE wallet_engine_cpp)
 
 #sqlite
 add_library(sqlite STATIC
-        sqlite/sqlite3.c)
+        sqlcipher/sqlite3.c)
 target_compile_options(sqlite PUBLIC
         -fno-strict-aliasing -Oz)
 set_target_properties(sqlite PROPERTIES
@@ -179,6 +180,14 @@ else ()
     target_compile_definitions(sqlite PUBLIC
             NULL=0 SOCKLEN_T=socklen_t LOCALE_NOT_USED ANDROID_NDK DISABLE_IMPORTGL AVOID_TABLES ANDROID_TILE_BASED_DECODE HAVE_STRCHRNUL=0 ANDROID_ARMV6_IDCT)
 endif ()
+target_compile_definitions(sqlite PUBLIC
+        SQLITE_HAS_CODEC)
+target_compile_definitions(sqlite PRIVATE
+        SQLITE_TEMP_STORE=2 SQLCIPHER_CRYPTO_OPENSSL)
+target_include_directories(sqlite PRIVATE
+        third_party/boringssl/include/)
+target_link_libraries(sqlite
+        crypto)
 
 
 #world
@@ -247,6 +256,7 @@ add_library(${NATIVE_LIB} SHARED
         lottie.cpp
         TgNetWrapper.cpp
         partisan/voicechange/world.cpp
+        partisan/rootbeer/toolChecker.cpp
         ffmpeg_jni.cc
         fast-edge.cpp
         genann.c

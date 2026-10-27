@@ -52,6 +52,8 @@ import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.SQLite.SQLiteException;
 import org.telegram.SQLite.SQLitePreparedStatement;
+import org.telegram.SQLite.SQLitePreparedStatementWrapper;
+import org.telegram.messenger.partisan.fileprotection.DraftsStorage;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
 import org.telegram.messenger.ringtone.RingtoneUploader;
@@ -160,13 +162,14 @@ public class MediaDataController extends BaseController {
     public MediaDataController(int num) {
         super(num);
 
-        if (currentAccount == 0) {
-            draftPreferences = ApplicationLoader.applicationContext.getSharedPreferences("drafts", Activity.MODE_PRIVATE);
-        } else {
-            draftPreferences = ApplicationLoader.applicationContext.getSharedPreferences("drafts" + currentAccount, Activity.MODE_PRIVATE);
-        }
+        draftsStorage = new DraftsStorage(currentAccount);
+        draftsStorage.getAllAsync(this::applyLoadedDrafts);
+
+        loadInitialData();
+    }
+
+    private void applyLoadedDrafts(Map<String, ?> values) {
         final ArrayList<TLRPC.Message> replyMessageOwners = new ArrayList<>();
-        Map<String, ?> values = draftPreferences.getAll();
         for (Map.Entry<String, ?> entry : values.entrySet()) {
             try {
                 String key = entry.getKey();
@@ -207,7 +210,10 @@ public class MediaDataController extends BaseController {
             }
         }
         loadRepliesOfDraftReplies(replyMessageOwners);
+        AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload));
+    }
 
+    private void loadInitialData() {
         loadStickersByEmojiOrName(AndroidUtilities.STICKERS_PLACEHOLDER_PACK_NAME, false, true);
         loadEmojiThemes();
         loadRecentAndTopReactions(false);
@@ -334,7 +340,7 @@ public class MediaDataController extends BaseController {
     private boolean featuredStickersLoaded[] = new boolean[2];
 
     private TLRPC.Document greetingsSticker;
-    public final RingtoneDataStore ringtoneDataStore;
+    public RingtoneDataStore ringtoneDataStore;
     public final ArrayList<ChatThemeBottomSheet.ChatThemeItem> defaultEmojiThemes = new ArrayList<>();
 
     public final ArrayList<TLRPC.Document> premiumPreviewStickers = new ArrayList<>();
@@ -416,7 +422,7 @@ public class MediaDataController extends BaseController {
 
         drafts.clear();
         draftMessages.clear();
-        draftPreferences.edit().clear().apply();
+        draftsStorage.edit().clear().apply();
 
         botInfos.clear();
         botKeyboards.clear();
@@ -4606,8 +4612,8 @@ public class MediaDataController extends BaseController {
                     old = cursor.intValue(1);
                 }
                 cursor.dispose();
-                if (count == -1 && DialogObject.isEncryptedDialog(dialogId) || getMessagesStorage().isEncryptedGroup(dialogId)) {
-                    if (getMessagesStorage().isEncryptedGroup(dialogId)) {
+                if (count == -1 && DialogObject.isEncryptedDialog(dialogId) || getMessagesController().isEncryptedGroup(dialogId)) {
+                    if (getMessagesController().isEncryptedGroup(dialogId)) {
                         String dialogIdsString = TextUtils.join(",", new EncryptedGroupUtils(currentAccount).getEncryptedGroupInnerDialogIds(dialogId));
                         cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT COUNT(DISTINCT r.random_id) FROM media_v4 as m INNER JOIN randoms_v2 as r ON m.uid = r.uid AND m.mid = r.mid WHERE m.uid IN (%s) AND m.type = %d", dialogIdsString, type));
                     } else {
@@ -4618,7 +4624,7 @@ public class MediaDataController extends BaseController {
                     }
                     cursor.dispose();
 
-                    if (count != -1 && !getMessagesStorage().isEncryptedGroup(dialogId)) {
+                    if (count != -1 && !getMessagesController().isEncryptedGroup(dialogId)) {
                         putMediaCountDatabase(dialogId, topicId, type, count);
                     }
                 }
@@ -4793,7 +4799,7 @@ public class MediaDataController extends BaseController {
                             } else {
                                 cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, r.random_id FROM media_topics as m LEFT JOIN randoms_v2 as r ON r.mid = m.mid WHERE m.uid = %d AND m.topic_id = %d AND type = %d ORDER BY m.mid ASC LIMIT %d", uid, topicId, type, countToLoad));
                             }
-                        } else if (getMessagesStorage().isEncryptedGroup(uid)) {
+                        } else if (getMessagesController().isEncryptedGroup(uid)) {
                             String dialogIdsString = TextUtils.join(",", new EncryptedGroupUtils(currentAccount).getEncryptedGroupInnerDialogIds(uid));
                             if (max_id != 0) {
                                 cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, r.random_id FROM media_v4 as m LEFT JOIN randoms_v2 as r ON r.mid = m.mid WHERE m.uid IN (%s) AND m.mid > %d AND type = %d ORDER BY m.mid ASC LIMIT %d", dialogIdsString, max_id, type, countToLoad));
@@ -4916,9 +4922,12 @@ public class MediaDataController extends BaseController {
                 getMessagesStorage().getDatabase().beginTransaction();
                 SQLitePreparedStatement state2;
                 if (topicId != 0) {
-                    state2 = getMessagesStorage().getDatabase().executeFast("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
+                    state2 = getMessagesStorage().executeFastForBothDbIfNeeded("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
                 } else {
-                    state2 = getMessagesStorage().getDatabase().executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
+                    state2 = getMessagesStorage().executeFastForBothDbIfNeeded("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
+                }
+                if (state2 instanceof SQLitePreparedStatementWrapper) {
+                    ((SQLitePreparedStatementWrapper) state2).setDbSelectorByDialogId(uid);
                 }
 
                 for (TLRPC.Message message : messages) {
@@ -7822,7 +7831,7 @@ public class MediaDataController extends BaseController {
     private LongSparseArray<LongSparseArray<TLRPC.DraftMessage>> drafts = new LongSparseArray<>();
     private LongSparseArray<LongSparseArray<TLRPC.Message>> draftMessages = new LongSparseArray<>();
     private boolean inTransaction;
-    private SharedPreferences draftPreferences;
+    private DraftsStorage draftsStorage;
     private boolean loadingDrafts;
 
     public void loadDraftsIfNeed() {
@@ -8142,7 +8151,7 @@ public class MediaDataController extends BaseController {
                 ((TLRPC.TL_inputReplyToMessage) draft.reply_to).reply_to_msg_id = 0;
             }
         }
-        SharedPreferences.Editor editor = draftPreferences.edit();
+        DraftsStorage.Editor editor = draftsStorage.edit();
         MessagesController messagesController = getMessagesController();
         if (draft == null || draft instanceof TLRPC.TL_draftMessageEmpty) {
             {
@@ -8164,9 +8173,9 @@ public class MediaDataController extends BaseController {
                 }
             }
             if (threadId == 0) {
-                draftPreferences.edit().remove("" + dialogId).remove("r_" + dialogId).commit();
+                draftsStorage.edit().remove("" + dialogId).remove("r_" + dialogId).commit();
             } else {
-                draftPreferences.edit().remove("t_" + dialogId + "_" + threadId).remove("rt_" + dialogId + "_" + threadId).commit();
+                draftsStorage.edit().remove("t_" + dialogId + "_" + threadId).remove("rt_" + dialogId + "_" + threadId).commit();
             }
             messagesController.removeDraftDialogIfNeed(dialogId);
         } else {
@@ -8336,7 +8345,7 @@ public class MediaDataController extends BaseController {
                 threads2.put(threadId, message);
                 SerializedData serializedData = new SerializedData(message.getObjectSize());
                 message.serializeToStream(serializedData);
-                draftPreferences.edit().putString(threadId == 0 ? ("r_" + dialogId) : ("rt_" + dialogId + "_" + threadId), Utilities.bytesToHex(serializedData.toByteArray())).commit();
+                draftsStorage.edit().putString(threadId == 0 ? ("r_" + dialogId) : ("rt_" + dialogId + "_" + threadId), Utilities.bytesToHex(serializedData.toByteArray())).commit();
                 getNotificationCenter().postNotificationName(NotificationCenter.newDraftReceived, dialogId);
                 serializedData.cleanup();
             }
@@ -8347,7 +8356,7 @@ public class MediaDataController extends BaseController {
         drafts.clear();
         draftMessages.clear();
         draftsFolderIds.clear();
-        draftPreferences.edit().clear().commit();
+        draftsStorage.edit().clear().commit();
         if (notify) {
             getMessagesController().sortDialogs(null);
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -8380,11 +8389,11 @@ public class MediaDataController extends BaseController {
                 }
             }
             if (threadId == 0) {
-                draftPreferences.edit().remove("" + dialogId).remove("r_" + dialogId).commit();
+                draftsStorage.edit().remove("" + dialogId).remove("r_" + dialogId).commit();
                 getMessagesController().sortDialogs(null);
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
             } else {
-                draftPreferences.edit().remove("t_" + dialogId + "_" + threadId).remove("rt_" + dialogId + "_" + threadId).commit();
+                draftsStorage.edit().remove("t_" + dialogId + "_" + threadId).remove("rt_" + dialogId + "_" + threadId).commit();
             }
         } else if (draftMessage.reply_to == null || draftMessage.reply_to.reply_to_msg_id != 0) {
             if (draftMessage.reply_to != null) {

@@ -41,7 +41,11 @@ import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanDatabaseMigrationHelper;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.DraftsLocationReconciler;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionDatabaseCleaner;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionUtils;
 import org.telegram.messenger.partisan.fileprotection.UsersWithSecretChatsCache;
 import org.telegram.messenger.partisan.messageinterception.PartisanMessagesInterceptionController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
@@ -91,6 +95,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.function.Consumer;
 
 import me.vkryl.core.BitwiseUtils;
@@ -342,14 +347,15 @@ public class MessagesStorage extends BaseController {
             createTable = true;
         }
         try {
+            byte[] databaseEncryptionKey = FileProtectionDbEncryption.syncDatabaseEncryptionAndGetKeySpec(currentAccount, cacheFile);
             if (fileProtectionShouldBeEnabled()) {
-                database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey, getActiveOnlyMemoryTables());
                 storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
                 if (isFileProtectionDisabledBecauseOfFileSize()) {
                     fileProtectionDisabledBecauseOfFileSize = true;
                 }
-                database = new SQLiteDatabase(cacheFile.getPath());
+                database = new SQLiteDatabase(cacheFile.getPath(), databaseEncryptionKey);
             }
             database.executeFast("PRAGMA secure_delete = ON").stepThis().dispose();
             database.executeFast("PRAGMA temp_store = MEMORY").stepThis().dispose();
@@ -413,9 +419,14 @@ public class MessagesStorage extends BaseController {
                 }
             }
             new PartisanDatabaseMigrationHelper(database).updateDb();
+            DraftsLocationReconciler.reconcileDraftsLocation(currentAccount, database);
             databaseCreated = true;
         } catch (Exception e) {
             FileLog.e(e);
+            if (FileProtectionDbEncryption.isKeyTemporarilyUnavailable(currentAccount, cacheFile)) {
+                PartisanLog.e("MessagesStorage: the database key is temporarily unavailable, leaving the database for a later launch");
+                return;
+            }
             if (openTries < 3 && e.getMessage() != null && e.getMessage().contains("malformed")) {
                 if (openTries == 2) {
                     cleanupInternal(true);
@@ -464,10 +475,11 @@ public class MessagesStorage extends BaseController {
         FileLog.e("Database restored = " + restored);
         if (restored) {
             try {
+                byte[] databaseEncryptionKey = FileProtectionDbEncryption.syncDatabaseEncryptionAndGetKeySpec(currentAccount, cacheFile);
                 if (fileProtectionShouldBeEnabled()) {
-                    database = new SQLiteDatabaseWrapper(cacheFile.getPath());
+                    database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey, getActiveOnlyMemoryTables());
                 } else {
-                    database = new SQLiteDatabase(cacheFile.getPath());
+                    database = new SQLiteDatabase(cacheFile.getPath(), databaseEncryptionKey);
                 }
                 database.executeFast("PRAGMA secure_delete = ON").stepThis().dispose();
                 database.executeFast("PRAGMA temp_store = MEMORY").stepThis().dispose();
@@ -522,6 +534,7 @@ public class MessagesStorage extends BaseController {
             "enc_chats",
             "enc_groups",
             "enc_group_inner_chats",
+            "drafts",
             "channel_users_v2",
             "channel_admins_v3",
             "contacts",
@@ -1430,7 +1443,10 @@ public class MessagesStorage extends BaseController {
                     flags |= 2;
                 }
 
-                SQLitePreparedStatement state = database.executeFast("REPLACE INTO unread_push_messages VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                SQLitePreparedStatement state = executeFastForBothDbIfNeeded("REPLACE INTO unread_push_messages VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                if (state instanceof SQLitePreparedStatementWrapper) {
+                    ((SQLitePreparedStatementWrapper) state).setDbSelectorByDialogId(message.getDialogId());
+                }
                 state.requery();
                 state.bindLong(1, message.getDialogId());
                 state.bindInteger(2, message.getId());
@@ -4574,6 +4590,7 @@ public class MessagesStorage extends BaseController {
                         cursor2.dispose();
                         cursor2 = null;
 
+                        getEncryptedGroupUtils().cacheEncryptedGroupBlockingIfNeeded(did);
                         if (getEncryptedGroupUtils().isInnerEncryptedGroupChat(did)){
                             database.executeFast("DELETE FROM messages_v2 WHERE uid = " + did).stepThis().dispose();
                             if (did == getUserConfig().getClientUserId()) {
@@ -5976,7 +5993,10 @@ public class MessagesStorage extends BaseController {
                     getNotificationCenter().postNotificationName(NotificationCenter.messagesReadContent, dialogId, midsArray);
                 });
 
-                state = database.executeFast("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                state = executeFastForBothDbIfNeeded("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                if (state instanceof SQLitePreparedStatementWrapper) {
+                    ((SQLitePreparedStatementWrapper) state).setDbSelectorByDialogId(dialogId);
+                }
                 for (int a = 0; a < messages.size(); a++) {
                     int key = messages.keyAt(a);
                     ArrayList<Integer> arr = messages.get(key);
@@ -6019,7 +6039,10 @@ public class MessagesStorage extends BaseController {
             ArrayList<Integer> mids = new ArrayList<>();
             if (messages.size() != 0) {
                 database.beginTransaction();
-                state = database.executeFast("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                state = executeFastForBothDbIfNeeded("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                if (state instanceof SQLitePreparedStatementWrapper) {
+                    ((SQLitePreparedStatementWrapper) state).setDbSelectorByDialogId(dialogId);
+                }
                 for (int a = 0; a < messages.size(); a++) {
                     int key = messages.keyAt(a);
                     ArrayList<Integer> arr = messages.get(key);
@@ -6106,7 +6129,10 @@ public class MessagesStorage extends BaseController {
 
                 if (messages.size() != 0) {
                     database.beginTransaction();
-                    state = database.executeFast("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                    state = executeFastForBothDbIfNeeded("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                    if (state instanceof SQLitePreparedStatementWrapper) {
+                        ((SQLitePreparedStatementWrapper) state).setDbSelectorByDialogId(dialogId);
+                    }
                     for (int a = 0; a < messages.size(); a++) {
                         int key = messages.keyAt(a);
                         ArrayList<Integer> arr = messages.get(key);
@@ -10033,6 +10059,7 @@ public class MessagesStorage extends BaseController {
                 }
             }
             if (!replyMessageRandomOwners.isEmpty()) {
+                getEncryptedGroupUtils().cacheEncryptedGroupBlockingIfNeeded(dialogId);
                 boolean isEncryptedGroupInnerChat = getEncryptedGroupUtils().isInnerEncryptedGroupChat(dialogId);
                 if (isEncryptedGroupInnerChat) {
                     cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, m.date, r.random_id, r.uid FROM randoms_v2 as r INNER JOIN messages_v2 as m ON r.mid = m.mid AND r.uid = m.uid WHERE r.random_id IN(%s)", TextUtils.join(",", replyMessageRandomIds)));
@@ -10238,10 +10265,6 @@ public class MessagesStorage extends BaseController {
             checkSQLException(e);
         }
         return result[0] != null ? result : null;
-    }
-
-    public void updateOverriddenWidgets(ArrayList<Long> dids) {
-        updateWidgets(dids);
     }
 
     private void updateWidgets(long did) {
@@ -10832,7 +10855,7 @@ public class MessagesStorage extends BaseController {
                 data3.reuse();
                 data4.reuse();
                 data5.reuse();
-                if (fileProtectionEnabled()) {
+                if (isUsingInMemoryDatabase()) {
                     UsersWithSecretChatsCache.getOrCreateInstance(currentAccount, database).add(user.id);
                 }
                 if (dialog != null) {
@@ -11523,21 +11546,7 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public boolean isEncryptedGroup(long dialogId) {
-        if (!DialogObject.isEncryptedDialog(dialogId)) {
-            return false;
-        }
-        String sql = "SELECT EXISTS(SELECT 1 FROM enc_groups WHERE encrypted_group_id=? LIMIT 1)";
-        Object[] args = {DialogObject.getEncryptedChatId(dialogId)};
-        return partisanSelect(sql, args, cursor -> {
-            if (cursor.next()) {
-                return cursor.intValue(0) == 1;
-            }
-            return false;
-        });
-    }
-
-    public Integer getEncryptedGroupIdByInnerEncryptedChatId(int encryptedChatId) {
+    public Integer loadEncryptedGroupIdByInnerEncryptedChatId(int encryptedChatId) {
         String sql = "SELECT encrypted_group_id FROM enc_group_inner_chats WHERE encrypted_chat_id=?";
         Object[] args = {encryptedChatId};
         return partisanSelect(sql, args, cursor -> {
@@ -11548,19 +11557,11 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public Set<Integer> getAllInnerChatIdsFromEncryptedGroups() {
-        return partisanSelect("SELECT DISTINCT encrypted_chat_id FROM enc_group_inner_chats", cursor -> {
-            Set<Integer> encryptedChatIds = new HashSet<>();
-            while (cursor.next()) {
-                int id = cursor.intValue(0);
-                encryptedChatIds.add(id);
-            }
-            return encryptedChatIds;
-        });
-    }
-
     public void deleteEncryptedGroupPreview(long innerDialogId) {
         Set<Integer> messageIds = getPreviewMessageIds(innerDialogId);
+        if (messageIds == null) {
+            return;
+        }
         for (int messageId : messageIds) {
             deleteEncryptedGroupPreviewMessageById(innerDialogId, messageId);
         }
@@ -11599,6 +11600,10 @@ public class MessagesStorage extends BaseController {
     }
 
     private void partisanExecute(String sql, SQLitePreparedStatementConsumer action) {
+        if (database == null) {
+            PartisanLog.handleException(new IllegalStateException("partisanExecute called with a null database: " + sql));
+            return;
+        }
         SQLitePreparedStatement state = null;
         try {
             state = database.executeFast(sql);
@@ -11622,6 +11627,10 @@ public class MessagesStorage extends BaseController {
     }
 
     private <T> T partisanSelect(String sql, Object[] args, SQLiteCursorConsumer<T> action) {
+        if (database == null) {
+            PartisanLog.handleException(new IllegalStateException("partisanSelect called with a null database: " + sql));
+            return null;
+        }
         SQLiteCursor cursor = null;
         T result = null;
         try {
@@ -11640,34 +11649,38 @@ public class MessagesStorage extends BaseController {
         return result;
     }
 
-    private SQLitePreparedStatement executeFastForBothDbIfNeeded(String sql) throws SQLiteException {
-        if (fileProtectionEnabled()) {
+    SQLitePreparedStatement executeFastForBothDbIfNeeded(String sql) throws SQLiteException {
+        if (isUsingInMemoryDatabase()) {
             return ((SQLiteDatabaseWrapper)database).executeFastForBothDb(sql);
         } else {
             return database.executeFast(sql);
         }
     }
 
-    public boolean fileProtectionEnabled() {
+    public boolean isUsingInMemoryDatabase() {
         return database instanceof SQLiteDatabaseWrapper;
     }
 
-    public boolean fileProtectionShouldBeEnabled() {
-        return fileProtectionEnabledByConfig() && !databaseFileSizeExceedsMaximumForRam();
+    public boolean chatListMemoryOnly() {
+        return isUsingInMemoryDatabase() && ((SQLiteDatabaseWrapper) database).getOnlyMemoryTables().containsAll(SQLiteDatabaseWrapper.CHAT_LIST_TABLES);
     }
 
-    private boolean fileProtectionEnabledByConfig() {
-        if (FakePasscodeUtils.isFakePasscodeActivated() && !SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
+    public boolean fileProtectionShouldBeEnabled() {
+        return shouldUseInMemoryDatabase() && !databaseFileSizeExceedsMaximumForRam();
+    }
+
+    private boolean shouldUseInMemoryDatabase() {
+        if (!FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true)) {
             return false;
         }
-        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-            return true;
+        if (FakePasscodeUtils.isFakePasscodeActivated() && !FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true)) {
+            return false;
         }
-        if (getUserConfig().isConfigLoaded()) {
-            return getUserConfig().fileProtectionEnabled;
-        } else {
-            return getUserConfig().getPreferences().getBoolean("fileProtectionEnabled", false);
-        }
+        return FileProtectionUtils.fileProtectionEnabledForAccount(currentAccount);
+    }
+
+    private Set<String> getActiveOnlyMemoryTables() {
+        return SQLiteDatabaseWrapper.unionOfActiveBuckets(FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true));
     }
 
     private boolean databaseFileSizeExceedsMaximumForRam() {
@@ -11677,16 +11690,23 @@ public class MessagesStorage extends BaseController {
     private static volatile boolean fileProtectionDisabledBecauseOfFileSize = false;
 
     public boolean isFileProtectionDisabledBecauseOfFileSize() {
-        return fileProtectionDisabledBecauseOfFileSize || fileProtectionEnabledByConfig() && databaseFileSizeExceedsMaximumForRam();
+        return fileProtectionDisabledBecauseOfFileSize || shouldUseInMemoryDatabase() && databaseFileSizeExceedsMaximumForRam();
     }
 
     public void clearFileProtectedDb() {
+        if (!isUsingInMemoryDatabase()) {
+            return;
+        }
+        clearFileProtectedDb(((SQLiteDatabaseWrapper) database).getOnlyMemoryTables());
+    }
+
+    public void clearFileProtectedDb(Set<String> tablesToClean) {
         Utilities.cacheClearQueue.postRunnable(() -> {
-            SQLiteDatabase db = fileProtectionEnabled()
+            SQLiteDatabase db = isUsingInMemoryDatabase()
                     ? ((SQLiteDatabaseWrapper) database).getFileDatabase()
                     : database;
             try {
-                new FileProtectionDatabaseCleaner(db, currentAccount).clear();
+                new FileProtectionDatabaseCleaner(db, currentAccount, tablesToClean).clear();
             } catch (Exception e) {
                 checkSQLException(e);
             }
@@ -12755,7 +12775,7 @@ public class MessagesStorage extends BaseController {
                 state_messages = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
                 state_messages_topic = executeFastForBothDbIfNeeded("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
                 state_media = null;
-                state_randoms = database.executeFast("REPLACE INTO randoms_v2 VALUES(?, ?, ?)");
+                state_randoms = executeFastForBothDbIfNeeded("REPLACE INTO randoms_v2 VALUES(?, ?, ?)");
                 state_download = database.executeFast("REPLACE INTO download_queue VALUES(?, ?, ?, ?, ?)");
                 state_webpage = database.executeFast("REPLACE INTO webpage_pending_v2 VALUES(?, ?, ?)");
                 state_polls = null;
@@ -13333,6 +13353,9 @@ public class MessagesStorage extends BaseController {
                     }
 
                     if (message.random_id != 0) {
+                        if (state_randoms instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper) state_randoms).setDbSelectorByDialogId(message.dialog_id);
+                        }
                         state_randoms.requery();
                         state_randoms.bindLong(1, message.random_id);
                         state_randoms.bindInteger(2, messageId);
@@ -13358,7 +13381,10 @@ public class MessagesStorage extends BaseController {
 
                         if (topicId != 0) {
                             if (state_media_topics == null) {
-                                state_media_topics = database.executeFast("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
+                                state_media_topics = executeFastForBothDbIfNeeded("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
+                            }
+                            if (state_media_topics instanceof SQLitePreparedStatementWrapper) {
+                                ((SQLitePreparedStatementWrapper) state_media_topics).setDbSelectorByDialogId(message.dialog_id);
                             }
                             state_media_topics.requery();
                             state_media_topics.bindInteger(1, messageId);
@@ -13373,7 +13399,10 @@ public class MessagesStorage extends BaseController {
 
                     if (message.ttl_period != 0 && message.id > 0) {
                         if (state_tasks == null) {
-                            state_tasks = database.executeFast("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                            state_tasks = executeFastForBothDbIfNeeded("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                        }
+                        if (state_tasks instanceof SQLitePreparedStatementWrapper) {
+                            ((SQLitePreparedStatementWrapper) state_tasks).setDbSelectorByDialogId(message.dialog_id);
                         }
                         state_tasks.requery();
                         state_tasks.bindInteger(1, messageId);
@@ -16592,7 +16621,7 @@ public class MessagesStorage extends BaseController {
                         if (i == 0) {
                             state2 = executeFastForBothDbIfNeeded("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                         } else {
-                            state2 = database.executeFast("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
+                            state2 = executeFastForBothDbIfNeeded("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
                         }
                         int pointer = 1;
                         if (state2 instanceof SQLitePreparedStatementWrapper) {
@@ -16859,7 +16888,7 @@ public class MessagesStorage extends BaseController {
                     state_messages_topics = executeFastForBothDbIfNeeded("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
                     state_messages = executeFastForBothDbIfNeeded("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
                     state_media = executeFastForBothDbIfNeeded("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
-                    state_media_topics = database.executeFast("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
+                    state_media_topics = executeFastForBothDbIfNeeded("REPLACE INTO media_topics VALUES(?, ?, ?, ?, ?, ?)");
                     state_polls = null;
                     state_webpage = null;
                     state_tasks = null;
@@ -17166,6 +17195,9 @@ public class MessagesStorage extends BaseController {
                         long topicId = MessageObject.getTopicId(currentAccount, message, getForumTypeFlags(message.dialog_id));
                         if (threadMessageId != 0 || (load_type == -2 && topicId != 0)) {
                             if (MediaDataController.canAddMessageToMedia(message)) {
+                                if (state_media_topics instanceof SQLitePreparedStatementWrapper) {
+                                    ((SQLitePreparedStatementWrapper) state_media_topics).setDbSelectorByDialogId(message.dialog_id);
+                                }
                                 state_media_topics.requery();
                                 state_media_topics.bindInteger(1, message.id);
                                 state_media_topics.bindLong(2, dialogId);
@@ -17180,7 +17212,10 @@ public class MessagesStorage extends BaseController {
 
                         if (message.ttl_period != 0 && message.id > 0) {
                             if (state_tasks == null) {
-                                state_tasks = database.executeFast("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                                state_tasks = executeFastForBothDbIfNeeded("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                            }
+                            if (state_tasks instanceof SQLitePreparedStatementWrapper) {
+                                ((SQLitePreparedStatementWrapper) state_tasks).setDbSelectorByDialogId(message.dialog_id);
                             }
                             state_tasks.requery();
                             state_tasks.bindInteger(1, message.id);
@@ -17581,6 +17616,7 @@ public class MessagesStorage extends BaseController {
                 usersToLoad.add(getUserConfig().getClientUserId());
                 ArrayList<Long> chatsToLoad = new ArrayList<>();
                 ArrayList<Integer> encryptedToLoad = new ArrayList<>();
+                ArrayList<Integer> encryptedGroupsToLoad = new ArrayList<>();
                 ArrayList<Long> loadedDialogs = new ArrayList<>();
                 ArrayList<Long> emojiToLoad = new ArrayList<>();
                 LongSparseArray<SparseArray<ArrayList<TLRPC.Message>>> replyMessageOwners = new LongSparseArray<>();
@@ -17718,6 +17754,10 @@ public class MessagesStorage extends BaseController {
                             int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
                             if (!encryptedToLoad.contains(encryptedChatId)) {
                                 encryptedToLoad.add(encryptedChatId);
+                            }
+                            EncryptedGroup dialogEncryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByEncryptedChatDialogId(dialogId);
+                            if (dialogEncryptedGroup != null && !encryptedGroupsToLoad.contains(dialogEncryptedGroup.getInternalId())) {
+                                encryptedGroupsToLoad.add(dialogEncryptedGroup.getInternalId());
                             }
                         } else if (DialogObject.isUserDialog(dialogId)) {
                             if (!usersToLoad.contains(dialogId)) {
@@ -17859,8 +17899,13 @@ public class MessagesStorage extends BaseController {
                 if (!encryptedToLoad.isEmpty()) {
                     getEncryptedChatsInternal(TextUtils.join(",", encryptedToLoad), encryptedChats, usersToLoad);
 
-                    String encryptedGroupsCondition = String.format(Locale.US, "WHERE encrypted_group_id IN(%s)", TextUtils.join(",", encryptedToLoad));
-                    encryptedGroups.addAll(getEncryptedGroupsInternal(encryptedGroupsCondition, null));
+                    List<Integer> allEncryptedGroupsToLoad = Stream.concat(encryptedToLoad.stream(), encryptedGroupsToLoad.stream())
+                            .distinct()
+                            .collect(Collectors.toList());
+                    if (!allEncryptedGroupsToLoad.isEmpty()) {
+                        encryptedGroups.addAll(getEncryptedGroupsInternal(
+                                String.format(Locale.US, "WHERE encrypted_group_id IN(%s)", TextUtils.join(",", allEncryptedGroupsToLoad)), null));
+                    }
                 }
                 if (!chatsToLoad.isEmpty()) {
                     getChatsInternal(TextUtils.join(",", chatsToLoad), dialogs.chats);
@@ -18111,7 +18156,10 @@ public class MessagesStorage extends BaseController {
 
                         if (message.ttl_period != 0 && message.id > 0) {
                             if (state_tasks == null) {
-                                state_tasks = database.executeFast("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                                state_tasks = executeFastForBothDbIfNeeded("REPLACE INTO enc_tasks_v4 VALUES(?, ?, ?, ?)");
+                            }
+                            if (state_tasks instanceof SQLitePreparedStatementWrapper) {
+                                ((SQLitePreparedStatementWrapper) state_tasks).setDbSelectorByDialogId(message.dialog_id);
                             }
                             state_tasks.requery();
                             state_tasks.bindInteger(1, message.id);

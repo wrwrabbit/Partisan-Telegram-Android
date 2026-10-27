@@ -255,7 +255,7 @@ public class LogoutActivity extends BaseFragment {
                     TextSettingsCell view = (TextSettingsCell) holder.itemView;
                     if (position == logoutRow) {
                         view.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
-                        view.setText(getString(R.string.LogOutTitle), true);
+                        view.setText(getString(R.string.LogOutTitle), multiLogoutRow != -1);
                     } else if (position == multiLogoutRow) {
                         view.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
                         view.setText(LocaleController.getString("MultiLogOutTitle", R.string.MultiLogOutTitle), false);

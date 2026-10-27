@@ -5,6 +5,7 @@ import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.partisan.PartisanLog;
 
 import java.util.HashSet;
 import java.util.Locale;
@@ -31,13 +32,15 @@ public class FileProtectionDatabaseCleaner {
 
     private final int account;
     private final SQLiteDatabase db;
+    private final Set<String> tablesToClean;
     private final RecentSearchCache recentSearchDialogIds = new RecentSearchCache();
     private UsersWithSecretChatsCache usersWithSecretChats;
     private int deletedCount = 0;
 
-    public FileProtectionDatabaseCleaner(SQLiteDatabase db, int account) {
+    public FileProtectionDatabaseCleaner(SQLiteDatabase db, int account, Set<String> tablesToClean) {
         this.db = db;
         this.account = account;
+        this.tablesToClean = tablesToClean;
     }
 
     public void clear() throws Exception {
@@ -56,8 +59,28 @@ public class FileProtectionDatabaseCleaner {
             clearTable(new TableInfo("media_v4") {{ keepUsersWithSecretChats = true; }});
             clearTable(new TableInfo("media_holes_topics"));
             clearTable(new TableInfo("media_holes_v2"));
+            clearTable(new TableInfo("enc_tasks_v4"));
+            clearTable(new TableInfo("randoms_v2"));
+            clearTable(new TableInfo("sharing_locations"));
+            clearTable(new TableInfo("unread_push_messages"));
+            clearTable(new TableInfo("media_topics"));
+            clearTable(new TableInfo("saved_dialogs") {{ dialogIdColumn = "did"; }});
+            clearTable(new TableInfo("topics") {{ dialogIdColumn = "did"; }});
+            clearTable(new TableInfo("scheduled_messages_v2"));
+            clearTable(new TableInfo("chat_pinned_v2"));
+            clearTable(new TableInfo("ephemeral_messages") {{ dialogIdColumn = "dialog_id"; }});
+            clearTable(new TableInfo("bot_keyboard"));
+            clearTable(new TableInfo("bot_keyboard_topics"));
+            clearTable(new TableInfo("users_data") {{ keepRecentSearch = true; keepUsersWithSecretChats = true; }});
+            clearTable(new TableInfo("quick_replies_messages") {{ keepEncryptedGroups = false; }});
+            clearTable(new TableInfo("user_phones_v7") {{ keepEncryptedGroups = false; }});
+            clearTable(new TableInfo("tag_message_id") {{ keepEncryptedGroups = false; }});
+            clearTable(new TableInfo("user_contacts_v7") {{ keepEncryptedGroups = false; }});
             if (deletedCount > 100) {
                 compressDb();
+            }
+            if (deletedCount > 0) {
+                checkpointAndTruncateWal();
             }
         } finally {
             AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
@@ -65,6 +88,9 @@ public class FileProtectionDatabaseCleaner {
     }
 
     private void clearTable(TableInfo tableInfo) throws Exception {
+        if (!tablesToClean.contains(tableInfo.tableName)) {
+            return;
+        }
         if (tableInfo.keepRecentSearch || tableInfo.keepUsersWithSecretChats) {
             Set<Long> dialogIdsToDelete = loadDialogIdsToDelete(tableInfo);
             for (Long chatId : dialogIdsToDelete) {
@@ -133,7 +159,21 @@ public class FileProtectionDatabaseCleaner {
             db.executeFast("VACUUM").stepThis().dispose();
         } catch (Exception ignore) {
         }
-        db.executeFast("PRAGMA journal_size_limit = -1").stepThis().dispose();
+        db.executeFast("PRAGMA journal_size_limit = 10485760").stepThis().dispose();
+    }
+
+    private void checkpointAndTruncateWal() throws Exception {
+        SQLiteCursor cursor = null;
+        try {
+            cursor = db.queryFinalized("PRAGMA wal_checkpoint(TRUNCATE)");
+            if (cursor.next() && cursor.intValue(0) != 0) {
+                PartisanLog.e("FileProtectionDatabaseCleaner: WAL checkpoint was busy, WAL not truncated");
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.dispose();
+            }
+        }
     }
 
     private NotificationCenter getNotificationCenter() {

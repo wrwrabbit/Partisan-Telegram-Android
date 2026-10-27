@@ -71,6 +71,7 @@ public:
     void setProxySettings(std::string address, uint16_t port, std::string username, std::string password, std::string secret);
     void setLangCode(std::string langCode);
     void setRegId(std::string regId);
+    void setConfigEncryptionKey(const uint8_t *key, int32_t length, bool encryptOnWrite);
     void setSystemLangCode(std::string langCode);
     void updateDcSettings(uint32_t datacenterId, bool workaround, bool ifLoadingTryAgain);
     void setPushConnectionEnabled(bool value);
@@ -237,6 +238,9 @@ private:
     int32_t currentDeviceTimezone = 0;
     std::string currentSystemLangCode;
     std::string currentConfigPath;
+    uint8_t configEncryptionKey[32] = {0};
+    bool configEncryptionKeySet = false;
+    bool configEncryptionEncryptOnWrite = false;
     std::string currentLogPath;
     int64_t currentUserId = 0;
     bool currentUserPremium = false;

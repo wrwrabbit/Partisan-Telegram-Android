@@ -89,6 +89,8 @@ import org.telegram.messenger.chromecast.ChromecastFileServer;
 import org.telegram.messenger.chromecast.ChromecastMedia;
 import org.telegram.messenger.chromecast.ChromecastMediaVariations;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeType;
+import org.telegram.messenger.partisan.voicechange.VoiceChangerUtils;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.ConnectionsManager;
@@ -4513,6 +4515,9 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     }
 
     private boolean shouldUseAudioRecorderV2(int account) {
+        if (VoiceChangerUtils.needChangeVoice(account, VoiceChangeType.VOICE_MESSAGE)) {
+            return false;
+        }
         return SharedSettings.audioRecorderV2Enabled.isSet() ?
             SharedSettings.audioRecorderV2Enabled.get() :
             !MessagesController.getInstance(account).config.audioRecorderV2Disabled.get();
@@ -4997,6 +5002,14 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             }
             return;
         }
+        if (!audioRecorderPaused && voiceChanger != null && !voiceChanger.isWritingFinished()) {
+            // Drain the voice changer before pausing, otherwise the segment loses its tail.
+            // sendAfterDone = 4 keeps recordRunnable from treating the drained changer as a stop.
+            sendAfterDone = 4;
+            voiceChanger.setFinishedCallback(() -> toggleRecordingPause(voiceOnce));
+            voiceChanger.notifyWritingFinished();
+            return;
+        }
         recordQueue.postRunnable(() -> {
             if (recordingAudio == null || recordingAudioFile == null) {
                 return;
@@ -5076,6 +5089,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                         samplesCount = 0;
                         fileBuffer.rewind();
                         audioRecorder.startRecording();
+                        voiceChanger = VoiceChangerUtils.createVoiceChangerIfNeeded(recordingCurrentAccount, VoiceChangeType.VOICE_MESSAGE, audioRecorder.getSampleRate());
                         recordQueue.postRunnable(recordRunnable);
 
                         NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.recordResumed);

@@ -4,70 +4,119 @@ import android.content.Context;
 
 import com.jakewharton.processphoenix.ProcessPhoenix;
 
+import org.telegram.SQLite.SQLiteDatabaseWrapper;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
 public class FileProtectionSwitcher implements NotificationCenter.NotificationCenterDelegate {
     private final Set<Integer> accountsWithEnabledFileProtection = new HashSet<>();
     private final BaseFragment fragment;
     private boolean enableForAllAccounts;
-    private Map<Integer, Boolean> valuesPerAccounts;
+    private List<FileProtectionAccountInfo> valuesPerAccounts;
+    private boolean forceApply;
+    private boolean storeDataInMemoryOnly;
+    private boolean storeChatsInMemoryOnly;
+    private boolean encryptDatabase;
+    private boolean encryptAuthToken;
 
     public FileProtectionSwitcher(BaseFragment fragment) {
         this.fragment = fragment;
     }
 
-    public void changeForAllAccounts(boolean value) {
-        enableForAllAccounts = value;
-        valuesPerAccounts = new HashMap<>();
+    public void apply(boolean enableForAllAccounts) {
+        applyForAllAccounts(enableForAllAccounts);
+    }
+
+    public void forceApply(boolean enableForAllAccounts) {
+        forceApply = true;
+        applyForAllAccounts(enableForAllAccounts);
+    }
+
+    private void applyForAllAccounts(boolean enableForAllAccounts) {
+        this.enableForAllAccounts = enableForAllAccounts;
+        valuesPerAccounts = new ArrayList<>();
+        storeDataInMemoryOnly = FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true);
+        storeChatsInMemoryOnly = FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true);
+        encryptDatabase = FileProtectionSettings.encryptDatabase.get().orElse(true);
+        encryptAuthToken = FileProtectionSettings.encryptAuthToken.get().orElse(true);
         startSwitching();
     }
 
-    public void changeForMultipleAccounts(Map<Integer, Boolean> values) {
-        if (values.values().stream().allMatch(enabled -> enabled)) {
+    // accounts must cover every activated account
+    public void apply(List<FileProtectionAccountInfo> accounts, boolean storeDataInMemoryOnly, boolean storeChatsInMemoryOnly, boolean encryptDatabase, boolean encryptAuthToken) {
+        this.storeDataInMemoryOnly = storeDataInMemoryOnly;
+        this.storeChatsInMemoryOnly = storeChatsInMemoryOnly;
+        this.encryptDatabase = encryptDatabase;
+        this.encryptAuthToken = encryptAuthToken;
+        setProtectedAccounts(accounts);
+        startSwitching();
+    }
+
+    private void setProtectedAccounts(List<FileProtectionAccountInfo> accounts) {
+        if (!allActivatedAccountsPassed(accounts)) {
+            throw new IllegalArgumentException("accounts must include every activated account; partial lists are not supported");
+        }
+        if (accounts.stream().allMatch(account -> account.fileProtectionEnabled)) {
             enableForAllAccounts = true;
-            valuesPerAccounts = new HashMap<>();
-        } else if (values.values().stream().allMatch(enabled -> !enabled)) {
+            valuesPerAccounts = new ArrayList<>();
+        } else if (accounts.stream().allMatch(account -> !account.fileProtectionEnabled)) {
             enableForAllAccounts = false;
-            valuesPerAccounts = new HashMap<>();
+            valuesPerAccounts = new ArrayList<>();
         } else {
             enableForAllAccounts = false;
-            valuesPerAccounts = values;
+            valuesPerAccounts = accounts;
         }
-        startSwitching();
+    }
+
+    private static boolean allActivatedAccountsPassed(List<FileProtectionAccountInfo> accounts) {
+        return Utils.getActivatedAccountsSortedByLoginTime().stream()
+                .allMatch(activatedAcc -> accounts.stream()
+                        .anyMatch(account -> account.accountNum == activatedAcc)
+                );
+    }
+
+    public static boolean fileProtectedAccountsChanged(List<FileProtectionAccountInfo> accounts) {
+        for (FileProtectionAccountInfo account : accounts) {
+            boolean current = FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)
+                    || UserConfig.getInstance(account.accountNum).fileProtectionEnabled;
+            if (account.fileProtectionEnabled != current) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean fileProtectedAccountsChangedInternal() {
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            UserConfig config = UserConfig.getInstance(a);
+            if (config.isClientActivated()) {
+                boolean current = FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true) || config.fileProtectionEnabled;
+                if (needEnableFileProtectionForAccount(a) != current) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void startSwitching() {
-        AlertDialog enablingFileProtectionDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
-        fragment.showDialog(enablingFileProtectionDialog);
-
-        if (!enableForAllAccounts && valuesPerAccounts.isEmpty()) {
-            if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-                SharedConfig.setDisableFileProtectionAfterRestart(true);
-            }
-            SharedConfig.setFileProtectionForAllAccounts(enableForAllAccounts);
-            Utils.foreachActivatedAccountInstance(accountInstance -> {
-                UserConfig userConfig = accountInstance.getUserConfig();
-                if (userConfig.fileProtectionEnabled) {
-                    userConfig.fileProtectionEnabled = false;
-                    userConfig.disableFileProtectionAfterRestart = true;
-                    userConfig.clearPinnedDialogsLoaded();
-                    accountInstance.getUserConfig().saveConfig(false);
-                }
-            });
+        if (!needClearLocalDb()) {
+            updateConfigs();
             ProcessPhoenix.triggerRebirth(getContext());
             return;
         }
+
+        AlertDialog enablingFileProtectionDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
+        fragment.showDialog(enablingFileProtectionDialog);
 
         accountsWithEnabledFileProtection.clear();
         Utils.foreachActivatedAccountInstance(accountInstance -> {
@@ -79,10 +128,22 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
         });
     }
 
+    private boolean needClearLocalDb() {
+        return !onlyEncryptionSettingsChanged()
+                && storeDataInMemoryOnly
+                && (enableForAllAccounts || !valuesPerAccounts.isEmpty());
+    }
+
+    private boolean onlyEncryptionSettingsChanged() {
+        return !forceApply && !fileProtectedAccountsChangedInternal()
+                && storeDataInMemoryOnly == FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true)
+                && storeChatsInMemoryOnly == FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true);
+    }
+
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.onDatabaseReset) {
-            MessagesStorage.getInstance(account).clearFileProtectedDb();
+            MessagesStorage.getInstance(account).clearFileProtectedDb(SQLiteDatabaseWrapper.unionOfActiveBuckets(storeChatsInMemoryOnly));
         } else if (id == NotificationCenter.onFileProtectedDbCleared) {
             accountsWithEnabledFileProtection.add(account);
             if (fileProtectionEnablingFinished()) {
@@ -93,13 +154,20 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     }
 
     private void updateConfigs() {
-        if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-            SharedConfig.setDisableFileProtectionAfterRestart(true);
+        FileProtectionSettings.encryptDatabase.set(encryptDatabase);
+        FileProtectionSettings.encryptAuthToken.set(encryptAuthToken);
+        if (onlyEncryptionSettingsChanged()) {
+            return;
         }
-        SharedConfig.setFileProtectionForAllAccounts(enableForAllAccounts);
+        FileProtectionSettings.storeDataInMemoryOnly.set(storeDataInMemoryOnly);
+        FileProtectionSettings.storeChatsInMemoryOnly.set(storeChatsInMemoryOnly);
+        if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) {
+            FileProtectionSettings.disableFileProtectionAfterRestart.set(true);
+        }
+        FileProtectionSettings.fileProtectionForAllAccountsEnabled.set(enableForAllAccounts);
         Utils.foreachActivatedAccountInstance(accountInstance -> {
-            boolean enabledInConfig = valuesPerAccounts.getOrDefault(accountInstance.getCurrentAccount(), false);
-            boolean enabledForAccountOrGlobally = SharedConfig.fileProtectionForAllAccountsEnabled
+            boolean enabledInConfig = isEnabledInValuesPerAccounts(accountInstance.getCurrentAccount());
+            boolean enabledForAccountOrGlobally = FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)
                     || enabledInConfig;
             UserConfig userConfig = accountInstance.getUserConfig();
             if (userConfig.fileProtectionEnabled != enabledForAccountOrGlobally) {
@@ -124,7 +192,12 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
     }
 
     private boolean needEnableFileProtectionForAccount(int accountNum) {
-        return enableForAllAccounts || valuesPerAccounts.getOrDefault(accountNum, false);
+        return enableForAllAccounts || isEnabledInValuesPerAccounts(accountNum);
+    }
+
+    private boolean isEnabledInValuesPerAccounts(int accountNum) {
+        return valuesPerAccounts.stream()
+                .anyMatch(account -> account.accountNum == accountNum && account.fileProtectionEnabled);
     }
 
     private Context getContext() {
