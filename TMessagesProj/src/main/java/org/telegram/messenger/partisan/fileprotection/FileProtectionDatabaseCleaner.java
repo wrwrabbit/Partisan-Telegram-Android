@@ -5,6 +5,7 @@ import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.partisan.PartisanLog;
 
 import java.util.HashSet;
 import java.util.Locale;
@@ -77,6 +78,9 @@ public class FileProtectionDatabaseCleaner {
             clearTable(new TableInfo("user_contacts_v7") {{ keepEncryptedGroups = false; }});
             if (deletedCount > 100) {
                 compressDb();
+            }
+            if (deletedCount > 0) {
+                checkpointAndTruncateWal();
             }
         } finally {
             AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
@@ -155,7 +159,21 @@ public class FileProtectionDatabaseCleaner {
             db.executeFast("VACUUM").stepThis().dispose();
         } catch (Exception ignore) {
         }
-        db.executeFast("PRAGMA journal_size_limit = -1").stepThis().dispose();
+        db.executeFast("PRAGMA journal_size_limit = 10485760").stepThis().dispose();
+    }
+
+    private void checkpointAndTruncateWal() throws Exception {
+        SQLiteCursor cursor = null;
+        try {
+            cursor = db.queryFinalized("PRAGMA wal_checkpoint(TRUNCATE)");
+            if (cursor.next() && cursor.intValue(0) != 0) {
+                PartisanLog.e("FileProtectionDatabaseCleaner: WAL checkpoint was busy, WAL not truncated");
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.dispose();
+            }
+        }
     }
 
     private NotificationCenter getNotificationCenter() {
