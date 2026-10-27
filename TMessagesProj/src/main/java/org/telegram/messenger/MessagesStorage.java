@@ -350,6 +350,7 @@ public class MessagesStorage extends BaseController {
             byte[] databaseEncryptionKey = FileProtectionDbEncryption.syncDatabaseEncryptionAndGetKeySpec(currentAccount, cacheFile);
             if (fileProtectionShouldBeEnabled()) {
                 database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey, getActiveOnlyMemoryTables());
+                logFileProtectionDbState((SQLiteDatabaseWrapper) database);
                 storageQueue.postRunnable(this::clearFileProtectedDb, 1000);
             } else {
                 if (isFileProtectionDisabledBecauseOfFileSize()) {
@@ -478,6 +479,7 @@ public class MessagesStorage extends BaseController {
                 byte[] databaseEncryptionKey = FileProtectionDbEncryption.syncDatabaseEncryptionAndGetKeySpec(currentAccount, cacheFile);
                 if (fileProtectionShouldBeEnabled()) {
                     database = new SQLiteDatabaseWrapper(cacheFile.getPath(), databaseEncryptionKey, getActiveOnlyMemoryTables());
+                    logFileProtectionDbState((SQLiteDatabaseWrapper) database);
                 } else {
                     database = new SQLiteDatabase(cacheFile.getPath(), databaseEncryptionKey);
                 }
@@ -11681,6 +11683,41 @@ public class MessagesStorage extends BaseController {
 
     private Set<String> getActiveOnlyMemoryTables() {
         return SQLiteDatabaseWrapper.unionOfActiveBuckets(FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true));
+    }
+
+    private void logFileProtectionDbState(SQLiteDatabaseWrapper database) {
+        if (!PartisanLog.logsAllowed()) {
+            return;
+        }
+        try {
+            boolean chatsBucket = database.getOnlyMemoryTables().containsAll(SQLiteDatabaseWrapper.CHAT_LIST_TABLES);
+            int fileDialogs = countRowsSafely(database.getFileDatabase(), "dialogs");
+            int memoryDialogs = countRowsSafely(database.getMemoryDatabase(), "dialogs");
+            int fileMessages = countRowsSafely(database.getFileDatabase(), "messages_v2");
+            int memoryMessages = countRowsSafely(database.getMemoryDatabase(), "messages_v2");
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (dbOpen) chatsMemoryOnly = " + chatsBucket
+                    + ", dialogs file = " + fileDialogs + ", memory = " + memoryDialogs
+                    + ", messages_v2 file = " + fileMessages + ", memory = " + memoryMessages);
+        } catch (Exception e) {
+            PartisanLog.e("fileProtectedDialogsLoaded: account = " + currentAccount + " (dbOpen) failed", e);
+        }
+    }
+
+    private int countRowsSafely(SQLiteDatabase database, String table) {
+        SQLiteCursor cursor = null;
+        try {
+            cursor = database.queryFinalized("SELECT count(*) FROM " + table);
+            if (cursor.next()) {
+                return cursor.intValue(0);
+            }
+            return -1;
+        } catch (Exception e) {
+            return -1;
+        } finally {
+            if (cursor != null) {
+                cursor.dispose();
+            }
+        }
     }
 
     private boolean databaseFileSizeExceedsMaximumForRam() {

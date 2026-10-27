@@ -82,6 +82,9 @@ public class FileProtectionDatabaseCleaner {
             if (deletedCount > 0) {
                 checkpointAndTruncateWal();
             }
+            if (PartisanLog.logsAllowed()) {
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + account + " (cleaner) done, totalDeleted = " + deletedCount + ", tablesToClean = " + tablesToClean.size());
+            }
         } finally {
             AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onFileProtectedDbCleared));
         }
@@ -91,6 +94,7 @@ public class FileProtectionDatabaseCleaner {
         if (!tablesToClean.contains(tableInfo.tableName)) {
             return;
         }
+        int deletedBefore = deletedCount;
         if (tableInfo.keepRecentSearch || tableInfo.keepUsersWithSecretChats) {
             Set<Long> dialogIdsToDelete = loadDialogIdsToDelete(tableInfo);
             for (Long chatId : dialogIdsToDelete) {
@@ -105,6 +109,9 @@ public class FileProtectionDatabaseCleaner {
             }
             db.executeFast(query).stepThis().dispose();
             deletedCount += getDbChangesCount();
+        }
+        if (PartisanLog.logsAllowed()) {
+            PartisanLog.d("fileProtectedDialogsLoaded: account = " + account + " (cleaner) table = " + tableInfo.tableName + " deleted = " + (deletedCount - deletedBefore));
         }
     }
 

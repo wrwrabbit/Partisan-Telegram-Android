@@ -476,6 +476,9 @@ public class MessagesController extends BaseController implements NotificationCe
 
     private void loadDialogsWithFileProtection(int folderId, boolean fromCache) {
         if (loadingDialogs.get(folderId) || resetingDialogs) {
+            if (PartisanLog.logsAllowed()) {
+                PartisanLog.d("fileProtectedDialogsLoaded: account = " + currentAccount + " (loadDialogs) deferred, loadingDialogs = " + loadingDialogs.get(folderId) + ", resetingDialogs = " + resetingDialogs + ", fromCache = " + fromCache);
+            }
             AndroidUtilities.runOnUIThread(() -> loadDialogsWithFileProtection(folderId, fromCache), 100);
             return;
         }
