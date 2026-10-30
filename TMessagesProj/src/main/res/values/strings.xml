@@ -3722,6 +3722,11 @@
     <string name="SendingGif">Sending GIF...</string>
     <!--bot-->
     <string name="Bot">bot</string>
+    <string name="BotTypeAgent">Agent</string>
+    <string name="BotTypeGame">Game</string>
+    <string name="BotTypeApp">App</string>
+    <string name="BotTypeAI">AI</string>
+    <string name="BotTypeNonBinary">Non-binary</string>
     <string name="BotShare">Share</string>
     <string name="BotSettings">Settings</string>
     <string name="BotHelp">Help</string>
@@ -11270,6 +11275,14 @@
     <string name="RoundVideoCompositionEnabled">Round video styling</string>
     <string name="RoundVideoCompositionInfo">Disable styling to record a plain square without outside-circle blur, dimming or Telegram overlays.</string>
 
+    <string name="AudioRecorderSettings">Voice Messages</string>
+    <string name="AudioRecorderGeneral">Recorder</string>
+    <string name="AudioRecorderUseNewRecorder">Use new recorder</string>
+    <string name="AudioRecorderNoiseSuppression">Noise suppression</string>
+    <string name="AudioRecorderNoiseSuppressionOff">Off</string>
+    <string name="AudioRecorderNoiseSuppressionRNNoise">RNNoise</string>
+    <string name="AudioRecorderGeneralInfo">RNNoise removes background noise may affect music or very quiet speech.</string>
+
     <!-- Wallet -->
     <string name="WalletUseDevicePasscode">Use device PIN or password</string>
     <string name="WalletTouchFingerprint">Touch the fingerprint sensor to unlock your wallet.</string>
@@ -11890,9 +11903,14 @@
     <string name="AccountDataUnavailableDetails">The application can\'t read this account\'s data right now. Restarting the application or the device usually helps.\n\nIf this keeps happening, you will have to log in to this account again.</string>
     <string name="RestartApplication">Restart</string>
     <string name="AccountDataCannotBeProtectedTitle">⚠️ Account data can\'t be protected</string>
-    <string name="AccountDataCannotBeProtectedDetails">This device can\'t protect this account\'s data right now. Both ways forward have a risk:\n\n**Continue without protection** — you stay logged in, but this account\'s data is stored on the device unprotected. Anyone who gets access to the files could use it to read your messages.\n\n**Keep protection** — no unprotected data is left on the device, but this account\'s data will not be saved while the problem lasts. You may be logged out and have to log in again.</string>
+    <string name="AccountDataCannotBeProtectedDetails">This device can\'t protect this account\'s data right now. Both ways forward have a risk:\n\n**Continue without protection** — you stay logged in, but this account\'s data is stored on the device unprotected. During a search, forensic examiners could get access to the account and its messages.\n\n**Keep protection** — this account\'s login data will not be saved on the device while the problem lasts. You may be logged out and have to log in again.</string>
     <string name="ContinueWithoutProtection">Continue without protection</string>
     <string name="KeepProtection">Keep protection</string>
+    <string name="DatabaseNotEncryptedTitle">⚠️ Chat data isn\'t encrypted</string>
+    <string name="DatabaseNotEncryptedDetails">The **%1$s** setting is on, but this account\'s chat data is stored on the device unencrypted. During a search, forensic examiners could read it.</string>
+    <string name="DatabaseNotEncryptedNoSpace">There isn\'t enough free space to encrypt it. Free up at least %1$s and restart the application.</string>
+    <string name="DatabaseNotEncryptedKeyUnavailable">The device can\'t provide an encryption key right now. Restarting the application or the device usually helps.</string>
+    <string name="DatabaseNotEncryptedFailed">The application couldn\'t encrypt the chat data. Restart the application to try again.</string>
     <string name="InnerEncryptedChatStateSecretChatCreating">Secret chat creating</string>
     <string name="InnerEncryptedChatStateInvitationSent">Invitation sent</string>
     <string name="InnerEncryptedChatStateInitialization">Initialization</string>

@@ -13,6 +13,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
  * Decides whether an account's database must be opened with a SQLCipher key and performs the
@@ -22,8 +25,30 @@ import java.util.Arrays;
 public class FileProtectionDbEncryption {
     // the first 16 bytes of every plaintext SQLite file: "SQLite format 3" plus a trailing NUL
     private static final byte[] SQLITE_FILE_HEADER = Arrays.copyOf("SQLite format 3".getBytes(StandardCharsets.US_ASCII), 16);
+    private static final Pattern HEX_BLOB_LITERAL = Pattern.compile("[xX]'[0-9a-fA-F]*'");
+    private static final long EXPORT_SPACE_MARGIN = 10 * 1024 * 1024;
+
+    public enum PlaintextReason {
+        KEY_UNAVAILABLE,
+        NOT_ENOUGH_SPACE,
+        ENCRYPTION_FAILED
+    }
+
+    // Why an account's database stayed plaintext on its last open although encryption is enabled
+    public static class PlaintextIssue {
+        public final PlaintextReason reason;
+        public final long missingSpace;
+
+        PlaintextIssue(PlaintextReason reason, long missingSpace) {
+            this.reason = reason;
+            this.missingSpace = missingSpace;
+        }
+    }
+
+    private static final Map<Integer, PlaintextIssue> plaintextIssues = new ConcurrentHashMap<>();
 
     public static byte[] syncDatabaseEncryptionAndGetKeySpec(int account, File dbFile) {
+        plaintextIssues.remove(account);
         try {
             restoreBackupIfNeeded(dbFile);
             DatabaseKeyMigrationReceiver.takeOverMigratedKeyIfNeeded(account, dbFile);
@@ -42,6 +67,9 @@ public class FileProtectionDbEncryption {
             return createKeyAndEncryptFileIfEnabled(account, dbFile);
         } catch (Exception e) {
             PartisanLog.e("FileProtectionDbEncryption: failed to prepare the database key", e);
+            if (staysPlaintextDespiteEncryptionEnabled(account, dbFile)) {
+                recordPlaintextIssue(account, PlaintextReason.ENCRYPTION_FAILED, 0);
+            }
             return null;
         }
     }
@@ -60,13 +88,42 @@ public class FileProtectionDbEncryption {
         }
         byte[] key = FileProtectionEncryptionKeyStore.getOrCreateKey(KeyType.DATABASE, account);
         if (key == null) {
+            recordPlaintextIssue(account, PlaintextReason.KEY_UNAVAILABLE, 0);
             return null;
         }
         byte[] keySpec = toKeySpec(key);
         if (hasContent(dbFile)) {
+            long missingSpace = getRequiredSpaceForExport(dbFile) - dbFile.getParentFile().getUsableSpace();
+            if (missingSpace > 0) {
+                recordPlaintextIssue(account, PlaintextReason.NOT_ENOUGH_SPACE, missingSpace);
+                return null;
+            }
             encryptDatabase(dbFile, keySpec);
         }
         return keySpec;
+    }
+
+    private static void recordPlaintextIssue(int account, PlaintextReason reason, long missingSpace) {
+        PartisanLog.e("FileProtectionDbEncryption: the database of account " + account + " stays unencrypted: " + reason);
+        plaintextIssues.put(account, new PlaintextIssue(reason, missingSpace));
+    }
+
+    private static boolean staysPlaintextDespiteEncryptionEnabled(int account, File dbFile) {
+        try {
+            return encryptionSupported() && FileProtectionUtils.encryptionEnabledByConfig(account)
+                    && !(hasContent(dbFile) && isEncrypted(dbFile));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static long getRequiredSpaceForExport(File dbFile) {
+        long size = dbFile.length() + new File(dbFile.getPath() + "-wal").length();
+        return size + size / 10 + EXPORT_SPACE_MARGIN;
+    }
+
+    public static PlaintextIssue getPlaintextIssue(int account) {
+        return plaintextIssues.get(account);
     }
 
     public static boolean isKeyTemporarilyUnavailable(int account, File dbFile) {
@@ -144,6 +201,13 @@ public class FileProtectionDbEncryption {
         return ("x'" + Utilities.bytesToHex(rawKey) + "'").getBytes(StandardCharsets.US_ASCII);
     }
 
+    public static String maskHexBlobLiterals(String sql) {
+        if (sql == null) {
+            return null;
+        }
+        return HEX_BLOB_LITERAL.matcher(sql).replaceAll("x'…'");
+    }
+
     private static boolean canOpenWithKey(File dbFile, byte[] keySpec) {
         SQLiteDatabase database;
         try {
@@ -201,11 +265,24 @@ public class FileProtectionDbEncryption {
                 sourceDb.executeFast("PRAGMA exported.user_version = " + userVersion).stepThis().dispose();
             }
             sourceDb.executeFast("DETACH DATABASE exported").stepThis().dispose();
+        } catch (Exception e) {
+            sourceDb.close();
+            shredPartialExport(exportedFile);
+            throw e;
         } finally {
             sourceDb.close();
         }
 
         swapExportedFileIntoPlace(dbFile, exportedFile);
+    }
+
+    // Left behind, the partial copy would take up the space the next attempt needs
+    private static void shredPartialExport(File exportedFile) {
+        try {
+            deleteWithSidecars(exportedFile);
+        } catch (Exception e) {
+            PartisanLog.e("FileProtectionDbEncryption: failed to shred the partial export", e);
+        }
     }
 
     private static void swapExportedFileIntoPlace(File dbFile, File exportedFile) throws Exception {
