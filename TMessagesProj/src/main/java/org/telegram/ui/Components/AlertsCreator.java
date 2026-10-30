@@ -1751,7 +1751,7 @@ public class AlertsCreator {
     public static void showOpenUrlAlert(Context context, String url, boolean punycode, boolean tryTelegraph, boolean ask, boolean forceNotInternalForApps, long inlineReturn, Browser.Progress progress, @Nullable TLRPC.WebPage webPage, Theme.ResourcesProvider resourcesProvider) {
         if (!AndroidUtilities.isContextSafe(context)) return;
         final String scheme = url == null ? null : Uri.parse(url).getScheme();
-        SpoofedLinkChecker.SpoofedLinkInfo spoofedLinkInfo = SpoofedLinkChecker.isSpoofedLink(url, null, progress);
+        SpoofedLinkChecker.SpoofedLinkInfo spoofedLinkInfo = SpoofedLinkChecker.isSpoofedLink(url, progress);
         if ((Browser.isInternalUrl(url, null) || !ask || "mailto".equalsIgnoreCase(scheme)) && !spoofedLinkInfo.isSpoofed) {
             Browser.openUrl(context, Uri.parse(url), inlineReturn == 0, tryTelegraph, forceNotInternalForApps && checkInternalBotApp(url), progress, null, false, true, false);
             return;
@@ -2587,7 +2587,7 @@ public class AlertsCreator {
         final AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
 
         final CheckBoxCell[] cell = new CheckBoxCell[1];
-        final boolean[] value = new boolean[1];
+        final boolean[] value = new boolean[] { false };
 
         final TextView messageTextView = new TextView(context) {
             @Override
@@ -4591,7 +4591,7 @@ public class AlertsCreator {
         }
 
         final RLottieImageView notifyItem = new RLottieImageView(context);
-        final RLottieDrawable notifyIcon = new RLottieDrawable(R.raw.notify_toggle, "notify_toggle", dp(24), dp(24), true, null);
+        final RLottieDrawable notifyIcon = new RLottieDrawable(R.raw.notify_toggle, dp(24), dp(24), true, null);
         notifyIcon.setAllowDecodeSingleFrame(true);
         notifyIcon.setPlayInDirectionOfCustomEndFrame(true);
         notifyIcon.start();
@@ -5469,8 +5469,8 @@ public class AlertsCreator {
         buttonTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         buttonTextView.setTypeface(AndroidUtilities.bold());
         buttonTextView.setText(button);
-        buttonTextView.setBackground(Theme.createSimpleSelectorRoundRectDrawable(dp(8), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), Theme.getColor(Theme.key_featuredStickers_addButtonPressed, resourcesProvider)));
-        ScaleStateListAnimator.apply(buttonTextView);
+        buttonTextView.setBackground(Theme.createSimpleSelectorRoundRectDrawable(dp(24), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), Theme.getColor(Theme.key_featuredStickers_addButtonPressed, resourcesProvider)));
+        ScaleStateListAnimator.apply(buttonTextView, .02f, 1.2f);
         container.addView(buttonTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.LEFT | Gravity.BOTTOM, 16, showRemoveYear ? 0 : 15, 16, showDelete ? 0 : 16));
         buttonTextView.setOnClickListener(v -> {
             TL_account.TL_birthday b = new TL_account.TL_birthday();
@@ -5487,6 +5487,7 @@ public class AlertsCreator {
         if (showDelete) {
             final ButtonWithCounterView button2 = new ButtonWithCounterView(context, false, resourcesProvider);
             button2.setText(getString(R.string.BirthdayRemove), false);
+            button2.setRound();
             button2.setOnClickListener(v -> {
                 builder.getDismissRunnable().run();
                 whenSelectedBirthday.run(null);
@@ -7942,7 +7943,7 @@ public class AlertsCreator {
                 }
             };
 
-            Integer encryptedGroupId = MessagesStorage.getInstance(UserConfig.selectedAccount)
+            Integer encryptedGroupId = MessagesController.getInstance(UserConfig.selectedAccount)
                     .getEncryptedGroupIdByInnerEncryptedChatId(encryptedChat.id);
             if (encryptedGroupId != null) {
                 // apply ttl for every inner chat in the encrypted group
@@ -9108,77 +9109,6 @@ public class AlertsCreator {
             return false;
         });
         return popupWindow;
-    }
-
-    public static AlertDialog showOnScreenLockActionsAlert(BaseFragment fragment, Context context, final Runnable onSelectRunnable, Theme.ResourcesProvider resourcesProvider) {
-        String[] variants = new String[]{
-                LocaleController.getString("OnScreenLockActionNothing", R.string.OnScreenLockActionNothing),
-                LocaleController.getString("OnScreenLockActionHide", R.string.OnScreenLockActionHide),
-                LocaleController.getString("OnScreenLockActionClose", R.string.OnScreenLockActionClose)
-        };
-
-        class Settings {
-            boolean onScreenLockActionClearCache = SharedConfig.onScreenLockActionClearCache;
-            int onScreenLockAction = SharedConfig.onScreenLockAction;
-        }
-        Settings settings = new Settings();
-
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
-        builder.setTitle(LocaleController.getString("OnScreenLockActionTitle", R.string.OnScreenLockActionTitle));
-        final LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        builder.setView(linearLayout);
-
-        CheckBoxCell checkbox = new CheckBoxCell(context, 1, resourcesProvider);
-        checkbox.setPadding(AndroidUtilities.dp(4), 0, AndroidUtilities.dp(4), 0);
-        checkbox.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-        checkbox.setText(LocaleController.getString("ClearCache", R.string.ClearCache), "", settings.onScreenLockActionClearCache, false);
-        checkbox.setEnabled(settings.onScreenLockAction != 0);
-        checkbox.setOnClickListener(v -> {
-            settings.onScreenLockActionClearCache = !settings.onScreenLockActionClearCache;
-            checkbox.setChecked(settings.onScreenLockActionClearCache, true);
-        });
-
-        RadioColorCell[] cells = new RadioColorCell[variants.length];
-        for (int a = 0; a < variants.length; a++) {
-            RadioColorCell cell = new RadioColorCell(context, resourcesProvider);
-            cells[a] = cell;
-            cell.setPadding(AndroidUtilities.dp(4), 0, AndroidUtilities.dp(4), 0);
-            cell.setTag(a);
-            cell.setCheckColor(Theme.getColor(Theme.key_radioBackground), Theme.getColor(Theme.key_dialogRadioBackgroundChecked));
-            cell.setTextAndValue(variants[a], settings.onScreenLockAction == a);
-            linearLayout.addView(cell);
-            cell.setOnClickListener(v -> {
-                if (settings.onScreenLockAction == (Integer) v.getTag()) {
-                    return;
-                }
-                cell.setChecked(true, true);
-                cells[settings.onScreenLockAction].setChecked(false, true);
-                settings.onScreenLockAction = (Integer) v.getTag();
-                if (settings.onScreenLockAction == 0) {
-                    checkbox.setEnabled(false);
-                    checkbox.setChecked(false, true);
-                    settings.onScreenLockActionClearCache = false;
-                } else if (!checkbox.isEnabled()) {
-                    checkbox.setEnabled(true);
-                    checkbox.setChecked(true, true);
-                    settings.onScreenLockActionClearCache = true;
-                }
-            });
-        }
-        linearLayout.addView(checkbox);
-        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (d, w) -> {
-            SharedConfig.setOnScreenLockAction(settings.onScreenLockAction);
-            SharedConfig.onScreenLockActionClearCache = settings.onScreenLockActionClearCache;
-            SharedConfig.saveConfig();
-            if (onSelectRunnable != null) {
-                onSelectRunnable.run();
-            }
-        });
-        AlertDialog dialog = builder.create();
-        fragment.showDialog(dialog);
-        return dialog;
     }
 
     public static AlertDialog showCheckableSettingModesAlert(BaseFragment fragment, Context context, String title, final CheckabeSettingModeAlertDelegate delegate, Theme.ResourcesProvider resourcesProvider) {

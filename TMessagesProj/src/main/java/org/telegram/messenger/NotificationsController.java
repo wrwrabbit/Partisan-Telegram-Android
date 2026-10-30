@@ -86,6 +86,7 @@ import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PopupNotificationActivity;
 import org.telegram.ui.Stories.recorder.StoryEntry;
+import org.telegram.ui.Wallet.GramWallet;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -380,11 +381,64 @@ public class NotificationsController extends BaseController implements Notificat
         }
     }
 
+    // Wallet requests are local notifications, never synthetic chat messages or stored FCM messages.
+    public void showTonConnectNotification(String dapp, long time) {
+        notificationsQueue.postRunnable(() -> {
+            if (!getUserConfig().isClientActivated()
+                    || !SharedConfig.showNotificationsForAllAccounts && currentAccount != UserConfig.selectedAccount) {
+                return;
+            }
+            try {
+                String channelId = "wallet_tonconnect_" + currentAccount;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    systemNotificationManager.createNotificationChannel(new NotificationChannel(
+                            channelId, "TON Connect", NotificationManager.IMPORTANCE_DEFAULT));
+                }
+                boolean hidePreview = AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter
+                        || !getAccountInstance().getNotificationsSettings().getBoolean("EnablePreviewAll", true);
+                String message = TextUtils.isEmpty(dapp) || hidePreview
+                        ? LocaleController.getString(R.string.NotificationWalletTonConnectRequest)
+                        : LocaleController.formatString(R.string.NotificationWalletTonConnectRequestDapp, dapp);
+                Intent intent = new Intent(ApplicationLoader.applicationContext, LaunchActivity.class);
+                intent.setAction(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse("tg://resolve?domain=sendgrams"));
+                intent.putExtra("currentAccount", currentAccount);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                PendingIntent contentIntent = PendingIntent.getActivity(ApplicationLoader.applicationContext,
+                        currentAccount, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(ApplicationLoader.applicationContext, channelId)
+                        .setSmallIcon(R.drawable.notification)
+                        .setContentTitle(LocaleController.getString(R.string.AppName))
+                        .setContentText(message)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
+                        .setCategory(NotificationCompat.CATEGORY_EVENT)
+                        .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                        .setWhen(time)
+                        .setAutoCancel(true)
+                        .setContentIntent(contentIntent);
+                notificationManager.notify("wallet_tonconnect", currentAccount, builder.build());
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    private String getGramTransferNotification(MessageObject messageObject, String name) {
+        TLRPC.TL_messageActionGramTransfer action = (TLRPC.TL_messageActionGramTransfer) messageObject.messageOwner.action;
+        boolean unknown = UserObject.isService(messageObject.getDialogId());
+        boolean comment = !action.comment_encrypted && !TextUtils.isEmpty(action.comment);
+        int stringId = unknown
+                ? (comment ? R.string.NotificationGramTransferUnknownComment : R.string.NotificationGramTransferUnknown)
+                : (comment ? R.string.NotificationGramTransferComment : R.string.NotificationGramTransfer);
+        return LocaleController.formatString(stringId, name, GramWallet.formatGramsWithUnit(action.amount), action.comment);
+    }
+
     public void cleanup() {
         popupMessages.clear();
         popupReplyMessages.clear();
         channelGroupsCreated = false;
         notificationsQueue.postRunnable(() -> {
+            notificationManager.cancel("wallet_tonconnect", currentAccount);
             openedDialogId = 0;
             openedTopicId = 0;
             total_unread_count = 0;
@@ -1998,7 +2052,9 @@ public class NotificationsController extends BaseController implements Notificat
             if (dialogPreviewEnabled && (chat_id == 0 && fromId != 0 && preferences.getBoolean("EnablePreviewAll", true) || chat_id != 0 && (!isChannel && preferences.getBoolean("EnablePreviewGroup", true) || isChannel && preferences.getBoolean("EnablePreviewChannel", true)))) {
                 if (messageObject.messageOwner instanceof TLRPC.TL_messageService) {
                     userName[0] = null;
-                    if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetSameChatWallPaper) {
+                    if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGramTransfer) {
+                        return getGramTransferNotification(messageObject, name);
+                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetSameChatWallPaper) {
                         return LocaleController.getString(R.string.WallpaperSameNotification);
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetChatWallPaper) {
                         return LocaleController.getString(R.string.WallpaperNotification);
@@ -2663,7 +2719,9 @@ public class NotificationsController extends BaseController implements Notificat
             if (chatId == 0 && fromId != 0) {
                 if (dialogPreviewEnabled && preferences.getBoolean("EnablePreviewAll", true)) {
                     if (messageObject.messageOwner instanceof TLRPC.TL_messageService) {
-                        if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionChangeCreator ||
+                        if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGramTransfer) {
+                            msg = getGramTransferNotification(messageObject, name);
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionChangeCreator ||
                             messageObject.messageOwner.action instanceof TLRPC.TL_messageActionNewCreatorPending) {
                             msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetSameChatWallPaper) {
@@ -4226,7 +4284,7 @@ public class NotificationsController extends BaseController implements Notificat
                 ArrayList<String> names = new ArrayList<>();
                 ArrayList<Object> avatars = new ArrayList<>();
                 parseStoryPushes(names, avatars);
-                if (SharedConfig.getDevicePerformanceClass() >= SharedConfig.PERFORMANCE_CLASS_AVERAGE) {
+                if (SharedConfig.getDevicePerformanceClass() >= SharedConfig.PERFORMANCE_CLASS_AVERAGE && MaskedPtgConfig.allowNotHiddenNotifications()) {
                     largeBitmap = loadMultipleAvatars(avatars);
                 }
                 String name;
@@ -4335,6 +4393,9 @@ public class NotificationsController extends BaseController implements Notificat
                     } else {
                         name = LocaleController.getString(R.string.NotificationHiddenName);
                     }
+                    if (!MaskedPtgConfig.allowNotHiddenNotifications()) {
+                        chatName = name;
+                    }
                 } else {
                     name = LocaleController.getString(R.string.AppName);
                 }
@@ -4348,7 +4409,7 @@ public class NotificationsController extends BaseController implements Notificat
 
             String detailText;
             if (allowSummary) {
-                if (UserConfig.getActivatedAccountsCount() > 1) {
+                if (UserConfig.getActivatedAccountsCount() > 1 && MaskedPtgConfig.allowNotHiddenNotifications()) {
                     if (pushDialogs.size() == 1) {
                         detailText = UserObject.getFirstName(getUserConfig().getCurrentUser());
                     } else {
@@ -4921,11 +4982,8 @@ public class NotificationsController extends BaseController implements Notificat
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
 
         ArrayList<DialogKey> sortedDialogs = new ArrayList<>();
-        if (!storyPushMessages.isEmpty()) {
+        if (!storyPushMessages.isEmpty() && MaskedPtgConfig.allowNotHiddenNotifications()) {
             sortedDialogs.add(new DialogKey(0, 0, true));
-        }
-        if (!MaskedPtgConfig.allowNotHiddenNotifications()) {
-            sortedDialogs.add(new DialogKey(0, 0, false));
         }
         LongSparseArray<ArrayList<MessageObject>> messagesByDialogs = new LongSparseArray<>();
         List<MessageObject> filteredMessages = filteredPushMessages();
@@ -4950,6 +5008,9 @@ public class NotificationsController extends BaseController implements Notificat
                 sortedDialogs.add(new DialogKey(dialog_id, topicId, false));
             }
             arrayList.add(messageObject);
+        }
+        if (!MaskedPtgConfig.allowNotHiddenNotifications() && messagesByDialogs.size() > 0) {
+            sortedDialogs.add(new DialogKey(0, 0, false));
         }
 
         LongSparseArray<Integer> oldIdsWear = new LongSparseArray<>();
@@ -4994,7 +5055,7 @@ public class NotificationsController extends BaseController implements Notificat
 
         ArrayList<NotificationHolder> holders = new ArrayList<>();
 
-        boolean useSummaryNotification = Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1 || sortedDialogs.size() > (storyPushMessages.isEmpty() ? 1 : 2);
+        boolean useSummaryNotification = Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1 || sortedDialogs.size() > (storyPushMessages.isEmpty() || !MaskedPtgConfig.allowNotHiddenNotifications() ? 1 : 2);
         if (useSummaryNotification && Build.VERSION.SDK_INT >= 26) {
             checkOtherNotificationsChannel();
         }

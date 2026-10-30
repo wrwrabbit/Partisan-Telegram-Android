@@ -10,8 +10,6 @@ package org.telegram.SQLite;
 
 import android.os.SystemClock;
 
-import com.google.android.exoplayer2.util.Log;
-
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.FileLog;
 import org.telegram.tgnet.NativeByteBuffer;
@@ -112,7 +110,7 @@ public class SQLitePreparedStatement {
         if (BuildVars.LOGS_ENABLED) {
             long diff = SystemClock.elapsedRealtime() - startTime;
             if (diff > 500) {
-                FileLog.d("sqlite query " + query + " took " + diff + "ms");
+                FileLog.d("sqlite query " + org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption.maskHexBlobLiterals(query) + " took " + diff + "ms");
             }
         }
         try {

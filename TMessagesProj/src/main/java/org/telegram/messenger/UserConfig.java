@@ -22,6 +22,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SecurityIssue;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
@@ -479,12 +480,12 @@ public class UserConfig extends BaseController {
             showSecuritySuggestions = preferences.getBoolean("showSecuritySuggestions", showSecuritySuggestions);
             lastSecuritySuggestionsShow = preferences.getLong("lastSecuritySuggestionsShow", 0); // check security next day
             fileProtectionEnabled = preferences.getBoolean("fileProtectionEnabled", fileProtectionEnabled);
-            if (SharedConfig.fileProtectionForAllAccountsEnabled) { // Don't enable file protection for accounts if global file protection enabled.
+            if (FileProtectionSettings.fileProtectionForAllAccountsEnabled.get().orElse(true)) { // Don't enable file protection for accounts if global file protection enabled.
                 fileProtectionEnabled = false;
             }
             disableFileProtectionAfterRestart = preferences.getBoolean("disableFileProtectionAfterRestart", disableFileProtectionAfterRestart);
             disableFileProtectionAfterRestartByFakePasscode = preferences.getBoolean("disableFileProtectionAfterRestartByFakePasscode", disableFileProtectionAfterRestartByFakePasscode);
-            if (disableFileProtectionAfterRestart || disableFileProtectionAfterRestartByFakePasscode || SharedConfig.disableFileProtectionAfterRestart) {
+            if (disableFileProtectionAfterRestart || disableFileProtectionAfterRestartByFakePasscode || FileProtectionSettings.disableFileProtectionAfterRestart.get().orElse(false)) {
                 preferences.edit().remove("2dialogsLoadOffsetId").apply();
             }
             voiceChangeEnabledForAccount = preferences.getBoolean("voiceChangeEnabledForAccount", voiceChangeEnabledForAccount);
@@ -722,7 +723,7 @@ public class UserConfig extends BaseController {
     }
 
     public boolean isPinnedDialogsLoaded(int folderId) {
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().chatListMemoryOnly()) {
             return temporarilyLoadedPinnedDialogs.getOrDefault(folderId, false);
         } else {
             return getPreferences().getBoolean("2pinnedDialogsLoaded" + folderId, false);
@@ -730,7 +731,7 @@ public class UserConfig extends BaseController {
     }
 
     public void setPinnedDialogsLoaded(int folderId, boolean loaded) {
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().chatListMemoryOnly()) {
             temporarilyLoadedPinnedDialogs.put(folderId, loaded);
         } else {
             getPreferences().edit().putBoolean("2pinnedDialogsLoaded" + folderId, loaded).commit();
@@ -763,7 +764,7 @@ public class UserConfig extends BaseController {
     }
 
     public long[] getDialogLoadOffsets(int folderId) {
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().chatListMemoryOnly()) {
             return getFileProtectionDialogLoadOffsets(folderId);
         }
         SharedPreferences preferences = getPreferences();
@@ -777,7 +778,7 @@ public class UserConfig extends BaseController {
     }
 
     public void setDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
-        if (getMessagesStorage().fileProtectionEnabled()) {
+        if (getMessagesStorage().chatListMemoryOnly()) {
             setFileProtectionDialogsLoadOffset(folderId, dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess);
             return;
         }
@@ -872,6 +873,16 @@ public class UserConfig extends BaseController {
     private void setFileProtectionDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
         long[] offsets = {dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess};
         fileProtectionDialogLoadOffsets.put(folderId, offsets);
+    }
+
+    public void clearPersistedDialogListState() {
+        SharedPreferences.Editor editor = getPreferences().edit();
+        for (String key : getPreferences().getAll().keySet()) {
+            if (key.startsWith("2dialogsLoadOffset") || key.startsWith("2totalDialogsLoadCount") || key.startsWith("2pinnedDialogsLoaded")) {
+                editor.remove(key);
+            }
+        }
+        editor.commit();
     }
 
     public static Integer getAccountIndexForLoginIfPossible() {

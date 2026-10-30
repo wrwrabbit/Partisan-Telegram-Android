@@ -33,6 +33,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.ShareBroadcastReceiver;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.partisan.SpoofedLinkChecker;
 import org.telegram.messenger.partisan.links.PartisanLinkController;
 import org.telegram.messenger.support.customtabs.CustomTabsCallback;
 import org.telegram.messenger.support.customtabs.CustomTabsClient;
@@ -233,6 +234,7 @@ public class Browser {
     public static class Progress {
 
         private Runnable onInitListener;
+        private SpoofedLinkChecker.LinkSource spoofedLinkSource;
         private Runnable onCancelListener;
         private Runnable onEndListener;
 
@@ -243,6 +245,14 @@ public class Browser {
         public Progress(Runnable init, Runnable end) {
             this.onInitListener = init;
             this.onEndListener = end;
+        }
+
+        public SpoofedLinkChecker.LinkSource getSpoofedLinkSource() {
+            return spoofedLinkSource;
+        }
+
+        public void setSpoofedLinkSource(SpoofedLinkChecker.LinkSource spoofedLinkSource) {
+            this.spoofedLinkSource = spoofedLinkSource;
         }
 
         public void init() {
@@ -380,7 +390,7 @@ public class Browser {
                     .appendQueryParameter("autologin_token", autologin_token)
                     .build();
             }
-            if (allowCustom && !(uri != null && MessagesController.getInstance(currentAccount).isWebBrowserOpenInApp(uri.toString()) || isInstantViewOpen()) && MessagesController.getInstance(currentAccount).isWebBrowserUseCustomTabs() && !internalUri && !scheme.equals("tel") && !isTonsite(uri.toString())) {
+            if (allowCustom && !(uri != null && MessagesController.getInstance(currentAccount).isWebBrowserOpenInApp(uri.toString())) && MessagesController.getInstance(currentAccount).isWebBrowserUseCustomTabs() && !internalUri && !scheme.equals("tel") && !isTonsite(uri.toString())) {
                 if (forceBrowser[0] || !openInExternalApp(context, uri.toString(), false) || !hasAppToOpen(context, uri.toString())) {
                     if (MessagesController.getInstance(currentAccount).authDomains.contains(host)) {
                         Intent intent = new Intent(Intent.ACTION_VIEW, uri);
@@ -416,7 +426,7 @@ public class Browser {
 
             final boolean inappBrowser = (
                 allowInAppBrowser && BubbleActivity.instance == null &&
-                (uri != null && MessagesController.getInstance(currentAccount).isWebBrowserOpenInApp(uri.toString()) || isInstantViewOpen()) &&
+                uri != null && MessagesController.getInstance(currentAccount).isWebBrowserOpenInApp(uri.toString()) &&
                 TextUtils.isEmpty(browserPackage) &&
                 (uri.getScheme() == null || "https".equals(uri.getScheme()) || "http".equals(uri.getScheme()) || "tonsite".equals(uri.getScheme()))
                 ||
@@ -475,16 +485,6 @@ public class Browser {
         intent.putExtra(LaunchActivity.EXTRA_FORCE_REQUEST, forceRequest);
         activity.onNewIntent(intent, progress);
         return true;
-    }
-
-    public static boolean isInstantViewOpen() {
-        BaseFragment fragment = LaunchActivity.getSafeLastFragment();
-        if (fragment != null && fragment.getParentLayout() instanceof ActionBarLayout) {
-            BaseFragment sheetFragment = ((ActionBarLayout) fragment.getParentLayout()).getSheetFragment();
-            if (sheetFragment != null && sheetFragment.getArticleViewer() != null)
-                return true;
-        }
-        return fragment != null && fragment.getArticleViewer() != null;
     }
 
     public static boolean openInTelegramBrowser(Context context, String url, Browser.Progress progress) {

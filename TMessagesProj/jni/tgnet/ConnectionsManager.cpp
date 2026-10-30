@@ -20,6 +20,7 @@
 #include <string>
 #include <cinttypes>
 #include "ConnectionsManager.h"
+#include "DownloadRequestBudget.h"
 #include "FileLog.h"
 #include "EventObject.h"
 #include "MTProtoScheme.h"
@@ -440,7 +441,9 @@ void ConnectionsManager::loadConfig() {
     if (config == nullptr) {
         config = new Config(instanceNum, "tgnet.dat");
     }
-    NativeByteBuffer *buffer = config->readConfig();
+    bool wasEncrypted = false;
+    NativeByteBuffer *buffer = config->readConfig(&wasEncrypted);
+    bool encryptionFormatMismatch = false;
     if (buffer != nullptr) {
         uint32_t version = buffer->readUint32(nullptr);
         if (LOGS_ENABLED) DEBUG_D("config version = %u", version);
@@ -487,6 +490,7 @@ void ConnectionsManager::loadConfig() {
             }
         }
         buffer->reuse();
+        encryptionFormatMismatch = wasEncrypted != (configEncryptionKeySet && configEncryptionEncryptOnWrite);
     }
 
     if (currentDatacenterId != 0 && currentUserId) {
@@ -507,7 +511,7 @@ void ConnectionsManager::loadConfig() {
 
     initDatacenters();
 
-    if ((!datacenters.empty() && currentDatacenterId == 0) || pushSessionId == 0) {
+    if ((!datacenters.empty() && currentDatacenterId == 0) || pushSessionId == 0 || encryptionFormatMismatch) {
         if (pushSessionId == 0) {
             RAND_bytes((uint8_t *) &pushSessionId, 8);
         }
@@ -882,7 +886,8 @@ void ConnectionsManager::onConnectionConnected(Connection *connection) {
             if (networkPaused && lastPauseTime != 0) {
                 lastPauseTime = getCurrentTimeMonotonicMillis();
             }
-            processRequestQueue(connection->getConnectionType(), datacenter->getDatacenterId());
+            processRequestQueue(connectionType, datacenter->getDatacenterId(),
+                                connectionType == ConnectionTypeDownload ? connection : nullptr);
         }
     }
 }
@@ -1185,7 +1190,10 @@ void ConnectionsManager::processServerResponse(TLObject *message, int64_t messag
             for (auto & runningRequest : runningRequests) {
                 Request *request = runningRequest.get();
                 Datacenter *requestDatacenter = getDatacenterWithId(request->datacenterId);
-                if (request->messageId < response->first_msg_id && request->connectionType & connection->getConnectionType() && requestDatacenter != nullptr && requestDatacenter->getDatacenterId() == datacenter->getDatacenterId()) {
+                // A new download session says nothing about requests on sibling sockets.
+                bool sameDownloadConnection = connection->getConnectionType() != ConnectionTypeDownload ||
+                                              (request->connectionType >> 16) == connection->getConnectionNum();
+                if (sameDownloadConnection && request->messageId < response->first_msg_id && request->connectionType & connection->getConnectionType() && requestDatacenter != nullptr && requestDatacenter->getDatacenterId() == datacenter->getDatacenterId()) {
                     if (LOGS_ENABLED) DEBUG_D("clear request %p - %s", request->rawRequest, typeid(*request->rawRequest).name());
                     request->clear(true);
                 }
@@ -2511,7 +2519,12 @@ inline void addMessageToDatacenter(uint32_t datacenterId, NetworkMessage *networ
 #define MAX_DOWNLOAD_REQUESTS 16 * 2
 #define MAX_UPLOAD_REQUESTS 10 * 3
 
-void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t dc) {
+static uint32_t getDownloadSize(Request *request) {
+    auto apiRequest = dynamic_cast<TL_api_request *>(request->rawRequest);
+    return apiRequest != nullptr ? apiRequest->downloadSize : 0;
+}
+
+void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t dc, Connection *connectedDownload) {
     genericMessagesToDatacenters.clear();
     genericMediaMessagesToDatacenters.clear();
     tempMessagesToDatacenters.clear();
@@ -2650,7 +2663,10 @@ void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t 
 
         uint32_t requestConnectionType = request->connectionType & 0x0000ffff;
 
-        bool forceThisRequest = (connectionTypes & requestConnectionType) && requestDatacenter->getDatacenterId() == dc;
+        // Opening one download socket must not resend requests on its siblings.
+        // Salt/session recovery calls without a socket still apply to the whole DC.
+        bool forceThisRequest = (connectionTypes & requestConnectionType) && requestDatacenter->getDatacenterId() == dc &&
+                                (connectedDownload == nullptr || connection == connectedDownload);
 
         if (typeInfo == typeid(TL_get_future_salts)) {
             if (request->messageId != 0) {
@@ -2766,6 +2782,16 @@ void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t 
             }
         }
         iter++;
+    }
+
+    // Snapshot after retries/migrations, which can remove or requeue requests.
+    // No persistent reservations to leak on cancellation or DC changes.
+    DownloadRequestBudget downloadBudget(currentUserPremium);
+    for (const auto &request : runningRequests) {
+        if (!request->cancelled && (request->connectionType & 0xffff) == ConnectionTypeDownload) {
+            uint32_t datacenterId = request->datacenterId == DEFAULT_DATACENTER_ID ? currentDatacenterId : request->datacenterId;
+            downloadBudget.account(datacenterId, (request->requestFlags & RequestFlagSmallDownload) != 0, getDownloadSize(request.get()));
+        }
     }
 
     Connection *genericConnection = nullptr;
@@ -2894,7 +2920,9 @@ void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t 
 
         Connection *connection = requestDatacenter->getConnectionByType(request->connectionType, true, canUseUnboundKey);
 
-        if (request->connectionType & ConnectionTypeGeneric && connection->getConnectionToken() == 0) {
+        // Keep budgeted chunks queued until the socket is ready. Otherwise they
+        // are buffered here and then sent again by onConnectionConnected.
+        if (((request->connectionType & ConnectionTypeGeneric) || getDownloadSize(request) != 0) && connection->getConnectionToken() == 0) {
             iter++;
             continue;
         }
@@ -2925,6 +2953,15 @@ void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t 
                         DEBUG_D("skip queue, token = %d: download type: network unavailable", request->requestToken);
                     continue;
                 }
+                uint32_t bytes = getDownloadSize(request);
+                if (bytes != 0) {
+                    if (!downloadBudget.acquire(datacenterId, (request->requestFlags & RequestFlagSmallDownload) != 0, bytes)) {
+                        iter++;
+                        continue;
+                    }
+                    break;
+                }
+                // Non-opted-in requests retain the original count-based scheduling.
                 int max;
                 if (request->isCancelRequest()) {
                     max = MAX_DOWNLOAD_REQUESTS_CANCELS;
@@ -3718,6 +3755,17 @@ void ConnectionsManager::applyDnsConfig(NativeByteBuffer *buffer, std::string ph
         }
         buffer->reuse();
     });
+}
+
+void ConnectionsManager::setConfigEncryptionKey(const uint8_t *key, int32_t length, bool encryptOnWrite) {
+    configEncryptionEncryptOnWrite = encryptOnWrite;
+    if (key != nullptr && length == sizeof(configEncryptionKey)) {
+        memcpy(configEncryptionKey, key, sizeof(configEncryptionKey));
+        configEncryptionKeySet = true;
+    } else {
+        memset(configEncryptionKey, 0, sizeof(configEncryptionKey));
+        configEncryptionKeySet = false;
+    }
 }
 
 void ConnectionsManager::init(uint32_t version, int32_t layer, int32_t apiId, std::string deviceModel, std::string systemVersion, std::string appVersion, std::string langCode, std::string systemLangCode, std::string configPath, std::string logPath, std::string regId, std::string cFingerpting, std::string installerId, std::string packageId, int32_t timezoneOffset, int64_t userId, bool userPremium, bool isPaused, bool enablePushConnection, bool hasNetwork, int32_t networkType, int32_t performanceClass) {

@@ -299,7 +299,7 @@ public class VoIPGroupNotification {
 
         TLObject obj = MessagesController.getInstance(account).getUserOrChat(dialogId);
         Bitmap avatar = VoIPService.getRoundAvatarBitmap(context, account, obj);
-        String personName = !TextUtils.isEmpty(names) ? names : ContactsController.formatName(obj);
+        String personName = org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils.maskCallerNameIfNeeded(!TextUtils.isEmpty(names) ? names : ContactsController.formatName(obj));
         if (TextUtils.isEmpty(personName)) {
             //java.lang.IllegalArgumentException: person must have a non-empty a name
             personName = "___";

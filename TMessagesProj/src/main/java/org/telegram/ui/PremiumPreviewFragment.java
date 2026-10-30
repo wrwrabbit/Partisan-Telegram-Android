@@ -1,6 +1,7 @@
 package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
+import static org.telegram.messenger.LocaleController.getCurrencyExpDivider;
 import static org.telegram.messenger.LocaleController.getString;
 
 import android.animation.Animator;
@@ -926,14 +927,14 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         updateButtonText(false);
         buttonContainer = new FrameLayout(context);
 
-        buttonContainerInternal.setPadding(dp(12), dp(12), dp(12), dp(12));
+        buttonContainerInternal.setPadding(dp(8), dp(8), dp(8), dp(8));
         buttonContainerInternal.addView(premiumButtonView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         buttonContainerInternal.setBackground(iBlur3Factory.create(buttonContainerInternal)
             .setColorProvider(BlurredBackgroundProviderImpl.premiumButton(resourceProvider))
             .setRadius(dp(28))
-            .setPadding(dp(8)));
+            .setPadding(dp(5)));
         ScaleStateListAnimator.apply(buttonContainerInternal, 0.02f, 1.5f);
-        buttonContainer.addView(buttonContainerInternal, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48 + 12 + 12, Gravity.BOTTOM, 4, 0, 4, 0));
+        buttonContainer.addView(buttonContainerInternal, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48 + 8 + 8, Gravity.BOTTOM, 4, 0, 4, 0));
 
         BlurredBackgroundWithFadeDrawable fade = new BlurredBackgroundWithFadeDrawable(iBlur3Factory.create(buttonContainer));
         fade.setFadeHeight(dp(40), false);
@@ -1078,6 +1079,16 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(str);
         spannableStringBuilder.append("  d");
         FilterCreateActivity.NewSpan span = new FilterCreateActivity.NewSpan(false, fontSize);
+        span.setColor(Theme.getColor(Theme.key_premiumGradient1));
+        spannableStringBuilder.setSpan(span, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
+        return spannableStringBuilder;
+    }
+    public static CharSequence applyNewSpanTimed(CharSequence str, int since) {
+        if (ConnectionsManager.getInstance(UserConfig.selectedAccount).getCurrentTime() - since > 4 * 7 * 24 * 60 * 60)
+            return str;
+        SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(str);
+        spannableStringBuilder.append("  d");
+        FilterCreateActivity.NewSpan span = new FilterCreateActivity.NewSpan(false, -1);
         span.setColor(Theme.getColor(Theme.key_premiumGradient1));
         spannableStringBuilder.setSpan(span, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
         return spannableStringBuilder;

@@ -8,7 +8,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.NotificationCenter;
@@ -340,7 +339,7 @@ public class MigrationZipReceiver {
     }
 
     private void showMigrationReceiveError(Exception ex) {
-        Log.e("BasePermissionActivity", "Error", ex);
+        PartisanLog.e("BasePermissionActivity error", ex);
         AndroidUtilities.runOnUIThread(() -> {
             NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.telegramDataReceivingError);
             Toast.makeText(activity, "Error: " + ex.getMessage(), Toast.LENGTH_LONG).show();

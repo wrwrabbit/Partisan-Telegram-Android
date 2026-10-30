@@ -2,20 +2,20 @@ package org.telegram.messenger.partisan.fileprotection;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -25,30 +25,44 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.CheckBoxUserCell;
 import org.telegram.ui.Cells.HeaderCell;
-import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCheckCell;
+import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
+import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class FileProtectionActivity extends BaseFragment {
 
     private ListAdapter listAdapter;
     private RecyclerListView listView;
 
+    private int storageHeaderRow;
+    private int storeDataInMemoryOnlyRow;
+    private int storeDataInMemoryOnlyInfoRow;
+    private int storeChatsInMemoryOnlyRow;
+    private int storeChatsInMemoryOnlyInfoRow;
     private int worksWithFakePasscodeRow;
-    private int worksWithFakePasscodeDelimiterRow;
+    private int worksWithFakePasscodeInfoRow;
+    private int encryptionHeaderRow;
+    private int encryptDatabaseRow;
+    private int encryptDatabaseInfoRow;
+    private int encryptAuthTokenRow;
+    private int encryptAuthTokenInfoRow;
+    private int accountsHeaderRow;
     private int firstAccountRow;
     private int lastAccountRow;
+    private int accountsInfoRow;
     private int rowCount;
 
-    private final List<FileProtectionAccountCellInfo> accounts = new ArrayList<>();
+    private final List<FileProtectionAccountInfo> accounts = new ArrayList<>();
+    private boolean storeDataInMemoryOnly;
+    private boolean storeChatsInMemoryOnly;
+    private boolean encryptDatabase;
+    private boolean encryptAuthToken;
     private boolean fileProtectionWorksWhenFakePasscodeActivated;
 
     private static final int done_button = 1;
@@ -56,7 +70,12 @@ public class FileProtectionActivity extends BaseFragment {
     @Override
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
-        fileProtectionWorksWhenFakePasscodeActivated = SharedConfig.fileProtectionWorksWhenFakePasscodeActivated;
+        storeDataInMemoryOnly = FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true);
+        storeChatsInMemoryOnly = FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true);
+        encryptDatabase = FileProtectionSettings.encryptDatabase.get().orElse(true);
+        encryptAuthToken = FileProtectionSettings.encryptAuthToken.get().orElse(true);
+        fileProtectionWorksWhenFakePasscodeActivated = FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true);
+        loadAccounts();
         updateRows();
         return true;
     }
@@ -92,14 +111,50 @@ public class FileProtectionActivity extends BaseFragment {
         listView = new RecyclerListView(context);
         listView.setSections();
         actionBar.setAdaptiveBackground(listView);
-        listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
+        listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false) {
+            @Override
+            public boolean supportsPredictiveItemAnimations() {
+                return false;
+            }
+        });
         listView.setVerticalScrollBarEnabled(false);
         listView.setAnimateEmptyView(true, 0);
+        listView.setLayoutAnimation(null);
+        DefaultItemAnimator itemAnimator = new DefaultItemAnimator();
+        itemAnimator.setDurations(350);
+        itemAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
+        itemAnimator.setDelayAnimations(false);
+        itemAnimator.setSupportsChangeAnimations(false);
+        listView.setItemAnimator(itemAnimator);
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listView.setAdapter(listAdapter);
         listView.setOnItemClickListener((view, position) -> {
             if (getParentActivity() == null) {
                 return;
+            }
+            if (position == storeDataInMemoryOnlyRow) {
+                storeDataInMemoryOnly = !storeDataInMemoryOnly;
+                ((TextCheckCell) view).setChecked(storeDataInMemoryOnly);
+                int memoryOnlySubSettingsStartRow = storeDataInMemoryOnlyInfoRow + 1;
+                int oldRowCount = rowCount;
+                updateRows();
+                if (storeDataInMemoryOnly) {
+                    listAdapter.notifyItemRangeInserted(memoryOnlySubSettingsStartRow, rowCount - oldRowCount);
+                } else {
+                    listAdapter.notifyItemRangeRemoved(memoryOnlySubSettingsStartRow, oldRowCount - rowCount);
+                }
+            }
+            if (position == storeChatsInMemoryOnlyRow) {
+                storeChatsInMemoryOnly = !storeChatsInMemoryOnly;
+                ((TextCheckCell) view).setChecked(storeChatsInMemoryOnly);
+            }
+            if (position == encryptDatabaseRow) {
+                encryptDatabase = !encryptDatabase;
+                ((TextCheckCell) view).setChecked(encryptDatabase);
+            }
+            if (position == encryptAuthTokenRow) {
+                encryptAuthToken = !encryptAuthToken;
+                ((TextCheckCell) view).setChecked(encryptAuthToken);
             }
             if (position == worksWithFakePasscodeRow) {
                 fileProtectionWorksWhenFakePasscodeActivated = !fileProtectionWorksWhenFakePasscodeActivated;
@@ -108,14 +163,13 @@ public class FileProtectionActivity extends BaseFragment {
             }
             if (firstAccountRow <= position && position <= lastAccountRow) {
                 CheckBoxUserCell userCell = ((CheckBoxUserCell) view);
-                FileProtectionAccountCellInfo cellInfo = accounts.get(position - firstAccountRow);
-                cellInfo.fileProtectionEnabled = !cellInfo.fileProtectionEnabled;
+                FileProtectionAccountInfo accountInfo = accounts.get(position - firstAccountRow);
+                accountInfo.fileProtectionEnabled = !accountInfo.fileProtectionEnabled;
                 listAdapter.notifyItemChanged(position);
-                userCell.setChecked(cellInfo.fileProtectionEnabled, true);
+                userCell.setChecked(accountInfo.fileProtectionEnabled, true);
             }
         });
 
-        updateRows();
         return fragmentView;
     }
 
@@ -127,40 +181,85 @@ public class FileProtectionActivity extends BaseFragment {
         }
     }
 
+    @Override
+    public boolean onBackPressed(boolean invoked) {
+        if (isChanged()) {
+            if (invoked) {
+                confirmExit();
+            }
+            return false;
+        }
+        return super.onBackPressed(invoked);
+    }
+
+    @Override
+    public boolean isSwipeBackEnabled(MotionEvent event) {
+        return !isChanged();
+    }
+
     private void updateRows() {
         rowCount = 0;
 
-        worksWithFakePasscodeRow = rowCount++;
-        worksWithFakePasscodeDelimiterRow = rowCount++;
+        storageHeaderRow = rowCount++;
+        storeDataInMemoryOnlyRow = rowCount++;
+        storeDataInMemoryOnlyInfoRow = rowCount++;
+        if (storeDataInMemoryOnly) {
+            storeChatsInMemoryOnlyRow = rowCount++;
+            storeChatsInMemoryOnlyInfoRow = rowCount++;
+            worksWithFakePasscodeRow = rowCount++;
+            worksWithFakePasscodeInfoRow = rowCount++;
+        } else {
+            storeChatsInMemoryOnlyRow = -1;
+            storeChatsInMemoryOnlyInfoRow = -1;
+            worksWithFakePasscodeRow = -1;
+            worksWithFakePasscodeInfoRow = -1;
+        }
+        encryptionHeaderRow = rowCount++;
+        encryptDatabaseRow = rowCount++;
+        encryptDatabaseInfoRow = rowCount++;
+        encryptAuthTokenRow = rowCount++;
+        encryptAuthTokenInfoRow = rowCount++;
+        accountsHeaderRow = rowCount++;
         firstAccountRow = rowCount;
+        rowCount += accounts.size();
+        lastAccountRow = rowCount - 1;
+        accountsInfoRow = rowCount++;
+    }
+
+    private void loadAccounts() {
         accounts.clear();
         for (int account : Utils.getActivatedAccountsSortedByLoginTime()) {
-            accounts.add(new FileProtectionAccountCellInfo(account));
-            lastAccountRow = rowCount++;
+            accounts.add(new FileProtectionAccountInfo(account));
         }
     }
 
     private boolean isChanged() {
-        return fileProtectedAccountsChanged() || fileProtectionWorksWhenFakePasscodeActivatedChanged();
+        return FileProtectionSwitcher.fileProtectedAccountsChanged(accounts)
+                || storeDataInMemoryOnlyChanged()
+                || storeChatsInMemoryOnlyChanged()
+                || encryptDatabaseChanged()
+                || encryptAuthTokenChanged()
+                || fileProtectionWorksWhenFakePasscodeActivatedChanged();
     }
 
-    private boolean fileProtectedAccountsChanged() {
-        for (FileProtectionAccountCellInfo cellInfo : accounts) {
-            if (SharedConfig.fileProtectionForAllAccountsEnabled) {
-                if (!cellInfo.fileProtectionEnabled) {
-                    return true;
-                }
-            } else {
-                if (cellInfo.getUserConfig().fileProtectionEnabled != cellInfo.fileProtectionEnabled) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    private boolean storeDataInMemoryOnlyChanged() {
+        return storeDataInMemoryOnly != FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true);
+    }
+
+    private boolean storeChatsInMemoryOnlyChanged() {
+        return storeChatsInMemoryOnly != FileProtectionSettings.storeChatsInMemoryOnly.get().orElse(true);
+    }
+
+    private boolean encryptDatabaseChanged() {
+        return encryptDatabase != FileProtectionSettings.encryptDatabase.get().orElse(true);
+    }
+
+    private boolean encryptAuthTokenChanged() {
+        return encryptAuthToken != FileProtectionSettings.encryptAuthToken.get().orElse(true);
     }
 
     private boolean fileProtectionWorksWhenFakePasscodeActivatedChanged() {
-        return fileProtectionWorksWhenFakePasscodeActivated != SharedConfig.fileProtectionWorksWhenFakePasscodeActivated;
+        return fileProtectionWorksWhenFakePasscodeActivated != FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true);
     }
 
     private void confirmExit() {
@@ -182,44 +281,38 @@ public class FileProtectionActivity extends BaseFragment {
         }
     }
 
+    private boolean switchingNeeded() {
+        return FileProtectionSwitcher.fileProtectedAccountsChanged(accounts)
+                || storeDataInMemoryOnlyChanged()
+                || storeChatsInMemoryOnlyChanged()
+                || encryptDatabaseChanged()
+                || encryptAuthTokenChanged();
+    }
+
     private void processDone() {
-        if (!fileProtectedAccountsChanged()) {
+        if (!switchingNeeded()) {
             if (fileProtectionWorksWhenFakePasscodeActivatedChanged()) {
-                SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+                FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.toggle();
             }
             finishFragment();
             return;
         }
+
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setMessage(LocaleController.getString(R.string.ApplicationWillBeRestarted));
         builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialogInterface, i) -> {
             if (fileProtectionWorksWhenFakePasscodeActivatedChanged()) {
-                SharedConfig.toggleFileProtectionWorksWhenFakePasscodeActivated();
+                FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.toggle();
             }
-            Map<Integer, Boolean> map = new HashMap<>();
-            for (FileProtectionAccountCellInfo cellInfo : accounts) {
-                map.put(cellInfo.accountNum, cellInfo.fileProtectionEnabled);
+            if (switchingNeeded()) {
+                new FileProtectionSwitcher(this).apply(accounts, storeDataInMemoryOnly, storeChatsInMemoryOnly, encryptDatabase, encryptAuthToken);
+            } else {
+                finishFragment();
             }
-            new FileProtectionSwitcher(this).changeForMultipleAccounts(map);
         });
         builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         AlertDialog dialog = builder.create();
         showDialog(dialog);
-    }
-
-    private static class FileProtectionAccountCellInfo {
-        public int accountNum;
-        public boolean fileProtectionEnabled;
-
-        public FileProtectionAccountCellInfo(int accountNum) {
-            this.accountNum = accountNum;
-            this.fileProtectionEnabled = SharedConfig.fileProtectionForAllAccountsEnabled
-                    || getUserConfig().fileProtectionEnabled;
-        }
-
-        public UserConfig getUserConfig() {
-            return UserConfig.getInstance(accountNum);
-        }
     }
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
@@ -232,8 +325,8 @@ public class FileProtectionActivity extends BaseFragment {
 
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
-            int position = holder.getAdapterPosition();
-            return position != worksWithFakePasscodeDelimiterRow;
+            int viewType = holder.getItemViewType();
+            return viewType == 0 || viewType == 1;
         }
 
         @Override
@@ -256,7 +349,11 @@ public class FileProtectionActivity extends BaseFragment {
                     view = new TextCheckCell(mContext);
                     break;
                 case 2:
-                    view = new ShadowSectionCell(mContext);
+                    view = new HeaderCell(mContext);
+                    break;
+                case 3:
+                    view = new TextInfoPrivacyCell(mContext);
+                    view.setBackground(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     break;
             }
             return new RecyclerListView.Holder(view);
@@ -267,21 +364,52 @@ public class FileProtectionActivity extends BaseFragment {
             switch (holder.getItemViewType()) {
                 case 0: {
                     CheckBoxUserCell userCell = (CheckBoxUserCell) holder.itemView;
-                    FileProtectionAccountCellInfo cellInfo = accounts.get(position - firstAccountRow);
-                    userCell.setUser(cellInfo.getUserConfig().getCurrentUser(), cellInfo.fileProtectionEnabled, true);
+                    FileProtectionAccountInfo accountInfo = accounts.get(position - firstAccountRow);
+                    userCell.setUser(accountInfo.getUserConfig().getCurrentUser(), accountInfo.fileProtectionEnabled, position != lastAccountRow);
                     break;
                 }
                 case 1: {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
-                    if (position == worksWithFakePasscodeRow) {
-                        textCell.setTextAndCheck(LocaleController.getString(R.string.WorksWithFakePasscodes), fileProtectionWorksWhenFakePasscodeActivated, true);
+                    if (position == storeDataInMemoryOnlyRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionStoreDataInMemoryOnly), storeDataInMemoryOnly, false);
+                    } else if (position == storeChatsInMemoryOnlyRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionStoreChatsInMemoryOnly), storeChatsInMemoryOnly, false);
+                    } else if (position == encryptDatabaseRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionEncryptDatabase), encryptDatabase, false);
+                    } else if (position == encryptAuthTokenRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FileProtectionEncryptAuthToken), encryptAuthToken, false);
+                    } else if (position == worksWithFakePasscodeRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.WorksWithFakePasscodes), fileProtectionWorksWhenFakePasscodeActivated, false);
                     }
                     break;
                 }
                 case 2: {
-                    View sectionCell = holder.itemView;
-                    sectionCell.setTag(position);
-                    sectionCell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider, getThemedColor(Theme.key_windowBackgroundGrayShadow)));
+                    HeaderCell headerCell = (HeaderCell) holder.itemView;
+                    headerCell.setHeight(46);
+                    if (position == storageHeaderRow) {
+                        headerCell.setText(LocaleController.getString(R.string.FileProtectionStorageHeader));
+                    } else if (position == encryptionHeaderRow) {
+                        headerCell.setText(LocaleController.getString(R.string.FileProtectionEncryptionHeader));
+                    } else if (position == accountsHeaderRow) {
+                        headerCell.setText(LocaleController.getString(R.string.FileProtectionAccountsHeader));
+                    }
+                    break;
+                }
+                case 3: {
+                    TextInfoPrivacyCell infoCell = (TextInfoPrivacyCell) holder.itemView;
+                    if (position == storeDataInMemoryOnlyInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionStoreDataInMemoryOnlyInfo));
+                    } else if (position == storeChatsInMemoryOnlyInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionStoreChatsInMemoryOnlyInfo));
+                    } else if (position == worksWithFakePasscodeInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionWorksWithFakePasscodesInfo));
+                    } else if (position == encryptDatabaseInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionEncryptDatabaseInfo));
+                    } else if (position == encryptAuthTokenInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionEncryptAuthTokenInfo));
+                    } else if (position == accountsInfoRow) {
+                        infoCell.setText(LocaleController.getString(R.string.FileProtectionAccountsInfo));
+                    }
                     break;
                 }
             }
@@ -289,10 +417,13 @@ public class FileProtectionActivity extends BaseFragment {
 
         @Override
         public int getItemViewType(int position) {
-            if (position == worksWithFakePasscodeRow) {
+            if (position == storeDataInMemoryOnlyRow || position == storeChatsInMemoryOnlyRow || position == encryptDatabaseRow || position == encryptAuthTokenRow || position == worksWithFakePasscodeRow) {
                 return 1;
-            } else if (position == worksWithFakePasscodeDelimiterRow) {
+            } else if (position == storageHeaderRow || position == encryptionHeaderRow || position == accountsHeaderRow) {
                 return 2;
+            } else if (position == storeDataInMemoryOnlyInfoRow || position == storeChatsInMemoryOnlyInfoRow || position == worksWithFakePasscodeInfoRow
+                    || position == encryptDatabaseInfoRow || position == encryptAuthTokenInfoRow || position == accountsInfoRow) {
+                return 3;
             } if (firstAccountRow <= position && position <= lastAccountRow) {
                 return 0;
             }
@@ -333,6 +464,9 @@ public class FileProtectionActivity extends BaseFragment {
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_TEXTCOLOR | ThemeDescription.FLAG_CHECKTAG, new Class[]{TextSettingsCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueText4));
 
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{HeaderCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueHeader));
+
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow));
+        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText4));
 
         return themeDescriptions;
     }

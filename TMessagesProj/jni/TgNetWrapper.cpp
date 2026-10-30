@@ -106,9 +106,10 @@ jint getTimeDifference(JNIEnv *env, jclass c, jint instanceNum) {
     return ConnectionsManager::getInstance(instanceNum).getTimeDifference();
 }
 
-void sendRequest(JNIEnv *env, jclass c, jint instanceNum, jlong object, jint flags, jint datacenterId, jint connectionType, jboolean immediate, jint token) {
+void sendRequest(JNIEnv *env, jclass c, jint instanceNum, jlong object, jint flags, jint datacenterId, jint connectionType, jboolean immediate, jint token, jint downloadSize) {
     TL_api_request *request = new TL_api_request();
     request->request = (NativeByteBuffer *) (intptr_t) object;
+    request->downloadSize = downloadSize > 0 ? (uint32_t) downloadSize : 0;
     ConnectionsManager::getInstance(instanceNum).sendRequest(request, ([instanceNum, token](TLObject *response, TL_error *error, int32_t networkType, int64_t responseTime, int64_t msgId, int32_t dcId) {
         TL_api_response *resp = (TL_api_response *) response;
         jlong ptr = 0;
@@ -464,6 +465,21 @@ void setSystemLangCode(JNIEnv *env, jclass c, jint instanceNum, jstring langCode
     }
 }
 
+void setTgnetConfigKey(JNIEnv *env, jclass c, jint instanceNum, jbyteArray key, jboolean encryptOnWrite) {
+    if (key == nullptr) {
+        ConnectionsManager::getInstance(instanceNum).setConfigEncryptionKey(nullptr, 0, encryptOnWrite);
+        return;
+    }
+    jsize length = env->GetArrayLength(key);
+    jbyte *bytes = env->GetByteArrayElements(key, nullptr);
+    if (bytes == nullptr) {
+        ConnectionsManager::getInstance(instanceNum).setConfigEncryptionKey(nullptr, 0, encryptOnWrite);
+        return;
+    }
+    ConnectionsManager::getInstance(instanceNum).setConfigEncryptionKey((const uint8_t *) bytes, (int32_t) length, encryptOnWrite);
+    env->ReleaseByteArrayElements(key, bytes, JNI_ABORT);
+}
+
 void init(JNIEnv *env, jclass c, jint instanceNum, jint version, jint layer, jint apiId, jstring deviceModel, jstring systemVersion, jstring appVersion, jstring langCode, jstring systemLangCode, jstring configPath, jstring logPath, jstring regId, jstring cFingerprint, jstring installerId, jstring packageId, jint timezoneOffset, jlong userId, jboolean userPremium, jboolean enablePushConnection, jboolean hasNetwork, jint networkType, jint performanceClass) {
     const char *deviceModelStr = env->GetStringUTFChars(deviceModel, 0);
     const char *systemVersionStr = env->GetStringUTFChars(systemVersion, 0);
@@ -530,7 +546,7 @@ static JNINativeMethod ConnectionsManagerMethods[] = {
         {"native_getCurrentAuthKeyId", "(I)J", (void *) getCurrentAuthKeyId},
         {"native_isTestBackend", "(I)I", (void *) isTestBackend},
         {"native_getTimeDifference", "(I)I", (void *) getTimeDifference},
-        {"native_sendRequest", "(IJIIIZI)V", (void *) sendRequest},
+        {"native_sendRequest", "(IJIIIZII)V", (void *) sendRequest},
         {"native_cancelRequest", "(IIZ)V", (void *) cancelRequest},
         {"native_cleanUp", "(IZ)V", (void *) cleanUp},
         {"native_cancelRequestsForGuid", "(II)V", (void *) cancelRequestsForGuid},
@@ -543,6 +559,7 @@ static JNINativeMethod ConnectionsManagerMethods[] = {
         {"native_setLangCode", "(ILjava/lang/String;)V", (void *) setLangCode},
         {"native_setRegId", "(ILjava/lang/String;)V", (void *) setRegId},
         {"native_setSystemLangCode", "(ILjava/lang/String;)V", (void *) setSystemLangCode},
+        {"native_setTgnetConfigKey", "(I[BZ)V", (void *) setTgnetConfigKey},
         {"native_switchBackend", "(IZ)V", (void *) switchBackend},
         {"native_pauseNetwork", "(I)V", (void *) pauseNetwork},
         {"native_resumeNetwork", "(IZ)V", (void *) resumeNetwork},

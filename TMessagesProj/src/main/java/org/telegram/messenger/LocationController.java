@@ -27,7 +27,7 @@ import androidx.collection.LongSparseArray;
 
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.SQLite.SQLitePreparedStatement;
-import org.telegram.messenger.fakepasscode.FakePasscode;
+import org.telegram.SQLite.SQLitePreparedStatementWrapper;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLObject;
@@ -690,7 +690,10 @@ public class LocationController extends BaseController implements NotificationCe
                     if (info == null) {
                         return;
                     }
-                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO sharing_locations VALUES(?, ?, ?, ?, ?, ?)");
+                    SQLitePreparedStatement state = getMessagesStorage().executeFastForBothDbIfNeeded("REPLACE INTO sharing_locations VALUES(?, ?, ?, ?, ?, ?)");
+                    if (state instanceof SQLitePreparedStatementWrapper) {
+                        ((SQLitePreparedStatementWrapper) state).setDbSelectorByDialogId(info.did);
+                    }
                     state.requery();
 
                     NativeByteBuffer data = new NativeByteBuffer(info.messageObject.messageOwner.getObjectSize());

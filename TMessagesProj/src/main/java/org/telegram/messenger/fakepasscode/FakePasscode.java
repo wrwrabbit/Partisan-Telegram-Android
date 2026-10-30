@@ -18,10 +18,12 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.fakepasscode.results.AccountActionsResult;
 import org.telegram.messenger.fakepasscode.results.ActionsResult;
 import org.telegram.messenger.fakepasscode.results.RemoveChatsResult;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.Utils;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.messenger.partisan.serialization.PartisanListDeserializer;
 import org.telegram.messenger.partisan.serialization.PartisanCollectionSerializer;
 import org.telegram.tgnet.ConnectionsManager;
@@ -182,12 +184,19 @@ public class FakePasscode {
         }
         setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(false);
         AndroidUtilities.runOnUIThread(() -> {
-            if (!oldActionResult.hiddenAccountEntries.isEmpty()) {
+            boolean anyHidden = false;
+            for (AccountActionsResult accountResult : oldActionResult.accountResults.values()) {
+                if (accountResult.hideAccountResult != null) {
+                    anyHidden = true;
+                    break;
+                }
+            }
+            if (anyHidden) {
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.accountHidingChanged);
             }
-            for (Map.Entry<Integer, RemoveChatsResult> entry : oldActionResult.removeChatsResults.entrySet()) {
+            for (Map.Entry<Integer, AccountActionsResult> entry : oldActionResult.accountResults.entrySet()) {
                 int account = entry.getKey();
-                RemoveChatsResult removeResult = entry.getValue();
+                RemoveChatsResult removeResult = entry.getValue().removeChatsResult;
                 if (removeResult == null) {
                     continue;
                 }
@@ -361,9 +370,10 @@ public class FakePasscode {
         }
     }
 
-    private void checkPasswordlessMode() {
-        boolean changed = passwordDisabled != passwordlessMode;
-        passwordDisabled = passwordlessMode;
+    void checkPasswordlessMode() {
+        boolean passwordless = passwordlessMode || UserConfig.getActivatedAccountsCount(true) == 0;
+        boolean changed = passwordDisabled != passwordless;
+        passwordDisabled = passwordless;
         if (passwordDisabled) {
             SharedConfig.setAppLocked(false);
             SharedConfig.isWaitingForPasscodeEnter = false;
@@ -467,11 +477,11 @@ public class FakePasscode {
     }
 
     private void setDisableFileProtectionAfterRestartByFakePasscodeIfNeed(boolean disable) {
-        if (!SharedConfig.fileProtectionWorksWhenFakePasscodeActivated) {
+        if (!FileProtectionSettings.fileProtectionWorksWhenFakePasscodeActivated.get().orElse(true)) {
             Utils.foreachActivatedAccountInstance(accountInstance -> {
                 UserConfig userConfig = accountInstance.getUserConfig();
                 if (userConfig.disableFileProtectionAfterRestartByFakePasscode != disable
-                        && (!disable || accountInstance.getMessagesStorage().fileProtectionEnabled())) {
+                        && (!disable || accountInstance.getMessagesStorage().isUsingInMemoryDatabase())) {
                     userConfig.disableFileProtectionAfterRestartByFakePasscode = disable;
                     accountInstance.getUserConfig().saveConfig(false);
                 }

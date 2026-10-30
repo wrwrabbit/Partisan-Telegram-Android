@@ -18,6 +18,8 @@ import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.VibrationAttributes;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.text.SpannableString;
@@ -242,7 +244,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
             builder.setVibrate(new long[0]);
             builder.setCategory(Notification.CATEGORY_CALL);
             builder.setFullScreenIntent(PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_MUTABLE), true);
-            if (user != null && !TextUtils.isEmpty(user.phone)) {
+            if (user != null && !TextUtils.isEmpty(user.phone) && org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig.allowNotHiddenNotifications()) {
                 builder.addPerson("tel:" + user.phone);
             }
         }
@@ -259,7 +261,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
         builder.setDeleteIntent(hidePendingIntent);
 
         Bitmap avatar = VoIPService.getRoundAvatarBitmap(context, account, user);
-        String personName = ContactsController.formatName(user);
+        String personName = org.telegram.messenger.partisan.masked_ptg.MaskedPtgUtils.maskCallerNameIfNeeded(ContactsController.formatName(user));
         if (TextUtils.isEmpty(personName)) {
             //java.lang.IllegalArgumentException: person must have a non-empty a name
             personName = "___";
@@ -349,7 +351,16 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
                     } else if (vibrate == 3) {
                         duration *= 2;
                     }
-                    vibrator.vibrate(new long[]{0, duration, 500}, 0);
+                    long[] pattern = new long[]{0, duration, 500};
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        vibrator.vibrate(
+                                VibrationEffect.createWaveform(pattern, 0),
+                                new VibrationAttributes.Builder()
+                                    .setUsage(VibrationAttributes.USAGE_RINGTONE) // required for background apps
+                                    .build());
+                    } else {
+                        vibrator.vibrate(pattern, 0);
+                    }
                 }
             }
         }
