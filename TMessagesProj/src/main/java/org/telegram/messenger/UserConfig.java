@@ -875,6 +875,16 @@ public class UserConfig extends BaseController {
         fileProtectionDialogLoadOffsets.put(folderId, offsets);
     }
 
+    public void clearPersistedDialogListState() {
+        SharedPreferences.Editor editor = getPreferences().edit();
+        for (String key : getPreferences().getAll().keySet()) {
+            if (key.startsWith("2dialogsLoadOffset") || key.startsWith("2totalDialogsLoadCount") || key.startsWith("2pinnedDialogsLoaded")) {
+                editor.remove(key);
+            }
+        }
+        editor.commit();
+    }
+
     public static Integer getAccountIndexForLoginIfPossible() {
         int usedAccounts = getUsedAccountCountForCurrentFakePasscodeState();
         int maxAccountCount;

@@ -5,6 +5,7 @@ import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
 
 import java.util.HashSet;
@@ -45,6 +46,10 @@ public class FileProtectionDatabaseCleaner {
 
     public void clear() throws Exception {
         try {
+            if (tablesToClean.contains("dialogs")) {
+                // Cleared before the wipe: stale offsets over an empty disk block the server fetch.
+                UserConfig.getInstance(account).clearPersistedDialogListState();
+            }
             deletedCount = 0;
             recentSearchDialogIds.load(db);
             usersWithSecretChats = UsersWithSecretChatsCache.getOrCreateInstance(account, db);
