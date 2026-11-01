@@ -50,6 +50,9 @@ public abstract class InstantCameraViewBase extends FrameLayout {
             Theme.ResourcesProvider resourcesProvider,
             boolean isNewDesign
     ) {
+        if (org.telegram.messenger.partisan.voicechange.VoiceChangerUtils.needChangeVoice(UserConfig.selectedAccount, org.telegram.messenger.partisan.voicechange.VoiceChangeType.VIDEO_MESSAGE)) {
+            return new InstantCameraView(context, delegate, resourcesProvider, isNewDesign);
+        }
         final boolean useCamera2Impl = SharedSettings.roundVideoCamera2Enabled.isSet() ?
             SharedSettings.roundVideoCamera2Enabled.get() :
             AppGlobalConfig.getInstance(UserConfig.selectedAccount).roundVideoRecorder2Allowed.get();

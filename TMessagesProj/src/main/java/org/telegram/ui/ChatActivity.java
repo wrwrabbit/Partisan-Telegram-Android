@@ -206,6 +206,8 @@ import org.telegram.messenger.partisan.findmessages.FindMessagesController;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupState;
 import org.telegram.messenger.partisan.secretgroups.action.EncryptedGroupAction;
+import org.telegram.messenger.partisan.voicechange.VoiceChangeType;
+import org.telegram.messenger.partisan.voicechange.VoiceChangerUtils;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.utils.FBool;
 import org.telegram.messenger.utils.OnPostDrawView;
@@ -2502,6 +2504,9 @@ public class ChatActivity extends BaseFragment implements
 
         @Override
         public void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId, long stars) {
+            if (state == 0) {
+                discardInstantCameraView2IfVoiceChangeNeeded();
+            }
             checkInstantCameraView();
             if (instantCameraView != null) {
                 if (state == 0) {
@@ -35479,7 +35484,7 @@ public class ChatActivity extends BaseFragment implements
         } else if (actionBar != null && actionBar.isActionModeShowed()) {
             if (invoked) clearSelectionMode();
             return false;
-        } else if (chatActivityEnterView != null && chatActivityEnterView.isPopupShowing()) {
+        } else if (chatActivityEnterView != null && chatActivityEnterView.canHidePopupByBackButton()) {
             if (invoked) chatActivityEnterView.hidePopup(true);
             return false;
 //        } else if (chatActivityEnterView != null && chatActivityEnterView.hasBotWebView() && chatActivityEnterView.botCommandsMenuIsShowing() && chatActivityEnterView.onBotWebViewBackPressed()) {
@@ -46332,6 +46337,15 @@ public class ChatActivity extends BaseFragment implements
     private void finishHiddenChatFragment() {
         if (!finishing) {
             super.finishFragment(false);
+        }
+    }
+
+    private void discardInstantCameraView2IfVoiceChangeNeeded() {
+        if (instantCameraView instanceof InstantCameraView2
+                && VoiceChangerUtils.needChangeVoice(UserConfig.selectedAccount, VoiceChangeType.VIDEO_MESSAGE)) {
+            AndroidUtilities.removeFromParent(instantCameraView);
+            instantCameraView.destroy(false);
+            instantCameraView = null;
         }
     }
 
