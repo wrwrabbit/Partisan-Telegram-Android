@@ -605,12 +605,14 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }
         }
         getNotificationCenter().removeObserver(this, NotificationCenter.didUpdateConnectionState);
+        org.telegram.messenger.partisan.fileprotection.FileProtectionTgnetEncryption.clearLoginMarkerIfNotActivated(currentAccount);
         getNotificationCenter().removeObserver(this, NotificationCenter.newSuggestionsAvailable);
     }
 
     @Override
     public boolean onFragmentCreate() {
         getNotificationCenter().addObserver(this, NotificationCenter.didUpdateConnectionState);
+        org.telegram.messenger.partisan.fileprotection.FileProtectionTgnetEncryption.prepareSlotForLogin(currentAccount);
         getNotificationCenter().addObserver(this, NotificationCenter.newSuggestionsAvailable);
         return super.onFragmentCreate();
     }

@@ -21,13 +21,15 @@ import java.util.concurrent.CountDownLatch;
 public class DraftsStorage implements AccountControllersProvider {
 
     private final int account;
-    private final boolean databaseBacked;
     private final SharedPreferences preferences;
 
     public DraftsStorage(int account) {
         this.account = account;
-        this.databaseBacked = FileProtectionUtils.encryptionEnabledByConfig(account);
         this.preferences = getPreferences(account);
+    }
+
+    private boolean isDatabaseBacked() {
+        return DraftsLocationReconciler.isDatabaseBacked(account);
     }
 
     static SharedPreferences getPreferences(int account) {
@@ -37,7 +39,7 @@ public class DraftsStorage implements AccountControllersProvider {
     // Prefs-backed: callback runs synchronously, same thread.
     // DB-backed: reads on the storage queue, then hops to the UI thread.
     public void getAllAsync(Utilities.Callback<Map<String, String>> callback) {
-        if (!databaseBacked) {
+        if (!isDatabaseBacked()) {
             callback.run(readAllFromPreferences());
         } else {
             getMessagesStorage().getStorageQueue().postRunnable(() -> {
@@ -72,7 +74,7 @@ public class DraftsStorage implements AccountControllersProvider {
     }
 
     public Editor edit() {
-        return databaseBacked ? new DatabaseEditor(account) : new PreferencesEditor(preferences.edit());
+        return isDatabaseBacked() ? new DatabaseEditor(account) : new PreferencesEditor(preferences.edit());
     }
 
     @Override

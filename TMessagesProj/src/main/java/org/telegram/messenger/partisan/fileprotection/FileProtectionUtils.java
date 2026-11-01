@@ -4,11 +4,22 @@ import org.telegram.messenger.UserConfig;
 
 public class FileProtectionUtils {
     public static boolean encryptionEnabledByConfig(int account) {
-        return FileProtectionSettings.encryptDatabase.get().orElse(true) && fileProtectionEnabledForAccount(account);
+        return FileProtectionSettings.encryptDatabase.get().orElse(true) && fileProtectionEnabledForAccount(account)
+                && isSlotInUse(account);
     }
 
     public static boolean authTokenEncryptionEnabledByConfig(int account) {
+        return authTokenEncryptionEnabledForSlot(account) && isSlotInUse(account);
+    }
+
+    static boolean authTokenEncryptionEnabledForSlot(int account) {
         return FileProtectionSettings.encryptAuthToken.get().orElse(true) && fileProtectionEnabledForAccount(account);
+    }
+
+    public static boolean isSlotInUse(int account) {
+        UserConfig userConfig = UserConfig.getInstance(account);
+        userConfig.loadConfig();
+        return userConfig.isClientActivated() || FileProtectionTgnetEncryption.isLoginInProgress(account);
     }
 
     public static boolean fileProtectionEnabledForAccount(int account) {
