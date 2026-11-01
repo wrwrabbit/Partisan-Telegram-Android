@@ -483,6 +483,37 @@ public class MessagesController extends BaseController implements NotificationCe
         loadDialogs(folderId, fromCache ? -1 : 0, 100, fromCache);
     }
 
+    private boolean cachedDialogWouldDropLoadedMessages(int loadType, ArrayList<MessageObject> oldMsgs, ArrayList<MessageObject> newMsgs) {
+        return loadType == DIALOGS_LOAD_TYPE_CACHE && oldMsgs != null && newMsgs == null && getMessagesStorage().isUsingInMemoryDatabase();
+    }
+
+    private void fillMissingPinnedDialogMessages(TLRPC.Dialog currentDialog, TLRPC.Dialog loadedDialog, LongSparseArray<ArrayList<MessageObject>> loadedMessages) {
+        if (!getMessagesStorage().isUsingInMemoryDatabase() || dialogMessage.get(currentDialog.id) != null) {
+            return;
+        }
+        if (loadedDialog.top_message < currentDialog.top_message) {
+            return;
+        }
+        ArrayList<MessageObject> messages = loadedMessages.get(currentDialog.id);
+        if (messages == null) {
+            return;
+        }
+        dialogMessage.put(currentDialog.id, messages);
+        for (MessageObject message : messages) {
+            if (message != null && message.messageOwner.out) {
+                message.messageOwner.unread = loadedDialog.read_outbox_max_id < message.getId();
+            }
+            if (message != null && message.messageOwner.peer_id.channel_id == 0) {
+                dialogMessagesByIds.put(message.getId(), message);
+                if (message.messageOwner.random_id != 0) {
+                    dialogMessagesByRandomIds.put(message.messageOwner.random_id, message);
+                }
+            }
+        }
+        currentDialog.top_message = loadedDialog.top_message;
+        currentDialog.last_message_date = loadedDialog.last_message_date;
+    }
+
     void deleteEncryptedGroupInnerDialogsIfNeeded(long did, int onlyHistory, boolean revoke) {
         EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByDialogId(did);
         if (encryptedGroup == null) {
@@ -14084,6 +14115,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         currentDialog.pinned = value.pinned;
                         currentDialog.pinnedNum = value.pinnedNum;
                         ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
+                        if (cachedDialogWouldDropLoadedMessages(loadType, oldMsgs, newMsgs)) {
+                            continue;
+                        }
 
                         boolean oldMsgsDeleted = false;
                         for (int i = 0; oldMsgs != null && i < oldMsgs.size(); ++i) {
@@ -18033,6 +18067,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 d.pinnedNum = dialog.pinnedNum;
                                 dids.add(dialog.id);
                                 pinned.add(dialog.pinnedNum);
+                                fillMissingPinnedDialogMessages(d, dialog, new_dialogMessage);
                             } else {
                                 added = true;
                                 dialogs_dict.put(dialog.id, dialog);
