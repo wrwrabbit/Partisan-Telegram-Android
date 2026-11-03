@@ -3768,8 +3768,8 @@ void ConnectionsManager::setConfigEncryptionKey(const uint8_t *key, int32_t leng
     }
 }
 
-// Runtime variant for a slot that starts a login
-void ConnectionsManager::applyConfigEncryptionKeyAndResetAuthKeys(const uint8_t *key, int32_t length, bool encryptOnWrite) {
+// Runtime variant of setConfigEncryptionKey: applies the key on the network thread
+void ConnectionsManager::applyConfigEncryptionKey(const uint8_t *key, int32_t length, bool encryptOnWrite) {
     std::vector<uint8_t> keyCopy;
     if (key != nullptr && length > 0) {
         keyCopy.assign(key, key + length);
@@ -3777,6 +3777,11 @@ void ConnectionsManager::applyConfigEncryptionKeyAndResetAuthKeys(const uint8_t 
     scheduleTask([&, keyCopy, encryptOnWrite] {
         setConfigEncryptionKey(keyCopy.empty() ? nullptr : keyCopy.data(), (int32_t) keyCopy.size(), encryptOnWrite);
     });
+}
+
+// Runtime variant for a slot that starts a login
+void ConnectionsManager::applyConfigEncryptionKeyAndResetAuthKeys(const uint8_t *key, int32_t length, bool encryptOnWrite) {
+    applyConfigEncryptionKey(key, length, encryptOnWrite);
     cleanUp(true, -1);
 }
 

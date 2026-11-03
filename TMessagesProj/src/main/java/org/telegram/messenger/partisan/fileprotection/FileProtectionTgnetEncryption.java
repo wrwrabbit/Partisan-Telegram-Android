@@ -66,8 +66,13 @@ public class FileProtectionTgnetEncryption {
     public static synchronized void prepareSlotForLogin(int account) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M
                 || UserConfig.getInstance(account).isClientActivated()
-                || isLoginInProgress(account)
-                || !FileProtectionUtils.authTokenEncryptionEnabledForSlot(account)) {
+                || isLoginInProgress(account)) {
+            return;
+        }
+        if (!FileProtectionUtils.authTokenEncryptionEnabledForSlot(account)) {
+            // Native may still hold the logged-out account's key, whose blob is deleted on logout
+            configKeyStates.put(account, ConfigKeyState.READY);
+            ConnectionsManager.native_applyTgnetConfigKey(account, null, false);
             return;
         }
         // Keeps the key loading if the app restarts before the login completes

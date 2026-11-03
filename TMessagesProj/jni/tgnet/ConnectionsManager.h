@@ -72,6 +72,7 @@ public:
     void setLangCode(std::string langCode);
     void setRegId(std::string regId);
     void setConfigEncryptionKey(const uint8_t *key, int32_t length, bool encryptOnWrite);
+    void applyConfigEncryptionKey(const uint8_t *key, int32_t length, bool encryptOnWrite);
     void applyConfigEncryptionKeyAndResetAuthKeys(const uint8_t *key, int32_t length, bool encryptOnWrite);
     void setSystemLangCode(std::string langCode);
     void updateDcSettings(uint32_t datacenterId, bool workaround, bool ifLoadingTryAgain);

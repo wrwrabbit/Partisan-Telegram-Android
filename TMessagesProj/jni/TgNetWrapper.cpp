@@ -480,6 +480,17 @@ void setTgnetConfigKey(JNIEnv *env, jclass c, jint instanceNum, jbyteArray key, 
     env->ReleaseByteArrayElements(key, bytes, JNI_ABORT);
 }
 
+void applyTgnetConfigKey(JNIEnv *env, jclass c, jint instanceNum, jbyteArray key, jboolean encryptOnWrite) {
+    jbyte *bytes = key != nullptr ? env->GetByteArrayElements(key, nullptr) : nullptr;
+    if (bytes == nullptr) {
+        ConnectionsManager::getInstance(instanceNum).applyConfigEncryptionKey(nullptr, 0, encryptOnWrite);
+        return;
+    }
+    jsize length = env->GetArrayLength(key);
+    ConnectionsManager::getInstance(instanceNum).applyConfigEncryptionKey((const uint8_t *) bytes, (int32_t) length, encryptOnWrite);
+    env->ReleaseByteArrayElements(key, bytes, JNI_ABORT);
+}
+
 void applyTgnetConfigKeyAndResetAuthKeys(JNIEnv *env, jclass c, jint instanceNum, jbyteArray key, jboolean encryptOnWrite) {
     jbyte *bytes = key != nullptr ? env->GetByteArrayElements(key, nullptr) : nullptr;
     if (bytes == nullptr) {
@@ -571,6 +582,7 @@ static JNINativeMethod ConnectionsManagerMethods[] = {
         {"native_setRegId", "(ILjava/lang/String;)V", (void *) setRegId},
         {"native_setSystemLangCode", "(ILjava/lang/String;)V", (void *) setSystemLangCode},
         {"native_setTgnetConfigKey", "(I[BZ)V", (void *) setTgnetConfigKey},
+        {"native_applyTgnetConfigKey", "(I[BZ)V", (void *) applyTgnetConfigKey},
         {"native_applyTgnetConfigKeyAndResetAuthKeys", "(I[BZ)V", (void *) applyTgnetConfigKeyAndResetAuthKeys},
         {"native_switchBackend", "(IZ)V", (void *) switchBackend},
         {"native_pauseNetwork", "(I)V", (void *) pauseNetwork},
