@@ -35,7 +35,13 @@ public class FileProtectionUtils {
     }
 
     public static boolean fileProtectionEnabledForAnyAccount() {
-        return getAccountsWithFileProtectionCount() > 0;
+        return anyProtectionFeatureEnabled() && getAccountsWithFileProtectionCount() > 0;
+    }
+
+    private static boolean anyProtectionFeatureEnabled() {
+        return FileProtectionSettings.storeDataInMemoryOnly.get().orElse(true)
+                || FileProtectionSettings.encryptDatabase.get().orElse(true)
+                || FileProtectionSettings.encryptAuthToken.get().orElse(true);
     }
 
     private static int getAccountsWithFileProtectionCount() {
