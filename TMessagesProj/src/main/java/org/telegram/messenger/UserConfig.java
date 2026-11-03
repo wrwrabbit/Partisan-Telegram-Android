@@ -781,10 +781,7 @@ public class UserConfig extends BaseController {
     public void setDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
         if (getMessagesStorage().isUsingInMemoryDatabase()) {
             setFileProtectionDialogsLoadOffset(folderId, dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess);
-            // An on-disk chat list still needs persisted offsets that match it once file protection is off
-            if (getMessagesStorage().chatListMemoryOnly()) {
-                return;
-            }
+            return;
         }
         SharedPreferences.Editor editor = getPreferences().edit();
         editor.putInt("2dialogsLoadOffsetId" + (folderId == 0 ? "" : folderId), dialogsLoadOffsetId);
