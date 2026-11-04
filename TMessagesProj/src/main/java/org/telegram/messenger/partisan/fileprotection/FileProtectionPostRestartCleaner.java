@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.fileprotection;
 
+import android.content.SharedPreferences;
+
 import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.SQLite.SQLiteDatabaseWrapper;
 import org.telegram.messenger.AndroidUtilities;
@@ -26,9 +28,18 @@ public class FileProtectionPostRestartCleaner implements NotificationCenter.Noti
     }
 
     private static boolean fileProtectionDisabledAfterRestart(UserConfig userConfig) {
-        return userConfig.disableFileProtectionAfterRestart
-                || userConfig.disableFileProtectionAfterRestartByFakePasscode
+        return accountFileProtectionDisabledAfterRestart(userConfig)
                 || FileProtectionSettings.disableFileProtectionAfterRestart.get().orElse(false);
+    }
+
+    private static boolean accountFileProtectionDisabledAfterRestart(UserConfig userConfig) {
+        if (userConfig.isConfigLoaded()) {
+            return userConfig.disableFileProtectionAfterRestart
+                    || userConfig.disableFileProtectionAfterRestartByFakePasscode;
+        }
+        SharedPreferences preferences = userConfig.getPreferences();
+        return preferences.getBoolean("disableFileProtectionAfterRestart", false)
+                || preferences.getBoolean("disableFileProtectionAfterRestartByFakePasscode", false);
     }
 
     public void checkAndClean() {
