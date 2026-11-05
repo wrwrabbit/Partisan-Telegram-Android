@@ -26,6 +26,8 @@ import org.telegram.messenger.partisan.masked_ptg.MaskedPtgConfig;
 import org.telegram.messenger.partisan.masked_ptg.TutorialType;
 import org.telegram.ui.LaunchActivity;
 
+import me.vkryl.core.reference.ReferenceList;
+
 public class PasscodeView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
     private boolean showed = false;
 

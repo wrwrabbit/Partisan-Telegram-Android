@@ -110,7 +110,7 @@ public class SQLitePreparedStatement {
         if (BuildVars.LOGS_ENABLED) {
             long diff = SystemClock.elapsedRealtime() - startTime;
             if (diff > 500) {
-                FileLog.d("sqlite query " + query + " took " + diff + "ms");
+                FileLog.d("sqlite query " + org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption.maskHexBlobLiterals(query) + " took " + diff + "ms");
             }
         }
         try {

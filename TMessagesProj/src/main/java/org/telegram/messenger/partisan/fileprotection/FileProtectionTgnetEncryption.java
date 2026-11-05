@@ -3,11 +3,17 @@ package org.telegram.messenger.partisan.fileprotection;
 import android.content.SharedPreferences;
 import android.os.Build;
 
+import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.messenger.partisan.appmigration.TgnetKeyMigrationReceiver;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionEncryptionKeyStore.KeyType;
 import org.telegram.tgnet.ConnectionsManager;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,6 +25,9 @@ public class FileProtectionTgnetEncryption {
     }
 
     private static final String UNREADABLE_KEY_LAUNCH_COUNT = "unreadableConfigKeyLaunchCount";
+    private static final String LOGIN_IN_PROGRESS = "tgnetKeyLoginInProgress";
+    // Keep in sync with MARKER_MIN in jni/tgnet/ConfigEncryption.cpp
+    private static final long CONFIG_ENCRYPTION_MARKER_MIN = 0x40000000L;
 
     private static final Map<Integer, ConfigKeyState> configKeyStates = new ConcurrentHashMap<>();
 
@@ -35,7 +44,15 @@ public class FileProtectionTgnetEncryption {
             ConnectionsManager.native_setTgnetConfigKey(account, null, false);
             return;
         }
+        clearLoginMarkerIfActivated(account);
         boolean encryptionEnabled = FileProtectionUtils.authTokenEncryptionEnabledByConfig(account);
+        if (!encryptionEnabled && !isConfigFileEncrypted(account)) {
+            deleteStaleKeyBlob(account);
+            configKeyStates.put(account, ConfigKeyState.READY);
+            updateUnreadableLaunchCount(account, ConfigKeyState.READY);
+            ConnectionsManager.native_setTgnetConfigKey(account, null, false);
+            return;
+        }
         byte[] key = loadKey(account, encryptionEnabled);
         ConfigKeyState state = resolveConfigKeyState(account, key, encryptionEnabled);
         configKeyStates.put(account, state);
@@ -44,6 +61,88 @@ public class FileProtectionTgnetEncryption {
             PartisanLog.e("FileProtectionTgnetEncryption: account " + account + " config key state is " + state);
         }
         ConnectionsManager.native_setTgnetConfigKey(account, key, needEncryptOnWrite(state, key, encryptionEnabled));
+    }
+
+    public static synchronized void prepareSlotForLogin(int account) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                || UserConfig.getInstance(account).isClientActivated()
+                || isLoginInProgress(account)) {
+            return;
+        }
+        if (!FileProtectionUtils.authTokenEncryptionEnabledForSlot(account)) {
+            // Native may still hold the logged-out account's key, whose blob is deleted on logout
+            configKeyStates.put(account, ConfigKeyState.READY);
+            ConnectionsManager.native_applyTgnetConfigKey(account, null, false);
+            return;
+        }
+        // Keeps the key loading if the app restarts before the login completes
+        UserConfig.getInstance(account).getPreferences().edit().putBoolean(LOGIN_IN_PROGRESS, true).commit();
+        FileProtectionEncryptionKeyStore.deleteKey(KeyType.AUTH_TOKEN, account);
+        byte[] key = FileProtectionEncryptionKeyStore.getOrCreateKey(KeyType.AUTH_TOKEN, account);
+        ConfigKeyState state = resolveConfigKeyState(account, key, true);
+        configKeyStates.put(account, state);
+        if (state != ConfigKeyState.READY) {
+            PartisanLog.e("FileProtectionTgnetEncryption: account " + account + " config key state before login is " + state);
+        }
+        ConnectionsManager.native_applyTgnetConfigKeyAndResetAuthKeys(account, key, needEncryptOnWrite(state, key, true));
+    }
+
+    public static synchronized void clearLoginMarkerIfNotActivated(int account) {
+        if (!UserConfig.getInstance(account).isClientActivated() && isLoginInProgress(account)) {
+            UserConfig.getInstance(account).getPreferences().edit().remove(LOGIN_IN_PROGRESS).apply();
+        }
+    }
+
+    public static synchronized void deleteKeyAndStateUnlessLoginStarted(int account) {
+        if (isLoginInProgress(account)) {
+            return;
+        }
+        FileProtectionEncryptionKeyStore.deleteKey(KeyType.AUTH_TOKEN, account);
+        clearConfigKeyState(account);
+    }
+
+    public static boolean isLoginInProgress(int account) {
+        return UserConfig.getInstance(account).getPreferences().getBoolean(LOGIN_IN_PROGRESS, false);
+    }
+
+    private static void clearLoginMarkerIfActivated(int account) {
+        UserConfig userConfig = UserConfig.getInstance(account);
+        if (userConfig.isClientActivated() && isLoginInProgress(account)) {
+            userConfig.getPreferences().edit().remove(LOGIN_IN_PROGRESS).apply();
+        }
+    }
+
+    // Detected the way native Config::readConfig does: an encrypted file starts with a marker >= 0x40000000,
+    // a plaintext one with the payload size. A leftover .bak replaces tgnet.dat when native opens the config.
+    private static boolean isConfigFileEncrypted(int account) {
+        File configDir = ApplicationLoader.getFilesDirFixed();
+        if (account != 0) {
+            configDir = new File(configDir, "account" + account);
+        }
+        File configFile = new File(configDir, "tgnet.dat");
+        File backupFile = new File(configDir, "tgnet.dat.bak");
+        File effectiveFile = backupFile.exists() ? backupFile : configFile;
+        if (!effectiveFile.exists()) {
+            return false;
+        }
+        byte[] header = new byte[4];
+        try (FileInputStream stream = new FileInputStream(effectiveFile)) {
+            if (stream.read(header) < header.length) {
+                return false;
+            }
+        } catch (Exception e) {
+            PartisanLog.e("FileProtectionTgnetEncryption: failed to read the tgnet.dat header, treating it as encrypted", e);
+            return true;
+        }
+        long marker = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xFFFFFFFFL;
+        return marker >= CONFIG_ENCRYPTION_MARKER_MIN;
+    }
+
+    private static void deleteStaleKeyBlob(int account) {
+        if (FileProtectionEncryptionKeyStore.keyBlobExists(KeyType.AUTH_TOKEN, account)) {
+            PartisanLog.d("FileProtectionTgnetEncryption: deleting the unused tgnet key of account " + account);
+            FileProtectionEncryptionKeyStore.deleteKey(KeyType.AUTH_TOKEN, account);
+        }
     }
 
     private static byte[] loadKey(int account, boolean encryptionEnabled) {
@@ -110,8 +209,9 @@ public class FileProtectionTgnetEncryption {
     }
 
     // The key and tgnet.dat are gone, so the recorded diagnosis no longer describes this account.
-    public static void clearConfigKeyState(int account) {
+    private static void clearConfigKeyState(int account) {
         configKeyStates.remove(account);
+        UserConfig.getInstance(account).getPreferences().edit().remove(LOGIN_IN_PROGRESS).apply();
         FileProtectionEncryptionKeyStore.getPreferences(KeyType.AUTH_TOKEN, account).edit().remove(UNREADABLE_KEY_LAUNCH_COUNT).apply();
     }
 }

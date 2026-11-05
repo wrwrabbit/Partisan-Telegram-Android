@@ -20,9 +20,8 @@ import java.util.List;
  */
 class MigratedKeyFile {
 
-    // For callers where consuming the key isn't idempotent (e.g. a database rekey), so double-processing
-    // after a crash must be impossible: removing the entry before using it means a crash can't process
-    // the same key twice, at the cost of losing the only copy if the caller fails after this returns.
+    // The entry may be the only copy of the key: callers store or apply it first, so that a failure
+    // before this call leaves it in place to retry next launch.
     static byte[] readAndRemoveKey(File keysFile, int account) throws Exception {
         String prefix = account + ":";
         List<String> lines = readLines(keysFile);

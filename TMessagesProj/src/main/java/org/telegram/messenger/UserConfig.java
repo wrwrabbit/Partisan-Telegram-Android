@@ -21,6 +21,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
 import org.telegram.messenger.partisan.SecurityIssue;
+import org.telegram.messenger.partisan.serialization.PartisanDefaultTyping;
 import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.tgnet.ConnectionsManager;
@@ -138,7 +139,7 @@ public class UserConfig extends BaseController {
         }
         jsonMapper = new ObjectMapper();
         jsonMapper.registerModule(new JavaTimeModule());
-        jsonMapper.activateDefaultTyping(jsonMapper.getPolymorphicTypeValidator());
+        PartisanDefaultTyping.activate(jsonMapper);
         jsonMapper.setVisibility(jsonMapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -723,7 +724,7 @@ public class UserConfig extends BaseController {
     }
 
     public boolean isPinnedDialogsLoaded(int folderId) {
-        if (getMessagesStorage().chatListMemoryOnly()) {
+        if (getMessagesStorage().isUsingInMemoryDatabase()) {
             return temporarilyLoadedPinnedDialogs.getOrDefault(folderId, false);
         } else {
             return getPreferences().getBoolean("2pinnedDialogsLoaded" + folderId, false);
@@ -731,7 +732,7 @@ public class UserConfig extends BaseController {
     }
 
     public void setPinnedDialogsLoaded(int folderId, boolean loaded) {
-        if (getMessagesStorage().chatListMemoryOnly()) {
+        if (getMessagesStorage().isUsingInMemoryDatabase()) {
             temporarilyLoadedPinnedDialogs.put(folderId, loaded);
         } else {
             getPreferences().edit().putBoolean("2pinnedDialogsLoaded" + folderId, loaded).commit();
@@ -764,7 +765,7 @@ public class UserConfig extends BaseController {
     }
 
     public long[] getDialogLoadOffsets(int folderId) {
-        if (getMessagesStorage().chatListMemoryOnly()) {
+        if (getMessagesStorage().isUsingInMemoryDatabase()) {
             return getFileProtectionDialogLoadOffsets(folderId);
         }
         SharedPreferences preferences = getPreferences();
@@ -778,7 +779,7 @@ public class UserConfig extends BaseController {
     }
 
     public void setDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
-        if (getMessagesStorage().chatListMemoryOnly()) {
+        if (getMessagesStorage().isUsingInMemoryDatabase()) {
             setFileProtectionDialogsLoadOffset(folderId, dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess);
             return;
         }
@@ -873,6 +874,16 @@ public class UserConfig extends BaseController {
     private void setFileProtectionDialogsLoadOffset(int folderId, int dialogsLoadOffsetId, int dialogsLoadOffsetDate, long dialogsLoadOffsetUserId, long dialogsLoadOffsetChatId, long dialogsLoadOffsetChannelId, long dialogsLoadOffsetAccess) {
         long[] offsets = {dialogsLoadOffsetId, dialogsLoadOffsetDate, dialogsLoadOffsetUserId, dialogsLoadOffsetChatId, dialogsLoadOffsetChannelId, dialogsLoadOffsetAccess};
         fileProtectionDialogLoadOffsets.put(folderId, offsets);
+    }
+
+    public void clearPersistedDialogListState() {
+        SharedPreferences.Editor editor = getPreferences().edit();
+        for (String key : getPreferences().getAll().keySet()) {
+            if (key.startsWith("2dialogsLoadOffset") || key.startsWith("2totalDialogsLoadCount") || key.startsWith("2pinnedDialogsLoaded")) {
+                editor.remove(key);
+            }
+        }
+        editor.commit();
     }
 
     public static Integer getAccountIndexForLoginIfPossible() {
