@@ -10,13 +10,17 @@ import org.telegram.messenger.partisan.PartisanLog;
 import org.telegram.tgnet.NativeByteBuffer;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DraftsLocationReconciler {
+    private static final Map<Integer, Boolean> databaseBackedAccounts = new ConcurrentHashMap<>();
 
     public static void reconcileDraftsLocation(int account, SQLiteDatabase database) {
+        boolean databaseBacked = FileProtectionUtils.encryptionEnabledByConfig(account);
+        databaseBackedAccounts.put(account, databaseBacked);
         try {
             SharedPreferences preferences = DraftsStorage.getPreferences(account);
-            if (FileProtectionUtils.encryptionEnabledByConfig(account)) {
+            if (databaseBacked) {
                 movePreferencesToDatabase(preferences, database);
             } else {
                 moveDatabaseToPreferences(database, preferences);
@@ -24,6 +28,11 @@ public class DraftsLocationReconciler {
         } catch (Exception e) {
             PartisanLog.e("", e);
         }
+    }
+
+    static boolean isDatabaseBacked(int account) {
+        Boolean databaseBacked = databaseBackedAccounts.get(account);
+        return databaseBacked != null ? databaseBacked : FileProtectionUtils.encryptionEnabledByConfig(account);
     }
 
     private static void movePreferencesToDatabase(SharedPreferences preferences, SQLiteDatabase database) throws Exception {

@@ -84,6 +84,7 @@ public class FileProtectionDbEncryption {
 
     private static byte[] createKeyAndEncryptFileIfEnabled(int account, File dbFile) throws Exception {
         if (!FileProtectionUtils.encryptionEnabledByConfig(account)) {
+            deleteStaleKeyBlob(account);
             return null;
         }
         byte[] key = FileProtectionEncryptionKeyStore.getOrCreateKey(KeyType.DATABASE, account);
@@ -101,6 +102,13 @@ public class FileProtectionDbEncryption {
             encryptDatabase(dbFile, keySpec);
         }
         return keySpec;
+    }
+
+    private static void deleteStaleKeyBlob(int account) {
+        if (FileProtectionEncryptionKeyStore.keyBlobExists(KeyType.DATABASE, account)) {
+            PartisanLog.d("FileProtectionDbEncryption: deleting the unused database key of account " + account);
+            FileProtectionEncryptionKeyStore.deleteKey(KeyType.DATABASE, account);
+        }
     }
 
     private static void recordPlaintextIssue(int account, PlaintextReason reason, long missingSpace) {

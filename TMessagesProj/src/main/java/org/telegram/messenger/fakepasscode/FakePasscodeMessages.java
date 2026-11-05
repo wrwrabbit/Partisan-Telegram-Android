@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.partisan.serialization.PartisanDefaultTyping;
 import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class FakePasscodeMessages {
             try {
                 SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("fakepasscodemessages", Context.MODE_PRIVATE);
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.enableDefaultTyping();
+                PartisanDefaultTyping.activate(mapper);
                 String hasUnDeletedMessagesString = preferences.getString("hasUnDeletedMessages", null);
                 hasUnDeletedMessages = mapper.readValue(hasUnDeletedMessagesString, HashMap.class);
                 isLoaded = true;
@@ -84,7 +85,7 @@ public class FakePasscodeMessages {
                 SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("fakepasscodemessages", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = preferences.edit();
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.enableDefaultTyping();
+                PartisanDefaultTyping.activate(mapper);
                 String hasUnDeletedMessagesString = mapper.writeValueAsString(hasUnDeletedMessages);
                 editor.putString("hasUnDeletedMessages", hasUnDeletedMessagesString);
                 editor.commit();

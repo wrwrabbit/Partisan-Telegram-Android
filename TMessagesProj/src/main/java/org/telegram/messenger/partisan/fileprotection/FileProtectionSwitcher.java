@@ -173,7 +173,9 @@ public class FileProtectionSwitcher implements NotificationCenter.NotificationCe
             if (userConfig.fileProtectionEnabled != enabledForAccountOrGlobally) {
                 userConfig.clearPinnedDialogsLoaded();
             }
-            if (userConfig.fileProtectionEnabled && !enabledInConfig) {
+            boolean leavesMemoryDatabase = accountInstance.getMessagesStorage().isUsingInMemoryDatabase()
+                    && !(storeDataInMemoryOnly && enabledForAccountOrGlobally);
+            if (userConfig.fileProtectionEnabled && !enabledInConfig || leavesMemoryDatabase) {
                 userConfig.disableFileProtectionAfterRestart = true;
             }
             userConfig.fileProtectionEnabled = enabledInConfig;
