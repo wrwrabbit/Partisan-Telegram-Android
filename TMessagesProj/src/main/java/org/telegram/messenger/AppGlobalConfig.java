@@ -380,6 +380,9 @@ public class AppGlobalConfig {
         }
 
         public boolean get() {
+            if (org.telegram.messenger.partisan.settings.TesterSettings.isConfigForcedOn(handler.name)) {
+                return true;
+            }
             return handler.value;
         }
 

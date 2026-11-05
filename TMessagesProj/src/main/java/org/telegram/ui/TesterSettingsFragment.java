@@ -116,6 +116,7 @@ public class TesterSettingsFragment extends PartisanBaseFragment {
                 ),
                 new ToggleItem(this, "Show Plain Backup", TesterSettings.showPlainBackup),
                 new ToggleItem(this, "Disable Premium", TesterSettings.premiumDisabled),
+                new ToggleItem(this, "Force Wallet Available", TesterSettings.forceWalletAvailable),
                 new ToggleItem(this, "Show Hide Dialog Is Not Safe Warning",
                         () -> SharedConfig.showHideDialogIsNotSafeWarning,
                         value -> SharedConfig.showHideDialogIsNotSafeWarning = value

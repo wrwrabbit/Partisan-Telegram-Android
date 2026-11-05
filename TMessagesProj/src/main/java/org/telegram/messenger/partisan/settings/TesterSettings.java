@@ -26,6 +26,7 @@ public class TesterSettings {
     public static final BooleanSetting showTesterSettingsWithFakePasscode = new BooleanSetting("showTesterSettingsWithFakePasscode", false);
     public static final BooleanSetting fillAccountSelectorWithDummies = new BooleanSetting("fillAccountSelectorWithDummies", false);
     public static final BooleanSetting simulateKeystoreFailure = new BooleanSetting("simulateKeystoreFailure", false);
+    public static final BooleanSetting forceWalletAvailable = new BooleanSetting("forceWalletAvailable", false);
 
     public static void loadSettings() {
         for (Setting<?> setting : getAllSettings()) {
@@ -69,5 +70,9 @@ public class TesterSettings {
 
     public static boolean areVoiceChangingSettingsVisible() {
         return SharedConfig.activatedTesterSettingType >= 2;
+    }
+
+    public static boolean isConfigForcedOn(String configName) {
+        return "wallet_available".equals(configName) && forceWalletAvailable.get().orElse(false);
     }
 }
