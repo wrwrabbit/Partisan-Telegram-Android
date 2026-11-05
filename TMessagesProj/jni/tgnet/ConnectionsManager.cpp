@@ -3768,6 +3768,23 @@ void ConnectionsManager::setConfigEncryptionKey(const uint8_t *key, int32_t leng
     }
 }
 
+// Runtime variant of setConfigEncryptionKey: applies the key on the network thread
+void ConnectionsManager::applyConfigEncryptionKey(const uint8_t *key, int32_t length, bool encryptOnWrite) {
+    std::vector<uint8_t> keyCopy;
+    if (key != nullptr && length > 0) {
+        keyCopy.assign(key, key + length);
+    }
+    scheduleTask([&, keyCopy, encryptOnWrite] {
+        setConfigEncryptionKey(keyCopy.empty() ? nullptr : keyCopy.data(), (int32_t) keyCopy.size(), encryptOnWrite);
+    });
+}
+
+// Runtime variant for a slot that starts a login
+void ConnectionsManager::applyConfigEncryptionKeyAndResetAuthKeys(const uint8_t *key, int32_t length, bool encryptOnWrite) {
+    applyConfigEncryptionKey(key, length, encryptOnWrite);
+    cleanUp(true, -1);
+}
+
 void ConnectionsManager::init(uint32_t version, int32_t layer, int32_t apiId, std::string deviceModel, std::string systemVersion, std::string appVersion, std::string langCode, std::string systemLangCode, std::string configPath, std::string logPath, std::string regId, std::string cFingerpting, std::string installerId, std::string packageId, int32_t timezoneOffset, int64_t userId, bool userPremium, bool isPaused, bool enablePushConnection, bool hasNetwork, int32_t networkType, int32_t performanceClass) {
     currentVersion = version;
     currentLayer = layer;

@@ -35,7 +35,12 @@ RUN sdkmanager \
 
 CMD mkdir -p /home/source/TMessagesProj/build/outputs/apk && \
     mkdir -p /home/source/TMessagesProj/build/outputs/native-debug-symbols && \
-    cp -R /home/source/. /home/gradle && \
+    mkdir -p /home/source/TMessagesProj/build/outputs/mapping/TMessagesProj_App \
+             /home/source/TMessagesProj/build/outputs/mapping/TMessagesProj_AppHuawei \
+             /home/source/TMessagesProj/build/outputs/mapping/TMessagesProj_AppStandalone && \
+    tar -C /home/source \
+        --exclude=./.git --exclude=.cxx --exclude=build --exclude=.gradle --exclude=./local.properties \
+        -cf - . | tar -C /home/gradle -xf - && \
     cd /home/gradle && \
     gradle --parallel :TMessagesProj_AppStandalone:assembleAfatStandalone && \
     cp -R /home/gradle/TMessagesProj_AppStandalone/build/outputs/apk/. /home/source/TMessagesProj/build/outputs/apk

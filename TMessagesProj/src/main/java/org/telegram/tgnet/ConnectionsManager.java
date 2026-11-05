@@ -1037,6 +1037,8 @@ public class ConnectionsManager extends BaseController {
     public static native void native_setRegId(int currentAccount, String regId);
     public static native void native_setSystemLangCode(int currentAccount, String langCode);
     public static native void native_setTgnetConfigKey(int currentAccount, byte[] key, boolean encryptOnWrite);
+    public static native void native_applyTgnetConfigKey(int currentAccount, byte[] key, boolean encryptOnWrite);
+    public static native void native_applyTgnetConfigKeyAndResetAuthKeys(int currentAccount, byte[] key, boolean encryptOnWrite);
     public static native void native_setJava(boolean useJavaByteBuffers);
     public static native void native_setPushConnectionEnabled(int currentAccount, boolean value);
     public static native void native_applyDnsConfig(int currentAccount, long address, String phone, int date);

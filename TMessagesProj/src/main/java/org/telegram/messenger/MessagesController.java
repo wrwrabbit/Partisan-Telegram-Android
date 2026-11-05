@@ -483,6 +483,37 @@ public class MessagesController extends BaseController implements NotificationCe
         loadDialogs(folderId, fromCache ? -1 : 0, 100, fromCache);
     }
 
+    private boolean cachedDialogWouldDropLoadedMessages(int loadType, ArrayList<MessageObject> oldMsgs, ArrayList<MessageObject> newMsgs) {
+        return loadType == DIALOGS_LOAD_TYPE_CACHE && oldMsgs != null && newMsgs == null && getMessagesStorage().isUsingInMemoryDatabase();
+    }
+
+    private void fillMissingPinnedDialogMessages(TLRPC.Dialog currentDialog, TLRPC.Dialog loadedDialog, LongSparseArray<ArrayList<MessageObject>> loadedMessages) {
+        if (!getMessagesStorage().isUsingInMemoryDatabase() || dialogMessage.get(currentDialog.id) != null) {
+            return;
+        }
+        if (loadedDialog.top_message < currentDialog.top_message) {
+            return;
+        }
+        ArrayList<MessageObject> messages = loadedMessages.get(currentDialog.id);
+        if (messages == null) {
+            return;
+        }
+        dialogMessage.put(currentDialog.id, messages);
+        for (MessageObject message : messages) {
+            if (message != null && message.messageOwner.out) {
+                message.messageOwner.unread = loadedDialog.read_outbox_max_id < message.getId();
+            }
+            if (message != null && message.messageOwner.peer_id.channel_id == 0) {
+                dialogMessagesByIds.put(message.getId(), message);
+                if (message.messageOwner.random_id != 0) {
+                    dialogMessagesByRandomIds.put(message.messageOwner.random_id, message);
+                }
+            }
+        }
+        currentDialog.top_message = loadedDialog.top_message;
+        currentDialog.last_message_date = loadedDialog.last_message_date;
+    }
+
     void deleteEncryptedGroupInnerDialogsIfNeeded(long did, int onlyHistory, boolean revoke) {
         EncryptedGroup encryptedGroup = getEncryptedGroupUtils().getOrLoadEncryptedGroupByDialogId(did);
         if (encryptedGroup == null) {
@@ -6677,6 +6708,10 @@ public class MessagesController extends BaseController implements NotificationCe
         loadingChannelAdmins.clear();
         users.clear();
         objectsByUsernames.clear();
+        // its cache points at users of the previous session
+        userNameResolver = null;
+        cachedIsUserContactBlocked.clear();
+        loadingIsUserContactBlocked.clear();
         chats.clear();
         dialogMessage.clear();
         deletedHistory.clear();
@@ -7986,6 +8021,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                     }
                     fullUsers.put(user.id, userFull);
+                    final boolean contactBlockedChanged = syncUserContactBlocked(user.id, userFull);
                     getTranslateController().updateDialogFull(user.id);
                     StarsController.getInstance(currentAccount).invalidateProfileGifts(userFull);
                     loadingFullUsers.remove(user.id);
@@ -8006,6 +8042,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         getNotificationCenter().postNotificationName(NotificationCenter.botInfoDidLoad, userFull.bot_info, classGuid);
                     }
                     getNotificationCenter().postNotificationName(NotificationCenter.userInfoDidLoad, user.id, userFull);
+                    if (contactBlockedChanged) {
+                        getNotificationCenter().postNotificationName(NotificationCenter.userIsPremiumBlockedUpadted);
+                    }
 
                     TLRPC.Dialog dialog = dialogs_dict.get(user.id);
                     if (dialog != null) {
@@ -13719,6 +13758,10 @@ public class MessagesController extends BaseController implements NotificationCe
                         dialogsEndReached.put(folderId, false);
                         serverDialogsEndReached.put(folderId, false);
                     } else if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetId] == Integer.MAX_VALUE) {
+                        // nothing to load, otherwise sortDialogs hides every new dialog of an empty account
+                        if (folderId == 0) {
+                            dialogsLoadedTillDate = Integer.MIN_VALUE;
+                        }
                         dialogsEndReached.put(folderId, true);
                         serverDialogsEndReached.put(folderId, true);
                     } else {
@@ -14072,6 +14115,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         currentDialog.pinned = value.pinned;
                         currentDialog.pinnedNum = value.pinnedNum;
                         ArrayList<MessageObject> oldMsgs = dialogMessage.get(key);
+                        if (cachedDialogWouldDropLoadedMessages(loadType, oldMsgs, newMsgs)) {
+                            continue;
+                        }
 
                         boolean oldMsgsDeleted = false;
                         for (int i = 0; oldMsgs != null && i < oldMsgs.size(); ++i) {
@@ -18021,6 +18067,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 d.pinnedNum = dialog.pinnedNum;
                                 dids.add(dialog.id);
                                 pinned.add(dialog.pinnedNum);
+                                fillMissingPinnedDialogMessages(d, dialog, new_dialogMessage);
                             } else {
                                 added = true;
                                 dialogs_dict.put(dialog.id, dialog);
@@ -19742,8 +19789,11 @@ public class MessagesController extends BaseController implements NotificationCe
             } else if (baseUpdate instanceof TL_update.TL_updateChatParticipantDelete) {
                 TL_update.TL_updateChatParticipantDelete update = (TL_update.TL_updateChatParticipantDelete) baseUpdate;
                 getMessagesStorage().updateChatInfo(update.chat_id, update.user_id, 1, 0, update.version);
-            } else if (baseUpdate instanceof TL_update.TL_updateDcOptions || baseUpdate instanceof TL_update.TL_updateConfig) {
+            } else if (baseUpdate instanceof TL_update.TL_updateDcOptions) {
                 getConnectionsManager().updateDcSettings();
+            } else if (baseUpdate instanceof TL_update.TL_updateConfig) {
+                getConnectionsManager().updateDcSettings();
+                loadAppConfig(true);
             } else if (baseUpdate instanceof TL_update.TL_updateEncryption) {
                 getSecretChatHelper().processUpdateEncryption((TL_update.TL_updateEncryption) baseUpdate, usersDict);
             } else if (baseUpdate instanceof TL_update.TL_updatePeerBlocked) {
@@ -24894,6 +24944,24 @@ public class MessagesController extends BaseController implements NotificationCe
         AndroidUtilities.cancelRunOnUIThread(requestIsUserContactBlockedRunnable);
         AndroidUtilities.runOnUIThread(requestIsUserContactBlockedRunnable, 60);
         return null;
+    }
+
+    // the full user is fresher than a requirement cached earlier, e.g. after importing a no paid messages token
+    private boolean syncUserContactBlocked(long userId, TLRPC.UserFull userFull) {
+        final TL_account.RequirementToContact cached = cachedIsUserContactBlocked.get(userId);
+        if (cached == null) {
+            return false;
+        }
+        final TL_account.RequirementToContact r = UserObject.getRequirementToContact(userFull);
+        if (UserObject.eq(cached, r)) {
+            return false;
+        }
+        if (r == null) {
+            cachedIsUserContactBlocked.remove(userId);
+        } else {
+            cachedIsUserContactBlocked.put(userId, r);
+        }
+        return true;
     }
 
     public void invalidateUserPremiumBlocked(long userId, int classGuid) {

@@ -44,6 +44,7 @@ import org.telegram.messenger.partisan.Utils;
 import org.telegram.messenger.partisan.fileprotection.DraftsLocationReconciler;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionDatabaseCleaner;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionDbEncryption;
+import org.telegram.messenger.partisan.fileprotection.FileProtectionPostRestartCleaner;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionSettings;
 import org.telegram.messenger.partisan.fileprotection.FileProtectionUtils;
 import org.telegram.messenger.partisan.fileprotection.UsersWithSecretChatsCache;
@@ -420,6 +421,7 @@ public class MessagesStorage extends BaseController {
             }
             new PartisanDatabaseMigrationHelper(database).updateDb();
             DraftsLocationReconciler.reconcileDraftsLocation(currentAccount, database);
+            FileProtectionPostRestartCleaner.clearDiskChatListIfFileProtectionDisabled(currentAccount, database);
             databaseCreated = true;
         } catch (Exception e) {
             FileLog.e(e);
