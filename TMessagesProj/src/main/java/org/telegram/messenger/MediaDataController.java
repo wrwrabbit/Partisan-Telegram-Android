@@ -54,6 +54,7 @@ import org.telegram.SQLite.SQLiteException;
 import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.SQLite.SQLitePreparedStatementWrapper;
 import org.telegram.messenger.partisan.fileprotection.DraftsStorage;
+import org.telegram.messenger.partisan.secretsearch.SecretChatMessageSearcher;
 import org.telegram.messenger.partisan.secretgroups.EncryptedGroupUtils;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
 import org.telegram.messenger.ringtone.RingtoneUploader;
@@ -3859,6 +3860,40 @@ public class MediaDataController extends BaseController {
         return reqId != 0;
     }
 
+    private void searchMessagesInSecretChat(String query, long dialogId, int guid, boolean jumpToMessage) {
+        int currentReqId = ++lastReqId;
+        lastGuid = guid;
+        lastDialogId = dialogId;
+        lastMergeDialogId = 0;
+        lastSearchQuery = query;
+        loadingSearchLocal = false;
+        loadedPredirectedSearchLocal = false;
+        SecretChatMessageSearcher.search(currentAccount, dialogId, query, messageObjects -> {
+            if (currentReqId != lastReqId) {
+                return;
+            }
+            loadingMoreSearchMessages = false;
+            lastReturnedNum = 0;
+            searchServerResultMessages.clear();
+            searchServerResultMessagesMap[0].clear();
+            searchServerResultMessagesMap[1].clear();
+            for (MessageObject messageObject : messageObjects) {
+                searchServerResultMessages.add(messageObject);
+                searchServerResultMessagesMap[0].put(messageObject.getId(), messageObject);
+            }
+            updateSearchResults();
+            messagesSearchEndReached[0] = messagesSearchEndReached[1] = true;
+            messagesSearchCount[0] = searchResultMessages.size();
+            messagesSearchCount[1] = 0;
+            if (searchResultMessages.isEmpty()) {
+                getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), (long) 0, 0, 0, jumpToMessage);
+            } else {
+                MessageObject messageObject = searchResultMessages.get(0);
+                getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), 0, getSearchCount(), jumpToMessage);
+            }
+        });
+    }
+
     public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction) {
         int max_id = 0;
         long queryWithDialog = dialogId;
@@ -3929,6 +3964,10 @@ public class MediaDataController extends BaseController {
             searchServerResultMessagesMap[0].clear();
             searchServerResultMessagesMap[1].clear();
             getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsLoading, guid);
+        }
+        if (query != null && DialogObject.isEncryptedDialog(dialogId)) {
+            searchMessagesInSecretChat(query, dialogId, guid, jumpToMessage);
+            return;
         }
         final boolean isHashtag = query != null && (query.trim().startsWith("#") || query.trim().startsWith("$"));
         if (messagesSearchEndReached[0] && !messagesSearchEndReached[1] && mergeDialogId != 0) {

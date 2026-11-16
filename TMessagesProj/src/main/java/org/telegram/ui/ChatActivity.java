@@ -4614,7 +4614,7 @@ public class ChatActivity extends BaseFragment implements
             topicCreateItem = menu.addItem(chat_menu_topic_create, R.drawable.menu_topic_add_30);
         }
 
-        if (!isEncryptedChat() && (chatMode == 0 || chatMode == MODE_SAVED || chatMode == MODE_SUGGESTIONS) && !isReport()) {
+        if ((!isEncryptedChat() || !isEncryptedGroup() && !FakePasscodeUtils.isFakePasscodeActivated()) && (chatMode == 0 || chatMode == MODE_SAVED || chatMode == MODE_SUGGESTIONS) && !isReport()) {
             searchIconItem = menu.addItem(search, isSupportedTags() ? R.drawable.navbar_search_tag : R.drawable.outline_header_search);
             searchIconItem.setContentDescription(LocaleController.getString(R.string.Search));
             searchItem = menu.addItem(chat_menu_search, R.drawable.outline_header_search, themeDelegate);
@@ -11037,7 +11037,9 @@ public class ChatActivity extends BaseFragment implements
             searchCalendarButton.setImageResource(R.drawable.msg_calendar);
             searchCalendarButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_chat_searchPanelIcons), PorterDuff.Mode.MULTIPLY));
             searchCalendarButton.setBackgroundDrawable(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 1));
-            searchContainer.addView(searchCalendarButton, LayoutHelper.createFrame(44, 44, Gravity.LEFT | Gravity.TOP, 2.66f, 0, 0, 0));
+            if (!isEncryptedChat()) {
+                searchContainer.addView(searchCalendarButton, LayoutHelper.createFrame(44, 44, Gravity.LEFT | Gravity.TOP, 2.66f, 0, 0, 0));
+            }
             searchCalendarButton.setOnClickListener(view -> {
                 if (getParentActivity() == null) {
                     return;
@@ -39802,7 +39804,7 @@ public class ChatActivity extends BaseFragment implements
             boolean hashtags = false;
             boolean channelHashtags = false;
             searchingQuery = editText != null ? editText.getText().toString() : searchingQuery;
-            if (!TextUtils.isEmpty(searchingQuery) && (searchingQuery.startsWith("$") || searchingQuery.startsWith("#"))) {
+            if (!isEncryptedChat() && !TextUtils.isEmpty(searchingQuery) && (searchingQuery.startsWith("$") || searchingQuery.startsWith("#"))) {
                 hashtags = true;
                 createSearchHashtagViewsIfNeeded();
                 if (searchingQuery.contains("@")) {
