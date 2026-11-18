@@ -39804,7 +39804,7 @@ public class ChatActivity extends BaseFragment implements
             boolean hashtags = false;
             boolean channelHashtags = false;
             searchingQuery = editText != null ? editText.getText().toString() : searchingQuery;
-            if (!isEncryptedChat() && !TextUtils.isEmpty(searchingQuery) && (searchingQuery.startsWith("$") || searchingQuery.startsWith("#"))) {
+            if (!TextUtils.isEmpty(searchingQuery) && (searchingQuery.startsWith("$") || searchingQuery.startsWith("#"))) {
                 hashtags = true;
                 createSearchHashtagViewsIfNeeded();
                 if (searchingQuery.contains("@")) {
