@@ -2,6 +2,7 @@ package org.telegram.messenger.partisan.secretsearch;
 
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.MessageObject;
@@ -35,6 +36,8 @@ public class SecretChatMessageSearcher {
     private final Consumer<ArrayList<MessageObject>> onResultsOnUiThread;
     private final MessageTextMatcher matcher;
     private final List<TLRPC.Message> foundMessages = new ArrayList<>();
+    private final long selfId;
+    private final long peerUserId;
 
     private SecretChatMessageSearcher(int account, long dialogId, String query, int searchId, Consumer<ArrayList<MessageObject>> onResultsOnUiThread) {
         this.account = account;
@@ -43,6 +46,9 @@ public class SecretChatMessageSearcher {
         this.searchId = searchId;
         this.onResultsOnUiThread = onResultsOnUiThread;
         this.matcher = new MessageTextMatcher(query);
+        this.selfId = UserConfig.getInstance(account).getClientUserId();
+        TLRPC.EncryptedChat encryptedChat = MessagesController.getInstance(account).getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
+        this.peerUserId = encryptedChat != null ? encryptedChat.user_id : 0;
     }
 
     // A newer search cancels the running one; a cancelled search never calls onResults.
@@ -103,7 +109,6 @@ public class SecretChatMessageSearcher {
     // Secret chat mids are negative and decrease over time, so ascending mid order is newest first.
     private Batch readBatch(long afterMid) {
         Batch batch = new Batch(afterMid);
-        long selfId = UserConfig.getInstance(account).getClientUserId();
         SQLiteCursor cursor = null;
         try {
             cursor = MessagesStorage.getInstance(account).getDatabase().queryFinalized(
@@ -112,7 +117,7 @@ public class SecretChatMessageSearcher {
             while (cursor.next()) {
                 batch.rowCount++;
                 batch.lastMid = cursor.longValue(1);
-                TLRPC.Message message = readMessageOrNull(cursor, selfId);
+                TLRPC.Message message = readMessageOrNull(cursor);
                 if (message != null) {
                     batch.messages.add(message);
                 }
@@ -129,7 +134,7 @@ public class SecretChatMessageSearcher {
     }
 
     // A row that fails to deserialize is skipped rather than ending the search.
-    private TLRPC.Message readMessageOrNull(SQLiteCursor cursor, long selfId) {
+    private TLRPC.Message readMessageOrNull(SQLiteCursor cursor) {
         NativeByteBuffer data = null;
         try {
             data = cursor.byteBufferValue(0);
@@ -146,6 +151,7 @@ public class SecretChatMessageSearcher {
             message.date = cursor.intValue(3);
             MessageObject.setUnreadFlags(message, cursor.intValue(4));
             message.dialog_id = dialogId;
+            restoreSenderId(message);
             return message;
         } catch (Exception e) {
             FileLog.e(e);
@@ -155,6 +161,16 @@ public class SecretChatMessageSearcher {
                 data.reuse();
             }
         }
+    }
+
+    // TL_message_secret stores from_id as int32, so 64-bit user ids come back truncated.
+    private void restoreSenderId(TLRPC.Message message) {
+        long senderId = message.out ? selfId : peerUserId;
+        if (senderId == 0) {
+            return;
+        }
+        message.from_id = new TLRPC.TL_peerUser();
+        message.from_id.user_id = senderId;
     }
 
     private boolean matches(TLRPC.Message message) {
