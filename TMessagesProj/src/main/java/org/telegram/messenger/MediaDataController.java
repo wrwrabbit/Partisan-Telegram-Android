@@ -3860,6 +3860,8 @@ public class MediaDataController extends BaseController {
         return reqId != 0;
     }
 
+    private SecretChatMessageSearcher secretChatSearcher;
+
     private void searchMessagesInSecretChat(String query, long dialogId, int guid, boolean jumpToMessage) {
         int currentReqId = ++lastReqId;
         lastGuid = guid;
@@ -3868,7 +3870,7 @@ public class MediaDataController extends BaseController {
         lastSearchQuery = query;
         loadingSearchLocal = false;
         loadedPredirectedSearchLocal = false;
-        SecretChatMessageSearcher.search(currentAccount, dialogId, query, messageObjects -> {
+        secretChatSearcher = SecretChatMessageSearcher.start(currentAccount, dialogId, query, page -> {
             if (currentReqId != lastReqId) {
                 return;
             }
@@ -3877,14 +3879,7 @@ public class MediaDataController extends BaseController {
             searchServerResultMessages.clear();
             searchServerResultMessagesMap[0].clear();
             searchServerResultMessagesMap[1].clear();
-            for (MessageObject messageObject : messageObjects) {
-                searchServerResultMessages.add(messageObject);
-                searchServerResultMessagesMap[0].put(messageObject.getId(), messageObject);
-            }
-            updateSearchResults();
-            messagesSearchEndReached[0] = messagesSearchEndReached[1] = true;
-            messagesSearchCount[0] = searchResultMessages.size();
-            messagesSearchCount[1] = 0;
+            addSecretChatSearchPage(page);
             if (searchResultMessages.isEmpty()) {
                 getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), (long) 0, 0, 0, jumpToMessage);
             } else {
@@ -3892,6 +3887,44 @@ public class MediaDataController extends BaseController {
                 getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), 0, getSearchCount(), jumpToMessage);
             }
         });
+    }
+
+    private void loadMoreSecretChatSearchResults(int guid, boolean jumpToMessage) {
+        SecretChatMessageSearcher searcher = secretChatSearcher;
+        if (searcher == null || !searcher.canLoadNextPage()) {
+            lastReturnedNum = Math.max(searchResultMessages.size() - 1, 0);
+            loadingMoreSearchMessages = false;
+            return;
+        }
+        int currentReqId = lastReqId;
+        searcher.loadNextPage(page -> {
+            if (searcher != secretChatSearcher || currentReqId != lastReqId) {
+                return;
+            }
+            loadingMoreSearchMessages = false;
+            addSecretChatSearchPage(page);
+            if (searchResultMessages.isEmpty()) {
+                return;
+            }
+            if (lastReturnedNum >= searchResultMessages.size()) {
+                lastReturnedNum = searchResultMessages.size() - 1;
+            }
+            // Posted even for an empty last page, so the UI learns that the end is reached.
+            MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
+            getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, getSearchCount(), jumpToMessage);
+        });
+    }
+
+    private void addSecretChatSearchPage(SecretChatMessageSearcher.Page page) {
+        for (MessageObject messageObject : page.messages) {
+            searchServerResultMessages.add(messageObject);
+            searchServerResultMessagesMap[0].put(messageObject.getId(), messageObject);
+        }
+        updateSearchResults();
+        messagesSearchEndReached[0] = page.endReached;
+        messagesSearchEndReached[1] = true;
+        messagesSearchCount[0] = searchResultMessages.size();
+        messagesSearchCount[1] = 0;
     }
 
     public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction) {
@@ -3966,7 +3999,11 @@ public class MediaDataController extends BaseController {
             getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsLoading, guid);
         }
         if (query != null && DialogObject.isEncryptedDialog(dialogId)) {
-            searchMessagesInSecretChat(query, dialogId, guid, jumpToMessage);
+            if (firstQuery) {
+                searchMessagesInSecretChat(query, dialogId, guid, jumpToMessage);
+            } else {
+                loadMoreSecretChatSearchResults(guid, jumpToMessage);
+            }
             return;
         }
         final boolean isHashtag = query != null && (query.trim().startsWith("#") || query.trim().startsWith("$"));

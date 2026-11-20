@@ -27913,9 +27913,9 @@ public class ChatActivity extends BaseFragment implements
             } else if (searchingFiltered) {
                 searchCountText.setText(LocaleController.formatPluralString("TaggedMessages", searchLastCount), animated);
             } else if (chatMode == MODE_SEARCH || isMessagesSearchListVisible()) {
-                searchCountText.setText(LocaleController.formatPluralString("SearchMessagesResultCount", searchLastCount, LocaleController.formatNumber(searchLastCount, ' ')), animated);
+                searchCountText.setText(withSecretSearchLoadingSuffix(LocaleController.formatPluralString("SearchMessagesResultCount", searchLastCount, LocaleController.formatNumber(searchLastCount, ' '))), animated);
             } else {
-                searchCountText.setText(LocaleController.formatString(R.string.Of, searchLastIndex + 1, searchLastCount), animated);
+                searchCountText.setText(withSecretSearchLoadingSuffix(LocaleController.formatString(R.string.Of, searchLastIndex + 1, searchLastCount)), animated);
             }
         }
     }
@@ -46526,6 +46526,13 @@ public class ChatActivity extends BaseFragment implements
             return currentEncryptedGroup.containsEncryptedChatId(DialogObject.getEncryptedChatId(encryptedChatId));
         }
         return false;
+    }
+
+    private String withSecretSearchLoadingSuffix(String text) {
+        if (DialogObject.isEncryptedDialog(dialog_id) && !getMediaDataController().searchEndReached()) {
+            return text + "…";
+        }
+        return text;
     }
 
     private int getVisibleEncryptedGroupMessageId(int messageId) {
