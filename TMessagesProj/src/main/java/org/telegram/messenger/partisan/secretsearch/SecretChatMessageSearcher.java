@@ -1,5 +1,7 @@
 package org.telegram.messenger.partisan.secretsearch;
 
+import android.text.TextUtils;
+
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
@@ -11,11 +13,17 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.fakepasscode.FakePasscodeUtils;
+import org.telegram.messenger.partisan.secretgroups.EncryptedGroup;
+import org.telegram.messenger.partisan.secretgroups.InnerEncryptedChat;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -36,8 +44,12 @@ public class SecretChatMessageSearcher {
     private final Consumer<ArrayList<MessageObject>> onResultsOnUiThread;
     private final MessageTextMatcher matcher;
     private final List<TLRPC.Message> foundMessages = new ArrayList<>();
+    // An outgoing secret group message is stored once per member chat, all copies sharing random_id.
+    private final Set<Long> foundOutgoingRandomIds = new HashSet<>();
     private final long selfId;
-    private final long peerUserId;
+    private final boolean isEncryptedGroup;
+    // For a secret group: every inner chat. For a secret chat: just the chat itself.
+    private final Map<Long, Long> peerUserIdByDialogId;
 
     private SecretChatMessageSearcher(int account, long dialogId, String query, int searchId, Consumer<ArrayList<MessageObject>> onResultsOnUiThread) {
         this.account = account;
@@ -47,15 +59,34 @@ public class SecretChatMessageSearcher {
         this.onResultsOnUiThread = onResultsOnUiThread;
         this.matcher = new MessageTextMatcher(query);
         this.selfId = UserConfig.getInstance(account).getClientUserId();
-        TLRPC.EncryptedChat encryptedChat = MessagesController.getInstance(account).getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
-        this.peerUserId = encryptedChat != null ? encryptedChat.user_id : 0;
+        MessagesController messagesController = MessagesController.getInstance(account);
+        EncryptedGroup encryptedGroup = messagesController.getEncryptedGroupByDialogId(dialogId);
+        this.isEncryptedGroup = encryptedGroup != null;
+        this.peerUserIdByDialogId = isEncryptedGroup
+                ? getInnerChatPeers(encryptedGroup)
+                : getSecretChatPeer(messagesController, dialogId);
+    }
+
+    private static Map<Long, Long> getInnerChatPeers(EncryptedGroup encryptedGroup) {
+        Map<Long, Long> peers = new HashMap<>();
+        for (InnerEncryptedChat innerChat : encryptedGroup.getInnerChats()) {
+            innerChat.getDialogId().ifPresent(innerDialogId -> peers.put(innerDialogId, innerChat.getUserId()));
+        }
+        return peers;
+    }
+
+    private static Map<Long, Long> getSecretChatPeer(MessagesController messagesController, long dialogId) {
+        TLRPC.EncryptedChat encryptedChat = messagesController.getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
+        Map<Long, Long> peers = new HashMap<>();
+        peers.put(dialogId, encryptedChat != null ? encryptedChat.user_id : 0L);
+        return peers;
     }
 
     // A newer search cancels the running one; a cancelled search never calls onResults.
     public static void search(int account, long dialogId, String query, Consumer<ArrayList<MessageObject>> onResultsOnUiThread) {
         int searchId = currentSearchId.incrementAndGet();
         SecretChatMessageSearcher searcher = new SecretChatMessageSearcher(account, dialogId, query, searchId, onResultsOnUiThread);
-        if (searcher.matcher.isQueryEmpty() || MessagesController.getInstance(account).isEncryptedGroup(dialogId)) {
+        if (searcher.matcher.isQueryEmpty() || searcher.peerUserIdByDialogId.isEmpty()) {
             AndroidUtilities.runOnUIThread(() -> onResultsOnUiThread.accept(new ArrayList<>()));
             return;
         }
@@ -84,7 +115,7 @@ public class SecretChatMessageSearcher {
             if (foundMessages.size() >= MAX_RESULTS) {
                 break;
             }
-            if (matches(message) && !FakePasscodeUtils.isHideMessage(account, dialogId, message.id)) {
+            if (matches(message) && !isHidden(message) && !isDuplicateOutgoingSecretGroupMessageCopy(message)) {
                 foundMessages.add(message);
             }
         }
@@ -93,6 +124,18 @@ public class SecretChatMessageSearcher {
         } else {
             readNextBatch(batch.lastMid);
         }
+    }
+
+    private boolean isHidden(TLRPC.Message message) {
+        return FakePasscodeUtils.isHideMessage(account, message.dialog_id, message.id)
+                || isEncryptedGroup && FakePasscodeUtils.isHideMessage(account, dialogId, message.id);
+    }
+
+    private boolean isDuplicateOutgoingSecretGroupMessageCopy(TLRPC.Message message) {
+        if (!isEncryptedGroup || !message.out || message.random_id == 0) {
+            return false;
+        }
+        return !foundOutgoingRandomIds.add(message.random_id);
     }
 
     private void deliverResults() {
@@ -106,14 +149,14 @@ public class SecretChatMessageSearcher {
         });
     }
 
-    // Secret chat mids are negative and decrease over time, so ascending mid order is newest first.
     private Batch readBatch(long afterMid) {
         Batch batch = new Batch(afterMid);
         SQLiteCursor cursor = null;
         try {
+            String dialogIds = TextUtils.join(",", peerUserIdByDialogId.keySet());
             cursor = MessagesStorage.getInstance(account).getDatabase().queryFinalized(
-                    "SELECT data, mid, send_state, date, read_state FROM messages_v2 WHERE uid = ? AND mid > ? ORDER BY mid ASC LIMIT " + BATCH_SIZE,
-                    dialogId, afterMid);
+                    "SELECT data, mid, send_state, date, read_state, uid FROM messages_v2 WHERE uid IN (" + dialogIds + ") AND mid > ? ORDER BY mid ASC LIMIT " + BATCH_SIZE,
+                    afterMid);
             while (cursor.next()) {
                 batch.rowCount++;
                 batch.lastMid = cursor.longValue(1);
@@ -150,7 +193,7 @@ public class SecretChatMessageSearcher {
             message.send_state = cursor.intValue(2);
             message.date = cursor.intValue(3);
             MessageObject.setUnreadFlags(message, cursor.intValue(4));
-            message.dialog_id = dialogId;
+            message.dialog_id = cursor.longValue(5);
             restoreSenderId(message);
             return message;
         } catch (Exception e) {
@@ -165,7 +208,8 @@ public class SecretChatMessageSearcher {
 
     // TL_message_secret stores from_id as int32, so 64-bit user ids come back truncated.
     private void restoreSenderId(TLRPC.Message message) {
-        long senderId = message.out ? selfId : peerUserId;
+        Long peerUserId = peerUserIdByDialogId.get(message.dialog_id);
+        long senderId = message.out ? selfId : (peerUserId != null ? peerUserId : 0);
         if (senderId == 0) {
             return;
         }

@@ -936,6 +936,11 @@ public class ChatActivity extends BaseFragment implements
     private Map<Long, Boolean[]> forwardEndReachedEncryptedGroup = new HashMap<>();
 
     private Set<Integer> postponedScrollToLastMessageQueryIndexesSetForEncryptedGroup = new HashSet<>();
+    private int encryptedGroupPageBackTargetId;
+    private int encryptedGroupPageBackFromMessageId;
+    private boolean encryptedGroupPageBackSelect;
+    private final Set<Integer> encryptedGroupPageBackLoadIndexes = new HashSet<>();
+    private AlertDialog encryptedGroupPageBackProgressDialog;
 
     private boolean hideForwardEndReached;
     private boolean loading = true;
@@ -3621,6 +3626,7 @@ public class ChatActivity extends BaseFragment implements
         if (findMessagesController != null) {
             findMessagesController.stop();
         }
+        stopEncryptedGroupPageBack();
 
         if (flagSecure != null) {
             flagSecure.detach();
@@ -4614,7 +4620,7 @@ public class ChatActivity extends BaseFragment implements
             topicCreateItem = menu.addItem(chat_menu_topic_create, R.drawable.menu_topic_add_30);
         }
 
-        if ((!isEncryptedChat() || !isEncryptedGroup() && !FakePasscodeUtils.isFakePasscodeActivated()) && (chatMode == 0 || chatMode == MODE_SAVED || chatMode == MODE_SUGGESTIONS) && !isReport()) {
+        if ((!isEncryptedChat() || !FakePasscodeUtils.isFakePasscodeActivated()) && (chatMode == 0 || chatMode == MODE_SAVED || chatMode == MODE_SUGGESTIONS) && !isReport()) {
             searchIconItem = menu.addItem(search, isSupportedTags() ? R.drawable.navbar_search_tag : R.drawable.outline_header_search);
             searchIconItem.setContentDescription(LocaleController.getString(R.string.Search));
             searchItem = menu.addItem(chat_menu_search, R.drawable.outline_header_search, themeDelegate);
@@ -17501,6 +17507,7 @@ public class ChatActivity extends BaseFragment implements
             return;
         }
 
+        id = getVisibleEncryptedGroupMessageId(id);
         forceNextPinnedMessageId = Math.abs(forcePinnedMessageId);
         forceScrollToFirst = forcePinnedMessageId > 0;
         wasManualScroll = true;
@@ -17633,6 +17640,10 @@ public class ChatActivity extends BaseFragment implements
             }
             if (progressDialog != null) {
                 progressDialog.dismiss();
+            }
+            if (isEncryptedGroup()) {
+                startEncryptedGroupPageBack(id, fromMessageId, select);
+                return;
             }
 
             showPinnedProgress(forceNextPinnedMessageId != 0);
@@ -21337,6 +21348,7 @@ public class ChatActivity extends BaseFragment implements
         }
 
         if (index == -1) {
+            stopEncryptedGroupPageBackIfLoadDropped(queryLoadIndex);
             if (chatMode == MODE_SCHEDULED && mode == MODE_SCHEDULED && !isCache) {
                 waitingForReplyMessageLoad = true;
                 waitingForLoad.add(lastLoadIndex);
@@ -22439,6 +22451,7 @@ public class ChatActivity extends BaseFragment implements
             showFloatingTopicView(false);
         }
         addSponsoredMessages(!isFirstLoading);
+        continueEncryptedGroupPageBackIfNeeded(queryLoadIndex);
         checkScrollForLoad(false);
 
         if (postponedScroll && !fakePostponedScroll) {
@@ -24482,7 +24495,7 @@ public class ChatActivity extends BaseFragment implements
                         final boolean wasFiltered = chatAdapter.isFiltered;
                         setFilterMessages(false);
                         if (!wasFiltered) {
-                            scrollToMessageId(messageId, 0, true, did == dialog_id ? 0 : 1, true, 0);
+                            scrollToMessageId(messageId, 0, true, isCurrentDialogId(did) ? 0 : 1, true, 0);
                         } else {
                             updateVisibleRows();
                         }
@@ -46513,6 +46526,83 @@ public class ChatActivity extends BaseFragment implements
             return currentEncryptedGroup.containsEncryptedChatId(DialogObject.getEncryptedChatId(encryptedChatId));
         }
         return false;
+    }
+
+    private int getVisibleEncryptedGroupMessageId(int messageId) {
+        if (!isEncryptedGroup() || chatAdapter.isFiltered) {
+            return messageId;
+        }
+        MessageObject visibleMessage = getVisibleMessage(messagesDict[0].get(messageId));
+        return visibleMessage != null ? visibleMessage.getId() : messageId;
+    }
+
+    private void startEncryptedGroupPageBack(int messageId, int fromMessageId, boolean select) {
+        stopEncryptedGroupPageBack();
+        encryptedGroupPageBackTargetId = messageId;
+        encryptedGroupPageBackFromMessageId = fromMessageId;
+        encryptedGroupPageBackSelect = select;
+        if (getParentActivity() != null) {
+            encryptedGroupPageBackProgressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER, themeDelegate);
+            encryptedGroupPageBackProgressDialog.setOnCancelListener(dialog -> stopEncryptedGroupPageBack());
+            encryptedGroupPageBackProgressDialog.showDelayed(400);
+        }
+        loadNextEncryptedGroupPageBackRound();
+    }
+
+    private void loadNextEncryptedGroupPageBackRound() {
+        loading = true;
+        forEachDialogId(did -> {
+            if (getEndReached(did, 0)) {
+                return;
+            }
+            encryptedGroupPageBackLoadIndexes.add(lastLoadIndex);
+            waitingForLoad.add(lastLoadIndex);
+            getMessagesController().loadMessages(did, mergeDialogId, false, 50, getMaxMessageId(did, 0), 0, !getCacheEndReached(did, 0), getMinDate(did, 0), classGuid, 0, 0, chatMode, threadMessageId, replyMaxReadId, lastLoadIndex++, isTopic);
+        });
+        if (encryptedGroupPageBackLoadIndexes.isEmpty()) {
+            loading = false;
+            finishEncryptedGroupPageBack(false);
+        }
+    }
+
+    private void continueEncryptedGroupPageBackIfNeeded(int queryLoadIndex) {
+        if (!encryptedGroupPageBackLoadIndexes.remove(queryLoadIndex) || !encryptedGroupPageBackLoadIndexes.isEmpty()) {
+            return;
+        }
+        MessageObject target = messagesDict[0].get(encryptedGroupPageBackTargetId);
+        if (target == null) {
+            loadNextEncryptedGroupPageBackRound();
+        } else {
+            // Loaded but not shown (e.g. a merged service message): older pages won't change that.
+            finishEncryptedGroupPageBack(messages.contains(getVisibleMessage(target)));
+        }
+    }
+
+    private void finishEncryptedGroupPageBack(boolean found) {
+        int targetId = encryptedGroupPageBackTargetId;
+        int fromMessageId = encryptedGroupPageBackFromMessageId;
+        boolean select = encryptedGroupPageBackSelect;
+        stopEncryptedGroupPageBack();
+        showMessagesSearchListView(false);
+        if (found) {
+            scrollToMessageId(targetId, fromMessageId, select, 0, true, 0);
+        } else {
+            BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.MessageNotFound), themeDelegate).show();
+        }
+    }
+
+    private void stopEncryptedGroupPageBackIfLoadDropped(int queryLoadIndex) {
+        if (encryptedGroupPageBackLoadIndexes.contains(queryLoadIndex)) {
+            stopEncryptedGroupPageBack();
+        }
+    }
+
+    private void stopEncryptedGroupPageBack() {
+        encryptedGroupPageBackLoadIndexes.clear();
+        if (encryptedGroupPageBackProgressDialog != null) {
+            encryptedGroupPageBackProgressDialog.dismiss();
+            encryptedGroupPageBackProgressDialog = null;
+        }
     }
 
     public MessageObject fixEncryptedGroupMessageObjectIfNeed(MessageObject obj, long targetEncryptedDialogId) {
