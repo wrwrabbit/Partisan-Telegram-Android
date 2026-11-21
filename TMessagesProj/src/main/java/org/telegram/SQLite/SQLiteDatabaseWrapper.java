@@ -28,7 +28,7 @@ public class SQLiteDatabaseWrapper extends SQLiteDatabase {
     public static final Set<String> MESSAGE_CONTENT_TABLES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "messages_v2", "messages_holes", "messages_topics", "messages_holes_topics",
             "media_v4", "media_holes_topics", "media_holes_v2", "media_topics",
-            "scheduled_messages_v2", "quick_replies_messages", "ephemeral_messages", "chat_pinned_v2",
+            "scheduled_messages_v2", "quick_replies_messages", "ephemeral_messages", "chat_pinned_v2", "chat_pinned_count",
             "bot_keyboard", "bot_keyboard_topics", "tag_message_id", "enc_tasks_v4", "randoms_v2",
             "unread_push_messages", "sharing_locations"
     )));

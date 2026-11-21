@@ -73,6 +73,7 @@ public class FileProtectionDatabaseCleaner {
             clearTable(new TableInfo("topics") {{ dialogIdColumn = "did"; }});
             clearTable(new TableInfo("scheduled_messages_v2"));
             clearTable(new TableInfo("chat_pinned_v2"));
+            clearTable(new TableInfo("chat_pinned_count"));
             clearTable(new TableInfo("ephemeral_messages") {{ dialogIdColumn = "dialog_id"; }});
             clearTable(new TableInfo("bot_keyboard"));
             clearTable(new TableInfo("bot_keyboard_topics"));
